@@ -1,5 +1,6 @@
 // Modules to control application life and create native browser window
 // import {app, BrowserWindow, Menu, ipcMain} from 'electron'
+console.log("loading main.js");
 const { app, BrowserWindow, Menu, ipcMain } = require('electron')
 const electron = require('electron');
 const dialog = require('electron').dialog;
@@ -8,7 +9,7 @@ import VideoServer from './VideoServer';
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-const INDEX_HTML = 'src/renderer/index.html';
+const INDEX_HTML = './src/renderer/index.html';
 
 let mainWindow;
 let httpServer;

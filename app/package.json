@@ -11,15 +11,6 @@
     "dist": "electron-builder --win --x64 ",
     "package:win32": "npm run compile && electron-packager ./ rock-player --overwrite --app-version=1.0.0 --platform=win32 --arch=x64 --out=./out "
   },
-  "build": {
-    "appId": "com.electron.rock-player",
-    "mac": {
-      "category": "your.app.category.type"
-    },
-    "directories": {
-      "output": "build"
-    }
-  },
   "repository": "https://github.com/ziyang0116/rockplayer",
   "keywords": [
     "Electron",
