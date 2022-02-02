@@ -1,5 +1,6 @@
 'use strict';
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path.replace('app.asar', 'app.asar.unpacked');
+;
 const process = require('child_process');
 
 function findVideoInfo(reg, text) {
