@@ -6,13 +6,31 @@
             margin: 0;
             overflow: hidden;
         }
+
+        .video-js {
+            position: relative !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
+    <title>Video Player</title>
+    <link rel="stylesheet" href="./css/lqh.css" />
 </head>
 
 <body>
-    <div id="holder">
-        <div id="video-container">
+    <div id="holder" class="flexrow height100p">
+        <div id="video_container" class="widthauto height100p">
+        </div>
+        <div id="script" style="width:400px;overflow: scroll;" class="height100p">
+            请拖放字幕文件在这里
         </div>
     </div>
+
+    <div id="scriptTemplate" class="hide">
+        <div id="script#id#" class="scriptLine">
+            #script#
+        </div>
+    </div>
+    <script src="./js/jquery.js" onload="window.$ = window.jQuery = module.exports;"></script>
     <script src="../../dist/renderer/bundle.js"></script>
 </body>

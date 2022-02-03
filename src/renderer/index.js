@@ -3,6 +3,14 @@ import 'video.js/dist/video-js.css';
 import './js/StreamPlayTech';
 const ipcRenderer = require('electron').ipcRenderer;
 
+function find(reg, text) {
+    let matchArr = reg.exec(text);
+    let infoFound;
+    if (matchArr && matchArr.length > 0) {
+        infoFound = matchArr[0].trim();
+    }
+    return infoFound;
+}
 
 function getWindowSize() {
     const { offsetWidth, offsetHeight } = document.documentElement
@@ -28,9 +36,11 @@ function createVideoHtml(source) {
 }
 
 var holder = document.getElementById('holder');
-let videoContainer = document.getElementById("video-container")
+
+let videoContainer = document.getElementById("video_container")
 let videoHtml = createVideoHtml("http://vjs.zencdn.net/v/oceans.mp4")
 videoContainer.innerHTML = videoHtml;
+
 
 var newSettings = {
     backgroundOpacity: '0',
@@ -78,10 +88,22 @@ ipcRenderer.on('resize', function () {
     }
 });
 
+var getSeconds = function (line) {
+    var time = find(/\d\d:\d\d:\d\d /gi, line);
+    if (time != null) {
+        var t = time.split(":");
+        var sec = parseInt(t[0]) * 3600 + parseInt(t[1]) * 60 + parseInt(t[2]);
+        return sec;
+    }
+
+    return -1;
+};
+
+var scriptTimes = {};
+
 ipcRenderer.on('fileSelected', function (event, message) {
     console.log('fileSelected:', message)
     let vid = document.getElementById("my-video");
-
     videojs(vid).dispose();
 
     videoContainer.innerHTML = createVideoHtml(message.videoSource);
@@ -101,6 +123,52 @@ ipcRenderer.on('fileSelected', function (event, message) {
     // player.textTrackSettings.setValues(newSettings);
     // player.textTrackSettings.updateDisplay();
 
+    player.on('play', function () {
+    });
+
+    //拖动
+    player.on('seeking', function () {
+        var newtime = player.currentTime();
+        console.log('newtime: ' + newtime);
+        //player.currentTime(vue.currTime);
+    })
+
+    player.on('timeupdate', function () {
+        var time = parseInt(player.currentTime());
+        var id = scriptTimes[time];
+        if (id != null) {
+            $(".scriptLine").removeClass("selected");
+            $("#script" + id).addClass("selected");
+        }
+    });
+
+    var script = message.script;
+    if (script != null) {
+        var template = $("#scriptTemplate").html();
+        var htmls = [];
+        scriptTimes = {};
+        for (var i = 0; i < script.length; ++i) {
+            var line = script[i];
+            var html = template.replace(/#script#/g, line);
+            html = html.replace(/#id#/g, i);
+            var time = getSeconds(line);
+            if (time > -1) {
+                scriptTimes[time] = i;
+            }
+
+            htmls.push(html);
+        }
+
+        $("#script").html(htmls.join(""));
+        $(".scriptLine").on("click", function (e) {
+            var line = $(this).html();
+            var time = getSeconds(line);
+            if (time > -1) {
+                player.currentTime(time);
+                player.play();
+            }
+        });
+    }
 });
 
 ipcRenderer.send("ipcRendererReady", "true");

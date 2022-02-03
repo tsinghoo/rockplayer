@@ -21,6 +21,7 @@ exe(){
 cd $DIR
 npm run compile
 cp -rf dist/main/*.js app/
+cp -rf dist app/
 cp -rf src app
 dist="dist"
 if [ "$1" == "mac" ]; then

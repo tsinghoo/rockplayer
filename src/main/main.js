@@ -4,6 +4,8 @@ console.log("loading main.js");
 const { app, BrowserWindow, Menu, ipcMain } = require('electron')
 const electron = require('electron');
 const dialog = require('electron').dialog;
+const fs = require('fs')
+import video from 'fluent-ffmpeg/lib/options/video';
 import { videoSupport } from './ffmpeg-helper';
 import VideoServer from './VideoServer';
 
@@ -15,13 +17,36 @@ let mainWindow;
 let httpServer;
 let isRendererReady = false;
 
+
+function getScript(videoFilePath) {
+    var strs = videoFilePath.split(".");
+    var scriptPath = "";
+    if (strs.length > 1) {
+        var len = strs[strs.length - 1].length;
+        scriptPath = videoFilePath.substring(0, videoFilePath.length - len) + "txt";
+    }
+    if (fs.existsSync(scriptPath)) {
+        try {
+            const data = fs.readFileSync(scriptPath, 'utf8');
+            return data.split("\n");
+        } catch (err) {
+            console.error(err)
+        }
+    }
+}
+
 function onVideoFileSeleted(videoFilePath) {
     videoSupport(videoFilePath).then((checkResult) => {
-        if (checkResult.videoCodecSupport && checkResult.audioCodecSupport) {
+
+        let playParams = {};
+
+        playParams.script = getScript(videoFilePath);
+
+
+        if ((checkResult.videoCodecSupport || checkResult.onlyAudio) && checkResult.audioCodecSupport) {
             if (httpServer) {
                 httpServer.killFfmpegCommand();
             }
-            let playParams = {};
             playParams.type = "native";
             playParams.videoSource = videoFilePath;
             if (isRendererReady) {
@@ -36,14 +61,13 @@ function onVideoFileSeleted(videoFilePath) {
                 })
             }
         }
-        if (!checkResult.videoCodecSupport || !checkResult.audioCodecSupport) {
+        if ((!checkResult.videoCodecSupport && !checkResult.onlyAudio) || !checkResult.audioCodecSupport) {
             if (!httpServer) {
                 httpServer = new VideoServer();
             }
             httpServer.videoSourceInfo = { videoSourcePath: videoFilePath, checkResult: checkResult };
             httpServer.createServer();
             console.log("createVideoServer success");
-            let playParams = {};
             playParams.type = "stream";
             playParams.videoSource = "http://127.0.0.1:8888?startTime=0";
             playParams.duration = checkResult.duration
@@ -76,16 +100,16 @@ function onVideoFileSeleted(videoFilePath) {
 let application_menu = [
     {
         label: 'Rock Player',
-        submenu:[
+        submenu: [
             {
                 label: 'About Rock Player',
-                click: () =>{
+                click: () => {
                     let version = app.getVersion();
-                    
+
                     const options = {
                         type: 'info',
                         title: 'About Rock Player',
-                        message: "Version: " + version + '\n' + "Github: \nhttps://github.com/ziyang0116/rockplayer\n" ,
+                        message: "Version: " + version + '\n' + "Github: \nhttps://github.com/ziyang0116/rockplayer\n",
                         buttons: ['OK']
                     }
                     dialog.showMessageBox(options)
@@ -105,7 +129,7 @@ let application_menu = [
                         // filters: [
                         //     {name: 'Movies', extensions: ['mkv', 'avi', 'mp4', 'rmvb', 'flv', 'ogv','webm', '3gp', 'mov']},
                         // ]
-                    }).then ((result) => {
+                    }).then((result) => {
                         console.log(result);
                         let canceled = result.canceled;
                         let filePaths = result.filePaths;
@@ -175,8 +199,8 @@ function createWindow() {
         mainWindow = null
     })
 
-    mainWindow.on('resize', function(){
-       mainWindow.webContents.send('resize')
+    mainWindow.on('resize', function () {
+        mainWindow.webContents.send('resize')
     })
 
     var menu = Menu.buildFromTemplate(application_menu);

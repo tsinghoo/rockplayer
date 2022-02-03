@@ -25,7 +25,7 @@ function transformDuration(duration) {
 
 var videoSupport = function (videoPath) {
     let p = new Promise(function (resolve, reject) {
-        let command = `${ffmpegPath} -i ${videoPath}`;
+        let command = `"${ffmpegPath}" -i "${videoPath}"`;
         process.exec(command, { encoding: 'utf-8' }, function (error, stdout, stderr) {
             if (error) {
                 let str = error.stack;
@@ -58,6 +58,11 @@ var videoSupport = function (videoPath) {
                     audioCodec == 'vorbis') {
                     checkResult.audioCodecSupport = true;
                 }
+
+                if (videoPath.indexOf(".m4a") > 0) { 
+                    checkResult.onlyAudio = true;
+                }
+
                 resolve(checkResult)
                 return;
             }
