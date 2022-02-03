@@ -2,7 +2,7 @@ import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import './js/StreamPlayTech';
 const ipcRenderer = require('electron').ipcRenderer;
-
+const share = window.mhgl_share;
 function find(reg, text) {
     let matchArr = reg.exec(text);
     let infoFound;
@@ -107,23 +107,31 @@ ipcRenderer.on('fileSelected', function (event, message) {
     videojs(vid).dispose();
 
     videoContainer.innerHTML = createVideoHtml(message.videoSource);
+    document.title = share.shrinkString__(message.videoSource,80);
     vid = document.getElementById("my-video");
     if (message.type === 'native') {
         player = videojs(vid);
-        player.play();
+        //player.play();
     } else if (message.type === 'stream') {
         player = videojs(vid, {
             techOrder: ['StreamPlay'],
             StreamPlay: { duration: message.duration }
         }, () => {
-            player.play()
+            //player.play()
         });
     }
     // player.textTrackSettings.setDefaults();
     // player.textTrackSettings.setValues(newSettings);
     // player.textTrackSettings.updateDisplay();
+    if (message.position) { 
+        player.currentTime(message.position);
+    }
 
     player.on('play', function () {
+    });
+    player.on('pause', function () {
+
+
     });
 
     //拖动
@@ -134,6 +142,7 @@ ipcRenderer.on('fileSelected', function (event, message) {
     })
 
     player.on('timeupdate', function () {
+        ipcRenderer.send("timeupdate", player.currentTime());
         var time = parseInt(player.currentTime());
         var id = scriptTimes[time];
         if (id != null) {

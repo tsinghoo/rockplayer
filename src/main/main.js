@@ -17,6 +17,10 @@ let mainWindow;
 let httpServer;
 let isRendererReady = false;
 
+var history = {
+    files: {},
+    lastFilePath: null
+};
 
 function getScript(videoFilePath) {
     var strs = videoFilePath.split(".");
@@ -41,7 +45,10 @@ function onVideoFileSeleted(videoFilePath) {
         let playParams = {};
 
         playParams.script = getScript(videoFilePath);
-
+        var lastData = history.files[videoFilePath];
+        if (lastData != null) {
+            playParams.position = lastData.position;
+        }
 
         if ((checkResult.videoCodecSupport || checkResult.onlyAudio) && checkResult.audioCodecSupport) {
             if (httpServer) {
@@ -83,6 +90,9 @@ function onVideoFileSeleted(videoFilePath) {
                 })
             }
         }
+
+        history.files[videoFilePath] = { position: 0 };
+        history.lastFilePath = videoFilePath;
     }).catch((err) => {
         console.log("video format error", err);
         const options = {
@@ -169,6 +179,22 @@ let application_menu = [
     },
 ];
 
+const historyFilePath = "./history";
+
+function loadRecent() {
+    if (fs.existsSync(historyFilePath)) {
+        try {
+            const data = fs.readFileSync(historyFilePath, 'utf8');
+            history = JSON.parse(data);
+            if (history.lastFilePath) {
+                onVideoFileSeleted(history.lastFilePath);
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+}
+
 
 function createWindow() {
     // Create the browser window.
@@ -187,6 +213,8 @@ function createWindow() {
     ipcMain.once("ipcRendererReady", (event, args) => {
         console.log("ipcRendererReady")
         isRendererReady = true;
+
+        loadRecent();
     })
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
@@ -209,6 +237,11 @@ function createWindow() {
         console.log("fileDrop:", arg);
         onVideoFileSeleted(arg);
     });
+
+    ipcMain.on('timeupdate', (event, arg) => {
+        console.log("fileDrop:", arg);
+        history.files[history.lastFilePath].position = arg;
+    });
 }
 
 // This method will be called when Electron has finished
@@ -220,6 +253,8 @@ app.on('ready', createWindow)
 app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
+
+    fs.writeFileSync(historyFilePath, JSON.stringify(history));
     if (process.platform !== 'darwin') {
         app.quit()
     }
