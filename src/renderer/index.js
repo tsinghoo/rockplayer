@@ -38,9 +38,18 @@ function createVideoHtml(source) {
 var holder = document.getElementById('holder');
 
 let videoContainer = document.getElementById("video_container")
+
 let videoHtml = createVideoHtml("http://vjs.zencdn.net/v/oceans.mp4")
 videoContainer.innerHTML = videoHtml;
 
+
+let vid = document.getElementById("my-video");
+
+let player;
+
+if (vid) {
+    player = videojs(vid);
+}
 
 var newSettings = {
     backgroundOpacity: '0',
@@ -61,9 +70,6 @@ holder.ondrop = function (e) {
     ipcRenderer.send('fileDrop', file.path);
     return false;
 };
-let vid = document.getElementById("my-video");
-
-let player = videojs(vid);
 document.onkeydown = (event) => {
     console.log("onkeypress", event);
     if (event.code === "Space") {
@@ -185,7 +191,7 @@ ipcRenderer.on('fileSelected', function (event, message) {
     if (script == null) {
         $("#script").html();
         $("#script").addClass("hide");
-    }else{
+    } else {
         var template = $("#scriptTemplate").html();
         var htmls = [];
         scriptTimes = {};
