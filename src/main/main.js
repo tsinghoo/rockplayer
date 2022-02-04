@@ -19,6 +19,7 @@ let isRendererReady = false;
 
 var history = {
     files: {},
+    items: [],
     lastFilePath: null
 };
 
@@ -37,6 +38,21 @@ function getScript(videoFilePath) {
             console.error(err)
         }
     }
+}
+
+function appendArray(arr, item) {
+    var found = -1;
+    for (var i = 0; i < arr.length; ++i) {
+        if (arr[i] == item) {
+            found = i;
+        }
+    }
+
+    if (found > -1) {
+        arr.splice(found, 1);
+    }
+
+    arr.push(item);
 }
 
 function onVideoFileSeleted(videoFilePath) {
@@ -92,6 +108,10 @@ function onVideoFileSeleted(videoFilePath) {
         }
 
         history.files[videoFilePath] = { position: 0 };
+        if (history.items == null) {
+            history.items = [];
+        }
+        appendArray(history.items, videoFilePath);
         history.lastFilePath = videoFilePath;
     }).catch((err) => {
         console.log("video format error", err);
@@ -105,6 +125,10 @@ function onVideoFileSeleted(videoFilePath) {
             console.log("showMessageBox", index);
         })
     })
+}
+
+function onRecentClicked() {
+    mainWindow.webContents.send('recentClicked', history.items);
 }
 
 let application_menu = [
@@ -148,6 +172,12 @@ let application_menu = [
                         }
                     });
                 }
+            },
+            {
+                label: 'Recent',
+                click: () => {
+                    onRecentClicked();
+                }
             }
         ]
     },
@@ -186,9 +216,11 @@ function loadRecent() {
         try {
             const data = fs.readFileSync(historyFilePath, 'utf8');
             history = JSON.parse(data);
+            /*
             if (history.lastFilePath) {
                 onVideoFileSeleted(history.lastFilePath);
             }
+            */
         } catch (err) {
             console.error(err)
         }
@@ -215,6 +247,7 @@ function createWindow() {
         isRendererReady = true;
 
         loadRecent();
+        onRecentClicked();
     })
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
@@ -242,6 +275,12 @@ function createWindow() {
         console.log("fileDrop:", arg);
         history.files[history.lastFilePath].position = arg;
     });
+
+    ipcMain.on('openRecent', (event, arg) => {
+        console.log("openRecent:", arg);
+        var i = arg;
+        onVideoFileSeleted(history.items[i]);
+    });
 }
 
 // This method will be called when Electron has finished
@@ -253,6 +292,14 @@ app.on('ready', createWindow)
 app.on('window-all-closed', function () {
     // On OS X it is common for applications and their menu bar
     // to stay active until the user quits explicitly with Cmd + Q
+
+    if (history.items.length > 10) {
+        for (var i = 0; i < history.items.length - 10; ++i) {
+            history.files.delete(history.items[i]);
+        }
+
+        history.items.splice(0, history.items.length - 10);
+    }
 
     fs.writeFileSync(historyFilePath, JSON.stringify(history));
     if (process.platform !== 'darwin') {

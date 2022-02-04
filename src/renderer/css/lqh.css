@@ -149,7 +149,7 @@ pre {
 }
 
 .hide {
-	display: none;
+	display: none !important;
 }
 
 ul.pagination li span a {

@@ -101,29 +101,59 @@ var getSeconds = function (line) {
 
 var scriptTimes = {};
 
+ipcRenderer.on('recentClicked', function (event, message) {
+
+    var items = message;
+    if (items != null) {
+        var template = $("#recentTemplate").html();
+        var htmls = [];
+        for (var i = items.length - 1; i > -1; --i) {
+            var line = items[i];
+            var html = template.replace(/#item#/g, line);
+            html = html.replace(/#id#/g, i);
+
+            htmls.push(html);
+        }
+
+        $("#recent").html(htmls.join(""));
+        $(".recentItem").on("dblclick", function (e) {
+            var strs = $(this).attr("id").split("_");
+            var id = strs[1];
+            ipcRenderer.send("openRecent", id);
+        });
+    }
+
+    $("#recent").removeClass("hide");
+    $("#holder").addClass("hide");
+});
+
 ipcRenderer.on('fileSelected', function (event, message) {
-    console.log('fileSelected:', message)
+    console.log('fileSelected:', message);
+    $("#recent").addClass("hide");
+    $("#holder").removeClass("hide");
     let vid = document.getElementById("my-video");
     videojs(vid).dispose();
 
     videoContainer.innerHTML = createVideoHtml(message.videoSource);
-    document.title = share.shrinkString__(message.videoSource,80);
+    document.title = share.shrinkString__(message.videoSource, 80);
     vid = document.getElementById("my-video");
     if (message.type === 'native') {
         player = videojs(vid);
         //player.play();
+        player.pause();
     } else if (message.type === 'stream') {
         player = videojs(vid, {
             techOrder: ['StreamPlay'],
             StreamPlay: { duration: message.duration }
         }, () => {
-            //player.play()
+            //player.play();
+            player.pause();
         });
     }
     // player.textTrackSettings.setDefaults();
     // player.textTrackSettings.setValues(newSettings);
     // player.textTrackSettings.updateDisplay();
-    if (message.position) { 
+    if (message.position) {
         player.currentTime(message.position);
     }
 
@@ -147,12 +177,15 @@ ipcRenderer.on('fileSelected', function (event, message) {
         var id = scriptTimes[time];
         if (id != null) {
             $(".scriptLine").removeClass("selected");
-            $("#script" + id).addClass("selected");
+            $("#script_" + id).addClass("selected");
         }
     });
 
     var script = message.script;
-    if (script != null) {
+    if (script == null) {
+        $("#script").html();
+        $("#script").addClass("hide");
+    }else{
         var template = $("#scriptTemplate").html();
         var htmls = [];
         scriptTimes = {};
@@ -169,7 +202,8 @@ ipcRenderer.on('fileSelected', function (event, message) {
         }
 
         $("#script").html(htmls.join(""));
-        $(".scriptLine").on("click", function (e) {
+        $("#script").removeClass("hide");
+        $(".scriptLine").on("dblclick", function (e) {
             var line = $(this).html();
             var time = getSeconds(line);
             if (time > -1) {
@@ -178,6 +212,8 @@ ipcRenderer.on('fileSelected', function (event, message) {
             }
         });
     }
+
+
 });
 
 ipcRenderer.send("ipcRendererReady", "true");
