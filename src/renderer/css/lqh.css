@@ -960,7 +960,7 @@ ul.pagination li span input {
 }
 
 .selected {
-	background-color: lightblue;
+	background-color: darkblue;
 }
 
 .bubble {

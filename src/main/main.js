@@ -13,6 +13,7 @@ import VideoServer from './VideoServer';
 // be closed automatically when the JavaScript object is garbage collected.
 const INDEX_HTML = './src/renderer/index.html';
 
+const historyFilePath = process.argv[0].replace(/rock-player\.exe/g,"../history") ;
 let mainWindow;
 let httpServer;
 let isRendererReady = false;
@@ -209,7 +210,6 @@ let application_menu = [
     },
 ];
 
-const historyFilePath = "./history";
 
 function loadRecent() {
     if (fs.existsSync(historyFilePath)) {
@@ -247,7 +247,13 @@ function createWindow() {
         isRendererReady = true;
 
         loadRecent();
-        onRecentClicked();
+        var filePath = process.argv;
+        console.log("argv:" + JSON.stringify(filePath));
+        if (filePath.length > 1 && (filePath[1].substring(0, 1) != "-")) {
+            onVideoFileSeleted(filePath[1]);
+        } else {
+            onRecentClicked();
+        }
     })
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
@@ -295,7 +301,7 @@ app.on('window-all-closed', function () {
 
     if (history.items.length > 10) {
         for (var i = 0; i < history.items.length - 10; ++i) {
-            history.files.delete(history.items[i]);
+            delete history.files[history.items[i]];
         }
 
         history.items.splice(0, history.items.length - 10);

@@ -39,9 +39,10 @@ var holder = document.getElementById('holder');
 
 let videoContainer = document.getElementById("video_container")
 
+/*
 let videoHtml = createVideoHtml("http://vjs.zencdn.net/v/oceans.mp4")
 videoContainer.innerHTML = videoHtml;
-
+*/
 
 let vid = document.getElementById("my-video");
 
@@ -138,22 +139,22 @@ ipcRenderer.on('fileSelected', function (event, message) {
     $("#recent").addClass("hide");
     $("#holder").removeClass("hide");
     let vid = document.getElementById("my-video");
-    videojs(vid).dispose();
+    if (vid != null) {
+        videojs(vid).dispose();
+    }
 
     videoContainer.innerHTML = createVideoHtml(message.videoSource);
     document.title = share.shrinkString__(message.videoSource, 80);
     vid = document.getElementById("my-video");
     if (message.type === 'native') {
         player = videojs(vid);
-        //player.play();
-        player.pause();
+        player.play();
     } else if (message.type === 'stream') {
         player = videojs(vid, {
             techOrder: ['StreamPlay'],
             StreamPlay: { duration: message.duration }
         }, () => {
-            //player.play();
-            player.pause();
+            player.play();
         });
     }
     // player.textTrackSettings.setDefaults();
