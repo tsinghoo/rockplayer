@@ -35,7 +35,7 @@ function createVideoHtml(source) {
     return videoHtml;
 }
 
-var holder = document.getElementById('holder');
+let holder = document.getElementById('holder');
 
 let videoContainer = document.getElementById("video_container")
 
@@ -52,7 +52,7 @@ if (vid) {
     player = videojs(vid);
 }
 
-var newSettings = {
+let newSettings = {
     backgroundOpacity: '0',
     edgeStyle: 'dropshadow',
     fontPercent: 1.25,
@@ -66,7 +66,7 @@ holder.ondragleave = holder.ondragend = function () {
 };
 holder.ondrop = function (e) {
     e.preventDefault();
-    var file = e.dataTransfer.files[0];
+    let file = e.dataTransfer.files[0];
     console.log('File you dragged here is', file.path);
     ipcRenderer.send('fileDrop', file.path);
     return false;
@@ -95,28 +95,28 @@ ipcRenderer.on('resize', function () {
     }
 });
 
-var getSeconds = function (line) {
-    var time = find(/\d\d:\d\d:\d\d /gi, line);
+let getSeconds = function (line) {
+    let time = find(/\d\d:\d\d:\d\d /gi, line);
     if (time != null) {
-        var t = time.split(":");
-        var sec = parseInt(t[0]) * 3600 + parseInt(t[1]) * 60 + parseInt(t[2]);
+        let t = time.split(":");
+        let sec = parseInt(t[0]) * 3600 + parseInt(t[1]) * 60 + parseInt(t[2]);
         return sec;
     }
 
     return -1;
 };
 
-var scriptTimes = {};
+let scriptTimes = {};
 
 ipcRenderer.on('recentClicked', function (event, message) {
 
-    var items = message;
+    let items = message;
     if (items != null) {
-        var template = $("#recentTemplate").html();
-        var htmls = [];
-        for (var i = items.length - 1; i > -1; --i) {
-            var line = items[i];
-            var html = template.replace(/#item#/g, line);
+        let template = $("#recentTemplate").html();
+        let htmls = [];
+        for (let i = items.length - 1; i > -1; --i) {
+            let line = items[i];
+            let html = template.replace(/#item#/g, line);
             html = html.replace(/#id#/g, i);
 
             htmls.push(html);
@@ -124,8 +124,8 @@ ipcRenderer.on('recentClicked', function (event, message) {
 
         $("#recent").html(htmls.join(""));
         $(".recentItem").on("dblclick", function (e) {
-            var strs = $(this).attr("id").split("_");
-            var id = strs[1];
+            let strs = $(this).attr("id").split("_");
+            let id = strs[1];
             ipcRenderer.send("openRecent", id);
         });
     }
@@ -173,34 +173,34 @@ ipcRenderer.on('fileSelected', function (event, message) {
 
     //拖动
     player.on('seeking', function () {
-        var newtime = player.currentTime();
+        let newtime = player.currentTime();
         console.log('newtime: ' + newtime);
         //player.currentTime(vue.currTime);
     })
 
     player.on('timeupdate', function () {
         ipcRenderer.send("timeupdate", player.currentTime());
-        var time = parseInt(player.currentTime());
-        var id = scriptTimes[time];
+        let time = parseInt(player.currentTime());
+        let id = scriptTimes[time];
         if (id != null) {
             $(".scriptLine").removeClass("selected");
             $("#script_" + id).addClass("selected");
         }
     });
 
-    var script = message.script;
+    let script = message.script;
     if (script == null) {
         $("#script").html();
         $("#script").addClass("hide");
     } else {
-        var template = $("#scriptTemplate").html();
-        var htmls = [];
+        let template = $("#scriptTemplate").html();
+        let htmls = [];
         scriptTimes = {};
-        for (var i = 0; i < script.length; ++i) {
-            var line = script[i];
-            var html = template.replace(/#script#/g, line);
+        for (let i = 0; i < script.length; ++i) {
+            let line = script[i];
+            let html = template.replace(/#script#/g, line);
             html = html.replace(/#id#/g, i);
-            var time = getSeconds(line);
+            let time = getSeconds(line);
             if (time > -1) {
                 scriptTimes[time] = i;
             }
@@ -211,12 +211,59 @@ ipcRenderer.on('fileSelected', function (event, message) {
         $("#script").html(htmls.join(""));
         $("#script").removeClass("hide");
         $(".scriptLine").on("dblclick", function (e) {
-            var line = $(this).html();
-            var time = getSeconds(line);
+            let line = $(this).html();
+            let time = getSeconds(line);
             if (time > -1) {
                 player.currentTime(time);
                 player.play();
             }
+        });
+
+        $(".scriptLine").on("click", function (e) {
+            let ele = $(this);
+            if (ele.html().indexOf("<input type") > 0) {
+                return;
+            }
+            let line = ele.text().trim();
+            let id = ele.attr("id").split("_")[1];
+            let time = find(/\d\d:\d\d:\d\d /gi, line);
+            let s = line;
+            if (time != null) {
+                s = line.split(time)[1].trim();
+            }
+
+            let html = $("#editorTemplate").html();
+            html = html.replace(/#time#/g, time);
+            html = html.replace(/#id#/g, id);
+            html = html.replace(/#script#/g, s);
+            ele.html(html);
+
+            setTimeout(function () {
+                $(".scriptInput").focus();
+            }, 200);
+            $(".scriptInput").on("keyup", function (event) {
+                if (event.key == "Enter" && !event.shiftKey) {
+                    let s = $(this).val().trim();
+                    line = time + " " + s;
+                    script[id] = line;
+                    $("#script_" + id).html(line);
+                    ipcRenderer.send("updateScript", JSON.stringify(script));
+                }
+            });
+
+
+            $(".scriptInput").blur(function (e) {
+                let s = $(this).val().trim();
+                line = time + " " + s;
+                script[id] = line;
+                $("#script_" + id).html(line);
+                ipcRenderer.send("updateScript", JSON.stringify(script));
+            });
+
+            $(".scriptInput").on("click", function (e) {
+                e.stopPropagation();
+            });
+
         });
     }
 

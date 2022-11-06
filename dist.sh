@@ -17,8 +17,17 @@ exe(){
 	`$1`
 }
 
+read -t 2 -n 1 -p "nvm use v14.18.2(y/n):" input
+if [ "$input" == "y" ]; then
+  nvm use v14.18.2
+fi
+
+
 
 cd $DIR
+
+
+
 npm run compile
 cp -rf dist/main/*.js app/
 cp -rf dist app/

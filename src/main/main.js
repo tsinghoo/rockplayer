@@ -13,11 +13,11 @@ import VideoServer from './VideoServer';
 // be closed automatically when the JavaScript object is garbage collected.
 const INDEX_HTML = './src/renderer/index.html';
 
-const historyFilePath = process.argv[0].replace(/rock-player\.exe/g,"../history") ;
+const historyFilePath = process.argv[0].replace(/rock-player\.exe/g, "../history");
 let mainWindow;
 let httpServer;
 let isRendererReady = false;
-
+let scriptPath = "";
 var history = {
     files: {},
     items: [],
@@ -26,7 +26,7 @@ var history = {
 
 function getScript(videoFilePath) {
     var strs = videoFilePath.split(".");
-    var scriptPath = "";
+    scriptPath = "";
     if (strs.length > 1) {
         var len = strs[strs.length - 1].length;
         scriptPath = videoFilePath.substring(0, videoFilePath.length - len) + "txt";
@@ -280,6 +280,12 @@ function createWindow() {
     ipcMain.on('timeupdate', (event, arg) => {
         console.log("fileDrop:", arg);
         history.files[history.lastFilePath].position = arg;
+    });
+
+    ipcMain.on('updateScript', (event, arg) => {
+        console.log("updateScript");
+        var script = JSON.parse(arg);
+        fs.writeFileSync(scriptPath, script.join("\n"));
     });
 
     ipcMain.on('openRecent', (event, arg) => {
