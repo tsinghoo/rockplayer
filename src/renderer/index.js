@@ -210,60 +210,73 @@ ipcRenderer.on('fileSelected', function (event, message) {
 
         $("#script").html(htmls.join(""));
         $("#script").removeClass("hide");
+        let dblclick = false;
+        let dblClickInterval = 300;
         $(".scriptLine").on("dblclick", function (e) {
+            dblclick = true;
             let line = $(this).html();
             let time = getSeconds(line);
             if (time > -1) {
                 player.currentTime(time);
                 player.play();
             }
+
+            setTimeout(function () {
+                dblclick = false;
+            }, dblClickInterval);
         });
 
         $(".scriptLine").on("click", function (e) {
+
             let ele = $(this);
             if (ele.html().indexOf("<input type") > 0) {
                 return;
             }
-            let line = ele.text().trim();
-            let id = ele.attr("id").split("_")[1];
-            let time = find(/\d\d:\d\d:\d\d /gi, line);
-            let s = line;
-            if (time != null) {
-                s = line.split(time)[1].trim();
-            }
-
-            let html = $("#editorTemplate").html();
-            html = html.replace(/#time#/g, time);
-            html = html.replace(/#id#/g, id);
-            html = html.replace(/#script#/g, s);
-            ele.html(html);
-
+            
             setTimeout(function () {
-                $(".scriptInput").focus();
-            }, 200);
-            $(".scriptInput").on("keyup", function (event) {
-                if (event.key == "Enter" && !event.shiftKey) {
-                    let s = $(this).val().trim();
-                    line = time + " " + s;
-                    script[id] = line;
-                    $("#script_" + id).html(line);
-                    ipcRenderer.send("updateScript", JSON.stringify(script));
+
+                if (!dblclick) {
+                    let line = ele.text().trim();
+                    let id = ele.attr("id").split("_")[1];
+                    let time = find(/\d\d:\d\d:\d\d /gi, line);
+                    let s = line;
+                    if (time != null) {
+                        s = line.split(time)[1].trim();
+                    }
+
+                    let html = $("#editorTemplate").html();
+                    html = html.replace(/#time#/g, time);
+                    html = html.replace(/#id#/g, id);
+                    html = html.replace(/#script#/g, s);
+                    ele.html(html);
+
+                    setTimeout(function () {
+                        $(".scriptInput").focus();
+                    }, 200);
+                    $(".scriptInput").on("keyup", function (event) {
+                        if (event.key == "Enter" && !event.shiftKey) {
+                            let s = $(this).val().trim();
+                            line = time + " " + s;
+                            script[id] = line;
+                            $("#script_" + id).html(line);
+                            ipcRenderer.send("updateScript", JSON.stringify(script));
+                        }
+                    });
+
+
+                    $(".scriptInput").blur(function (e) {
+                        let s = $(this).val().trim();
+                        line = time + " " + s;
+                        script[id] = line;
+                        $("#script_" + id).html(line);
+                        ipcRenderer.send("updateScript", JSON.stringify(script));
+                    });
+
+                    $(".scriptInput").on("click", function (e) {
+                        e.stopPropagation();
+                    });
                 }
-            });
-
-
-            $(".scriptInput").blur(function (e) {
-                let s = $(this).val().trim();
-                line = time + " " + s;
-                script[id] = line;
-                $("#script_" + id).html(line);
-                ipcRenderer.send("updateScript", JSON.stringify(script));
-            });
-
-            $(".scriptInput").on("click", function (e) {
-                e.stopPropagation();
-            });
-
+            }, dblClickInterval);
         });
     }
 
