@@ -77,8 +77,10 @@ document.onkeydown = (event) => {
         if (player) {
             if (player.paused()) {
                 player.play();
+                $("#mask").css("z-index", 1);
             } else {
                 player.pause();
+                $("#mask").css("z-index", 100);
             }
         }
         return false;
@@ -165,10 +167,9 @@ ipcRenderer.on('fileSelected', function (event, message) {
     }
 
     player.on('play', function () {
+        $("#mask").css("z-index", 1);
     });
     player.on('pause', function () {
-
-
     });
 
     //拖动
@@ -219,6 +220,7 @@ ipcRenderer.on('fileSelected', function (event, message) {
             if (time > -1) {
                 player.currentTime(time);
                 player.play();
+                $("#mask").css("z-index", 1);
             }
 
             setTimeout(function () {
@@ -232,7 +234,7 @@ ipcRenderer.on('fileSelected', function (event, message) {
             if (ele.html().indexOf("<input type") > 0) {
                 return;
             }
-            
+
             setTimeout(function () {
 
                 if (!dblclick) {

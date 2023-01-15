@@ -19,9 +19,17 @@
 
 <body>
     <div id="holder" class="flexrow height100p">
-        <div id="video_container" class="widthauto height100p">
+        <div class="width100p height100p">
+            <div class="width100p height100p" style="position: relative;">
+                <div id="mask" class="bg_black width100p height100p" style="z-index:1;position:absolute;left:0;top:0;">
+
+                </div>
+                <div id="video_container" class="width100p height100p"
+                    style="z-index:10;position:absolute;left:0;top:0;">
+                </div>
+            </div>
         </div>
-        <div id="script" style="width:400px;overflow: scroll;" class="height100p bg_black gray">
+        <div id="script" style="width:600px;overflow: scroll;padding-right: 80px;" class="height100p bg_black gray">
             无字幕
         </div>
     </div>
@@ -30,7 +38,7 @@
     <div id="recent" class="hide">
 
     </div>
-    
+
     <div id="scriptTemplate" class="hide">
         <div id="script_#id#" class="scriptLine">
             #script#
