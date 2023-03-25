@@ -6,8 +6,8 @@ const electron = require('electron');
 const dialog = require('electron').dialog;
 const fs = require('fs')
 const aes = require("./aes.js");
-import { videoSupport } from './ffmpeg-helper';
-import VideoServer from './VideoServer';
+const videoSupport = require('./ffmpeg-helper');
+const VideoServer = require('./VideoServer');
 const os = require('os');
 let debugEnabled = false;
 let version = 20230325;
