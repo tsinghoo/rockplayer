@@ -5,10 +5,13 @@ const { app, BrowserWindow, Menu, ipcMain } = require('electron')
 const electron = require('electron');
 const dialog = require('electron').dialog;
 const fs = require('fs')
+const aes = require("./aes.js");
 import video from 'fluent-ffmpeg/lib/options/video';
 import { videoSupport } from './ffmpeg-helper';
 import VideoServer from './VideoServer';
-
+const os = require('os');
+let debugEnabled = false;
+let version = 20230325;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 const INDEX_HTML = './src/renderer/index.html';
@@ -40,6 +43,32 @@ function getScript(videoFilePath) {
         }
     }
 }
+
+function getDeviceId() {
+    const ifaces = os.networkInterfaces();
+    const hostName = os.hostname();
+    const cpus = os.cpus();
+    let ipAddr = ''
+    let macAddr = ''
+    for (const dev in ifaces) {
+        for (let i = 0; i < ifaces[dev].length; i++) {
+            if (
+                !ifaces[dev][i].internal &&
+                ifaces[dev][i].family === 'IPv4' &&
+                !ifaces[dev][i].address.includes('::') &&
+                ifaces[dev][i].address !== '127.0.0.1'
+            ) {
+                ipAddr = ifaces[dev][i].address
+                macAddr = ifaces[dev][i].mac
+                break
+            }
+        }
+    }
+
+    var res = { "mac": macAddr, "cpu": cpus.length + cpus[0].model };
+    res = aes.md5(JSON.stringify(res));
+    return res;
+};
 
 function appendArray(arr, item) {
     var found = -1;
@@ -118,8 +147,8 @@ function onVideoFileSeleted(videoFilePath) {
         console.log("video format error", err);
         const options = {
             type: 'info',
-            title: 'Error',
-            message: "It is not a video file!",
+            title: '出错了',
+            message: "该文件不存在或者不支持打开!",
             buttons: ['OK']
         }
         dialog.showMessageBox(options, function (index) {
@@ -133,25 +162,7 @@ function onRecentClicked() {
 }
 
 let application_menu = [
-    {
-        label: 'Rock Player',
-        submenu: [
-            {
-                label: 'About Rock Player',
-                click: () => {
-                    let version = app.getVersion();
 
-                    const options = {
-                        type: 'info',
-                        title: 'About Rock Player',
-                        message: "Version: " + version + '\n' + "Github: \nhttps://github.com/ziyang0116/rockplayer\n",
-                        buttons: ['OK']
-                    }
-                    dialog.showMessageBox(options)
-                }
-            }
-        ]
-    },
     {
         label: 'File',
         submenu: [
@@ -179,6 +190,20 @@ let application_menu = [
                 click: () => {
                     onRecentClicked();
                 }
+            },
+            {
+                label: '关于',
+                click: () => {
+                    let version = app.getVersion();
+
+                    const options = {
+                        type: 'info',
+                        title: '关于',
+                        message: "小喇叭播放器:" + version,
+                        buttons: ['OK']
+                    }
+                    dialog.showMessageBox(options)
+                }
             }
         ]
     },
@@ -202,7 +227,7 @@ let application_menu = [
                         return 'Ctrl+Shift+I';
                 })(),
                 click: function (item, focusedWindow) {
-                    if (focusedWindow)
+                    if (focusedWindow && debugEnabled)
                         focusedWindow.toggleDevTools();
                 }
             },
@@ -227,6 +252,14 @@ function loadRecent() {
     }
 }
 
+function getSystem() {
+    var res = {
+        deviceId: getDeviceId()
+    };
+
+    return res;
+}
+
 
 function createWindow() {
     // Create the browser window.
@@ -238,7 +271,7 @@ function createWindow() {
                 nodeIntegration: true
             }
         })
-
+    mainWindow.setContentProtection(true);
     // and load the index.html of the app.
     mainWindow.loadFile(INDEX_HTML)
 
@@ -254,6 +287,8 @@ function createWindow() {
         } else {
             onRecentClicked();
         }
+
+        mainWindow.webContents.send("setSystem", getSystem());
     })
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()

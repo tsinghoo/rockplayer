@@ -3,6 +3,7 @@ import 'video.js/dist/video-js.css';
 import './js/StreamPlayTech';
 const ipcRenderer = require('electron').ipcRenderer;
 const share = window.mhgl_share;
+let system = null;
 function find(reg, text) {
     let matchArr = reg.exec(text);
     let infoFound;
@@ -95,6 +96,10 @@ ipcRenderer.on('resize', function () {
         vid.style.width = width + 'px'
         vid.style.height = height + 'px'
     }
+});
+
+ipcRenderer.on('setSystem', function (sys) {
+    system = sys;
 });
 
 let getSeconds = function (line) {
@@ -281,8 +286,6 @@ ipcRenderer.on('fileSelected', function (event, message) {
             }, dblClickInterval);
         });
     }
-
-
 });
 
 ipcRenderer.send("ipcRendererReady", "true");
