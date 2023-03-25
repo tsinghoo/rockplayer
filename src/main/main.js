@@ -6,10 +6,10 @@ const electron = require('electron');
 const dialog = require('electron').dialog;
 const fs = require('fs')
 const aes = require("./aes.js");
-const videoSupport = require('./ffmpeg-helper');
-const VideoServer = require('./VideoServer');
+import { videoSupport } from './ffmpeg-helper';
+import VideoServer from './VideoServer';
 const os = require('os');
-let debugEnabled = false;
+let debugEnabled = true;
 let version = 20230325;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

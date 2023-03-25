@@ -9,8 +9,8 @@
     "compile": "gulp --gulpfile config/gulpfile.js --cwd . && webpack",
     "package:mac:app": "npm run compile && electron-packager ./ rockplayer --overwrite --app-version=1.0.0 --platform=darwin --arch=all --out=./out --verbose",
     "package:mac:dmg": "npm run package:mac:app && electron-installer-dmg out/rockplayer-darwin-x64/rockplayer.app rockplayer --out=./out",
-    "dist": "electron-builder --win --x64 ",
-    "build": "electron-vite preview -c electron.vite.config.ts",
+    "dev": "electron-builder --win --x64 ",
+    "prod": "npm run bytenode && electron-builder --win --x64 ",
     "package:win32": "npm run compile && electron-packager ./ rock-player --overwrite --app-version=1.0.0 --platform=win32 --arch=x64 --out=./out "
   },
   "build": {

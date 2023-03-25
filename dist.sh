@@ -32,9 +32,9 @@ npm run compile
 cp -rf dist/main/*.js app/
 cp -rf dist app/
 cp -rf src app
-dist="dist"
-if [ "$1" == "mac" ]; then
-  dist="distmac"
+dist="dev"
+if [ "$1" == "prod" ]; then
+  dist="prod"
   export CSC_IDENTITY_AUTO_DISCOVERY=false
 fi
 
