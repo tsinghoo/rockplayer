@@ -4,7 +4,7 @@
   "description": "A electron video player",
   "main": "main.js",
   "scripts": {
-    "bytenode": "node src/main/bytenode.js", // 添加bytenode的脚本 执行之前写好的js文件
+    "bytenode": "node src/main/bytenode.js",
     "start": "npm run compile && electron --inspect=5858 .",
     "compile": "gulp --gulpfile config/gulpfile.js --cwd . && webpack",
     "package:mac:app": "npm run compile && electron-packager ./ rockplayer --overwrite --app-version=1.0.0 --platform=darwin --arch=all --out=./out --verbose",
@@ -49,6 +49,7 @@
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "1.0.20",
+    "bytenode": "^1.4.0",
     "fluent-ffmpeg": "2.1.2",
     "video.js": "^7.7.5"
   }

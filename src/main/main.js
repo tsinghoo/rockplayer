@@ -6,7 +6,6 @@ const electron = require('electron');
 const dialog = require('electron').dialog;
 const fs = require('fs')
 const aes = require("./aes.js");
-import video from 'fluent-ffmpeg/lib/options/video';
 import { videoSupport } from './ffmpeg-helper';
 import VideoServer from './VideoServer';
 const os = require('os');
