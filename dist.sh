@@ -27,16 +27,20 @@ fi
 cd $DIR
 
 
-
-npm run compile
-cp -rf dist/main/*.js app/
-cp -rf dist app/
-cp -rf src app
 dist="dev"
 if [ "$1" == "prod" ]; then
   dist="prod"
   export CSC_IDENTITY_AUTO_DISCOVERY=false
 fi
+if [ "$dist" == "prod" ];then
+  npm run bytenode
+fi
 
-npm run $dist
+
+npm run compile
+cp -rf dist/main/*.js app/
+cp -rf dist app/
+cp -rf src app
+
+npm run dist
 #electron-builder --win --x64
