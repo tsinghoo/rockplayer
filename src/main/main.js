@@ -6,8 +6,10 @@ const electron = require('electron');
 const dialog = require('electron').dialog;
 const fs = require('fs')
 const aes = require("./aes.js");
-import { videoSupport } from './ffmpeg-helper';
-import VideoServer from './VideoServer';
+//import { videoSupport } from './ffmpeg-helper';
+let videoSupport = require('./ffmpeg-helper');
+videoSupport = videoSupport.videoSupport;
+//import VideoServer from './VideoServer';
 const os = require('os');
 let debugEnabled = true;
 let version = 20230325;
@@ -113,6 +115,7 @@ function onVideoFileSeleted(videoFilePath) {
                 })
             }
         }
+        /*
         if ((!checkResult.videoCodecSupport && !checkResult.onlyAudio) || !checkResult.audioCodecSupport) {
             if (!httpServer) {
                 httpServer = new VideoServer();
@@ -135,6 +138,7 @@ function onVideoFileSeleted(videoFilePath) {
                 })
             }
         }
+        */
 
         history.files[videoFilePath] = { position: 0 };
         if (history.items == null) {
