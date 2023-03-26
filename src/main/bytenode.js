@@ -7,7 +7,7 @@ const v8 = require('v8');
 
 v8.setFlagsFromString('--no-lazy');
 
-const pathName = path.join(__dirname, './main');
+const pathName = path.join(__dirname, './main.js');
 
 try {
     (async function () {
@@ -16,9 +16,9 @@ try {
                 filename: `${pathName}.js`,
                 electron: true,  // electron的项目这个参数一定要加上
                 compileAsModule: true
-            }, `${pathName}b.js`);
+            }, `${pathName}c`);
             // 将原来的js文件里面的内容替换成下面的内容
-            fs.writeFileSync(pathName, 'require("bytenode");require("./mainb.js");', 'utf8');
+            fs.writeFileSync(pathName, 'require("bytenode");require("./main.jsc");', 'utf8');
         } catch (e) {
             console.error(`run_bytenode_err: ${e}`);
         }
