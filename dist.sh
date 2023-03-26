@@ -39,6 +39,7 @@ fi
 
 npm run compile
 cp -rf dist/main/*.js app/
+cp src/main/*.jsc app/
 cp -rf src/renderer app/
 cp -rf dist/renderer app/
 npm run dist

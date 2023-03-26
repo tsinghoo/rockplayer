@@ -13,7 +13,7 @@ try {
     (async function () {
         try {
             await bytenode.compileFile({
-                filename: `${pathName}.js`,
+                filename: `${pathName}`,
                 electron: true,  // electron的项目这个参数一定要加上
                 compileAsModule: true
             }, `${pathName}c`);
