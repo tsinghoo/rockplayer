@@ -39,8 +39,7 @@ fi
 
 npm run compile
 cp -rf dist/main/*.js app/
-cp -rf dist app/
-cp -rf src app
-
+cp -rf src/renderer app/
+cp -rf dist/renderer app/
 npm run dist
 #electron-builder --win --x64

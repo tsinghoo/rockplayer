@@ -15,7 +15,7 @@ let debugEnabled = true;
 let version = 20230325;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-const INDEX_HTML = './src/renderer/index.html';
+const INDEX_HTML = './renderer/index.html';
 
 const historyFilePath = process.argv[0].replace(/rock-player\.exe/g, "../history");
 let mainWindow;
