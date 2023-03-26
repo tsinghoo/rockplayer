@@ -18,26 +18,9 @@
   ],
   "author": "relaxrock",
   "license": "Apache-2.0",
-  "devDependencies": {
-    "@babel/core": "^7.9.6",
-    "@babel/preset-env": "^7.2.3",
-    "babel": "^6.23.0",
-    "css-loader": "^3.5.3",
-    "electron": "^16.0.2",
-    "electron-builder": "^22.10.5",
-    "electron-installer-dmg": "^3.0.0",
-    "electron-installer-windows": "^1.1.0",
-    "electron-packager": "^14.2.1",
-    "electron-reload": "^1.0.0",
-    "gulp": "^4.0.2",
-    "gulp-babel": "^8.0.0",
-    "style-loader": "^1.2.1",
-    "webpack": "^2.5.1",
-    "webpack-dev-server": "^3.1.11",
-    "webpack-target-electron-renderer": "^0.4.0"
-  },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "1.0.20",
+    "@ffmpeg-installer/win32-x64": "^4.1.0",
     "bytenode": "^1.4.0",
     "fluent-ffmpeg": "2.1.2",
     "video.js": "^7.7.5"
