@@ -12,12 +12,15 @@ videoSupport = videoSupport.videoSupport;
 //import VideoServer from './VideoServer';
 const os = require('os');
 let debugEnabled = true;
+var system;
 let version = 20230325;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-const INDEX_HTML = './renderer/index.html';
+const PlayerPage = './renderer/index.html';
+const LicensePage = './renderer/license.html';
 
 const historyFilePath = process.argv[0].replace(/rock-player\.exe/g, "../history");
+const licenseFilePath = process.argv[0].replace(/rock-player\.exe/g, "../lic");
 let mainWindow;
 let httpServer;
 let isRendererReady = false;
@@ -257,26 +260,32 @@ function loadRecent() {
 
 function getSystem() {
     var res = {
-        deviceId: getDeviceId()
+        deviceId: getDeviceId(),
+        license: 0
     };
+
+
+    if (fs.existsSync(licenseFilePath)) {
+        try {
+            const data = fs.readFileSync(licenseFilePath, 'utf8');
+            var lic = aes.md5(res.deviceId);
+            if (data == lic) {
+                res.license = 1;
+            }
+        } catch (err) {
+            console.error(err)
+        }
+    }
+
 
     return res;
 }
 
 
-function createWindow() {
-    // Create the browser window.
-    mainWindow = new BrowserWindow(
-        {
-            width: 1020,
-            height: 600,
-            webPreferences: {
-                nodeIntegration: true
-            }
-        })
-    mainWindow.setContentProtection(true);
-    // and load the index.html of the app.
-    mainWindow.loadFile(INDEX_HTML)
+
+function loadPlayer() {
+    console.log("loadPlayer");
+    mainWindow.loadFile(PlayerPage);
 
     ipcMain.once("ipcRendererReady", (event, args) => {
         console.log("ipcRendererReady")
@@ -291,7 +300,7 @@ function createWindow() {
             onRecentClicked();
         }
 
-        mainWindow.webContents.send("setSystem", getSystem());
+        mainWindow.webContents.send("setSystem", JSON.stringify(getSystem()));
     })
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
@@ -333,6 +342,59 @@ function createWindow() {
     });
 }
 
+function loadLicense() {
+
+    console.log("loadLicense");
+    mainWindow.loadFile(LicensePage);
+
+    ipcMain.once("ipcRendererReady", (event, args) => {
+        console.log("ipcRendererReady")
+        mainWindow.webContents.send("setSystem", getSystem());
+    })
+
+
+    var menu = Menu.buildFromTemplate([]);
+    //Menu.setApplicationMenu(menu);
+
+    // Emitted when the window is closed.
+    mainWindow.on('closed', function () {
+        // Dereference the window object, usually you would store windows
+        // in an array if your app supports multi windows, this is the time
+        // when you should delete the corresponding element.
+        mainWindow = null
+    });
+
+    ipcMain.on('submitLicense', function (event, license) {
+        console.log("submitLicense:" + license);
+
+        if (license == aes.md5(system.deviceId)) {
+            fs.writeFileSync(licenseFilePath, license);
+            loadPlayer();
+        }
+    });
+
+}
+
+function createWindow() {
+    // Create the browser window.
+    mainWindow = new BrowserWindow(
+        {
+            width: 1020,
+            height: 600,
+            webPreferences: {
+                nodeIntegration: true
+            }
+        })
+    mainWindow.setContentProtection(true);
+    // and load the index.html of the app.
+    system = getSystem();
+    if (system.license == 1) {
+        loadPlayer();
+    } else {
+        loadLicense();
+    }
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -367,8 +429,5 @@ app.on('activate', function () {
 // fix:Uncaught (in promise) DOMException: play() failed because the user didn't interact with the document first
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
-
-
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+var lic = aes.md5("ackEcTfJ2ZLogFggxFxAEg==");
+console.log("ae" + lic);
