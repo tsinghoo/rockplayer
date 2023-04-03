@@ -22,6 +22,26 @@ function getWindowSize() {
     ]
 }
 
+function compare(os, ns) {
+    let start = -1;
+    for (var i = 0; i < os.length && i < ns.length; ++i) {
+        if (os.charAt(i) == ns.charAt(i)) {
+            start = i;
+        }
+    }
+    let end = -1;
+    for (var i = 0; i < os.length && i < ns.length; ++i) {
+        if (os.charAt(os.length - i - 1) == ns.charAt(ns.length - i - 1)) {
+            end = i;
+        }
+    }
+
+    let src = os.substring(start + 1, os.length - end - 1);
+    let dst = ns.substring(start + 1, ns.length - end - 1);
+
+    return { src, dst };
+}
+
 function createVideoHtml(source) {
     const [width, height] = getWindowSize()
     const videoHtml =
@@ -246,15 +266,15 @@ ipcRenderer.on('fileSelected', function (event, message) {
                     let line = ele.text().trim();
                     let id = ele.attr("id").split("_")[1];
                     let time = find(/\d\d:\d\d:\d\d /gi, line);
-                    let s = line;
+                    let oldScript = line;
                     if (time != null) {
-                        s = line.split(time)[1].trim();
+                        oldScript = line.split(time)[1].trim();
                     }
 
                     let html = $("#editorTemplate").html();
                     html = html.replace(/#time#/g, time);
                     html = html.replace(/#id#/g, id);
-                    html = html.replace(/#script#/g, s);
+                    html = html.replace(/#script#/g, oldScript);
                     ele.html(html);
 
                     setTimeout(function () {
@@ -262,9 +282,15 @@ ipcRenderer.on('fileSelected', function (event, message) {
                     }, 200);
                     $(".scriptInput").on("keyup", function (event) {
                         if (event.key == "Enter" && !event.shiftKey) {
-                            let s = $(this).val().trim();
-                            line = time + " " + s;
+                            let newScript = $(this).val().trim();
+                            line = time + " " + newScript;
                             script[id] = line;
+
+                            var res = compare(oldScript, newScript);
+                            for (let i = 0; i < script.length; ++i) {
+                                script[i] = script[i].replaceAll(res.src, res.dst);
+                            }
+
                             $("#script_" + id).html(line);
                             ipcRenderer.send("updateScript", JSON.stringify(script));
                         }
