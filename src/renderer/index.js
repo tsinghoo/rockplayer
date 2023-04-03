@@ -27,12 +27,16 @@ function compare(os, ns) {
     for (var i = 0; i < os.length && i < ns.length; ++i) {
         if (os.charAt(i) == ns.charAt(i)) {
             start = i;
+        } else {
+            break;
         }
     }
     let end = -1;
     for (var i = 0; i < os.length && i < ns.length; ++i) {
         if (os.charAt(os.length - i - 1) == ns.charAt(ns.length - i - 1)) {
             end = i;
+        } else {
+            break;
         }
     }
 
@@ -276,19 +280,34 @@ ipcRenderer.on('fileSelected', function (event, message) {
                     html = html.replace(/#id#/g, id);
                     html = html.replace(/#script#/g, oldScript);
                     ele.html(html);
-
+                    let scriptBeforeDel = "";
+                    let deletedWord = "";
                     setTimeout(function () {
                         $(".scriptInput").focus();
+                        scriptBeforeDel = "";
                     }, 200);
+                    $(".scriptInput").on("keydown", function (event) {
+                        if (event.key == "Delete" || event.key == "Backspace") {
+                            scriptBeforeDel = event.target.value;
+                            deletedWord = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
+                            //console.log("Deleted word: " + deletedWord);
+                        }
+                    });
                     $(".scriptInput").on("keyup", function (event) {
                         if (event.key == "Enter" && !event.shiftKey) {
                             let newScript = $(this).val().trim();
                             line = time + " " + newScript;
                             script[id] = line;
 
-                            var res = compare(oldScript, newScript);
-                            for (let i = 0; i < script.length; ++i) {
-                                script[i] = script[i].replaceAll(res.src, res.dst);
+                            let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
+
+                            if (deletedWord != "" && newWord != "") {
+                                console.log(deletedWord + "->" + newWord);
+                                for (let i = 0; i < script.length; ++i) {
+                                    script[i] = script[i].replace(new RegExp(deletedWord), newWord);
+                                    $("#script_" + i).html(script[i]);
+                                }
+                                deletedWord = "";
                             }
 
                             $("#script_" + id).html(line);
