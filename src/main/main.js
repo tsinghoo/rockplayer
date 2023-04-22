@@ -9,7 +9,7 @@ const aes = require("./aes.js");
 //import { videoSupport } from './ffmpeg-helper';
 let videoSupport = require('./ffmpeg-helper');
 videoSupport = videoSupport.videoSupport;
-//import VideoServer from './VideoServer';
+import VideoServer from './VideoServer';
 const os = require('os');
 let debugEnabled = true;
 var system;
@@ -91,7 +91,7 @@ function appendArray(arr, item) {
 
 function onVideoFileSeleted(videoFilePath) {
     videoSupport(videoFilePath).then((checkResult) => {
-
+        console.log("checkResult:" + JSON.stringify(checkResult));
         let playParams = {};
 
         playParams.script = getScript(videoFilePath);
@@ -118,7 +118,7 @@ function onVideoFileSeleted(videoFilePath) {
                 })
             }
         }
-        /*
+
         if ((!checkResult.videoCodecSupport && !checkResult.onlyAudio) || !checkResult.audioCodecSupport) {
             if (!httpServer) {
                 httpServer = new VideoServer();
@@ -141,7 +141,7 @@ function onVideoFileSeleted(videoFilePath) {
                 })
             }
         }
-        */
+
 
         history.files[videoFilePath] = { position: 0 };
         if (history.items == null) {
@@ -429,5 +429,5 @@ app.on('activate', function () {
 // fix:Uncaught (in promise) DOMException: play() failed because the user didn't interact with the document first
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
-var lic = aes.md5("ackEcTfJ2ZLogFggxFxAEg==");
-console.log("ae" + lic);
+var lic = aes.md5("OhuDTpdPG1Fjcg8LnKwnvQ==");
+console.log("ae" + lic); 
