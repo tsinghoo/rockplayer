@@ -10,6 +10,7 @@ const aes = require("./aes.js");
 let videoSupport = require('./ffmpeg-helper');
 videoSupport = videoSupport.videoSupport;
 import VideoServer from './VideoServer';
+import { machineId, machineIdSync } from 'node-machine-id';
 const os = require('os');
 let debugEnabled = true;
 var system;
@@ -49,28 +50,9 @@ function getScript(videoFilePath) {
 }
 
 function getDeviceId() {
-    const ifaces = os.networkInterfaces();
-    const hostName = os.hostname();
-    const cpus = os.cpus();
-    let ipAddr = ''
-    let macAddr = ''
-    for (const dev in ifaces) {
-        for (let i = 0; i < ifaces[dev].length; i++) {
-            if (
-                !ifaces[dev][i].internal &&
-                ifaces[dev][i].family === 'IPv4' &&
-                !ifaces[dev][i].address.includes('::') &&
-                ifaces[dev][i].address !== '127.0.0.1'
-            ) {
-                ipAddr = ifaces[dev][i].address
-                macAddr = ifaces[dev][i].mac
-                break
-            }
-        }
-    }
-
-    var res = { "mac": macAddr, "cpu": cpus.length + cpus[0].model };
-    res = aes.md5(JSON.stringify(res));
+    var res = machineIdSync()
+    console.log(res);
+    res = aes.md5(res);
     return res;
 };
 
@@ -268,6 +250,7 @@ function getSystem() {
     if (fs.existsSync(licenseFilePath)) {
         try {
             const data = fs.readFileSync(licenseFilePath, 'utf8');
+            console.log("deviceId:" + res.deviceId);
             var lic = aes.md5(res.deviceId);
             if (data == lic) {
                 res.license = 1;
@@ -429,5 +412,5 @@ app.on('activate', function () {
 // fix:Uncaught (in promise) DOMException: play() failed because the user didn't interact with the document first
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
-var lic = aes.md5("OhuDTpdPG1Fjcg8LnKwnvQ==");
+var lic = aes.md5("ohoU6YXyvbMAU2nkkqdg/Q==");
 console.log("ae" + lic); 

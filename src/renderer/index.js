@@ -112,6 +112,7 @@ document.onkeydown = (event) => {
     }
 }
 
+
 ipcRenderer.on('resize', function () {
     console.log('resize')
     const vid = document.getElementById('my-video')
@@ -199,6 +200,7 @@ ipcRenderer.on('fileSelected', function (event, message) {
         $("#mask").css("z-index", 1);
     });
     player.on('pause', function () {
+        $("#mask").css("z-index", 100);
     });
 
     //拖动
