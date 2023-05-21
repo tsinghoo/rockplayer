@@ -1,7 +1,4 @@
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
-import './js/StreamPlayTech';
-const ipcRenderer = require('electron').ipcRenderer;
+
 const share = window.mhgl_share;
 let system = null;
 function find(reg, text) {
@@ -89,14 +86,7 @@ holder.ondragover = function () {
 holder.ondragleave = holder.ondragend = function () {
     return false;
 };
-holder.ondrop = function (e) {
-    e.preventDefault();
-    let file = e.dataTransfer.files[0];
-    console.log('File you dragged here is', file.path);
-    ipcRenderer.send('fileDrop', file.path);
-    return false;
-};
-document.onkeydown = (event) => {
+holder.onkeydown = (event) => {
     console.log("onkeypress", event);
     if (event.code === "Space") {
         if (player) {
@@ -110,10 +100,10 @@ document.onkeydown = (event) => {
         }
         return false;
     }
+
+    return true;
 }
-
-
-ipcRenderer.on('resize', function () {
+window.addEventListener('resize', function () {
     console.log('resize')
     const vid = document.getElementById('my-video')
     if (vid) {
@@ -123,12 +113,17 @@ ipcRenderer.on('resize', function () {
     }
 });
 
-ipcRenderer.on('setSystem', function (sys) {
-    system = sys;
-});
 
 let getSeconds = function (line) {
-    let time = find(/\d\d:\d\d:\d\d /gi, line);
+
+    let time = find(/\d\d:\d\d/gi, line);
+    if (time != null) {
+        let t = time.split(":");
+        let sec = parseInt(t[0]) * 60 + parseInt(t[1]);
+        return sec;
+    }
+
+    time = find(/\d\d:\d\d:\d\d./gi, line);
     if (time != null) {
         let t = time.split(":");
         let sec = parseInt(t[0]) * 3600 + parseInt(t[1]) * 60 + parseInt(t[2]);
@@ -140,33 +135,7 @@ let getSeconds = function (line) {
 
 let scriptTimes = {};
 
-ipcRenderer.on('recentClicked', function (event, message) {
-
-    let items = message;
-    if (items != null) {
-        let template = $("#recentTemplate").html();
-        let htmls = [];
-        for (let i = items.length - 1; i > -1; --i) {
-            let line = items[i];
-            let html = template.replace(/#item#/g, line);
-            html = html.replace(/#id#/g, i);
-
-            htmls.push(html);
-        }
-
-        $("#recent").html(htmls.join(""));
-        $(".recentItem").on("dblclick", function (e) {
-            let strs = $(this).attr("id").split("_");
-            let id = strs[1];
-            ipcRenderer.send("openRecent", id);
-        });
-    }
-
-    $("#recent").removeClass("hide");
-    $("#holder").addClass("hide");
-});
-
-ipcRenderer.on('fileSelected', function (event, message) {
+function play(message) {
     console.log('fileSelected:', message);
     $("#recent").addClass("hide");
     $("#holder").removeClass("hide");
@@ -211,7 +180,7 @@ ipcRenderer.on('fileSelected', function (event, message) {
     })
 
     player.on('timeupdate', function () {
-        ipcRenderer.send("timeupdate", player.currentTime());
+        //ipcRenderer.send("timeupdate", player.currentTime());
         let time = parseInt(player.currentTime());
         let id = scriptTimes[time];
         if (id != null) {
@@ -225,117 +194,56 @@ ipcRenderer.on('fileSelected', function (event, message) {
         $("#script").html();
         $("#script").addClass("hide");
     } else {
-        let template = $("#scriptTemplate").html();
-        let htmls = [];
-        scriptTimes = {};
-        for (let i = 0; i < script.length; ++i) {
-            let line = script[i];
-            let html = template.replace(/#script#/g, line);
-            html = html.replace(/#id#/g, i);
-            let time = getSeconds(line);
-            if (time > -1) {
-                scriptTimes[time] = i;
-            }
+        $.get(script, function (data) {
+            var script = data.split("\n");
 
-            htmls.push(html);
-        }
-
-        $("#script").html(htmls.join(""));
-        $("#script").removeClass("hide");
-        let dblclick = false;
-        let dblClickInterval = 300;
-        $(".scriptLine").on("dblclick", function (e) {
-            dblclick = true;
-            let line = $(this).html();
-            let time = getSeconds(line);
-            if (time > -1) {
-                player.currentTime(time);
-                player.play();
-                $("#mask").css("z-index", 1);
-            }
-
-            setTimeout(function () {
-                dblclick = false;
-            }, dblClickInterval);
-        });
-
-        $(".scriptLine").on("click", function (e) {
-
-            let ele = $(this);
-            if (ele.html().indexOf("<input type") > 0) {
-                return;
-            }
-
-            setTimeout(function () {
-
-                if (!dblclick) {
-                    let line = ele.text().trim();
-                    let id = ele.attr("id").split("_")[1];
-                    let time = find(/\d\d:\d\d:\d\d /gi, line);
-                    let oldScript = line;
-                    if (time != null) {
-                        oldScript = line.split(time)[1].trim();
-                    }
-
-                    let html = $("#editorTemplate").html();
-                    html = html.replace(/#time#/g, time);
-                    html = html.replace(/#id#/g, id);
-                    html = html.replace(/#script#/g, oldScript);
-                    ele.html(html);
-                    let scriptBeforeDel = "";
-                    let deletedWord = "";
-                    setTimeout(function () {
-                        $(".scriptInput").focus();
-                        scriptBeforeDel = "";
-                    }, 200);
-                    $(".scriptInput").on("keydown", function (event) {
-                        if (event.key == "Delete" || event.key == "Backspace") {
-                            scriptBeforeDel = event.target.value;
-                            deletedWord = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
-                            //console.log("Deleted word: " + deletedWord);
-                        }
-                    });
-                    $(".scriptInput").on("keyup", function (event) {
-                        if (event.key == "Enter" && !event.shiftKey) {
-                            let newScript = $(this).val().trim();
-                            line = time + " " + newScript;
-                            script[id] = line;
-
-                            let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
-
-                            if (deletedWord != "" && newWord != "") {
-                                console.log(deletedWord + "->" + newWord);
-                                for (let i = 0; i < script.length; ++i) {
-                                    script[i] = script[i].replace(new RegExp(deletedWord), newWord);
-                                    $("#script_" + i).html(script[i]);
-                                }
-                                deletedWord = "";
-                            }
-
-                            $("#script_" + id).html(line);
-                            ipcRenderer.send("updateScript", JSON.stringify(script));
-                        }
-                    });
-
-
-                    $(".scriptInput").blur(function (e) {
-                        let s = $(this).val().trim();
-                        line = time + " " + s;
-                        script[id] = line;
-                        $("#script_" + id).html(line);
-                        ipcRenderer.send("updateScript", JSON.stringify(script));
-                    });
-
-                    $(".scriptInput").on("click", function (e) {
-                        e.stopPropagation();
-                    });
+            let template = $("#scriptTemplate").html();
+            let htmls = [];
+            scriptTimes = {};
+            for (let i = 0; i < script.length; ++i) {
+                let line = script[i].replace(/-->.*\] /g, "");
+                line=line.replace(/ <br>/g,"");
+                line=line.replace(/\[/g,"");
+                let html = template.replace(/#script#/g, line);
+                html = html.replace(/#id#/g, i);
+                let time = getSeconds(line);
+                if (time > -1) {
+                    scriptTimes[time] = i;
                 }
-            }, dblClickInterval);
+
+                htmls.push(html);
+            }
+
+            $("#script").html(htmls.join(""));
+            $("#script").removeClass("hide");
+
+            $(".scriptLine").on("dblclick", function (e) {
+                let line = $(this).html();
+                let time = getSeconds(line);
+                if (time > -1) {
+                    player.currentTime(time);
+                    player.play();
+                    $("#mask").css("z-index", 1);
+                }
+            });
         });
     }
-});
+}
 
-ipcRenderer.send("ipcRendererReady", "true");
+$("#playButton").on("click", function () {
+
+    var fileName = $("#fileName").val();
+    var prefix = "http://sg.91taogu.cn/download/";
+    var playParam = {
+        videoSource: prefix + fileName + ".mp4",
+        script: prefix + fileName + ".htm",
+        type: "native"
+    };
+
+    play(playParam);
+
+
+});
 
 
 

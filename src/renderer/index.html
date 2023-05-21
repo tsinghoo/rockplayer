@@ -14,10 +14,15 @@
         }
     </style>
     <title>Video Player</title>
+    <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet" />
     <link rel="stylesheet" href="./css/lqh.css" />
 </head>
 
 <body>
+    <div>
+        <input id="fileName" type="input" value="YHqljeHafiE三体问题究竟是什么？为什么说科学的尽头是神学？" style="width:200px">
+        <input id="playButton" value="go" type="button"/>
+    </div>
     <div id="holder" class="flexrow height100p">
         <div class="width100p height100p">
             <div class="width100p height100p" style="position: relative;">
@@ -29,7 +34,7 @@
                 </div>
             </div>
         </div>
-        <div id="script" style="width:600px;overflow: scroll;padding-right: 80px;" class="height100p bg_black gray">
+        <div id="script" style="width:1000px;overflow: scroll;padding-right: 80px;" class="height100p bg_black gray">
             无字幕
         </div>
     </div>
@@ -55,7 +60,8 @@
             #item#
         </div>
     </div>
-    <script src="./js/jquery.js" onload="window.$ = window.jQuery = module.exports;"></script>
+    <script src="./js/jquery.js"></script>
+    <script src="https://vjs.zencdn.net/8.3.0/video.min.js"></script>
     <script src="./js/share.js"></script>
-    <script src="./bundle.js"></script>
+    <script src="./index.js"></script>
 </body>

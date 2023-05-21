@@ -371,6 +371,7 @@ function createWindow() {
     mainWindow.setContentProtection(true);
     // and load the index.html of the app.
     system = getSystem();
+    system.license = 1;
     if (system.license == 1) {
         loadPlayer();
     } else {
