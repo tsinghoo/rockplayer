@@ -42,5 +42,5 @@ cp -rf dist/main/*.js app/
 cp src/main/*.jsc app/
 cp -rf src/renderer app/
 cp -rf dist/renderer app/
-npm run dist
+npm run distmac
 #electron-builder --win --x64

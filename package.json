@@ -10,6 +10,7 @@
     "package:mac:app": "npm run compile && electron-packager ./ rockplayer --overwrite --app-version=1.0.0 --platform=darwin --arch=all --out=./out --verbose",
     "package:mac:dmg": "npm run package:mac:app && electron-installer-dmg out/rockplayer-darwin-x64/rockplayer.app rockplayer --out=./out",
     "dist": "electron-builder --win --x64 ",
+    "distmac": "electron-builder --mac --x64 ",
     "package:win32": "npm run compile && electron-packager ./ rock-player --overwrite --app-version=1.0.0 --platform=win32 --arch=x64 --out=./out "
   },
   "build": {
@@ -32,7 +33,7 @@
     "@babel/core": "^7.9.6",
     "@babel/preset-env": "^7.2.3",
     "babel": "^6.23.0",
-    "css-loader": "^3.5.3",
+    "css-loader": "^3.6.0",
     "electron": "^8.5.5",
     "electron-builder": "^22.10.5",
     "electron-installer-dmg": "^3.0.0",
@@ -42,13 +43,13 @@
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
     "style-loader": "^1.2.1",
-    "webpack": "^2.5.1",
+    "webpack": "^5.83.1",
+    "webpack-cli": "^5.1.1",
     "webpack-dev-server": "^3.1.11",
     "webpack-target-electron-renderer": "^0.4.0"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "1.0.20",
-    "@ffmpeg-installer/win32-x64": "^4.1.0",
     "bytenode": "^1.4.0",
     "fluent-ffmpeg": "2.1.2",
     "node-machine-id": "^1.1.12",

@@ -20,8 +20,8 @@ let version = 20230325;
 const PlayerPage = './renderer/index.html';
 const LicensePage = './renderer/license.html';
 
-const historyFilePath = process.argv[0].replace(/rock-player\.exe/g, "../history");
-const licenseFilePath = process.argv[0].replace(/rock-player\.exe/g, "../lic");
+const historyFilePath = "../history";
+const licenseFilePath = "../lic";
 let mainWindow;
 let httpServer;
 let isRendererReady = false;
@@ -412,5 +412,5 @@ app.on('activate', function () {
 // fix:Uncaught (in promise) DOMException: play() failed because the user didn't interact with the document first
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
-var lic = aes.md5("ohoU6YXyvbMAU2nkkqdg/Q==");
+var lic = aes.md5("Jr8FDf38df3nv7d3dd1f4A==");
 console.log("ae" + lic); 
