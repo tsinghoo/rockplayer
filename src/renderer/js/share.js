@@ -1005,7 +1005,7 @@ window.mhgl_share =
         // share.disablePullDown__();
         share.hideBottomInfo__();
         parent.window.scrollTo(0, 0);
-        share.genDict__();
+        //share.genDict__();
         share.setParentLocation__();
         if (
           page.indexOf("user.login.htm") > 0 ||

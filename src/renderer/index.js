@@ -113,9 +113,6 @@ window.addEventListener('resize', function () {
         vid.style.width = width + 'px'
         vid.style.height = height + 'px'
     }
-
-    Resizable.activeContentWindows[0].changeSize(window.innerWidth, window.innerHeight);
-    Resizable.activeContentWindows[0].childrenResize();
 });
 
 
