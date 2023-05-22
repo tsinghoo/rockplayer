@@ -1,6 +1,8 @@
 
 const share = window.mhgl_share;
 let system = null;
+let scriptTimes = {};
+
 function find(reg, text) {
     let matchArr = reg.exec(text);
     let infoFound;
@@ -133,10 +135,16 @@ let getSeconds = function (line) {
     return -1;
 };
 
-let scriptTimes = {};
+function play(fileName) {
+    console.log('fileSelected:', fileName);
 
-function play(message) {
-    console.log('fileSelected:', message);
+    var prefix = "http://sg.91taogu.cn/download/";
+    var message = {
+        videoSource: prefix + fileName + ".mp4",
+        script: prefix + fileName + ".htm",
+        type: "native"
+    };
+
     $("#recent").addClass("hide");
     $("#holder").removeClass("hide");
     let vid = document.getElementById("my-video");
@@ -202,8 +210,8 @@ function play(message) {
             scriptTimes = {};
             for (let i = 0; i < script.length; ++i) {
                 let line = script[i].replace(/-->.*\] /g, "");
-                line=line.replace(/ <br>/g,"");
-                line=line.replace(/\[/g,"");
+                line = line.replace(/ <br>/g, "");
+                line = line.replace(/\[/g, "");
                 let html = template.replace(/#script#/g, line);
                 html = html.replace(/#id#/g, i);
                 let time = getSeconds(line);
@@ -230,19 +238,15 @@ function play(message) {
     }
 }
 
-$("#playButton").on("click", function () {
+$(function () {
+    $("#playButton").on("click", function () {
+        play($("#fileName").val());
+    });
 
-    var fileName = $("#fileName").val();
-    var prefix = "http://sg.91taogu.cn/download/";
-    var playParam = {
-        videoSource: prefix + fileName + ".mp4",
-        script: prefix + fileName + ".htm",
-        type: "native"
-    };
-
-    play(playParam);
-
-
+    var fileName = share.getParameter__("f");
+    if (fileName != null && fileName.trim() != "") {
+        play(fileName);
+    }
 });
 
 

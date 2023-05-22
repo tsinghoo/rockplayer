@@ -998,7 +998,7 @@ window.mhgl_share =
         var pUrl = parent.location.href;
         console.log("pUrl:" + pUrl);
         share.loadCookie__();
-        share.setConsts__();
+        //share.setConsts__();
         if (share.uiDebug == 0 && page == pUrl && page.indexOf("container.htm") < 0) {
           var strs = page.split("/fe/");
           var container = "./container.htm#" + encodeURIComponent(strs[1]);
@@ -1975,7 +1975,7 @@ window.mhgl_share =
         return false;
       },
       getCache__: function (key, value, options) {
-        return store.get(share.packageName + key, value);
+        return null;
       },
       getMailAddress__: function (arr) {
         var res = "";
