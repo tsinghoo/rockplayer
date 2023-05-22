@@ -24,7 +24,7 @@
         <input id="playButton" value="go" type="button"/>
     </div>
     <div id="holder" class="flexrow height100p">
-        <div class="width100p height100p">
+        <div class="resizable-left width100p height100p">
             <div class="width100p height100p" style="position: relative;">
                 <div id="mask" class="bg_black width100p height100p" style="z-index:1;position:absolute;left:0;top:0;">
 
@@ -34,7 +34,7 @@
                 </div>
             </div>
         </div>
-        <div id="script" style="width:1000px;overflow: scroll;padding-right: 80px;font-family:serif;" class="height100p bg_black gray">
+        <div id="script" class="height100p bg_black gray resizable-right" style="width:1000px;overflow: scroll;padding-right: 80px;padding-left:6px;font-family:serif;">
             无字幕
         </div>
     </div>
@@ -61,6 +61,7 @@
         </div>
     </div>
     <script src="./js/jquery.js"></script>
+    <script src="./js/resizable.js"></script>
     <script src="https://vjs.zencdn.net/8.3.0/video.min.js"></script>
     <script src="./js/share.js"></script>
     <script src="./index.js"></script>

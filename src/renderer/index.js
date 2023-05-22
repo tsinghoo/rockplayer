@@ -113,6 +113,9 @@ window.addEventListener('resize', function () {
         vid.style.width = width + 'px'
         vid.style.height = height + 'px'
     }
+
+    Resizable.activeContentWindows[0].changeSize(window.innerWidth, window.innerHeight);
+    Resizable.activeContentWindows[0].childrenResize();
 });
 
 
@@ -152,7 +155,9 @@ function play(fileName) {
         videojs(vid).dispose();
     }
 
-    videoContainer.innerHTML = createVideoHtml(message.videoSource);
+    var vh = createVideoHtml(message.videoSource);
+    //videoContainer.innerHTML = vh;
+    $("#video_container").html(vh);
     document.title = share.shrinkString__(message.videoSource, 80);
     vid = document.getElementById("my-video");
     if (message.type === 'native') {
@@ -243,6 +248,21 @@ $(function () {
         play($("#fileName").val());
     });
 
+    document.getElementById("holder").style.width = window.innerWidth + "px";
+    document.getElementById("holder").style.height = window.innerHeight + "px";
+
+    var sizes = {
+        "win1": 0.5,
+        "win3": 0.75,
+        "win4": 0.5,
+        "win6": 0.4,
+        "win11": 0.8,
+        "win9": 0.5,
+        "win13": 0.4
+    };
+
+    //Resizable.initialise("main", sizes);
+    Resizable.initialise("holder", {});
     var fileName = share.getParameter__("f");
     if (fileName != null && fileName.trim() != "") {
         play(fileName);
