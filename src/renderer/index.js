@@ -88,7 +88,7 @@ holder.ondragover = function () {
 holder.ondragleave = holder.ondragend = function () {
     return false;
 };
-holder.onkeydown = (event) => {
+window.document.onkeydown = (event) => {
     console.log("onkeypress", event);
     if (event.code === "Space") {
         if (player) {
@@ -99,10 +99,10 @@ holder.onkeydown = (event) => {
                 player.pause();
                 $("#mask").css("z-index", 100);
             }
-        }
-        return false;
-    }
 
+            return false;
+        }
+    }
     return true;
 }
 window.addEventListener('resize', function () {
@@ -244,25 +244,13 @@ function play(fileName) {
 }
 
 $(function () {
+
+    $('#holder').enhsplitter({ handle: 'lotsofdots', minSize: 50, vertical: true });
+
     $("#playButton").on("click", function () {
         play($("#fileName").val());
     });
 
-    document.getElementById("holder").style.width = window.innerWidth + "px";
-    document.getElementById("holder").style.height = window.innerHeight + "px";
-
-    var sizes = {
-        "win1": 0.5,
-        "win3": 0.75,
-        "win4": 0.5,
-        "win6": 0.4,
-        "win11": 0.8,
-        "win9": 0.5,
-        "win13": 0.4
-    };
-
-    //Resizable.initialise("main", sizes);
-    Resizable.initialise("holder", {});
     var fileName = share.getParameter__("f");
     if (fileName != null && fileName.trim() != "") {
         play(fileName);

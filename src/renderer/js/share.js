@@ -999,13 +999,6 @@ window.mhgl_share =
         console.log("pUrl:" + pUrl);
         share.loadCookie__();
         //share.setConsts__();
-        if (share.uiDebug == 0 && page == pUrl && page.indexOf("container.htm") < 0) {
-          var strs = page.split("/fe/");
-          var container = "./container.htm#" + encodeURIComponent(strs[1]);
-          console.log("openContainer:" + container);
-          parent.window.open(container);
-          return;
-        }
 
         $(window).bind("beforeunload", share.beforeUnload__);
 
@@ -1032,9 +1025,6 @@ window.mhgl_share =
       }
       */
 
-        if (!share.isFromBrowser__() && !share.isInFrame__()) {
-          share.loadCordova__();
-        }
         $.ajaxSetup({
           timeout: share.ajaxTimeout__
         });
@@ -1994,14 +1984,6 @@ window.mhgl_share =
         return res;
       },
       setCache__: function (key, value, options) {
-        if (typeof value != "string") {
-          value = JSON.stringify(value);
-        }
-
-        store.set(share.packageName + key, value);
-        if (key == "user") {
-          console.log("=================================================");
-        }
       },
       ensureNotEmpty__: function (trim, id, errorMessage) {
         var value = $("#" + id).val();

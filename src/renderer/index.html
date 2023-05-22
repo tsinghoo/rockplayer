@@ -16,15 +16,12 @@
     <title>Video Player</title>
     <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet" />
     <link rel="stylesheet" href="./css/lqh.css" />
+    <link href="css/jquery.enhsplitter.css" rel="stylesheet"/>
 </head>
 
 <body>
-    <div>
-        <input id="fileName" type="input" value="YHqljeHafiE三体问题究竟是什么？为什么说科学的尽头是神学？" style="width:200px">
-        <input id="playButton" value="go" type="button" />
-    </div>
     <div id="holder" class="flexrow height100p">
-        <div class="resizable-left width100p height100p">
+        <div class="width100p height100p">
             <div class="width100p height100p" style="position: relative;">
                 <div id="mask" class="bg_black width100p height100p" style="z-index:1;position:absolute;left:0;top:0;">
 
@@ -34,7 +31,11 @@
                 </div>
             </div>
         </div>
-        <div class="resizable-right">
+        <div class="">
+            <div>
+                <input id="fileName" type="input" value="YHqljeHafiE三体问题究竟是什么？为什么说科学的尽头是神学？" style="width:200px">
+                <input id="playButton" value="go" type="button" />
+            </div>
             <div id="script" class="height100p bg_black gray "
                 style="width:1000px;overflow: scroll;padding-right: 80px;padding-left:6px;font-family:serif;">
                 无字幕
@@ -64,7 +65,7 @@
         </div>
     </div>
     <script src="./js/jquery.js"></script>
-    <script src="./js/resizable.js"></script>
+    <script src="js/jquery.enhsplitter.js"></script>
     <script src="https://vjs.zencdn.net/8.3.0/video.min.js"></script>
     <script src="./js/share.js"></script>
     <script src="./index.js"></script>
