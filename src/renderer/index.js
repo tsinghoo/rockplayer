@@ -103,6 +103,33 @@ window.document.onkeydown = (event) => {
             return false;
         }
     }
+    else if (event.code === "ArrowRight") {
+        if (player) {
+            let time = player.currentTime();
+            var step = 5;
+            if (event.ctrlKey) { 
+                step = 15;
+            }
+            player.currentTime(time + step);
+            player.play();
+            $("#mask").css("z-index", 1);
+        }
+        return false;
+    }
+    else if (event.code === "ArrowLeft") {
+        if (player) {
+            let time = player.currentTime();
+            var step = 5;
+            if (event.ctrlKey) {
+                step = 15;
+            }
+            player.currentTime(time - step);
+            player.play();
+            $("#mask").css("z-index", 1);
+        }
+        return false;
+    }
+    
     return true;
 }
 window.addEventListener('resize', function () {
