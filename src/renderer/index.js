@@ -2,7 +2,7 @@
 const share = window.mhgl_share;
 let system = null;
 let scriptTimes = {};
-
+let maskEnabled = 1;
 function find(reg, text) {
     let matchArr = reg.exec(text);
     let infoFound;
@@ -97,7 +97,6 @@ window.document.onkeydown = (event) => {
                 $("#mask").css("z-index", 1);
             } else {
                 player.pause();
-                $("#mask").css("z-index", 100);
             }
 
             return false;
@@ -145,17 +144,17 @@ window.addEventListener('resize', function () {
 
 let getSeconds = function (line) {
 
-    let time = find(/\d\d:\d\d/gi, line);
-    if (time != null) {
-        let t = time.split(":");
-        let sec = parseInt(t[0]) * 60 + parseInt(t[1]);
-        return sec;
-    }
-
-    time = find(/\d\d:\d\d:\d\d./gi, line);
+    let time = find(/\d\d:\d\d:\d\d/gi, line);
     if (time != null) {
         let t = time.split(":");
         let sec = parseInt(t[0]) * 3600 + parseInt(t[1]) * 60 + parseInt(t[2]);
+        return sec;
+    }
+
+    time = find(/\d\d:\d\d/gi, line);
+    if (time != null) {
+        let t = time.split(":");
+        let sec = parseInt(t[0]) * 60 + parseInt(t[1]);
         return sec;
     }
 
@@ -202,11 +201,15 @@ function play(fileName) {
         player.currentTime(message.position);
     }
 
+    $("#maskCheckbox").change(function () { 
+        maskEnabled = this.checked;
+    });
+
     player.on('play', function () {
         $("#mask").css("z-index", 1);
     });
     player.on('pause', function () {
-        $("#mask").css("z-index", 100);
+        maskEnabled && $("#mask").css("z-index", 100);
     });
 
     //拖动
