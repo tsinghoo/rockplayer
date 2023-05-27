@@ -5,6 +5,7 @@ window.mhgl_share =
     var share = {
       packageName: "com.lbdd.email",
       mhgl__: "web",
+      cache__: {},
       uiDebug: 0,
       logData__: [],
       defaultLogLevel__: 0,
@@ -1965,7 +1966,17 @@ window.mhgl_share =
         return false;
       },
       getCache__: function (key, value, options) {
-        return null;
+        return store.get(share.packageName + key, value);
+        if (share.isInFrame__()) {
+          return parent.mhgl_share.getCache__(key, value, options);
+        }
+
+        var val = share.cache__[key];
+        if (val == null) {
+          val = value;
+        }
+
+        return val;
       },
       getMailAddress__: function (arr) {
         var res = "";
@@ -1984,6 +1995,18 @@ window.mhgl_share =
         return res;
       },
       setCache__: function (key, value, options) {
+        if (share.isInFrame__()) {
+          return parent.mhgl_share.setCache__(key, value);
+        }
+
+        if (typeof value != "string") {
+          value = JSON.stringify(value);
+        }
+
+        share.cache__[key] = value;
+
+
+        store.set(share.packageName + key, value);
       },
       ensureNotEmpty__: function (trim, id, errorMessage) {
         var value = $("#" + id).val();

@@ -3,6 +3,12 @@ const share = window.mhgl_share;
 let system = null;
 let scriptTimes = {};
 let maskEnabled = 1;
+let recentFiles = share.getCache__("recent");
+if (recentFiles == null) {
+    recentFiles = [];
+} else { 
+    recentFiles = JSON.parse(recentFiles);
+}
 function find(reg, text) {
     let matchArr = reg.exec(text);
     let infoFound;
@@ -106,11 +112,11 @@ window.document.onkeydown = (event) => {
         if (player) {
             let time = player.currentTime();
             var step = 5;
-            if (event.ctrlKey) { 
+            if (event.ctrlKey) {
                 step = 15;
             }
             player.currentTime(time + step);
-            player.play();
+            //player.play();
             $("#mask").css("z-index", 1);
         }
         return false;
@@ -123,12 +129,12 @@ window.document.onkeydown = (event) => {
                 step = 15;
             }
             player.currentTime(time - step);
-            player.play();
+            //player.play();
             $("#mask").css("z-index", 1);
         }
         return false;
     }
-    
+
     return true;
 }
 window.addEventListener('resize', function () {
@@ -166,7 +172,7 @@ function play(fileName) {
 
     var prefix = "http://sg.91taogu.cn/download/";
     var message = {
-        videoSource: prefix + fileName + ".mp4",
+        videoSource: prefix + fileName,
         script: prefix + fileName + ".htm",
         type: "native"
     };
@@ -194,6 +200,13 @@ function play(fileName) {
             player.play();
         });
     }
+
+    for (var i = 0; i < recentFiles.length; ++i) {
+        if (recentFiles[i].name == fileName && recentFiles[i].time != null) {
+            player.currentTime(recentFiles[i].time);
+        }
+    }
+
     // player.textTrackSettings.setDefaults();
     // player.textTrackSettings.setValues(newSettings);
     // player.textTrackSettings.updateDisplay();
@@ -201,7 +214,7 @@ function play(fileName) {
         player.currentTime(message.position);
     }
 
-    $("#maskCheckbox").change(function () { 
+    $("#maskCheckbox").change(function () {
         maskEnabled = this.checked;
     });
 
@@ -210,6 +223,20 @@ function play(fileName) {
     });
     player.on('pause', function () {
         maskEnabled && $("#mask").css("z-index", 100);
+        for (var i = 0; i < recentFiles.length; ++i) {
+            var file = recentFiles[i];
+            if (file.name == fileName) {
+                file.time = player.currentTime();
+
+                if (i != 0) {
+                    recentFiles.splice(i);
+                    recentFiles.splice(0, 0, file);
+                }
+
+                share.setCache__("recent", recentFiles);
+            }
+
+        }
     });
 
     //拖动
@@ -270,8 +297,61 @@ function play(fileName) {
     }
 }
 
-$(function () {
+function loadRecent() {
+    $.get("http://sg.91taogu.cn/download/recent", function (data) {
+        var files = data.split("\n");
 
+        let filesKey = {};
+        for (let i = 0; i < files.length; ++i) {
+            let f = files[i];
+            filesKey[f] = i;
+            let exists = -1;
+            for (let j = 0; j < recentFiles.length; ++j) {
+                if (recentFiles[j].name == f) {
+                    exists = j;
+                    break;
+                }
+            }
+            if (exists < 0) {
+                recentFiles.push({ name: f });
+            }
+        }
+        let j = 0;
+        while (j < recentFiles.length) {
+            if (filesKey[recentFiles[j].name] == null) {
+                recentFiles.splice(j);
+            } else {
+                ++j;
+            }
+        }
+
+        share.setCache__("recent", recentFiles);
+
+        let template = $("#recentTemplate").html();
+        let htmls = [];
+        for (let i = 0; i < recentFiles.length; ++i) {
+
+            let html = template.replace(/#name#/g, recentFiles[i].name);
+            html = html.replace(/#id#/g, i);
+
+            htmls.push(html);
+        }
+
+        $("#recent").html(htmls);
+        $("#recent").removeClass("hide");
+
+        $("#holder").addClass("hide");
+
+        $(".recentItem").on("click", function (e) {
+            var lst = e.currentTarget.id.split("_");
+            var file = recentFiles[lst[1]].name;
+            window.open("./index.html?f=" + file, file);
+        })
+
+    });
+}
+
+$(function () {
     $('#holder').enhsplitter({ handle: 'lotsofdots', minSize: 50, vertical: true });
 
     $("#playButton").on("click", function () {
@@ -281,6 +361,8 @@ $(function () {
     var fileName = share.getParameter__("f");
     if (fileName != null && fileName.trim() != "") {
         play(fileName);
+    } else {
+        loadRecent();
     }
 });
 
