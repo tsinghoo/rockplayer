@@ -6,7 +6,7 @@ let maskEnabled = 1;
 let recentFiles = share.getCache__("recent");
 if (recentFiles == null) {
     recentFiles = [];
-} else { 
+} else {
     recentFiles = JSON.parse(recentFiles);
 }
 function find(reg, text) {
@@ -169,7 +169,7 @@ let getSeconds = function (line) {
 
 function play(fileName) {
     console.log('fileSelected:', fileName);
-
+    fileName = encodeURIComponent(fileName);
     var prefix = "http://sg.91taogu.cn/download/";
     var message = {
         videoSource: prefix + fileName,
