@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
+app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
-
 const args = process.argv;
 console.log(args.length);
 if (args.length < 4) {
@@ -43,6 +43,9 @@ function listFiles() {
 
 // 删除文件
 function deleteFiles(prefix) {
+    if (prefix.indexOf("../")>=0){
+        console.error();
+    }
     fs.readdir(directoryPath, (err, files) => {
         if (err) {
             console.error('Error reading directory:', err);
@@ -70,11 +73,14 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // 路由：首页
-app.get('/', (req, res) => {
+app.get('/video/i', (req, res) => {
     const files = listFiles();
     res.render('index', { files });
 });
-app.get('/download/:filename', (req, res) => {
+app.get('/video/player', (req, res) => {
+    res.render('player');
+});
+app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const filePath = path.join(directoryPath, fileName);
 
@@ -94,10 +100,10 @@ app.get('/download/:filename', (req, res) => {
 });
 
 // 路由：删除文件
-app.post('/delete', (req, res) => {
+app.post('/video/delete', (req, res) => {
     const filePath = req.query.file;
     deleteFiles(filePath);
-    res.redirect('/');
+    res.redirect('/video');
 });
 
 app.listen(port, () => {

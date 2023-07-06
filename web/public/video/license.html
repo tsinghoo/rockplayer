@@ -1,0 +1,56 @@
+<head>
+    <style>
+        html,
+        body {
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+    <title>Video Player</title>
+    <link rel="stylesheet" href="bootstrap-3.3.7-dist/css/bootstrap.css" />
+    <link rel="stylesheet" href="bootstrap-3.3.7-dist/css/bootstrap-theme.css" />
+    <script src="bootstrap-3.3.7-dist/js/bootstrap.js" defer="defer"></script>
+    <link rel="stylesheet" href="./css/lqh.css" />
+</head>
+
+<body>
+    <div class="container">
+        <div class="flexrow center">
+            <div style="width:480px;margin-top: 40px;">
+                <form class="form-horizontal" role="form" id="formLicense">
+                    <div class="input-group center">
+                        <span id="loginHint" for="login" class="input-group-addon">授权秘钥</span>
+                        <input type="text" class="form-control" id="licenseKey" placeholder="请输入您的授权密钥">
+                    </div>
+                    <div class="form-group margin20 center">
+                        <div class="col-xs-12 center">
+                            <button id="buttonSubmit" type="button" class="btn btn-success">提交</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="flexcolumn" style="margin: 20px 20px 20px 20px;">
+            <div>
+                问：如何获取授权秘钥？
+            </div>
+            <div>
+                答：请用微信扫左边二维码添加好友，并拍摄右边二维码发送给他。
+            </div>
+            <div id="" class="flexrow center">
+                <div id="wechat" class="margin20">
+                    <img style="width:120px;height:120px;" src="./img/owner.jpg">
+                </div>
+                <div id="deviceId" class="margin20">
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/store.legacy.min.js"></script>
+    <script src="./js/jquery.js" onload="window.$ = window.jQuery = module.exports;"></script>
+    <script src="./js/share.js"></script>
+    <script src="./js/qrcode.min.js"></script>
+    <script src="./license.js"></script>
+</body>

@@ -170,7 +170,7 @@ let getSeconds = function (line) {
 function play(fileName) {
     console.log('fileSelected:', fileName);
     fileName = encodeURIComponent(fileName);
-    var prefix = "http://sg.91taogu.cn/video/download/";
+    var prefix = "/video/download/";
     var message = {
         videoSource: prefix + fileName,
         script: prefix + fileName + ".htm",
@@ -298,7 +298,7 @@ function play(fileName) {
 }
 
 function loadRecent() {
-    $.get("http://sg.91taogu.cn/video/download/recent", function (data) {
+    $.get("/video/download/recent", function (data) {
         var files = data.split("\n");
 
         let filesKey = {};

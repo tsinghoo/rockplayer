@@ -24,11 +24,11 @@
         }
 
         function toPlayer(fileName) {
-            window.open("/download/html/index.html?f=" + encodeURIComponent(fileName), fileName);
+            window.open("/video/index.html?f=" + encodeURIComponent(fileName), fileName);
         }
 
         function deleteFile(fileName) {
-            fetch('/delete?file=' + encodeURIComponent(fileName), {
+            fetch('./delete?file=' + encodeURIComponent(fileName), {
                 method: 'POST'
             })
                 .then(response => {
