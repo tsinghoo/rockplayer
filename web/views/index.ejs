@@ -16,7 +16,7 @@
                 <% if (file.script){%> ♣ <% } %>
                         |
                         <% if (remove=="995560" ){%>
-                            <a href="#" onclick="confirmDelete('<%= file.name %>')">删除</a>
+                            <a href="#<%=file.name%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
                             <% } %>
             </li>
             <% }) %>
@@ -60,7 +60,7 @@
             })
                 .then(response => {
                     if (response.ok) {
-                        
+			refresh();                        
                     } else {
                         alert('删除文件出错！');
                     }
