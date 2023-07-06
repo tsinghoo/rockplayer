@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>文件列表</title>
+</head>
+
+<body>
+    <h1>文件列表</h1>
+    <ul>
+        <% files.forEach(file=> { %>
+            <li>
+                <a href="#" onclick="toPlayer('<%= file.name %>')"><%=file.name%></a>
+                <a href="#" onclick="confirmDelete('<%= file.name %>')">删除</a>
+            </li>
+            <% }) %>
+    </ul>
+
+    <script>
+        function confirmDelete(fileName) {
+            if (confirm('确定要删除该文件吗？')) {
+                deleteFile(fileName);
+            }
+        }
+
+        function toPlayer(fileName) {
+            window.open("/download/html/index.html?f=" + encodeURIComponent(fileName), fileName);
+        }
+
+        function deleteFile(fileName) {
+            fetch('/delete?file=' + encodeURIComponent(fileName), {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload(); // 删除成功后刷新页面
+                    } else {
+                        alert('删除文件出错！');
+                    }
+                })
+                .catch(error => {
+                    console.error('删除文件出错:', error);
+                    alert('删除文件出错！');
+                });
+        }
+    </script>
+</body>
+
+</html>
