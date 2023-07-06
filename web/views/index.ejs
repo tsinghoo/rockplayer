@@ -10,7 +10,7 @@
     <ul>
         <% files.forEach(file=> { %>
             <li>
-                <a href="#" onclick="toPlayer('<%= file.name %>')">
+		    <a href="#<%=file.name%>" onclick="toPlayer('<%=file.name%>')">
                     <%=file.name%>
                 </a>&nbsp;
                 <% if (file.script){%>♣ <% } %>

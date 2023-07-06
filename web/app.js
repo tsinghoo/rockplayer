@@ -27,7 +27,7 @@ function listFiles() {
     if (suffix.length > 0) {
         matchedFiles = files.filter(file => {
             for (var i = 0; i < suffix.length; ++i) {
-                if (file.includes(suffix[i])) {
+                if (file.endsWith(suffix[i])) {
                     return true;
                 }
             }
@@ -36,7 +36,7 @@ function listFiles() {
         });
     }
     return matchedFiles.map(file => {
-        var script = fs.existsSync(file + ".htm");
+        var script = fs.existsSync(path.join(directoryPath,file + ".htm"));
 
         return {
             name: file,
