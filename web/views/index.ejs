@@ -24,12 +24,14 @@
 
     <script>
         // 在页面加载前，将滚动位置保存到会话存储中
-        window.addEventListener('beforeunload', function () {
+        function refresh() {
             sessionStorage.setItem('scrollPosition', JSON.stringify({
                 x: window.scrollX || window.pageXOffset,
                 y: window.scrollY || window.pageYOffset
             }));
-        });
+
+            window.location.reload(); // 删除成功后刷新页面
+        }
 
         // 在页面加载后，如果会话存储中存在滚动位置，则将页面滚动到该位置
         window.addEventListener('load', function () {
@@ -58,7 +60,7 @@
             })
                 .then(response => {
                     if (response.ok) {
-                        window.location.reload(); // 删除成功后刷新页面
+                        
                     } else {
                         alert('删除文件出错！');
                     }
