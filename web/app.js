@@ -86,28 +86,7 @@ app.get('/video/i', (req, res) => {
 app.get('/video/player', (req, res) => {
     res.render('player');
 });
-app.get('/video/download/:filename', (req, res) => {
-    const fileName = req.params.filename;
-    const filePath = path.join(directoryPath, fileName);
-
-    fs.stat(filePath, (err, stats) => {
-        if (err) {
-          res.statusCode = 404;
-          res.end('File not found');
-          return;
-        }
     
-        const { size } = stats;
-        const contentType = mime.getType(filePath);
-    
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Length', size);
-    
-        const stream = fs.createReadStream(filePath);
-        stream.pipe(res);
-      });
-});
-
 app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const videoPath = path.join(directoryPath, fileName);
