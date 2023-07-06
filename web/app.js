@@ -90,23 +90,22 @@ app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const filePath = path.join(directoryPath, fileName);
 
-    // 检查文件是否存在
-    if (!fs.existsSync(filePath)) {
-        res.status(404).send('文件不存在！');
-        return;
-    }
-
-
-    const contentType = mime.getType(filePath);
-
-    res.setHeader('Content-Type', contentType);
-    // 设置响应头
-    // res.setHeader('Content-Type', 'application/octet-stream');
-    // res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
-
-    // 创建可读流并将文件内容传输到响应中
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
+    fs.stat(filePath, (err, stats) => {
+        if (err) {
+          res.statusCode = 404;
+          res.end('File not found');
+          return;
+        }
+    
+        const { size } = stats;
+        const contentType = mime.getType(filePath);
+    
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Length', size);
+    
+        const stream = fs.createReadStream(filePath);
+        stream.pipe(res);
+      });
 });
 
 // 路由：删除文件
