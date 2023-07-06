@@ -1,7 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-
+const mime = require('mime');
 const app = express();
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
@@ -36,12 +36,12 @@ function listFiles() {
         });
     }
     return matchedFiles.map(file => {
-        var script = fs.existsSync(path.join(directoryPath,file + ".htm"));
+        var script = fs.existsSync(path.join(directoryPath, file + ".htm"));
 
         return {
             name: file,
             path: path.join(directoryPath, file),
-            script:script
+            script: script
         };
     });
 }
@@ -96,6 +96,10 @@ app.get('/video/download/:filename', (req, res) => {
         return;
     }
 
+
+    const contentType = mime.getType(filePath);
+
+    res.setHeader('Content-Type', contentType);
     // 设置响应头
     // res.setHeader('Content-Type', 'application/octet-stream');
     // res.setHeader('Content-Disposition', `attachment; filename=${fileName}`);
