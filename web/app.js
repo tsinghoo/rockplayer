@@ -35,15 +35,20 @@ function listFiles() {
             return false;
         });
     }
-    return matchedFiles.map(file => ({
-        name: file,
-        path: path.join(directoryPath, file)
-    }));
+    return matchedFiles.map(file => {
+        var script = fs.existsSync(file + ".htm");
+
+        return {
+            name: file,
+            path: path.join(directoryPath, file),
+            script:script
+        };
+    });
 }
 
 // 删除文件
 function deleteFiles(prefix) {
-    if (prefix.indexOf("../")>=0){
+    if (prefix.indexOf("../") >= 0) {
         console.error();
     }
     fs.readdir(directoryPath, (err, files) => {
@@ -75,7 +80,8 @@ app.set('view engine', 'ejs');
 // 路由：首页
 app.get('/video/i', (req, res) => {
     const files = listFiles();
-    res.render('index', { files });
+    const remove = req.query.remove;
+    res.render('index', { files: files, remove: remove });
 });
 app.get('/video/player', (req, res) => {
     res.render('player');

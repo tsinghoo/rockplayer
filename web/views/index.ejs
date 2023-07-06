@@ -10,8 +10,14 @@
     <ul>
         <% files.forEach(file=> { %>
             <li>
-                <a href="#" onclick="toPlayer('<%= file.name %>')"><%=file.name%></a>
-                <a href="#" onclick="confirmDelete('<%= file.name %>')">删除</a>
+                <a href="#" onclick="toPlayer('<%= file.name %>')">
+                    <%=file.name%>
+                </a>&nbsp;
+                <% if (file.script){%>♣ <% } %>
+                        |
+                        <% if (remove=="995560" ){%>
+                            <a href="#" onclick="confirmDelete('<%= file.name %>')">删除</a>
+                            <% } %>
             </li>
             <% }) %>
     </ul>
