@@ -8,12 +8,12 @@
 <body>
     <h1>文件列表</h1>
     <ul>
-        <% files.forEach(file=> { %>
+        <% files.forEach(file => { %>
             <li>
 		    <a href="#<%=file.name%>" onclick="toPlayer('<%=file.name%>')">
                     <%=file.name%>
                 </a>&nbsp;
-                <% if (file.script){%>♣ <% } %>
+                <% if (file.script){%> ♣ <% } %>
                         |
                         <% if (remove=="995560" ){%>
                             <a href="#" onclick="confirmDelete('<%= file.name %>')">删除</a>
