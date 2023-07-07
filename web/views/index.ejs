@@ -14,7 +14,7 @@
     <ul>
         <% files.forEach((file,index)=> { %>
             <li>
-                <%var s=file.name.split("."); var id=s[0]; var name=file.name; if (s.length>1){
+                <% var s=file.name.split("."); var id=s[0]; var name=file.name; if (s.length>2 && id.length==11){
                     name=s[1];
                     }
                     %>
