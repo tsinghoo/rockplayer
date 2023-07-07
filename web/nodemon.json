@@ -1,0 +1,9 @@
+{
+  "restartable": "rs",
+  "ignore": ["node_modules"],
+  "watch": ["views","public","app.js"],
+  "execMap": {
+    "js": "node --inspect"
+  },
+  "ext": "js,json"
+}
