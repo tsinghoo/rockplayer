@@ -14,7 +14,7 @@
     <ul>
         <% files.forEach((file,index)=> { %>
             <li>
-                <%=index%>. <a href="#<%=file.name%>" onclick="toPlayer('<%=file.name%>')">
+                <%=index+1%>. <a href="#<%=file.name%>" onclick="toPlayer('<%=file.name%>')">
                         <%=file.name%>
                     </a>&nbsp;
                     <% if (file.script){%>
