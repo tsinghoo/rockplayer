@@ -14,10 +14,16 @@
                     <%=file.name%>
                 </a>&nbsp;
                 <% if (file.script){%> ♣ <% } %>
-                        |
-                        <% if (remove=="995560" ){%>
-                            <a href="#<%=file.name%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
-                            <% } %>
+                        <% var id=file.name.split(".")[0]; %>
+                            |
+                            <a href="#ut<%=file.name%>" onclick="toYoutube('<%= id %>')">Yt</a>
+
+
+                            |
+                            <% if (remove=="995560" ){%>
+                                <a href="#<%=file.name%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
+                                <% } %>
+
             </li>
             <% }) %>
     </ul>
@@ -54,13 +60,17 @@
             window.open("/video/index.html?f=" + encodeURIComponent(fileName), fileName);
         }
 
+        function toYoutube(id) {
+            window.open("https://www.youtube.com/watch?v=" + id, id);
+        }
+
         function deleteFile(fileName) {
             fetch('./delete?file=' + encodeURIComponent(fileName), {
                 method: 'POST'
             })
                 .then(response => {
                     if (response.ok) {
-			refresh();                        
+                        refresh();
                     } else {
                         alert('删除文件出错！');
                     }
