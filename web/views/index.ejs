@@ -14,18 +14,21 @@
     <ul>
         <% files.forEach((file,index)=> { %>
             <li>
-                <%=index+1%>. <a href="#<%=file.name%>" onclick="toPlayer('<%=file.name%>')">
-                        <%=file.name%>
-                    </a>&nbsp;
-                    <% if (file.script){%>
-                        ♣
-                        <% } %>
-                            <% var id=file.name.split(".")[0]; %>
+                <%var s=file.name.split("."); var id=s[0]; var name=file.name; if (s.length>1){
+                    name=s[1];
+                    }
+                    %>
+                    <%=index+1%>. <a href="#<%=id%>" onclick="toPlayer('<%=file.name%>')">
+                            <%=name%>
+                        </a>&nbsp;
+                        <% if (file.script){%>
+                            ♣
+                            <% } %>
                                 |
-                                <a href="#ut<%=file.name%>" onclick="toYoutube('<%= id %>')">Yt</a>
+                                <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
                                 |
                                 <% if (remove=="995560" ){%>
-                                    <a href="#<%=file.name%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
+                                    <a href="#<%=id%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
                                     <% } %>
             </li>
             <div style="height:6px;">&nbsp;</div>
