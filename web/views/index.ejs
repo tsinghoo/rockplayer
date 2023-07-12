@@ -28,7 +28,7 @@
                                 <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
                                 |
                                 <% if (remove=="995560" ){%>
-                                    <% if (file.script){%>
+                                    <% if (!file.script){%>
                                         <a href="#<%=id%>" onclick="toStt('<%= file.name %>')"><span
                                                 style="color:red;">♣</span></a>
                                         <% } %>
