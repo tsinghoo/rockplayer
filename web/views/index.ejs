@@ -28,10 +28,12 @@
                                 <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
                                 |
                                 <% if (remove=="995560" ){%>
-
-                                    <a href="#<%=id%>" onclick="toStt('<%= file.name %>')"><span style="color:red;">♣</span></a>
-                                    <a href="#<%=id%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
-                                    <% } %>
+                                    <% if (file.script){%>
+                                        <a href="#<%=id%>" onclick="toStt('<%= file.name %>')"><span
+                                                style="color:red;">♣</span></a>
+                                        <% } %>
+                                            <a href="#<%=id%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
+                                            <% } %>
             </li>
             <div style="height:6px;">&nbsp;</div>
             <% }) %>
