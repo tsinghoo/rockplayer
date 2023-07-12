@@ -81,27 +81,27 @@ function toStt(fileName) {
             console.error(err);
             return;
         }
-    var files = data.split("\n");
-    var exists = 0;
-    for (var i = 0; i < files.length; ++i) {
-        if (files[i] == fileName) {
-            exists = 1;
-            break;
-        }
-    }
-
-    if (!exists) {
-        files.push(fileName);
-    }
-
-    fs.writeFile(todo, files.join("\n"), 'utf8', (err) => {
-        if (err) {
-            console.error(err);
-            return;
+        var files = data.split("\n");
+        var exists = 0;
+        for (var i = 0; i < files.length; ++i) {
+            if (files[i] == fileName) {
+                exists = 1;
+                break;
+            }
         }
 
-        console.log('文件写入成功。');
-    });
+        if (!exists) {
+            files.push(fileName);
+        }
+
+        fs.writeFile(todo, files.join("\n"), 'utf8', (err) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            console.log('文件写入成功。');
+        });
 
     });
 }
