@@ -28,6 +28,8 @@
                                 <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
                                 |
                                 <% if (remove=="995560" ){%>
+
+                                    <a href="#<%=id%>" onclick="toStt('<%= file.name %>')">+S+</a>
                                     <a href="#<%=id%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
                                     <% } %>
             </li>
@@ -85,6 +87,22 @@
                 .catch(error => {
                     console.error('删除文件出错:', error);
                     alert('删除文件出错！');
+                });
+        }
+
+        function toStt(fileName) {
+            fetch('./toStt?file=' + encodeURIComponent(fileName), {
+                method: 'POST'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        refresh();
+                    } else {
+                        alert('加入字幕出错！');
+                    }
+                })
+                .catch(error => {
+                    alert('加入字幕出错！');
                 });
         }
     </script>

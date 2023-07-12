@@ -73,6 +73,40 @@ function deleteFiles(prefix) {
     });
 }
 
+// 删除文件
+function toStt(fileName) {
+    var todo = path.join(directoryPath, "todo");
+    fs.readFile(todo, 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+
+        console.log(data);
+    });
+    var files = data.split("\n");
+    var exists = 0;
+    for (var i = 0; i < files.length; ++i) {
+        if (files[i] == fileName) {
+            exists = 1;
+            break;
+        }
+    }
+
+    if (!exists) {
+        files.push(fileName);
+    }
+
+    fs.writeFile(todo, files.join("\n"), 'utf8', (err) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+
+        console.log('文件写入成功。');
+    });
+}
+
 // 设置模板引擎
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -86,49 +120,54 @@ app.get('/video/i', (req, res) => {
 app.get('/video/player', (req, res) => {
     res.render('player');
 });
-    
+
 app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const videoPath = path.join(directoryPath, fileName);
     const stat = fs.statSync(videoPath);
     const fileSize = stat.size;
-  
+
     // 获取范围头
     const range = req.headers.range;
     const contentType = mime.getType(videoPath);
     if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-      const chunkSize = (end - start) + 1;
-      const file = fs.createReadStream(videoPath, { start, end });
-      
-      // 设置响应头
-      res.writeHead(206, {
-        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-        "Accept-Ranges": "bytes",
-        "Content-Length": chunkSize,
-        "Content-Type": contentType // 替换为适当的 MIME 类型
-      });
-  
-      // 将视频文件流传递给响应对象
-      file.pipe(res);
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunkSize = (end - start) + 1;
+        const file = fs.createReadStream(videoPath, { start, end });
+
+        // 设置响应头
+        res.writeHead(206, {
+            "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+            "Accept-Ranges": "bytes",
+            "Content-Length": chunkSize,
+            "Content-Type": contentType // 替换为适当的 MIME 类型
+        });
+
+        // 将视频文件流传递给响应对象
+        file.pipe(res);
     } else {
-      // 如果没有范围头，则正常提供整个视频文件
-      res.writeHead(200, {
-        "Content-Length": fileSize,
-        "Content-Type": contentType // 替换为适当的 MIME 类型
-      });
-  
-      const file = fs.createReadStream(videoPath);
-      file.pipe(res);
+        // 如果没有范围头，则正常提供整个视频文件
+        res.writeHead(200, {
+            "Content-Length": fileSize,
+            "Content-Type": contentType // 替换为适当的 MIME 类型
+        });
+
+        const file = fs.createReadStream(videoPath);
+        file.pipe(res);
     }
-  });
+});
 
 // 路由：删除文件
 app.post('/video/delete', (req, res) => {
     const filePath = req.query.file;
     deleteFiles(filePath);
+    res.redirect('/video');
+});
+app.post('/video/toStt', (req, res) => {
+    const filePath = req.query.file;
+    toStt(filePath);
     res.redirect('/video');
 });
 
