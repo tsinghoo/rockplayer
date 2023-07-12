@@ -81,9 +81,6 @@ function toStt(fileName) {
             console.error(err);
             return;
         }
-
-        console.log(data);
-    });
     var files = data.split("\n");
     var exists = 0;
     for (var i = 0; i < files.length; ++i) {
@@ -104,6 +101,8 @@ function toStt(fileName) {
         }
 
         console.log('文件写入成功。');
+    });
+
     });
 }
 
