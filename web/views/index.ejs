@@ -23,18 +23,18 @@
                     }
                     %>
                     <%=index+1%>.
-                    <a href="#<%=id%>" onclick="toPlayer('<%=file.name%>')">
+                    <a href="#<%=id%>" onclick="toPlayer('<%=encodeURIComponent(file.name)%>')">
                         <%=name%>
                     </a>&nbsp;
                     <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
                     |
                     <% if (remove=="995560" ){%>
                         <% if (!file.script){%>
-                            <a href="#<%=id%>" onclick="toStt('<%= file.name %>')">
+                            <a href="#<%=id%>" onclick="toStt('<%= encodeURIComponent(file.name) %>')">
                                 <span style="color:red;">♣</span>
                             </a>
                         <% } %>
-                        <a href="#<%=id%>" onclick="confirmDelete('<%= file.name %>')">删除</a>
+                        <a href="#<%=id%>" onclick="confirmDelete('<%= encodeURIComponent(file.name) %>')">删除</a>
                     <% } %>
                 </li>
                 <div style="height:6px;">&nbsp;</div>
