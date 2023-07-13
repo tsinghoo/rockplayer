@@ -23,18 +23,18 @@
                     }
                     %>
                     <%=index+1%>.
-                    <a href="#<%=id%>" onclick="toPlayer('<%=encodeURIComponent(file.name)%>')">
+                    <a href="#<%=id%>" onclick="toPlayer('<%= JSON.stringify({file:file.name}) %>')">
                         <%=name%>
                     </a>&nbsp;
                     <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
                     |
                     <% if (remove=="995560" ){%>
                         <% if (!file.script){%>
-                            <a href="#<%=id%>" onclick="toStt('<%= encodeURIComponent(file.name) %>')">
+                            <a href="#<%=id%>" onclick="toStt('<%= JSON.stringify({file:file.name}) %>')">
                                 <span style="color:red;">♣</span>
                             </a>
                         <% } %>
-                        <a href="#<%=id%>" onclick="confirmDelete('<%= encodeURIComponent(file.name) %>')">删除</a>
+                        <a href="#<%=id%>" onclick="confirmDelete('<%= JSON.stringify({file:file.name}) %>')">删除</a>
                     <% } %>
                 </li>
                 <div style="height:6px;">&nbsp;</div>
@@ -64,11 +64,13 @@
 
             function confirmDelete(fileName) {
                 if (confirm('确定要删除该文件吗？')) {
+                    fileName = fileName.file;
                     deleteFile(fileName);
                 }
             }
 
             function toPlayer(fileName) {
+                fileName = fileName.file;
                 window.open("/video/index.html?f=" + encodeURIComponent(fileName), fileName);
             }
 
@@ -77,6 +79,7 @@
             }
 
             function deleteFile(fileName) {
+                fileName = fileName.file;
                 fetch('./delete?file=' + encodeURIComponent(fileName), {method: 'POST'}).then(response => {
                     if (response.ok) {
                         refresh();
@@ -90,6 +93,7 @@
             }
 
             function toStt(fileName) {
+                fileName = fileName.file;
                 fetch('./toStt?file=' + encodeURIComponent(fileName), {method: 'POST'}).then(response => {
                     if (response.ok) {
                         refresh();
