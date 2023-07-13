@@ -19,7 +19,7 @@
                     var id=s[0]; 
                     var name=file.name; 
                     if (s.length>2 && id.length==11){
-                      name=file.name.substring(id.length);
+                      name=file.name.substring(id.length+1);
                     }
 
                     var fn=file.name.replace(/'/g, "\\'");
