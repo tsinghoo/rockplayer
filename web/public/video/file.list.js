@@ -6,6 +6,11 @@ window.mhgl_file_list =
       initialize: function () {
         share.log__("mhgl_file_list.init");
         this.bindEvents();
+      },
+      toDelete:function(fn){
+        if (confirm('确定要删除该文件吗？')) {
+          deleteFile(fn);
+        }
       }
     };
 
