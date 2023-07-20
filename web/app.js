@@ -119,6 +119,15 @@ app.get('/video/i', (req, res) => {
 app.get('/video/player', (req, res) => {
     res.render('player');
 });
+app.get('/video/config', (req, res) => {
+    const path = path.join(directoryPath, "config.json");
+    if (fs.existsSync(path)) {
+        const file = fs.createReadStream(path);
+        file.pipe(res);
+    } else {
+        
+    }
+});
 
 app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
