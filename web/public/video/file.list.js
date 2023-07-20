@@ -42,7 +42,7 @@ window.addEventListener('load', function () {
   }
 });
 
-function confirmDelete(fileName) {
+function toDelete(fileName) {
   if (confirm('确定要删除该文件吗？')) {
     deleteFile(fileName);
   }
