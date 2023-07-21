@@ -31,8 +31,26 @@ window.mhgl_file_list =
 
         share.showActionSheet__('请选择', buttons);
       },
-      toTag:function(){
-        
+      toTag: function () {
+        share.closeDilaog__();
+        var buttons = [];
+        self.tags.keys.forEach((e, i) => {
+          buttons.push({
+            text: e,
+            onTap: function () {
+              self.toClickTag(e);
+            }
+          });
+        });
+        buttons.push({
+          text: '新标签',
+          onTap: self.toNewTag
+        });
+
+        share.showActionSheet__('请选择', buttons);
+      },
+      toNewTag: function () {
+        share.todo__();
       },
       bindEvents: function () {
 
