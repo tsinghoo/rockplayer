@@ -20,10 +20,12 @@
         <script src="./file.list.js"></script>
         <script>
             var files=<%-JSON.stringify(files)%>;
+            var tags=<%-JSON.stringify(tags)%>;
         </script>
     </head>
 
     <body>
+        <div id="tags"></div>
         <ul>
             <% files.forEach((file,index)=> { %>
                 <li>

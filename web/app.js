@@ -46,6 +46,19 @@ function listFiles() {
     });
 }
 
+function getTags() {
+    var file = path.join(directoryPath, "tags");
+    const tags = {};
+    try {
+        var text = fs.readFileSync(file, "utf-8");
+        tags = JSON.parse(text);
+    } catch (e) {
+        console.log(file + " not exists");
+    }
+
+    return tags;
+}
+
 // 删除文件
 function deleteFiles(prefix) {
     if (prefix.indexOf("../") >= 0) {
@@ -114,7 +127,8 @@ app.set('view engine', 'ejs');
 app.get('/video/i', (req, res) => {
     const files = listFiles();
     const remove = req.query.remove;
-    res.render('index', { files: files, remove: remove });
+    const tags = getTags();
+    res.render('index', { files: files, tags: tags, remove: remove });
 });
 app.get('/video/player', (req, res) => {
     res.render('player');
@@ -125,7 +139,7 @@ app.get('/video/config', (req, res) => {
         const file = fs.createReadStream(path);
         file.pipe(res);
     } else {
-        
+
     }
 });
 
