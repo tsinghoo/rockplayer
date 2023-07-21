@@ -34,7 +34,7 @@ window.mhgl_file_list =
       toTag: function () {
         share.closeDialog__();
         var buttons = [];
-        self.tags.keys.forEach((e, i) => {
+        Object.keys(self.tags).forEach((e, i) => {
           buttons.push({
             text: e,
             onTap: function () {
