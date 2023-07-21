@@ -18,6 +18,9 @@
         <script src="vendor/bootstrap3-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
         <script src="./js/share.js"></script>
         <script src="./file.list.js"></script>
+        <script>
+            var files=<%=JSON.stringify(files)%>;
+        </script>
     </head>
 
     <body>
@@ -47,7 +50,7 @@
                                 <span style="color:red;">♣</span>
                             </a>
                         <% } %>
-                        <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">删除</a>
+                        <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">⋯</a>
                     <% } %>
                 </li>
                 <div style="height:6px;">&nbsp;</div>
