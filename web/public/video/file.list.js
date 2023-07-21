@@ -33,24 +33,9 @@ window.mhgl_file_list =
       },
       toTag: function () {
         share.closeDialog__();
-        var buttons = [];
-        Object.keys(self.tags).forEach((e, i) => {
-          buttons.push({
-            text: e,
-            onTap: function () {
-              self.toClickTag(e);
-            }
-          });
+        share.selectTag__(self.tags, function(tags){
+          share.toastInfo__(tags.join(","));
         });
-        buttons.push({
-          text: '新标签',
-          onTap: self.toNewTag
-        });
-
-        share.showActionSheet__('请选择', buttons);
-      },
-      toNewTag: function () {
-        share.todo__();
       },
       bindEvents: function () {
 

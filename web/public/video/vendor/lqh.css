@@ -162,6 +162,45 @@ ul.pagination li span input {
 	font-weight: bold;
 }
 
+
+.tsTag {
+	display: inline-block;
+	padding: 6px 12px;
+	background-color: #eaeaea;
+	margin: 5px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.tsTagSelected {
+	background-color: #b3b3b3;
+	color: white;
+}
+#tsNewTagInput {
+	width: 200px;
+	padding: 6px 12px;
+	font-size: 16px;
+	border: none;
+}
+.tsSelectedTags {
+	margin-top: 20px;
+}
+.tsSelectedTag {
+	margin-right: 5px;
+	padding: 6px;
+	background-color: #b3b3b3;
+	display: inline-flex;
+	align-items: center;
+}
+.tsDeleteTagButton {
+	margin-left: 5px;
+	background-color: #ff4d4f;
+	color: white;
+	border: none;
+	padding: 2px 8px;
+	cursor: pointer;
+}
+
 .top-bar-section ul.pagination li {
 	background: transparent
 }
