@@ -1295,6 +1295,98 @@ window.mhgl_share =
       },
 
       selectTag__: function (tags, succ) {
+
+
+        function submit() {
+          succ(selectedTags);
+        }
+        // 切换标签的选中状态
+        function toggleTagSelection(tag) {
+          var index = selectedTags.indexOf(tag);
+
+          if (index === -1) {
+            selectedTags.push(tag);
+          } else {
+            selectedTags.splice(index, 1);
+          } refreshSelectedTags();
+          refreshTagsDisplay();
+        }
+
+        // 刷新标签显示
+        function refreshTagsDisplay() {
+          var tagElements = document.getElementsByClassName("tsTag");
+
+          for (var i = 0; i < tagElements.length; i++) {
+            var tagElement = tagElements[i];
+            var tagText = tagElement.textContent;
+
+            if (selectedTags.includes(tagText)) {
+              tagElement.classList.add("tsTagSelected");
+            } else {
+              tagElement.classList.remove("tsTagSelected");
+            }
+          }
+        }
+
+        // 刷新已选择的标签显示
+        function refreshSelectedTags() {
+          selectedTagsContainer.innerHTML = "";
+
+          selectedTags.forEach(function (tag) {
+            var div = document.createElement("div");
+            div.classList.add("tsSelectedTag");
+
+            var span = document.createElement("span");
+            span.textContent = tag;
+            div.appendChild(span);
+
+            var deleteButton = document.createElement("button");
+            deleteButton.className = "tsDeleteTagButton";
+            deleteButton.textContent = "x";
+            deleteButton.addEventListener("click", function () {
+              deleteSelectedTag(tag);
+            });
+            div.appendChild(deleteButton);
+
+            selectedTagsContainer.appendChild(div);
+          });
+        }
+
+        // 删除已选择的标签
+        function deleteSelectedTag(tag) {
+          var index = selectedTags.indexOf(tag);
+
+          if (index !== -1) {
+            selectedTags.splice(index, 1);
+            refreshSelectedTags();
+          }
+        }
+
+        // 添加新标签
+        function addNewTag() {
+          var newTagInput = document.getElementById("newTagInput");
+          var newTag = newTagInput.value.trim();
+
+          if (newTag !== "") {
+            tags.push(newTag);
+
+            selectedTags.push(newTag); // 将新标签同时加入已选择的标签数组中
+
+            var div = document.createElement("div");
+            div.className = "tsTag";
+            div.textContent = newTag;
+            div.addEventListener("click", function () {
+              toggleTagSelection(newTag);
+            });
+            tagContainer.appendChild(div);
+
+            newTagInput.value = "";
+
+            refreshSelectedTags(); // 刷新已选择的标签显示
+            refreshTagsDisplay(); // 刷新标签显示
+          }
+        }
+
         var title = " 选取标签";
         var content = $("#tagSelectionContainer").html();
         var buttons = null;
@@ -1319,95 +1411,6 @@ window.mhgl_share =
             tagContainer.appendChild(div);
           });
 
-          function submit() {
-            succ(selectedTags);
-          }
-          // 切换标签的选中状态
-          function toggleTagSelection(tag) {
-            var index = selectedTags.indexOf(tag);
-
-            if (index === -1) {
-              selectedTags.push(tag);
-            } else {
-              selectedTags.splice(index, 1);
-            } refreshSelectedTags();
-            refreshTagsDisplay();
-          }
-
-          // 刷新标签显示
-          function refreshTagsDisplay() {
-            var tagElements = document.getElementsByClassName("tsTag");
-
-            for (var i = 0; i < tagElements.length; i++) {
-              var tagElement = tagElements[i];
-              var tagText = tagElement.textContent;
-
-              if (selectedTags.includes(tagText)) {
-                tagElement.classList.add("tsTagSelected");
-              } else {
-                tagElement.classList.remove("tsTagSelected");
-              }
-            }
-          }
-
-          // 刷新已选择的标签显示
-          function refreshSelectedTags() {
-            selectedTagsContainer.innerHTML = "";
-
-            selectedTags.forEach(function (tag) {
-              var div = document.createElement("div");
-              div.classList.add("tsSelectedTag");
-
-              var span = document.createElement("span");
-              span.textContent = tag;
-              div.appendChild(span);
-
-              var deleteButton = document.createElement("button");
-              deleteButton.className = "tsDeleteTagButton";
-              deleteButton.textContent = "x";
-              deleteButton.addEventListener("click", function () {
-                deleteSelectedTag(tag);
-              });
-              div.appendChild(deleteButton);
-
-              selectedTagsContainer.appendChild(div);
-            });
-          }
-
-          // 删除已选择的标签
-          function deleteSelectedTag(tag) {
-            var index = selectedTags.indexOf(tag);
-
-            if (index !== -1) {
-              selectedTags.splice(index, 1);
-              refreshSelectedTags();
-            }
-          }
-
-          // 添加新标签
-          function addNewTag() {
-            var newTagInput = document.getElementById("newTagInput");
-            var newTag = newTagInput.value.trim();
-
-            if (newTag !== "") {
-              tags.push(newTag);
-
-              selectedTags.push(newTag); // 将新标签同时加入已选择的标签数组中
-
-              var div = document.createElement("div");
-              div.className = "tsTag";
-              div.textContent = newTag;
-              div.addEventListener("click", function () {
-                toggleTagSelection(newTag);
-              });
-              tagContainer.appendChild(div);
-
-              newTagInput.value = "";
-
-              refreshSelectedTags(); // 刷新已选择的标签显示
-              refreshTagsDisplay(); // 刷新标签显示
-            }
-          }
         };
 
         share.showDialog__(title, content, buttons, onHide, onShown);
