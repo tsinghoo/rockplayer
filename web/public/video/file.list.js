@@ -32,7 +32,7 @@ window.mhgl_file_list =
         share.showActionSheet__('请选择', buttons);
       },
       toTag: function () {
-        share.closeDilaog__();
+        share.closeDialog__();
         var buttons = [];
         self.tags.keys.forEach((e, i) => {
           buttons.push({
