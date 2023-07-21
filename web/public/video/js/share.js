@@ -1398,7 +1398,7 @@ window.mhgl_share =
 
           var tagContainer = document.getElementById("tagContainer" + id);
           var selectedTagsContainer = document.getElementById("selectedTags" + id);
-          $('#newTagInput').blur(addNewTag);
+          $('#newTagInput' + id).blur(addNewTag);
           $('.stConfirm').on("click", submit);
 
 
