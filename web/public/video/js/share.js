@@ -1364,7 +1364,7 @@ window.mhgl_share =
 
         // 添加新标签
         function addNewTag() {
-          var newTagInput = document.getElementById("newTagInput");
+          var newTagInput = document.getElementById("newTagInput" + id);
           var newTag = newTagInput.value.trim();
 
           if (newTag !== "") {
@@ -1388,14 +1388,16 @@ window.mhgl_share =
         }
 
         var title = " 选取标签";
+        var id = 0;
         var content = $("#tagSelectionContainer").html();
+        content = content.replace(/#id#/g, id);
         var buttons = null;
         var onHide = null;
         var onShown = function () {
           var selectedTags = []; // 存储用户选择的标签
 
-          var tagContainer = document.getElementById("tagContainer");
-          var selectedTagsContainer = document.getElementById("selectedTags");
+          var tagContainer = document.getElementById("tagContainer" + id);
+          var selectedTagsContainer = document.getElementById("selectedTags" + id);
           $('#newTagInput').blur(addNewTag);
           $('.stConfirm').on("click", submit);
 
