@@ -48,7 +48,7 @@ function listFiles() {
 
 function getTags() {
     var file = path.join(directoryPath, "tags");
-    const tags = {};
+    let tags = {};
     try {
         var text = fs.readFileSync(file, "utf-8");
         tags = JSON.parse(text);
