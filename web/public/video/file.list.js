@@ -4,8 +4,8 @@ window.mhgl_file_list =
     var share = window.mhgl_share;
     var self = {
       clickedFile: null,
-      files: files,
-      tags: tags,
+      files: window.files,
+      tags: window.tags,
       initialize: function () {
         share.log__("mhgl_file_list.init");
         //$("body").html();
