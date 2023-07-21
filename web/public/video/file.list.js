@@ -3,14 +3,28 @@ window.mhgl_file_list =
   (function () {
     var share = window.mhgl_share;
     var self = {
+      clickedFile: null,
       initialize: function () {
         share.log__("mhgl_file_list.init");
-        this.bindEvents();
+        self.bindEvents();
       },
-      toDelete:function(fn){
+      toDelete: function () {
         if (confirm('确定要删除该文件吗？')) {
-          deleteFile(fn);
+          deleteFile(self.clickedFile);
         }
+      },
+      moreAction: function (fn) {
+        self.clickedFile = fn;
+        var buttons = [];
+        buttons.push({
+          text: '删除',
+          onTap: self.toDelete
+        });
+
+        share.showActionSheet__('请选择', buttons);
+      },
+      bindEvents: function () {
+
       }
     };
 
