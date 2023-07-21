@@ -33,7 +33,7 @@ window.mhgl_file_list =
       },
       toTag: function () {
         share.closeDialog__();
-        share.selectTag__(self.tags, function(tags){
+        share.selectTag__(Object.keys(self.tags), function (tags) {
           share.toastInfo__(tags.join(","));
         });
       },
