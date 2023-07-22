@@ -9,8 +9,11 @@ window.mhgl_file_list =
       initialize: function () {
         share.log__("mhgl_file_list.init");
         //$("body").html();
-        $("#tags").html(self.tags.keys.join(" "));
+        self.showTags();
         self.bindEvents();
+      },
+      showTags: function () {
+        $("#tags").html(Object.keys(self.tags).join(" "));
       },
       toDelete: function () {
         if (confirm('确定要删除该文件吗？')) {
@@ -34,9 +37,35 @@ window.mhgl_file_list =
       toTag: function () {
         share.closeDialog__();
         share.selectTag__(Object.keys(self.tags), function (tags) {
-          share.toastInfo__(tags.join(","));
+          self.tagFile(tags);
         });
       },
+      tagFile: function (tags) {
+        var url = "./tag";
+        var files = [self.clickedFile];
+        var params = {
+          tags: tags,
+          files: files
+        };
+
+        var success = function (res) {
+          self.tags = res;
+          self.showTags();
+        };
+
+        var fail = function (e) {
+          share.toastError__(e);
+        };
+
+
+        share.httpGet__(
+          url,
+          params,
+          success,
+          fail
+        );
+      },
+
       bindEvents: function () {
 
       }

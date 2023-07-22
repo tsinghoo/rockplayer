@@ -130,6 +130,24 @@ app.get('/video/i', (req, res) => {
     const tags = getTags();
     res.render('index', { files: files, tags: tags, remove: remove });
 });
+app.get('/video/tag', (req, res) => {
+    const files = JSON.parse(req.query.files);
+    const tags = JSON.parse(req.query.tags);
+    let otags = getTags();
+    for (var i = 0; i < tags.length; ++i) {
+        var f = otags[tags[i]];
+        if (f == null) {
+            f = {};
+            otags[tags[i]] = f;
+        }
+        for (var j = 0; j < files.length; ++j) {
+            f[files[j]] = null;
+        }
+    }
+
+    fs.writeFileSync(path.join(directoryPath, "tags"), JSON.stringify(otags));
+    res.json(otags);
+});
 app.get('/video/player', (req, res) => {
     res.render('player');
 });
