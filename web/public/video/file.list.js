@@ -49,7 +49,7 @@ window.mhgl_file_list =
         };
 
         var success = function (res) {
-          self.tags = res;
+          self.tags = res.data;
           self.showTags();
         };
 
