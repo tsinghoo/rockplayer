@@ -13,7 +13,17 @@ window.mhgl_file_list =
         self.bindEvents();
       },
       showTags: function () {
-        $("#tags").html(Object.keys(self.tags).join(" "));
+        var temp = $("#templateTag").html();
+        $("#tags").html(Object.keys(self.tags).map(function (item, index) {
+          var html = temp.replace(/#tag#/g, item);
+          return html;
+        }).join(""));
+
+        $(".itemTag").on("click", self.tagClicked);
+      },
+      tagClicked: function (e) {
+        var tag = $(e.currentTarget).html();
+        
       },
       toDelete: function () {
         if (confirm('确定要删除该文件吗？')) {

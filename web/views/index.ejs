@@ -20,7 +20,7 @@
     </head>
 
     <body>
-        <div id="tags"></div>
+        <div class="flexrow" id="tags"></div>
         <ul>
             <% files.forEach((file,index)=> { %>
                 <li>
@@ -93,6 +93,9 @@
         <div id="dialogButtons" class="flexrow center">
             #buttons#
         </div>
+    </div>
+    <div id="templateTag" style="display: none">
+        <div class="itemTag">#tag#</div>
     </div>
 
 </html>
