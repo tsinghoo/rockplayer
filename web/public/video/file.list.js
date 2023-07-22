@@ -44,8 +44,8 @@ window.mhgl_file_list =
         var url = "./tag";
         var files = [self.clickedFile];
         var params = {
-          tags: tags,
-          files: files
+          tags: JSON.stringify(tags),
+          files: JSON.stringify(files)
         };
 
         var success = function (res) {
