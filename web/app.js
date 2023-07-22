@@ -149,8 +149,8 @@ app.get('/video/tag', (req, res) => {
     }
 
     fs.writeFileSync(path.join(directoryPath, "tags"), JSON.stringify(otags));
-    var res = req.query.js + "(" + JSON.stringify(otags) + ")";
-    res.json(res);
+    var resp = req.query.js + "(" + JSON.stringify(otags) + ")";
+    res.json(resp);
 });
 app.get('/video/player', (req, res) => {
     res.render('player');
