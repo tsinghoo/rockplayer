@@ -131,6 +131,7 @@ app.get('/video/i', (req, res) => {
     res.render('index', { files: files, tags: tags, remove: remove });
 });
 app.get('/video/tag', (req, res) => {
+    console.log("video/tag");
     const files = JSON.parse(req.query.files);
     const tags = JSON.parse(req.query.tags);
     let otags = getTags();
