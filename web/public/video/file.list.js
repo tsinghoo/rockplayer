@@ -11,6 +11,13 @@ window.mhgl_file_list =
         //$("body").html();
         self.showTags();
         self.bindEvents();
+
+        var scrollPosition = sessionStorage.getItem('scrollPosition');
+        if (scrollPosition) {
+          scrollPosition = JSON.parse(scrollPosition);
+          window.scrollTo(scrollPosition.x, scrollPosition.y);
+          sessionStorage.removeItem('scrollPosition');
+        }
       },
       showTags: function () {
         var temp = $("#templateTag").html();
@@ -19,11 +26,12 @@ window.mhgl_file_list =
           return html;
         }).join(""));
 
+
         $(".itemTag").on("click", self.tagClicked);
       },
       tagClicked: function (e) {
         var tag = $(e.currentTarget).html();
-        
+
       },
       toDelete: function () {
         if (confirm('确定要删除该文件吗？')) {
@@ -99,15 +107,6 @@ function refresh() {
   window.location.reload(); // 删除成功后刷新页面
 }
 
-// 在页面加载后，如果会话存储中存在滚动位置，则将页面滚动到该位置
-window.addEventListener('load', function () {
-  var scrollPosition = sessionStorage.getItem('scrollPosition');
-  if (scrollPosition) {
-    scrollPosition = JSON.parse(scrollPosition);
-    window.scrollTo(scrollPosition.x, scrollPosition.y);
-    sessionStorage.removeItem('scrollPosition');
-  }
-});
 
 function toDelete(fileName) {
   if (confirm('确定要删除该文件吗？')) {
