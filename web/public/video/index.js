@@ -137,6 +137,21 @@ window.document.onkeydown = (event) => {
 
     return true;
 }
+window.document.onclick = (event) => {
+    console.log("document.onclick", event);
+    if (player) {
+        if (player.paused()) {
+            player.play();
+            $("#mask").css("z-index", 1);
+        } else {
+            player.pause();
+        }
+
+        return false;
+    }
+
+    return true;
+}
 window.addEventListener('resize', function () {
     console.log('resize')
     const vid = document.getElementById('my-video')
