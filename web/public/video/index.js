@@ -234,14 +234,8 @@ function play(fileName) {
         maskEnabled = this.checked;
 
         if (maskEnabled) {
-            if (player) {
-                if (player.paused()) {
-                    $("#mask").css("z-index", 100);
-                } else {
-                    $("#mask").css("z-index", 1);
-                }
-            }
-        }else{
+            $("#mask").css("z-index", 100);
+        } else {
             $("#mask").css("z-index", 1);
         }
     });
