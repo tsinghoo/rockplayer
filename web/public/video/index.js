@@ -239,12 +239,8 @@ function play(fileName) {
             $("#mask").css("z-index", 1);
         }
     });
-
-    player.on('play', function () {
-        $("#mask").css("z-index", 1);
-    });
     player.on('pause', function () {
-        maskEnabled && $("#mask").css("z-index", 100);
+        //maskEnabled && $("#mask").css("z-index", 100);
         for (var i = 0; i < recentFiles.length; ++i) {
             var file = recentFiles[i];
             if (file.name == fileName) {
