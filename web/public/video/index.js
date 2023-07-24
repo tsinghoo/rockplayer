@@ -100,7 +100,6 @@ window.document.onkeydown = (event) => {
         if (player) {
             if (player.paused()) {
                 player.play();
-                $("#mask").css("z-index", 1);
             } else {
                 player.pause();
             }
@@ -116,8 +115,6 @@ window.document.onkeydown = (event) => {
                 step = 15;
             }
             player.currentTime(time + step);
-            //player.play();
-            $("#mask").css("z-index", 1);
         }
         return false;
     }
@@ -129,8 +126,6 @@ window.document.onkeydown = (event) => {
                 step = 15;
             }
             player.currentTime(time - step);
-            //player.play();
-            $("#mask").css("z-index", 1);
         }
         return false;
     }
@@ -142,7 +137,6 @@ $("#mask").on("click", (event) => {
     if (player) {
         if (player.paused()) {
             player.play();
-            $("#mask").css("z-index", 1);
         } else {
             player.pause();
         }
@@ -308,7 +302,6 @@ function play(fileName) {
                 if (time > -1) {
                     player.currentTime(time);
                     player.play();
-                    $("#mask").css("z-index", 1);
                 }
             });
         });
