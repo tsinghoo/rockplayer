@@ -137,8 +137,8 @@ window.document.onkeydown = (event) => {
 
     return true;
 }
-window.document.onclick = (event) => {
-    console.log("document.onclick", event);
+$("#mask").on("click", (event) => {
+    console.log("mask.onclick", event);
     if (player) {
         if (player.paused()) {
             player.play();
@@ -151,7 +151,8 @@ window.document.onclick = (event) => {
     }
 
     return true;
-}
+});
+
 window.addEventListener('resize', function () {
     console.log('resize')
     const vid = document.getElementById('my-video')
@@ -231,6 +232,18 @@ function play(fileName) {
 
     $("#maskCheckbox").change(function () {
         maskEnabled = this.checked;
+
+        if (maskEnabled) {
+            if (player) {
+                if (player.paused()) {
+                    $("#mask").css("z-index", 100);
+                } else {
+                    $("#mask").css("z-index", 1);
+                }
+            }
+        }else{
+            $("#mask").css("z-index", 1);
+        }
     });
 
     player.on('play', function () {
