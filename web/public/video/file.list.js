@@ -13,9 +13,9 @@ window.mhgl_file_list =
         self.showTags();
         self.bindEvents();
         self.files = window.files.sort((a, b) => {
-          let an = getFileName(a);
-          let bn = getFileName(b);
-          return an - bn;
+          let an = self.getFileName(a);
+          let bn = self.getFileName(b);
+          return an > bn;
         });
         var scrollPosition = sessionStorage.getItem('scrollPosition');
         if (scrollPosition) {

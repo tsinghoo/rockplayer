@@ -142,7 +142,7 @@ app.get('/video/i', (req, res) => {
         let an = getFileName(a);
         let bn = getFileName(b);
 
-        return an - bn;
+        return an > bn;
     });
     const remove = req.query.remove;
     const tags = getTags();
