@@ -17,7 +17,7 @@ window.mhgl_file_list =
           self.i++;
           let an = self.getFileName(a);
           let bn = self.getFileName(b);
-          let res = an > bn ? -1 : 1;
+          let res = an > bn ? 1 : -1;
           console.log(self.i + ":" + res);
           console.log(an);
           console.log(bn);
