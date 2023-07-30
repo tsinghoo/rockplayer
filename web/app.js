@@ -126,6 +126,9 @@ app.set('view engine', 'ejs');
 // 路由：首页
 app.get('/video/i', (req, res) => {
     const files = listFiles();
+    files.sort((a, b) => { 
+        return a - b;
+    });
     const remove = req.query.remove;
     const tags = getTags();
     res.render('index', { files: files, tags: tags, remove: remove });
