@@ -6,6 +6,7 @@ window.mhgl_file_list =
       clickedFile: null,
       files: window.files,
       tags: window.tags,
+      i: 0,
 
       initialize: function () {
         share.log__("mhgl_file_list.init");
@@ -13,9 +14,13 @@ window.mhgl_file_list =
         self.showTags();
         self.bindEvents();
         self.files = window.files.sort((a, b) => {
+          self.i++;
           let an = self.getFileName(a);
           let bn = self.getFileName(b);
-          return an > bn;
+          let res = an > bn;
+          console.log(self.i + ":" + res);
+          console.log(an);
+          console.log(bn);
         });
         var scrollPosition = sessionStorage.getItem('scrollPosition');
         if (scrollPosition) {
