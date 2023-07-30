@@ -139,8 +139,8 @@ app.get('/video/i', (req, res) => {
     let files = listFiles();
     files = files.sort((a, b) => {
         i++;
-        let an = self.getFileName(a);
-        let bn = self.getFileName(b);
+        let an = getFileName(a);
+        let bn = getFileName(b);
         let res = an > bn ? -1 : 1;
         console.log(i + ":" + res);
         console.log(an);
