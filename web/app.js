@@ -123,24 +123,24 @@ function toStt(fileName) {
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
-function getFileName(file){
-  var s=file.name.split("."); 
-                    var id=s[0]; 
-                    var name=file.name; 
-                    if (s.length>2 && id.length==11){
-                      name=file.name.substring(id.length+1);
-                    }
-	return name;
+function getFileName(file) {
+    var s = file.name.split(".");
+    var id = s[0];
+    var name = file.name;
+    if (s.length > 2 && id.length == 11) {
+        name = file.name.substring(id.length + 1);
+    }
+    return name;
 }
 
 
 // 路由：首页
 app.get('/video/i', (req, res) => {
     let files = listFiles();
-    files = files.sort((a, b) => { 
+    files = files.sort((a, b) => {
 
-	let an=getFileName(a);
-	let bn=getFileName(b);
+        let an = getFileName(a);
+        let bn = getFileName(b);
 
         return an - bn;
     });

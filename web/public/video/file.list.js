@@ -6,18 +6,33 @@ window.mhgl_file_list =
       clickedFile: null,
       files: window.files,
       tags: window.tags,
+
       initialize: function () {
         share.log__("mhgl_file_list.init");
         //$("body").html();
         self.showTags();
         self.bindEvents();
-
+        self.files = window.files.sort((a, b) => {
+          let an = getFileName(a);
+          let bn = getFileName(b);
+          return an - bn;
+        });
         var scrollPosition = sessionStorage.getItem('scrollPosition');
         if (scrollPosition) {
           scrollPosition = JSON.parse(scrollPosition);
           window.scrollTo(scrollPosition.x, scrollPosition.y);
           sessionStorage.removeItem('scrollPosition');
         }
+      },
+
+      getFileName: function (file) {
+        var s = file.name.split(".");
+        var id = s[0];
+        var name = file.name;
+        if (s.length > 2 && id.length == 11) {
+          name = file.name.substring(id.length + 1);
+        }
+        return name;
       },
       showTags: function () {
         var temp = $("#templateTag").html();
