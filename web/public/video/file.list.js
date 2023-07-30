@@ -21,6 +21,7 @@ window.mhgl_file_list =
           console.log(self.i + ":" + res);
           console.log(an);
           console.log(bn);
+          return res;
         });
         var scrollPosition = sessionStorage.getItem('scrollPosition');
         if (scrollPosition) {
