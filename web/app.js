@@ -133,16 +133,19 @@ function getFileName(file) {
     return name;
 }
 
-
+var i = 0;  
 // 路由：首页
 app.get('/video/i', (req, res) => {
     let files = listFiles();
     files = files.sort((a, b) => {
-
-        let an = getFileName(a);
-        let bn = getFileName(b);
-
-        return an < bn ? 1 : -1;
+        i++;
+        let an = self.getFileName(a);
+        let bn = self.getFileName(b);
+        let res = an > bn ? -1 : 1;
+        console.log(i + ":" + res);
+        console.log(an);
+        console.log(bn);
+        return res;
     });
     const remove = req.query.remove;
     const tags = getTags();
