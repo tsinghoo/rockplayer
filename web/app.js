@@ -20,6 +20,18 @@ if (args.length > 4) {
 }
 console.log(args[4]);
 console.log(suffix.join(" "));
+
+function isVideo(file){
+    if (suffix.length > 0) {
+        for (var i = 0; i < suffix.length; ++i) {
+            if (file.endsWith(suffix[i])) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 // 列出目录下的所有文件
 function listFiles() {
     const files = fs.readdirSync(directoryPath);
@@ -71,7 +83,7 @@ function deleteFiles(prefix) {
         }
 
         files.forEach(file => {
-            if (file.startsWith(prefix)) {
+            if (file.startsWith(prefix) && isVideo(file)) {
                 const filePath = path.join(directoryPath, file);
 
                 fs.unlink(filePath, err => {
