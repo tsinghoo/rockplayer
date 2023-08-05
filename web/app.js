@@ -194,7 +194,7 @@ app.get('/video/updateScript', (req, res) => {
         scripts = scripts.replace(new RegExp(params.deletedWord), params.newWord);
     } else {
         var script = scripts.split("\n");
-        script[params.index] = script[params.index].replace(new RegExp(params.oldScript), params.newScript);
+        script[params.index] = script[params.index].replace(new RegExp(params.oldScript, "g"), params.newScript);
         scripts = script.join("\n");
     }
     fs.writeFileSync(filePath, scripts);
