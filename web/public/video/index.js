@@ -397,7 +397,7 @@ function play(fileName) {
                                     }
                                     deletedWord = "";
                                 } else {
-                                    script[id] = script[id].replace(new RegExp(scriptBeforeDel), newScript);
+                                    script[id] = script[id].replace(new RegExp(oldScript), newScript);
                                     let line = script[id].replace(/-->.*\] /g, "");
                                     line = line.replace(/ <br>/g, "");
                                     line = line.replace(/\[/g, "");
