@@ -273,6 +273,7 @@ function play(fileName) {
     });
 
     let script = message.script;
+    let editing=false;
     if (script == null) {
         $("#script").html();
         $("#script").addClass("hide");
@@ -343,9 +344,11 @@ function play(fileName) {
                         let deletedWord = "";
                         setTimeout(function () {
                             $(".scriptInput").focus();
+                            editing = true;
                             scriptBeforeDel = "";
                         }, 200);
                         $(".scriptInput").on("keydown", function (event) {
+                            event.stopPropagation();
                             if (event.key == "Delete" || event.key == "Backspace") {
                                 scriptBeforeDel = event.target.value;
                                 deletedWord = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
@@ -353,6 +356,7 @@ function play(fileName) {
                             }
                         });
                         $(".scriptInput").on("keyup", function (event) {
+                            event.stopPropagation();
                             if (event.key == "Enter" && !event.shiftKey) {
                                 let newScript = $(this).val().trim();
                                 line = time + " " + newScript;
