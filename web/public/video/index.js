@@ -385,7 +385,7 @@ function play(fileName) {
 
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
                                 var fileName = share.getParameter__("f");
-                                updateScript(id, fileName + ".htm", scriptBeforeDel, newScript, deletedWord, newWord);
+                                updateScript(id, fileName + ".htm", oldScript, newScript, deletedWord, newWord);
                                 if (deletedWord != "" && newWord != "") {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
