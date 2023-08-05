@@ -191,7 +191,7 @@ app.get('/video/updateScript', (req, res) => {
     console.log("filePath:" + filePath);
     var scripts = fs.readFileSync(filePath, "utf-8");
     if (params.deletedWord != '' && params.newWord != '') {
-        scripts = scripts.replace(new RegExp(params.deletedWord), params.newWord);
+        scripts = scripts.replace(new RegExp(params.deletedWord, "g"), params.newWord);
     } else {
         var script = scripts.split("\n");
         script[params.index] = script[params.index].replace(new RegExp(params.oldScript, "g"), params.newScript);
