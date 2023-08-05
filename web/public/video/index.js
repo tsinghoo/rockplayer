@@ -328,7 +328,7 @@ function play(fileName) {
                     if (!dblclick) {
                         let line = ele.text().trim();
                         let id = ele.attr("id").split("_")[1];
-                        let time = find(/\d\d:\d\d:\d\d /gi, line);
+                        let time = find(/\d\d:\d\d.\d\d\d /gi, line);
                         let oldScript = line;
                         if (time != null) {
                             oldScript = line.split(time)[1].trim();
@@ -349,7 +349,7 @@ function play(fileName) {
                             if (event.key == "Delete" || event.key == "Backspace") {
                                 scriptBeforeDel = event.target.value;
                                 deletedWord = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
-                                //console.log("Deleted word: " + deletedWord);
+                                console.log("Deleted word: " + deletedWord);
                             }
                         });
                         $(".scriptInput").on("keyup", function (event) {
