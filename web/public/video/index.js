@@ -368,7 +368,7 @@ function play(fileName) {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
                                         script[i] = script[i].replace(new RegExp(deletedWord), newWord);
-                                        var line = script[i].replace(/-->.*\] /g, "");
+                                        let line = script[i].replace(/-->.*\] /g, "");
                                         line = line.replace(/ <br>/g, "");
                                         line = line.replace(/\[/g, "");
                                         $("#script_" + i).html(line);
