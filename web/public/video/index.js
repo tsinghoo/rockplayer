@@ -177,7 +177,7 @@ let getSeconds = function (line) {
     return -1;
 };
 
-function updateScript(index, oldScript, newScript, deletedWord, newWord) {
+function updateScript(index, file, oldScript, newScript, deletedWord, newWord) {
     var url = "./updateScript";
     var files = [self.clickedFile];
     var params = {
@@ -385,7 +385,7 @@ function play(fileName) {
 
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
 
-                                updateScript(id, scriptBeforeDel, newScript, deletedWord, newWord);
+                                updateScript(id, message.script, scriptBeforeDel, newScript, deletedWord, newWord);
                                 if (deletedWord != "" && newWord != "") {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
