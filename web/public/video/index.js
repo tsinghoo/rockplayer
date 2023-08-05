@@ -359,8 +359,8 @@ function play(fileName) {
                             event.stopPropagation();
                             if (event.key == "Enter" && !event.shiftKey) {
                                 let newScript = $(this).val().trim();
-                                line = time + " " + newScript;
-                                script[id] = line;
+                                //line = time + " " + newScript;
+                                //script[id] = line;
     
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
     
@@ -376,7 +376,7 @@ function play(fileName) {
                                     deletedWord = "";
                                 }
     
-                                $("#script_" + id).html(line);
+                                //$("#script_" + id).html(line);
                                 updateScript(script);
                             }
                         });
