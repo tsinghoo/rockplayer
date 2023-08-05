@@ -177,6 +177,10 @@ let getSeconds = function (line) {
     return -1;
 };
 
+function updateScript(){
+    share.todo__();
+}
+
 function play(fileName) {
     console.log('fileSelected:', fileName);
     fileName = encodeURIComponent(fileName);
@@ -295,14 +299,95 @@ function play(fileName) {
 
             $("#script").html(htmls.join(""));
             $("#script").removeClass("hide");
+            let dblclick = false;
+            let dblClickInterval = 300;
 
             $(".scriptLine").on("dblclick", function (e) {
+                dblclick = true;
                 let line = $(this).html();
                 let time = getSeconds(line);
                 if (time > -1) {
                     player.currentTime(time);
                     player.play();
                 }
+
+                setTimeout(function () {
+                    dblclick = false;
+                }, dblClickInterval);
+            });
+
+            $(".scriptLine").on("click", function (e) {
+
+                let ele = $(this);
+                if (ele.html().indexOf("<input type") > 0) {
+                    return;
+                }
+    
+                setTimeout(function () {
+    
+                    if (!dblclick) {
+                        let line = ele.text().trim();
+                        let id = ele.attr("id").split("_")[1];
+                        let time = find(/\d\d:\d\d:\d\d /gi, line);
+                        let oldScript = line;
+                        if (time != null) {
+                            oldScript = line.split(time)[1].trim();
+                        }
+    
+                        let html = $("#editorTemplate").html();
+                        html = html.replace(/#time#/g, time);
+                        html = html.replace(/#id#/g, id);
+                        html = html.replace(/#script#/g, oldScript);
+                        ele.html(html);
+                        let scriptBeforeDel = "";
+                        let deletedWord = "";
+                        setTimeout(function () {
+                            $(".scriptInput").focus();
+                            scriptBeforeDel = "";
+                        }, 200);
+                        $(".scriptInput").on("keydown", function (event) {
+                            if (event.key == "Delete" || event.key == "Backspace") {
+                                scriptBeforeDel = event.target.value;
+                                deletedWord = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
+                                //console.log("Deleted word: " + deletedWord);
+                            }
+                        });
+                        $(".scriptInput").on("keyup", function (event) {
+                            if (event.key == "Enter" && !event.shiftKey) {
+                                let newScript = $(this).val().trim();
+                                line = time + " " + newScript;
+                                script[id] = line;
+    
+                                let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
+    
+                                if (deletedWord != "" && newWord != "") {
+                                    console.log(deletedWord + "->" + newWord);
+                                    for (let i = 0; i < script.length; ++i) {
+                                        script[i] = script[i].replace(new RegExp(deletedWord), newWord);
+                                        $("#script_" + i).html(script[i]);
+                                    }
+                                    deletedWord = "";
+                                }
+    
+                                $("#script_" + id).html(line);
+                                ipcRenderer.send("updateScript", JSON.stringify(script));
+                            }
+                        });
+    
+    
+                        $(".scriptInput").blur(function (e) {
+                            let s = $(this).val().trim();
+                            line = time + " " + s;
+                            script[id] = line;
+                            $("#script_" + id).html(line);
+                            updateScript(script);
+                        });
+    
+                        $(".scriptInput").on("click", function (e) {
+                            e.stopPropagation();
+                        });
+                    }
+                }, dblClickInterval);
             });
         });
     }
