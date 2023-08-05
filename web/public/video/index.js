@@ -177,7 +177,7 @@ let getSeconds = function (line) {
     return -1;
 };
 
-function updateScript(){
+function updateScript() {
     share.todo__();
 }
 
@@ -273,7 +273,7 @@ function play(fileName) {
     });
 
     let script = message.script;
-    let editing=false;
+    let editing = false;
     if (script == null) {
         $("#script").html();
         $("#script").addClass("hide");
@@ -323,9 +323,9 @@ function play(fileName) {
                 if (ele.html().indexOf("<input type") > 0) {
                     return;
                 }
-    
+
                 setTimeout(function () {
-    
+
                     if (!dblclick) {
                         let line = ele.text().trim();
                         let id = ele.attr("id").split("_")[1];
@@ -334,7 +334,7 @@ function play(fileName) {
                         if (time != null) {
                             oldScript = line.split(time)[1].trim();
                         }
-    
+
                         let html = $("#editorTemplate").html();
                         html = html.replace(/#time#/g, time);
                         html = html.replace(/#id#/g, id);
@@ -361,9 +361,9 @@ function play(fileName) {
                                 let newScript = $(this).val().trim();
                                 //line = time + " " + newScript;
                                 //script[id] = line;
-    
+
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
-    
+
                                 if (deletedWord != "" && newWord != "") {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
@@ -374,14 +374,20 @@ function play(fileName) {
                                         $("#script_" + i).html(line);
                                     }
                                     deletedWord = "";
+                                } else {
+                                    script[i] = script[i].replace(new RegExp(scriptBeforeDel), newScript);
+                                    let line = script[i].replace(/-->.*\] /g, "");
+                                    line = line.replace(/ <br>/g, "");
+                                    line = line.replace(/\[/g, "");
+                                    $("#script_" + id).html(line);
                                 }
-    
+
                                 //$("#script_" + id).html(line);
                                 updateScript(script);
                             }
                         });
-    
-    
+
+
                         $(".scriptInput").blur(function (e) {
                             let s = $(this).val().trim();
                             line = time + " " + s;
@@ -389,7 +395,7 @@ function play(fileName) {
                             $("#script_" + id).html(line);
                             updateScript(script);
                         });
-    
+
                         $(".scriptInput").on("click", function (e) {
                             e.stopPropagation();
                         });
