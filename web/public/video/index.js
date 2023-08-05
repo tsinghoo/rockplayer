@@ -177,8 +177,29 @@ let getSeconds = function (line) {
     return -1;
 };
 
-function updateScript() {
-    share.todo__();
+function updateScript(index, oldScript, newScript, deletedWord, newWord) {
+    var url = "./updateScript";
+    var files = [self.clickedFile];
+    var params = {
+        "params": JSON.stringify({
+            index, oldScript, newScript, deletedWord, newWord
+        })
+    };
+
+    var success = function (res) {
+    };
+
+    var fail = function (e) {
+        share.toastError__(e);
+    };
+
+
+    share.httpGet__(
+        url,
+        params,
+        success,
+        fail
+    );
 }
 
 function play(fileName) {
@@ -364,6 +385,7 @@ function play(fileName) {
 
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
 
+                                updateScript(id, scriptBeforeDel, newScript, deletedWord, newWord);
                                 if (deletedWord != "" && newWord != "") {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
@@ -383,17 +405,15 @@ function play(fileName) {
                                 }
 
                                 //$("#script_" + id).html(line);
-                                updateScript(script);
                             }
                         });
 
 
                         $(".scriptInput").blur(function (e) {
-                            let s = $(this).val().trim();
-                            line = time + " " + s;
-                            script[id] = line;
+                            let line = script[id].replace(/-->.*\] /g, "");
+                            line = line.replace(/ <br>/g, "");
+                            line = line.replace(/\[/g, "");
                             $("#script_" + id).html(line);
-                            updateScript(script);
                         });
 
                         $(".scriptInput").on("click", function (e) {

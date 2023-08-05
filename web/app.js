@@ -21,7 +21,7 @@ if (args.length > 4) {
 console.log(args[4]);
 console.log(suffix.join(" "));
 
-function isVideo(file){
+function isVideo(file) {
     if (suffix.length > 0) {
         for (var i = 0; i < suffix.length; ++i) {
             if (file.endsWith(suffix[i])) {
@@ -145,7 +145,7 @@ function getFileName(file) {
     return name;
 }
 
-var i = 0;  
+var i = 0;
 // 路由：首页
 app.get('/video/i', (req, res) => {
     let files = listFiles();
@@ -180,6 +180,25 @@ app.get('/video/tag', (req, res) => {
 
     fs.writeFileSync(path.join(directoryPath, "tags"), JSON.stringify(otags));
     var resp = req.query.js + "(" + JSON.stringify({ data: otags }) + ");";
+    //resp = JSON.stringify(otags);
+    //res.jsonp(resp);
+    res.send(resp);
+});
+app.get('/video/updateScript', (req, res) => {
+    console.log("video/updateScript");
+    const params = JSON.parse(req.query.params);
+    var filePath = path.join(directoryPath, params.file);
+    var scripts = fs.readFileSync(filePath, "utf-8");
+    if (params.deletedWord != '' && params.newWord != '') {
+        scripts = scripts.replace(new RegExp(params.deletedWord), params.newWord);
+    } else {
+        var script = scripts.split("\n");
+        script[params.index] = script[params.index].replace(new RegExp(params.oldScript), params.newScript);
+        scripts = script.join("\n");
+    }
+    fs.writeFileSync(filePath, scripts);
+
+    var resp = req.query.js + "(" + JSON.stringify({ data: {} }) + ");";
     //resp = JSON.stringify(otags);
     //res.jsonp(resp);
     res.send(resp);
