@@ -389,7 +389,7 @@ function play(fileName) {
                                 if (deletedWord != "" && newWord != "") {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
-                                        script[i] = script[i].replace(new RegExp(deletedWord), newWord);
+                                        script[i] = script[i].replace(new RegExp(deletedWord, "g"), newWord);
                                         let line = script[i].replace(/-->.*\] /g, "");
                                         line = line.replace(/ <br>/g, "");
                                         line = line.replace(/\[/g, "");
