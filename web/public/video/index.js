@@ -374,7 +374,7 @@ function play(fileName) {
                                 }
     
                                 $("#script_" + id).html(line);
-                                ipcRenderer.send("updateScript", JSON.stringify(script));
+                                updateScript(script);
                             }
                         });
     
