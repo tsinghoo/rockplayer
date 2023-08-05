@@ -182,7 +182,7 @@ function updateScript(index, file, oldScript, newScript, deletedWord, newWord) {
     var files = [self.clickedFile];
     var params = {
         "params": JSON.stringify({
-            index, oldScript, newScript, deletedWord, newWord
+            index, file, oldScript, newScript, deletedWord, newWord
         })
     };
 
