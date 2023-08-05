@@ -220,6 +220,7 @@ app.get('/video/config', (req, res) => {
 app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const videoPath = path.join(directoryPath, fileName);
+    console.log("videoPath:" + videoPath);
     const stat = fs.statSync(videoPath);
     const fileSize = stat.size;
 
