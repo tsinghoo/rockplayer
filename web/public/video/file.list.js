@@ -5,7 +5,7 @@ window.mhgl_file_list =
     var self = {
       clickedFile: null,
       files: window.files,
-      allFiles: window.file,
+      allFiles: window.files,
       tags: window.tags,
       selectedTag: "",
       i: 0,
@@ -44,7 +44,7 @@ window.mhgl_file_list =
         var temp = $("#templateFile").html();
         $("#files").html(self.files.map(function (item, index) {
           var html = temp.replace(/#id#/g, index);
-          html = html.replace(/#fileName#/g,);
+          html = html.replace(/#fileName#/g,self.getFileName(item));
           html = html.replace(/#orig#/g, "原链");
           return html;
         }).join(""));
