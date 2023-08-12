@@ -19,9 +19,9 @@
         <link rel="stylesheet" href="vendor/lqh.css"/>
     </head>
 
-    <body>
+    <body class="marginlr4">
         <div class="flexrow" id="tags"></div>
-        <div id="files">
+        <div id="files" class="marginlr4">
 
         </div>
         <ul>
@@ -101,8 +101,8 @@
         <div class="itemTag">#tag#</div>
     </div>
     <div id="templateFile" style="display: none">
-        <div id="file_#id#" class="itemFile flexrow">
-            <a href="#fileName_#id#" id="fileName_#id#" class="itemFileName clickable" >#fileName#</a>
+        <div id="file_#id#" class="margintb2 itemFile flexrow">
+		<span>#id#.&nbsp;&nbsp; </span><a href="#fileName_#id#" id="fileName_#id#" class="itemFileName clickable" >#fileName#</a>
             &nbsp;&nbsp;<a href="#orig_#id#" id="orig_#id#" class="itemOrigUrl clickable">#orig#</a>
             &nbsp;&nbsp;<div id="fileAction_#id#" class="fileAction clickable">...</div>
         </div>
