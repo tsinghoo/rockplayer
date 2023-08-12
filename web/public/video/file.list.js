@@ -5,7 +5,9 @@ window.mhgl_file_list =
     var self = {
       clickedFile: null,
       files: window.files,
+      allFiles: window.file,
       tags: window.tags,
+      selectedTag: "",
       i: 0,
 
       initialize: function () {
@@ -13,16 +15,7 @@ window.mhgl_file_list =
         //$("body").html();
         self.showTags();
         self.bindEvents();
-        self.files = window.files.sort((a, b) => {
-          self.i++;
-          let an = self.getFileName(a);
-          let bn = self.getFileName(b);
-          let res = an > bn ? 1 : -1;
-          console.log(self.i + ":" + res);
-          console.log(an);
-          console.log(bn);
-          return res;
-        });
+        self.showFiles();
         var scrollPosition = sessionStorage.getItem('scrollPosition');
         if (scrollPosition) {
           scrollPosition = JSON.parse(scrollPosition);
@@ -30,13 +23,64 @@ window.mhgl_file_list =
           sessionStorage.removeItem('scrollPosition');
         }
       },
+      sortFileName: (a, b) => {
+        self.i++;
+        let an = self.getFileName(a);
+        let bn = self.getFileName(b);
+        let res = an > bn ? 1 : -1;
+        console.log(self.i + ":" + res);
+        console.log(an);
+        console.log(bn);
+        return res;
+      },
+      showFiles: function () {
+        self.files = self.allFiles.map(function (item, index) {
+          return item.name;
+        });
+        if (self.selectedTag != "") {
+          files = self.tags[self.selectedTag];
+        }
+        self.files = self.files.sort(self.sortFileName);
+        var temp = $("#templateFile").html();
+        $("#files").html(self.files.map(function (item, index) {
+          var html = temp.replace(/#id#/g, index);
+          html = html.replace(/#fileName#/g,);
+          html = html.replace(/#orig#/g, "原链");
+          return html;
+        }).join(""));
 
+        $(".itemTag").on("click", self.tagClicked);
+        $(".itemFileName").on("click", self.itemFileNameClicked);
+        $(".itemOrigUrl").on("click", self.itemOrigUrlClicked);
+        $(".fileAction").on("click", self.fileActionClicked);
+      },
+      itemFileNameClicked: function (e) {
+        var id = e.currentTarget.id;
+        id = id.split("_")[1];
+        var fileName = self.files[id];
+        toPlayer(fileName);
+      },
+      itemOrigUrlClicked: function (e) {
+        var id = e.currentTarget.id;
+        id = id.split("_")[1];
+
+
+      },
+      fileActionClicked: function (e) {
+        var id = e.currentTarget.id;
+        id = id.split("_")[1];
+
+      },
       getFileName: function (file) {
-        var s = file.name.split(".");
+        var fileName = file.name;
+        if (fileName == null) {
+          fileName = file;
+        }
+        var s = fileName.split(".");
         var id = s[0];
-        var name = file.name;
+        var name = fileName;
         if (s.length > 2 && id.length == 11) {
-          name = file.name.substring(id.length + 1);
+          name = fileName.substring(id.length + 1);
         }
         return name;
       },
@@ -47,12 +91,7 @@ window.mhgl_file_list =
           return html;
         }).join(""));
 
-
         $(".itemTag").on("click", self.tagClicked);
-      },
-      tagClicked: function (e) {
-        var tag = $(e.currentTarget).html();
-
       },
       toDelete: function () {
         if (confirm('确定要删除该文件吗？')) {

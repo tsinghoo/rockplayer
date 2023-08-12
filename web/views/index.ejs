@@ -21,6 +21,9 @@
 
     <body>
         <div class="flexrow" id="tags"></div>
+        <div id="files">
+
+        </div>
         <ul>
             <% files.forEach((file,index)=> { %>
                 <li>
@@ -96,6 +99,13 @@
     </div>
     <div id="templateTag" style="display: none">
         <div class="itemTag">#tag#</div>
+    </div>
+    <div id="templateFile" style="display: none">
+        <div id="file_#id#" class="itemFile flexrow">
+            <div id="fileName_#id#" class="itemFileName clickable" >#fileName#</div>
+            <div id="orig_#id#" class="itemOrigUrl clickable">#orig#</div>
+            <div id="fileAction_#id#" class="fileAction clickable">...</div>
+        </div>
     </div>
 
 </html>
