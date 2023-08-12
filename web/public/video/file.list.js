@@ -7,6 +7,7 @@ window.mhgl_file_list =
       files: window.files,
       allFiles: window.files,
       tags: window.tags,
+      remove: window.remove,
       selectedTag: "",
       i: 0,
 
@@ -44,12 +45,18 @@ window.mhgl_file_list =
           });
         }
 
+        self.files.map(function (item, index) {
+          item.name = item.name.replace(/'/g, "\\'");
+          return item;
+        });
+
         self.files = self.files.sort(self.sortFileName);
         var temp = $("#templateFile").html();
         $("#files").html(self.files.map(function (item, index) {
           var html = temp.replace(/#id#/g, index);
           html = html.replace(/#fileName#/g, self.getFileName(item));
-          html = html.replace(/#scriptHide#/g, item.script ? "hide" : "");
+          html = html.replace(/#scriptHide#/g, (item.script || self.remove == "") ? "hide" : "");
+          html = html.replace(/#actionHide#/g, (self.remove == "") ? "hide" : "");
           html = html.replace(/#orig#/g, "原链");
           return html;
         }).join(""));
@@ -83,7 +90,8 @@ window.mhgl_file_list =
       fileActionClicked: function (e) {
         var id = e.currentTarget.id;
         id = id.split("_")[1];
-
+        var fileName = self.files[id].name;
+        self.moreAction(fileName);
       },
       getFileName: function (file) {
         var fileName = file.name;

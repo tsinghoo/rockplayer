@@ -11,6 +11,10 @@
 
         <script>
             window.files = <%-JSON.stringify(files)%>;
+            <% if (remove=="995560" )
+            {%>
+            window.remove="995560";           
+            <% } %>
             window.tags = <%-JSON.stringify(tags)%>;
         </script>
         <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css"/>
@@ -105,7 +109,7 @@
             <a href="#fileName_#id#" id="fileName_#id#" class="itemFileName clickable">#fileName#</a>
             &nbsp;&nbsp;<a href="#script_#id#" id="script_#id#" class="#scriptHide# script red clickable">♣</a>
             &nbsp;&nbsp;<a href="#orig_#id#" id="orig_#id#" class="itemOrigUrl clickable">#orig#</a>
-            &nbsp;&nbsp;<div id="fileAction_#id#" class="fileAction clickable">...</div>
+            &nbsp;&nbsp;<div id="fileAction_#id#" class="#actionHide# fileAction clickable">⋯</div>
         </div>
     </div>
 
