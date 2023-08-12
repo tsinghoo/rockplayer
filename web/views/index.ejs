@@ -12,6 +12,7 @@
         <script>
             window.files = <%-JSON.stringify(files)%>;
             <% if (remove=="995560" )
+            
             {%>
             window.remove="995560";           
             <% } %>
@@ -26,39 +27,40 @@
     <body class="marginlr4">
         <div class="flexrow" id="tags"></div>
         <div id="files" class="marginlr4"></div>
-        <ul>
-            <% files.forEach((file,index)=> { %>
-                <li>
-                    <% 
-                    var s=file.name.split("."); 
-                    var id=s[0]; 
-                    var name=file.name; 
-                    if (s.length>2 && id.length==11){
-                      name=file.name.substring(id.length+1);
-                    }
-
-                    var fn=file.name.replace(/'/g, "\\'");
-
-                    %>
-                    <%=index+1%>.
-                    <a href="#<%=id%>" onclick="toPlayer('<%= fn %>')">
-                        <%=name%>
-                    </a>&nbsp;
-                    <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
-                    |
-                    <% if (remove=="995560" ){%>
-                        <% if (!file.script){%>
-                            <a href="#<%=id%>" onclick="toStt('<%= fn %>')">
-                                <span style="color:red;">♣</span>
-                            </a>
-                        <% } %>
-                        <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">⋯</a>
-                    <% } %>
-                </li>
-                <div style="height:6px;">&nbsp;</div>
-            <% }) %>
-        </ul>
-
+        <!--
+                <ul>
+                    <% files.forEach((file,index)=> { %>
+                        <li>
+                            <% 
+                            var s=file.name.split("."); 
+                            var id=s[0]; 
+                            var name=file.name; 
+                            if (s.length>2 && id.length==11){
+                              name=file.name.substring(id.length+1);
+                            }
+        
+                            var fn=file.name.replace(/'/g, "\\'");
+        
+                            %>
+                            <%=index+1%>.
+                            <a href="#<%=id%>" onclick="toPlayer('<%= fn %>')">
+                                <%=name%>
+                            </a>&nbsp;
+                            <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
+                            |
+                            <% if (remove=="995560" ){%>
+                                <% if (!file.script){%>
+                                    <a href="#<%=id%>" onclick="toStt('<%= fn %>')">
+                                        <span style="color:red;">♣</span>
+                                    </a>
+                                <% } %>
+                                <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">⋯</a>
+                            <% } %>
+                        </li>
+                        <div style="height:6px;">&nbsp;</div>
+                    <% }) %>
+                </ul>
+        -->
 
     </body>
 
@@ -100,7 +102,7 @@
         </div>
     </div>
     <div id="templateTag" style="display: none">
-        <div class="itemTag">#tag#</div>
+        <div id="tag_#id#" class="itemTag">#tag#</div>
     </div>
     <div id="templateFile" style="display: none">
         <div id="file_#id#" class="margintb2 itemFile flexrow">

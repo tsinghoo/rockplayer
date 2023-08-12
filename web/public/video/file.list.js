@@ -61,7 +61,6 @@ window.mhgl_file_list =
           return html;
         }).join(""));
 
-        $(".itemTag").on("click", self.tagClicked);
         $(".itemFileName").on("click", self.itemFileNameClicked);
         $(".itemOrigUrl").on("click", self.itemOrigUrlClicked);
         $(".script").on("click", self.scriptClicked);
@@ -93,6 +92,12 @@ window.mhgl_file_list =
         var fileName = self.files[id].name;
         self.moreAction(fileName);
       },
+      tagClicked: function (e) {
+        var id = e.currentTarget.id;
+        id = id.split("_")[1];
+        self.selectedTag = id;
+        self.showFiles();
+      },
       getFileName: function (file) {
         var fileName = file.name;
         if (fileName == null) {
@@ -110,6 +115,7 @@ window.mhgl_file_list =
         var temp = $("#templateTag").html();
         $("#tags").html(Object.keys(self.tags).map(function (item, index) {
           var html = temp.replace(/#tag#/g, item);
+          html = html.replace(/#id#/g, item);
           return html;
         }).join(""));
 
