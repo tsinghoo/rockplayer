@@ -57,19 +57,28 @@ window.mhgl_file_list =
         $(".itemTag").on("click", self.tagClicked);
         $(".itemFileName").on("click", self.itemFileNameClicked);
         $(".itemOrigUrl").on("click", self.itemOrigUrlClicked);
+        $(".script").on("click", self.scriptClicked);
         $(".fileAction").on("click", self.fileActionClicked);
       },
       itemFileNameClicked: function (e) {
         var id = e.currentTarget.id;
         id = id.split("_")[1];
-        var fileName = self.files[id];
+        var fileName = self.files[id].name;
         toPlayer(fileName);
+      },
+      scriptClicked: function (e) {
+        var id = e.currentTarget.id;
+        id = id.split("_")[1];
+        var fileName = self.files[id].name;
+        toStt(fileName);
       },
       itemOrigUrlClicked: function (e) {
         var id = e.currentTarget.id;
         id = id.split("_")[1];
-
-
+        var fileName = self.files[id].name;
+        var s = fileName.split(".");
+        var id = s[0];
+        toYoutube(id);
       },
       fileActionClicked: function (e) {
         var id = e.currentTarget.id;
