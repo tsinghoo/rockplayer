@@ -34,17 +34,22 @@ window.mhgl_file_list =
         return res;
       },
       showFiles: function () {
-        self.files = self.allFiles.map(function (item, index) {
-          return item.name;
-        });
+        self.files = self.allFiles;
         if (self.selectedTag != "") {
-          files = self.tags[self.selectedTag];
+          files = self.tags[self.selectedTag].map(function (item, index) {
+            return {
+              name: item.name,
+              script: true
+            };
+          });
         }
+
         self.files = self.files.sort(self.sortFileName);
         var temp = $("#templateFile").html();
         $("#files").html(self.files.map(function (item, index) {
           var html = temp.replace(/#id#/g, index);
-          html = html.replace(/#fileName#/g,self.getFileName(item));
+          html = html.replace(/#fileName#/g, self.getFileName(item));
+          html = html.replace(/#scriptHide#/g, item.script ? "hide" : "");
           html = html.replace(/#orig#/g, "原链");
           return html;
         }).join(""));
