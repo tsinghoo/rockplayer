@@ -55,8 +55,8 @@ window.mhgl_file_list =
         $("#files").html(self.files.map(function (item, index) {
           var html = temp.replace(/#id#/g, index);
           html = html.replace(/#fileName#/g, self.getFileName(item));
-          html = html.replace(/#scriptHide#/g, (item.script || self.remove == "") ? "hide" : "");
-          html = html.replace(/#actionHide#/g, (self.remove == "") ? "hide" : "");
+          html = html.replace(/#scriptHide#/g, (item.script || self.remove == null) ? "hide" : "");
+          html = html.replace(/#actionHide#/g, (self.remove == null) ? "hide" : "");
           html = html.replace(/#orig#/g, "原链");
           return html;
         }).join(""));
