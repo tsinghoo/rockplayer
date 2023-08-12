@@ -37,9 +37,9 @@ window.mhgl_file_list =
       showFiles: function () {
         self.files = self.allFiles;
         if (self.selectedTag != "") {
-          files = self.tags[self.selectedTag].map(function (item, index) {
+          self.files = Object.keys(self.tags[self.selectedTag]).map(function (item, index) {
             return {
-              name: item.name,
+              name: item,
               script: true
             };
           });
