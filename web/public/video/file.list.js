@@ -142,7 +142,14 @@ window.mhgl_file_list =
       },
       toTag: function () {
         share.closeDialog__();
-        share.selectTag__(Object.keys(self.tags), function (tags) {
+
+        var otags = self.files[self.clickedFile].tags;
+        if (otags == null) {
+          otags = [];
+        }
+
+
+        share.selectTag__(Object.keys(self.tags), otags, function (tags) {
           self.tagFile(tags);
         });
       },

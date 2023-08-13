@@ -11,11 +11,9 @@
 
         <script>
             window.files = <%-JSON.stringify(files)%>;
-            <% if (remove=="995560" )
-            
-            
-            {%>
-            window.remove="995560";           
+            <% if (remove=="995560" ){
+            %>
+            window.remove = "995560";
             <% } %>
             window.tags = <%-JSON.stringify(tags)%>;
         </script>
@@ -29,39 +27,39 @@
         <div class="flexrow" id="tags"></div>
         <div id="files" class="marginlr4"></div>
         <!--
-                        <ul>
-                            <% files.forEach((file,index)=> { %>
-                                <li>
-                                    <% 
-                                    var s=file.name.split("."); 
-                                    var id=s[0]; 
-                                    var name=file.name; 
-                                    if (s.length>2 && id.length==11){
-                                      name=file.name.substring(id.length+1);
-                                    }
-                
-                                    var fn=file.name.replace(/'/g, "\\'");
-                
-                                    %>
-                                    <%=index+1%>.
-                                    <a href="#<%=id%>" onclick="toPlayer('<%= fn %>')">
-                                        <%=name%>
-                                    </a>&nbsp;
-                                    <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
-                                    |
-                                    <% if (remove=="995560" ){%>
-                                        <% if (!file.script){%>
-                                            <a href="#<%=id%>" onclick="toStt('<%= fn %>')">
-                                                <span style="color:red;">♣</span>
-                                            </a>
-                                        <% } %>
-                                        <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">⋯</a>
-                                    <% } %>
-                                </li>
-                                <div style="height:6px;">&nbsp;</div>
-                            <% }) %>
-                        </ul>
-                -->
+                                <ul>
+                                    <% files.forEach((file,index)=> { %>
+                                        <li>
+                                            <% 
+                                            var s=file.name.split("."); 
+                                            var id=s[0]; 
+                                            var name=file.name; 
+                                            if (s.length>2 && id.length==11){
+                                              name=file.name.substring(id.length+1);
+                                            }
+                        
+                                            var fn=file.name.replace(/'/g, "\\'");
+                        
+                                            %>
+                                            <%=index+1%>.
+                                            <a href="#<%=id%>" onclick="toPlayer('<%= fn %>')">
+                                                <%=name%>
+                                            </a>&nbsp;
+                                            <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
+                                            |
+                                            <% if (remove=="995560" ){%>
+                                                <% if (!file.script){%>
+                                                    <a href="#<%=id%>" onclick="toStt('<%= fn %>')">
+                                                        <span style="color:red;">♣</span>
+                                                    </a>
+                                                <% } %>
+                                                <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">⋯</a>
+                                            <% } %>
+                                        </li>
+                                        <div style="height:6px;">&nbsp;</div>
+                                    <% }) %>
+                                </ul>
+                        -->
 
     </body>
 
@@ -79,16 +77,17 @@
     </div>
 
     <div id="tagSelectionContainer" class="hide">
-        <h1>标签选择器</h1>
 
-        <div class="tsSelectedTags">
+        <div class="tsSelectedTags flexrow margintb4">
+            已选标签:
             <div id="selectedTags#id#"></div>
-            <input type="text" id="newTagInput#id#" placeholder="输入新标签">
         </div>
 
-        <h4>所有标签：</h4>
-        <div id="tagContainer#id#"></div>
-        <input class="stConfirm" value="确定">
+        <div class="flexrow">所有标签：
+            <input type="text" id="newTagInput#id#" placeholder="输入新标签">
+            <div id="tagContainer#id#"></div>
+        </div>
+        <button class="stConfirm btn btn-info btn-sm widthAuto">确定</button>
     </div>
 
     <div id="templateDialogButton" style="display:none">
