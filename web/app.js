@@ -7,6 +7,7 @@ app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
 const args = process.argv;
 console.log(args.length);
+const pwd = "995560";
 if (args.length < 4) {
     console.log("node app.js 3000 /your/directory");
     return;
@@ -259,8 +260,13 @@ app.get('/video/download/:filename', (req, res) => {
 // 路由：删除文件
 app.post('/video/delete', (req, res) => {
     const filePath = req.query.file;
-    deleteFiles(filePath);
-    res.redirect('/video');
+    const remove = req.query.remove;
+    if (remove != pwd) {
+        res.status(403).send("forbidden");
+    } else {
+        deleteFiles(filePath);
+        res.redirect('/video');
+    }
 });
 app.post('/video/toStt', (req, res) => {
     const filePath = req.query.file;

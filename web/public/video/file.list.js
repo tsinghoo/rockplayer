@@ -211,7 +211,7 @@ function toYoutube(id) {
 }
 
 function deleteFile(fileName) {
-  fetch('./delete?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
+  fetch('./delete?remove=' + self.remove + '&file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
     if (response.ok) {
       refresh();
     } else {
