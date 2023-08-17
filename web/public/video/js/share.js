@@ -1321,8 +1321,8 @@ window.mhgl_share =
               selectedTags.push(tag);
             } else {
               selectedTags.splice(index, 1);
-            } 
-            
+            }
+
             refreshSelectedTags();
             refreshTagsDisplay();
           }
@@ -1382,7 +1382,7 @@ window.mhgl_share =
             var newTagInput = document.getElementById("newTagInput" + id);
             var newTag = newTagInput.value.trim();
 
-            if (newTag !== "") {
+            if (newTag !== "" && tags.indexOf(newTag) < 0) {
               tags.push(newTag);
 
               selectedTags.push(newTag); // 将新标签同时加入已选择的标签数组中
@@ -1403,6 +1403,11 @@ window.mhgl_share =
           }
 
           $('#newTagInput' + id).blur(addNewTag);
+          $('#newTagInput' + id).on("keyup", function (event) {
+            if (event.key == "Enter") {
+              addNewTag();
+            }
+          });
           $('.stConfirm').on("click", submit);
 
           refreshSelectedTags();

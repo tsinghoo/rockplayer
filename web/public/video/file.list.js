@@ -177,6 +177,7 @@ window.mhgl_file_list =
           share.closeDialog__();
           self.tags = res.data;
           self.showTags();
+          self.showFiles();
         };
 
         var fail = function (e) {
