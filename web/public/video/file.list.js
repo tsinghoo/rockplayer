@@ -8,15 +8,12 @@ window.mhgl_file_list =
       allFiles: {},
       tags: window.tags,
       remove: window.remove,
-      selectedTag: "",
+      selectedTag: "未标",
       i: 0,
 
       initialize: function () {
         share.log__("mhgl_file_list.init");
         //$("body").html();
-
-
-
         self.showTags();
         self.bindEvents();
         self.showFiles();
@@ -38,10 +35,20 @@ window.mhgl_file_list =
         return res;
       },
       showFiles: function () {
-
-
-        self.files = window.files;
-        if (self.selectedTag != "") {
+        self.files = [];
+        if (self.selectedTag == "未标") {
+          var k = Object.keys(self.allFiles);
+          for (var i = 0; i < k.length; ++i) {
+            if (Object.keys(self.allFiles[k[i]].tags).length == 0) {
+              self.files.push(self.allFiles[k[i]]);
+            }
+          }
+        } else if (self.selectedTag == "所有") {
+          var k = Object.keys(self.allFiles);
+          for (var i = 0; i < k.length; ++i) {
+            self.files.push(self.allFiles[k[i]]);
+          }
+        } else {
           self.files = Object.keys(self.tags[self.selectedTag]).map(function (e, i) {
             return self.allFiles[e];
           });
@@ -102,6 +109,7 @@ window.mhgl_file_list =
         var id = e.currentTarget.id;
         id = id.split("_")[1];
         self.selectedTag = id;
+        self.showTags();
         self.showFiles();
       },
       getFileName: function (file) {
@@ -132,14 +140,20 @@ window.mhgl_file_list =
               f.tags[tag] = 1;
             }
           });
-
         });
 
         var temp = $("#templateTag").html();
-
-        $("#tags").html(Object.keys(self.tags).map(function (tag, index) {
+        var tags = Object.keys(self.tags);
+        tags.unshift("未标");
+        tags.unshift("所有");
+        $("#tags").html(tags.map(function (tag, index) {
           var html = temp.replace(/#tag#/g, tag);
           html = html.replace(/#id#/g, tag);
+          if (tag == self.selectedTag) {
+            html = html.replace(/#selected#/g, "selected");
+          }else{
+            html = html.replace(/#selected#/g, "");
+          }
           return html;
         }).join(""));
 
