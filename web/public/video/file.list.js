@@ -55,12 +55,16 @@ window.mhgl_file_list =
         self.files = self.files.sort(self.sortFileName);
         var temp = $("#templateFile").html();
         $("#files").html(self.files.map(function (item, index) {
-          var html = temp.replace(/#id#/g, index);
-          html = html.replace(/#fileName#/g, self.getFileName(item));
-          html = html.replace(/#scriptHide#/g, (item.script || self.remove == null) ? "hide" : "");
-          html = html.replace(/#actionHide#/g, (self.remove == null) ? "hide" : "");
-          html = html.replace(/#orig#/g, "原链");
-          return html;
+          if (Object.keys(item.tags).length == 0) {
+            return "";
+          } else {
+            var html = temp.replace(/#id#/g, index);
+            html = html.replace(/#fileName#/g, self.getFileName(item));
+            html = html.replace(/#scriptHide#/g, (item.script || self.remove == null) ? "hide" : "");
+            html = html.replace(/#actionHide#/g, (self.remove == null) ? "hide" : "");
+            html = html.replace(/#orig#/g, "原链");
+            return html;
+          }
         }).join(""));
 
         $(".itemFileName").on("click", self.itemFileNameClicked);
