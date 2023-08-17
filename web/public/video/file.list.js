@@ -55,7 +55,7 @@ window.mhgl_file_list =
         self.files = self.files.sort(self.sortFileName);
         var temp = $("#templateFile").html();
         $("#files").html(self.files.map(function (item, index) {
-          if (Object.keys(item.tags).length == 0) {
+          if (Object.keys(item.tags).length > 0) {
             return "";
           } else {
             var html = temp.replace(/#id#/g, index);
