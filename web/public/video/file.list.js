@@ -4,8 +4,8 @@ window.mhgl_file_list =
     var share = window.mhgl_share;
     var self = {
       clickedFile: null,
-      files: window.files,
-      allFiles: window.files,
+      files: null,
+      allFiles: {},
       tags: window.tags,
       remove: window.remove,
       selectedTag: "",
@@ -14,6 +14,9 @@ window.mhgl_file_list =
       initialize: function () {
         share.log__("mhgl_file_list.init");
         //$("body").html();
+
+
+
         self.showTags();
         self.bindEvents();
         self.showFiles();
@@ -35,13 +38,12 @@ window.mhgl_file_list =
         return res;
       },
       showFiles: function () {
-        self.files = self.allFiles;
+
+
+        self.files = window.files;
         if (self.selectedTag != "") {
-          self.files = Object.keys(self.tags[self.selectedTag]).map(function (item, index) {
-            return {
-              name: item,
-              script: true
-            };
+          self.files = Object.keys(self.tags[self.selectedTag]).map(function (e, i) {
+            return self.allFiles[e];
           });
         }
 
@@ -112,10 +114,23 @@ window.mhgl_file_list =
         return name;
       },
       showTags: function () {
+        window.files.map(function (e, i) {
+          self.allFiles[e.name] = e;
+          e.tags = {};
+        });
+
+        Object.keys(self.tags).map(function (tag) {
+          Object.keys(self.tags[tag]).map(function (fn) {
+            self.allFiles[fn].tags[tag] = 1;
+          });
+
+        });
+
         var temp = $("#templateTag").html();
-        $("#tags").html(Object.keys(self.tags).map(function (item, index) {
-          var html = temp.replace(/#tag#/g, item);
-          html = html.replace(/#id#/g, item);
+
+        $("#tags").html(Object.keys(self.tags).map(function (tag, index) {
+          var html = temp.replace(/#tag#/g, tag);
+          html = html.replace(/#id#/g, tag);
           return html;
         }).join(""));
 
@@ -143,10 +158,7 @@ window.mhgl_file_list =
       toTag: function () {
         share.closeDialog__();
 
-        var otags = self.files[self.clickedFile].tags;
-        if (otags == null) {
-          otags = [];
-        }
+        var otags = Object.keys(self.allFiles[self.clickedFile].tags);
 
 
         share.selectTag__(Object.keys(self.tags), otags, function (tags) {
@@ -162,6 +174,7 @@ window.mhgl_file_list =
         };
 
         var success = function (res) {
+          share.closeDialog__();
           self.tags = res.data;
           self.showTags();
         };

@@ -1321,7 +1321,9 @@ window.mhgl_share =
               selectedTags.push(tag);
             } else {
               selectedTags.splice(index, 1);
-            } refreshSelectedTags();
+            } 
+            
+            refreshSelectedTags();
             refreshTagsDisplay();
           }
 
@@ -1403,7 +1405,7 @@ window.mhgl_share =
           $('#newTagInput' + id).blur(addNewTag);
           $('.stConfirm').on("click", submit);
 
-
+          refreshSelectedTags();
           // 动态生成标签
           tags.forEach(function (tag) {
             var div = document.createElement("div");
