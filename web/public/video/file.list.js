@@ -121,7 +121,12 @@ window.mhgl_file_list =
 
         Object.keys(self.tags).map(function (tag) {
           Object.keys(self.tags[tag]).map(function (fn) {
-            self.allFiles[fn].tags[tag] = 1;
+            var f = self.allFiles[fn];
+            if (f == null) {
+              delete self.tags[tag][fn];
+            } else {
+              f.tags[tag] = 1;
+            }
           });
 
         });
