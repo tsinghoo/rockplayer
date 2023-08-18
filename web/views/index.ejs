@@ -3,11 +3,6 @@
 
     <head>
         <title>文件列表</title>
-        <style>
-            li {
-                display: inline;
-            }
-        </style>
 
         <script>
             window.files = <%-JSON.stringify(files)%>;
@@ -21,45 +16,55 @@
         <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap-theme.css"/>
         <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet"/>
         <link rel="stylesheet" href="vendor/lqh.css"/>
+
+        <style>
+            li {
+                display: inline;
+            }
+            .modal-backdrop.in {
+                filter: alpha(opacity=50);
+                opacity: .05;
+            }
+        </style>
     </head>
 
     <body class="marginlr4">
         <div class="flexrow" id="tags"></div>
         <div id="files" class="marginlr4"></div>
         <!--
-                                                                <ul>
-                                                                    <% files.forEach((file,index)=> { %>
-                                                                        <li>
-                                                                            <% 
-                                                                            var s=file.name.split("."); 
-                                                                            var id=s[0]; 
-                                                                            var name=file.name; 
-                                                                            if (s.length>2 && id.length==11){
-                                                                              name=file.name.substring(id.length+1);
-                                                                            }
-                                                        
-                                                                            var fn=file.name.replace(/'/g, "\\'");
-                                                        
-                                                                            %>
-                                                                            <%=index+1%>.
-                                                                            <a href="#<%=id%>" onclick="toPlayer('<%= fn %>')">
-                                                                                <%=name%>
-                                                                            </a>&nbsp;
-                                                                            <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
-                                                                            |
-                                                                            <% if (remove=="995560" ){%>
-                                                                                <% if (!file.script){%>
-                                                                                    <a href="#<%=id%>" onclick="toStt('<%= fn %>')">
-                                                                                        <span style="color:red;">♣</span>
-                                                                                    </a>
-                                                                                <% } %>
-                                                                                <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">⋯</a>
-                                                                            <% } %>
-                                                                        </li>
-                                                                        <div style="height:6px;">&nbsp;</div>
-                                                                    <% }) %>
-                                                                </ul>
-                                                        -->
+                                                                        <ul>
+                                                                            <% files.forEach((file,index)=> { %>
+                                                                                <li>
+                                                                                    <% 
+                                                                                    var s=file.name.split("."); 
+                                                                                    var id=s[0]; 
+                                                                                    var name=file.name; 
+                                                                                    if (s.length>2 && id.length==11){
+                                                                                      name=file.name.substring(id.length+1);
+                                                                                    }
+                                                                
+                                                                                    var fn=file.name.replace(/'/g, "\\'");
+                                                                
+                                                                                    %>
+                                                                                    <%=index+1%>.
+                                                                                    <a href="#<%=id%>" onclick="toPlayer('<%= fn %>')">
+                                                                                        <%=name%>
+                                                                                    </a>&nbsp;
+                                                                                    <a href="#ut<%=id%>" onclick="toYoutube('<%= id %>')">Yt</a>
+                                                                                    |
+                                                                                    <% if (remove=="995560" ){%>
+                                                                                        <% if (!file.script){%>
+                                                                                            <a href="#<%=id%>" onclick="toStt('<%= fn %>')">
+                                                                                                <span style="color:red;">♣</span>
+                                                                                            </a>
+                                                                                        <% } %>
+                                                                                        <a href="#<%=id%>" onclick="window.mhgl_file_list.moreAction('<%= fn %>')">⋯</a>
+                                                                                    <% } %>
+                                                                                </li>
+                                                                                <div style="height:6px;">&nbsp;</div>
+                                                                            <% }) %>
+                                                                        </ul>
+                                                                -->
 
     </body>
 
