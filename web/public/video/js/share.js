@@ -2553,7 +2553,7 @@ window.mhgl_share =
         var shown = function () {
           if (buttons)
             buttons.forEach(function (item, i) {
-              $("#actionSheetButton" + (item.id ? item.id : i)).on(
+              $("#actionSheetButton_" + (item.id ? item.id : i)).on(
                 "click",
                 item.onTap
               );

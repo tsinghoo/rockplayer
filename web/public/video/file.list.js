@@ -151,7 +151,7 @@ window.mhgl_file_list =
           html = html.replace(/#id#/g, tag);
           if (tag == self.selectedTag) {
             html = html.replace(/#selected#/g, "selected");
-          }else{
+          } else {
             html = html.replace(/#selected#/g, "");
           }
           return html;
@@ -174,6 +174,15 @@ window.mhgl_file_list =
         buttons.push({
           text: '标签',
           onTap: self.toTag
+        });
+
+        Object.keys(self.tags).forEach((tag, i) => {
+          buttons.push({
+            text: tag,
+            onTap: function (e) {
+              self.tagFile([tag]);
+            }
+          })
         });
 
         share.showActionSheet__('请选择', buttons);
