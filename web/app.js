@@ -152,7 +152,7 @@ app.get('/video/i', (req, res) => {
     let files = listFiles();
     const remove = req.query.remove;
     const tags = getTags();
-    res.render('index', { files: files, tags: tags, remove: remove });
+    res.render('fileList', { files: files, tags: tags, remove: remove });
 });
 app.get('/video/tag', (req, res) => {
     console.log("video/tag");
