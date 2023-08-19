@@ -39,12 +39,18 @@
             </div>
             <div class="">
                 <div>
-                    <!--
-                                        <input id="fileName" type="input" value="toumingzhuang" style="width:200px">
-                                        <input id="playButton" value="go" type="button"/>
-                                        -->
                     关闭视频<input id="maskCheckbox" type="checkbox">
+                    <button id="buttonReplace" type="button" class="btn btn-info btn-sm marginlr2">替换</button>
                 </div>
+                <div id="replacerContainer" class="hide">
+                    <div id="replacers" class="flexcolumn"></div>
+                    <div>
+                        <button id="buttonReplacerClose" class="btn btn-info btn-sm marginlr2">关闭</button>
+                        <button id="buttonReplacerConfirm" class="btn btn-info btn-sm marginlr2">替换</button>
+                    </div>
+                </div>
+
+
                 <div id="script" class="height100p bg_black gray " style="overflow: scroll;padding-right: 80px;padding-left:6px;font-family:serif;">
                     无字幕
                 </div>
@@ -70,11 +76,14 @@
                 #name#
             </div>
         </div>
-
     </body>
-
 </html>
 
+<div id="templateReplacer">
+    <div class="flexrow left">
+        <input data="#data#" type="checkbox" checked><div class="replacerContent widthauto">#content#</div>
+    </div>
+</div>
 
 <script src="./js/jquery.js"></script>
 <script src="vendor/store.legacy.min.js"></script>

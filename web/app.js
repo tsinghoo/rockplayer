@@ -165,9 +165,9 @@ app.get('/video/tag', (req, res) => {
     for (var j = 0; j < files.length; ++j) {
         console.log("file:" + files[j]);
         Object.keys(otags).map(
-            (tag)=>{
+            (tag) => {
                 var f = otags[tag];
-                delete f[files[j]]; 
+                delete f[files[j]];
             }
         );
     }
@@ -192,14 +192,43 @@ app.get('/video/tag', (req, res) => {
     //res.jsonp(resp);
     res.send(resp);
 });
+app.get('/video/replacers', (req, res) => {
+    console.log("video/replacers");
+    var rPath = path.join(directoryPath, "replacers");
+    var replacers = {};
+    try {
+        replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+    } catch (e) {
+        console.log("error parsing replacers:" + e.message);
+    }
+
+    var resp = req.query.js + "(" + JSON.stringify({ data: replacers }) + ");";
+    res.send(resp);
+});
 app.get('/video/updateScript', (req, res) => {
     console.log("video/updateScript");
     const params = JSON.parse(req.query.params);
+    console.log("params:"+req.query.params);
     var filePath = path.join(directoryPath, params.file);
     console.log("filePath:" + filePath);
+    var rPath = path.join(directoryPath, "replacers");
     var scripts = fs.readFileSync(filePath, "utf-8");
-    if (params.deletedWord != '' && params.newWord != '') {
+    var replacers = {};
+    try {
+        replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+    } catch (e) {
+        console.log("error parsing replacers:" + e.message);
+    }
+
+    if (params.oldWords != "") {
+        var words = JSON.parse(params.oldWords);
+        words.forEach((w) => {
+            scripts = scripts.replace(new RegExp(w, "g"), replacers[w]);
+        });
+    } else if (params.deletedWord != '' && params.newWord != '') {
         scripts = scripts.replace(new RegExp(params.deletedWord, "g"), params.newWord);
+        replacers[params.deletedWord] = params.newWord;
+        fs.writeFileSync(rPath, JSON.stringify(replacers));
     } else {
         var script = scripts.split("\n");
         script[params.index] = script[params.index].replace(new RegExp(params.oldScript, "g"), params.newScript);

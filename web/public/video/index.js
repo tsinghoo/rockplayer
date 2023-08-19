@@ -177,12 +177,12 @@ let getSeconds = function (line) {
     return -1;
 };
 
-function updateScript(index, file, oldScript, newScript, deletedWord, newWord) {
+function updateScript(index, file, oldScript, newScript, deletedWord, newWord, oldWords) {
     var url = "./updateScript";
     var files = [self.clickedFile];
     var params = {
         "params": JSON.stringify({
-            index, file, oldScript, newScript, deletedWord, newWord
+            index, file, oldScript, newScript, deletedWord, newWord, oldWords
         })
     };
 
@@ -385,7 +385,7 @@ function play(fileName) {
 
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
                                 var fileName = share.getParameter__("f");
-                                updateScript(id, fileName + ".htm", oldScript, newScript, deletedWord, newWord);
+                                updateScript(id, fileName + ".htm", oldScript, newScript, deletedWord, newWord, "");
                                 if (deletedWord != "" && newWord != "") {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
@@ -480,11 +480,64 @@ function loadRecent() {
     });
 }
 
+function showReplacer() {
+    var temp = $("#templateReplacer").html();
+    var html = Object.keys(self.replacers).map((r, i) => {
+        var html = temp.replace(/#data#/g, r);
+        html = html.replace(/#content#/g, r + "=>" + self.replacers[r]);
+        return html;
+    }).join("");
+
+    $("#replacers").html(html);
+    $("#replacerContainer").removeClass("hide");
+}
+
+function toReplace() {
+    var fileName = share.getParameter__("f");
+    var oldWords = Object.keys(self.replacers);
+    updateScript("", fileName + ".htm", "", "", "", "", JSON.stringify(oldWords));
+    $("#replacerContainer").addClass("hide");
+}
+
+function toShowReplacers() {
+
+    var url = "./replacers";
+    var params = {
+    };
+
+    var success = function (res) {
+        share.closeDialog__();
+        self.replacers = res.data;
+        showReplacer();
+    };
+
+    var fail = function (e) {
+        share.toastError__(e);
+    };
+
+
+    share.httpGet__(
+        url,
+        params,
+        success,
+        fail
+    );
+}
+
 $(function () {
     $('#holder').enhsplitter({ handle: 'lotsofdots', minSize: 50, vertical: true });
 
     $("#playButton").on("click", function () {
         play($("#fileName").val());
+    });
+    $("#buttonReplace").on("click", function () {
+        toShowReplacers();
+    });
+    $("#buttonReplacerClose").on("click", function () {
+        $("#replacerContainer").addClass("hide");
+    });
+    $("#buttonReplacerConfirm").on("click", function () {
+        toReplace();
     });
 
     var fileName = share.getParameter__("f");
