@@ -373,6 +373,11 @@ function play(fileName) {
                             if (event.key == "Delete" || event.key == "Backspace") {
                                 scriptBeforeDel = event.target.value;
                                 deletedWord = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
+                                if (deletedWord == "") {
+                                    $("#replaceWords").html(deletedWord);
+                                } else {
+                                    $("#replaceWords").html(deletedWord + " => ");
+                                }
                                 console.log("Deleted word: " + deletedWord);
                             }
                         });
@@ -384,6 +389,11 @@ function play(fileName) {
                                 //script[id] = line;
 
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
+                                if (deletedWord != "" && newWord != "") {
+                                    $("#replaceWords").html(deletedWord + " => " + newWord);
+                                } else {
+                                    $("#replaceWords").html("");
+                                }
                                 var fileName = share.getParameter__("f");
                                 updateScript(id, fileName + ".htm", oldScript, newScript, deletedWord, newWord, "");
                                 if (deletedWord != "" && newWord != "") {
