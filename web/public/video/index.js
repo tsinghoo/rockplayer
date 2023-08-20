@@ -179,7 +179,6 @@ let getSeconds = function (line) {
 
 function updateScript(index, file, oldScript, newScript, deletedWord, newWord, oldWords) {
     var url = "./updateScript";
-    var files = [self.clickedFile];
     var params = {
         "params": JSON.stringify({
             index, file, oldScript, newScript, deletedWord, newWord, oldWords
@@ -245,8 +244,8 @@ function play(fileName) {
     // player.textTrackSettings.setDefaults();
     // player.textTrackSettings.setValues(newSettings);
     // player.textTrackSettings.updateDisplay();
-    if (message.position) {
-        player.currentTime(message.position);
+    if (self.metadata && self.metadata.position) {
+        player.currentTime(self.metadata.position);
     }
 
     $("#maskCheckbox").change(function () {
@@ -259,22 +258,32 @@ function play(fileName) {
         }
     });
     player.on('pause', function () {
-        //maskEnabled && $("#mask").css("z-index", 100);
-        for (var i = 0; i < recentFiles.length; ++i) {
-            var file = recentFiles[i];
-            if (file.name == fileName) {
-                file.time = player.currentTime();
-
-                if (i != 0) {
-                    recentFiles.splice(i);
-                    recentFiles.splice(0, 0, file);
-                }
-
-                share.setCache__("recent", recentFiles);
-            }
-
-        }
+        updatePosition();
     });
+
+    function updatePosition() {
+        var url = "./updatePosition";
+        var fileName = share.getParameter__("f");
+        var params = {
+            fileName: fileName,
+            position: player.currentTime()
+        };
+
+        var success = function (res) {
+            share.closeDialog__();
+        };
+
+        var fail = function (e) {
+            share.toastError__(e);
+        };
+
+        share.httpGet__(
+            url,
+            params,
+            success,
+            fail
+        );
+    }
 
     //拖动
     player.on('seeking', function () {
@@ -510,7 +519,6 @@ function toReplace() {
 }
 
 function toShowReplacers() {
-
     var url = "./replacers";
     var params = {
     };
@@ -534,6 +542,32 @@ function toShowReplacers() {
     );
 }
 
+function getMetadata(fileName) {
+    var url = "./metadata";
+    var params = {
+        fileName
+    };
+
+    var success = function (res) {
+        share.closeDialog__();
+        self.metadata = res.data;
+        play(fileName);
+    };
+
+    var fail = function (e) {
+        share.toastError__(e);
+    };
+
+    share.httpGet__(
+        url,
+        params,
+        success,
+        fail
+    );
+}
+
+
+
 $(function () {
     $('#holder').enhsplitter({ handle: 'lotsofdots', minSize: 50, vertical: true });
 
@@ -552,7 +586,9 @@ $(function () {
 
     var fileName = share.getParameter__("f");
     if (fileName != null && fileName.trim() != "") {
-        play(fileName);
+
+        getMetadata(fileName);
+
     } else {
         loadRecent();
     }
