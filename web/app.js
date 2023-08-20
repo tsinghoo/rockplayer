@@ -221,6 +221,10 @@ app.get('/video/metadata', (req, res) => {
         m = {};
     }
 
+    if (fileName == "") {
+        m = data;
+    }
+
 
     var resp = req.query.js + "(" + JSON.stringify({ data: m }) + ");";
     res.send(resp);

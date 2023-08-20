@@ -29,14 +29,47 @@ window.mhgl_file_list =
         let an = self.getFileName(a);
         let bn = self.getFileName(b);
         let res = an > bn ? 1 : -1;
-        console.log(self.i + ":" + res);
-        console.log(an);
-        console.log(bn);
         return res;
+      },
+      showRecentFiles: function () {
+        var url = "./metadata";
+        var params = {
+          fileName: ""
+        };
+
+        var success = function (res) {
+          share.closeDialog__();
+          self.metadata = res.data;
+          self.files = Object.keys(self.metadata).map((fn, i) => {
+            var file = self.allFiles[fn];
+            file.lastUpdateTime = self.metadata[fn].lastUpdateTime;
+            return file;
+          });
+
+          self.doShowFiles(function (a, b) {
+            let res = a.lastUpdateTime < b.lastUpdateTime ? 1 : -1;
+            return res;
+          });
+        };
+
+        var fail = function (e) {
+          share.toastError__(e);
+        };
+
+        share.httpGet__(
+          url,
+          params,
+          success,
+          fail
+        );
       },
       showFiles: function () {
         self.files = [];
-        if (self.selectedTag == "未标") {
+        if (self.selectedTag == "最近") {
+
+          self.showRecentFiles();
+          return;
+        } else if (self.selectedTag == "未标") {
           var k = Object.keys(self.allFiles);
           for (var i = 0; i < k.length; ++i) {
             if (Object.keys(self.allFiles[k[i]].tags).length == 0) {
@@ -54,30 +87,7 @@ window.mhgl_file_list =
           });
         }
 
-        self.files.map(function (item, index) {
-          item.name = item.name.replace(/'/g, "\\'");
-          return item;
-        });
-
-        self.files = self.files.sort(self.sortFileName);
-        var temp = $("#templateFile").html();
-        $("#files").html(self.files.map(function (item, index) {
-          if (Object.keys(item.tags).length > 0 && self.selectedTag == "") {
-            return "";
-          } else {
-            var html = temp.replace(/#id#/g, index);
-            html = html.replace(/#fileName#/g, self.getFileName(item));
-            html = html.replace(/#scriptHide#/g, (item.script || self.remove == null) ? "hide" : "");
-            html = html.replace(/#actionHide#/g, (self.remove == null) ? "hide" : "");
-            html = html.replace(/#orig#/g, "原链");
-            return html;
-          }
-        }).join(""));
-
-        $(".itemFileName").on("click", self.itemFileNameClicked);
-        $(".itemOrigUrl").on("click", self.itemOrigUrlClicked);
-        $(".script").on("click", self.scriptClicked);
-        $(".fileAction").on("click", self.fileActionClicked);
+        self.doShowFiles();
       },
       itemFileNameClicked: function (e) {
         var id = e.currentTarget.id;
@@ -146,6 +156,7 @@ window.mhgl_file_list =
         var tags = Object.keys(self.tags);
         tags.unshift("未标");
         tags.unshift("所有");
+        tags.unshift("最近");
         $("#tags").html(tags.map(function (tag, index) {
           var html = temp.replace(/#tag#/g, tag);
           html = html.replace(/#id#/g, tag);
@@ -186,6 +197,36 @@ window.mhgl_file_list =
         });
 
         share.showActionSheet__('请选择', buttons);
+      },
+      doShowFiles: function (sf) {
+        self.files.map(function (item, index) {
+          item.name = item.name.replace(/'/g, "\\'");
+          return item;
+        });
+
+        if (sf == null) {
+          sf = self.sortFileName;
+        }
+
+        self.files = self.files.sort(sf);
+        var temp = $("#templateFile").html();
+        $("#files").html(self.files.map(function (item, index) {
+          if (Object.keys(item.tags).length > 0 && self.selectedTag == "") {
+            return "";
+          } else {
+            var html = temp.replace(/#id#/g, index);
+            html = html.replace(/#fileName#/g, self.getFileName(item));
+            html = html.replace(/#scriptHide#/g, (item.script || self.remove == null) ? "hide" : "");
+            html = html.replace(/#actionHide#/g, (self.remove == null) ? "hide" : "");
+            html = html.replace(/#orig#/g, "原链");
+            return html;
+          }
+        }).join(""));
+
+        $(".itemFileName").on("click", self.itemFileNameClicked);
+        $(".itemOrigUrl").on("click", self.itemOrigUrlClicked);
+        $(".script").on("click", self.scriptClicked);
+        $(".fileAction").on("click", self.fileActionClicked);
       },
       toTag: function () {
         share.closeDialog__();
@@ -236,6 +277,7 @@ window.mhgl_file_list =
 
     return self;
   })();
+
 
 
 // 在页面加载前，将滚动位置保存到会话存储中
