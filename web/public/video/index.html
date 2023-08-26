@@ -42,7 +42,7 @@
                 </div>
             </div>
             <div class="">
-                <div class="flexrow">
+                <div class="flexrow margintb4">
                     <div>
                         关闭视频<input id="maskCheckbox" type="checkbox">
                         <button id="buttonReplace" type="button" class="btn btn-info btn-sm marginlr2">替换</button>
@@ -56,6 +56,17 @@
                     </div>
 
                     <div id="replaceWords" class="marginlr2 flexrow center bg_gray"></div>
+                    <div>
+                        <div class="flexrow">
+                            <button id="buttonStart" class="btn btn-info btn-sm marginlr2">[</button>
+                            <button id="buttonEnd" class="btn btn-info btn-sm marginlr2">]</button>
+                            <div id="segmentNameDiv" class="hide flexrow">
+                                <input type="text" class="scriptInput" id="segmentName" placeholder="片段名">
+                                <button id="buttonAddSegment" class="btn btn-info btn-sm marginlr2">+</button>
+                            </div>
+                            <button id="buttonSegments" class="btn btn-info btn-sm marginlr2">...</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="script" class="height100p bg_black gray " style="overflow: scroll;padding-right: 80px;padding-left:6px;font-family:serif;">
@@ -92,6 +103,18 @@
     </div>
 </div>
 
+<div id="templateActionSheetButton" style="display:none">
+    <button id="actionSheetButton_#id#" type="button" class="btn btn-info btn-sm widthAuto margintb6">
+        #name#
+    </button>
+</div>
+<div id="templateActionSheet" class="hide">
+    <div class="row text-center">#content#</div>
+    <br>
+    <div id="actionSheetButtons" class="flexcolumn">
+        #buttons#
+    </div>
+</div>
 <script src="./js/jquery.js"></script>
 <script src="vendor/store.legacy.min.js"></script>
 <script src="js/jquery.enhsplitter.js"></script>

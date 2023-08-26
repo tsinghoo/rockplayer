@@ -4,6 +4,9 @@ let system = null;
 let scriptTimes = {};
 let maskEnabled = 1;
 let recentFiles = share.getCache__("recent");
+let start = -1;
+let end = -1;
+
 if (recentFiles == null) {
     recentFiles = [];
 } else {
@@ -495,7 +498,6 @@ function loadRecent() {
             var file = recentFiles[lst[1]].name;
             window.open("./index.html?f=" + file, file);
         })
-
     });
 }
 
@@ -542,6 +544,24 @@ function toShowReplacers() {
     );
 }
 
+function toShowSegments() {
+    var buttons = [];
+    var segs = self.metadata.segments;
+    Object.keys(segs).forEach((seg, i) => {
+        let time = self.metadata.segments[seg];
+        buttons.push({
+            text: seg + ":" + share.getDurationText1__(time.start) + "-" + share.getDurationText1__(time.end),
+            onTap: function (e) {
+                player.currentTime(time.start);
+                player.play();
+                share.closeDialog__();
+            }
+        })
+    });
+
+    share.showActionSheet__('请选择', buttons);
+}
+
 function getMetadata(fileName) {
     var url = "./metadata";
     var params = {
@@ -566,7 +586,36 @@ function getMetadata(fileName) {
     );
 }
 
+function showStartEnd() {
+    if (start > -1) {
+        $("#replaceWords").html(share.getDurationText1__(start) + " => ");
+        if (end > start) {
+            $("#replaceWords").html(share.getDurationText1__(start) + " => " + share.getDurationText1__(end));
+            $("#segmentNameDiv").removeClass("hide");
+        } else {
+            $("#segmentNameDiv").addClass("hide");
+        }
+    } else {
+        $("#replaceWords").html();
+    }
 
+}
+function buttonStartClicked() {
+    start = player.currentTime();
+    if (end < start) {
+        end = -1;
+    }
+    showStartEnd();
+}
+
+function buttonEndClicked() {
+    end = player.currentTime();
+
+    if (end < start) {
+        start = -1;
+    }
+    showStartEnd();
+}
 
 $(function () {
     $('#holder').enhsplitter({ handle: 'lotsofdots', minSize: 50, vertical: true });
@@ -577,12 +626,57 @@ $(function () {
     $("#buttonReplace").on("click", function () {
         toShowReplacers();
     });
+    $("#buttonSegments").on("click", function () {
+        toShowSegments();
+    });
     $("#buttonReplacerClose").on("click", function () {
         $("#replacerContainer").addClass("hide");
     });
     $("#buttonReplacerConfirm").on("click", function () {
         toReplace();
     });
+
+
+    $("#buttonStart").on("click", function () {
+        buttonStartClicked();
+    });
+    $("#buttonEnd").on("click", function () {
+        buttonEndClicked();
+    });
+    $("#buttonAddSegment").on("click", function () {
+        toAddSegment();
+    });
+
+    function toAddSegment() {
+        var url = "./addSegment";
+        var name = $("#segmentName").val().trim();
+        if (name == "") {
+            share.toastError__("请先输入片段名");
+            return;
+        }
+        var fileName = share.getParameter__("f");
+        var params = {
+            start, end, name, fileName
+        };
+
+        var success = function (res) {
+            share.closeDialog__();
+            self.metadata = res.data;
+        };
+
+        var fail = function (e) {
+            share.toastError__(e);
+        };
+
+
+        share.httpGet__(
+            url,
+            params,
+            success,
+            fail
+        );
+    }
+
 
     var fileName = share.getParameter__("f");
     if (fileName != null && fileName.trim() != "") {

@@ -229,6 +229,37 @@ app.get('/video/metadata', (req, res) => {
     var resp = req.query.js + "(" + JSON.stringify({ data: m }) + ");";
     res.send(resp);
 });
+app.get('/video/addSegment', (req, res) => {
+    console.log("video/addSegment");
+    var fileName = req.query.fileName;
+    var start = req.query.start;
+    var end = req.query.end;
+    var name = req.query.name;
+    var rPath = path.join(directoryPath, "metadata");
+    var data = {};
+    try {
+        data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+    } catch (e) {
+        console.log("error parsing metadata:" + e.message);
+    }
+
+    var m = data[fileName];
+    if (m == null) {
+        m = {};
+        data[fileName] = m;
+    }
+
+    if (m.segments == null) {
+        m.segments = {};
+    }
+
+    m.segments[name] = { start, end };
+
+    fs.writeFileSync(rPath, JSON.stringify(data));
+
+    var resp = req.query.js + "(" + JSON.stringify({ data: m }) + ");";
+    res.send(resp);
+});
 app.get('/video/updateScript', (req, res) => {
     console.log("video/updateScript");
     const params = JSON.parse(req.query.params);
@@ -263,6 +294,30 @@ app.get('/video/updateScript', (req, res) => {
     var resp = req.query.js + "(" + JSON.stringify({ data: {} }) + ");";
     //resp = JSON.stringify(otags);
     //res.jsonp(resp);
+    res.send(resp);
+});
+app.get('/video/updatePosition', (req, res) => {
+    console.log("video/updatePosition");
+    var fileName = req.query.fileName;
+    var position = req.query.position;
+    var rPath = path.join(directoryPath, "metadata");
+    var data = {};
+    try {
+        data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+    } catch (e) {
+        console.log("error parsing replacers:" + e.message);
+    }
+
+    m = data[fileName];
+    if (m == null) {
+        m = {};
+    }
+    m.position = position;
+    m.lastUpdateTime = new Date().getTime();
+    data[fileName] = m;
+    fs.writeFileSync(rPath, JSON.stringify(data));
+
+    var resp = req.query.js + "(" + JSON.stringify({ data: m }) + ");";
     res.send(resp);
 });
 app.get('/video/updatePosition', (req, res) => {
