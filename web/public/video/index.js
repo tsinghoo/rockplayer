@@ -141,12 +141,6 @@ $("#mask").on("click", (event) => {
     if (player) {
         if (player.paused()) {
             player.play();
-            if (playingId>0){
-                $("#script_" + playingId)[0].scrollIntoView({ 
-                    behavior: "smooth",  // 平滑滚动
-                    block: "center"      // 将元素滚动到视野中间
-                  });
-            }
 
         } else {
             player.pause();
@@ -270,6 +264,12 @@ function play(fileName) {
     });
     player.on('pause', function () {
         updatePosition();
+        if (playingId>0){
+            $("#script_" + playingId)[0].scrollIntoView({ 
+                behavior: "smooth",  // 平滑滚动
+                block: "center"      // 将元素滚动到视野中间
+              });
+        }
     });
 
     function updatePosition() {
