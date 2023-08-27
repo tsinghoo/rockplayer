@@ -6,6 +6,7 @@ let maskEnabled = 1;
 let recentFiles = share.getCache__("recent");
 let start = -1;
 let end = -1;
+let playingId = -1;
 
 if (recentFiles == null) {
     recentFiles = [];
@@ -140,6 +141,13 @@ $("#mask").on("click", (event) => {
     if (player) {
         if (player.paused()) {
             player.play();
+            if (playingId>0){
+                $("#script_" + playingId)[0].scrollIntoView({ 
+                    behavior: "smooth",  // 平滑滚动
+                    block: "center"      // 将元素滚动到视野中间
+                  });
+            }
+
         } else {
             player.pause();
         }
@@ -302,6 +310,7 @@ function play(fileName) {
         if (id != null) {
             $(".scriptLine").removeClass("selected");
             $("#script_" + id).addClass("selected");
+            playingId = id;
         }
     });
 
@@ -384,10 +393,10 @@ function play(fileName) {
                             event.stopPropagation();
                             if (event.key == "Delete" || event.key == "Backspace") {
                                 scriptBeforeDel = event.target.value;
-                                deletedWord = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
-                                if (deletedWord == "") {
-                                    $("#replaceWords").html(deletedWord);
+                                let dw = scriptBeforeDel.substring(event.target.selectionStart, event.target.selectionEnd);
+                                if (dw == "") {
                                 } else {
+                                    deletedWord = dw;
                                     $("#replaceWords").html(deletedWord + " => ");
                                 }
                                 console.log("Deleted word: " + deletedWord);
