@@ -264,11 +264,11 @@ function play(fileName) {
     });
     player.on('pause', function () {
         updatePosition();
-        if (playingId>0){
-            $("#script_" + playingId)[0].scrollIntoView({ 
+        if (playingId > 0) {
+            $("#script_" + playingId)[0].scrollIntoView({
                 behavior: "smooth",  // 平滑滚动
                 block: "center"      // 将元素滚动到视野中间
-              });
+            });
         }
     });
 
@@ -562,6 +562,10 @@ function toShowSegments() {
             text: seg + ":" + share.getDurationText1__(time.start) + "-" + share.getDurationText1__(time.end),
             onTap: function (e) {
                 player.currentTime(time.start);
+                start = time.start;
+                end = time.end;
+                $("#segmentName").val(seg);
+                showStartEnd();
                 player.play();
                 share.closeDialog__();
             }
