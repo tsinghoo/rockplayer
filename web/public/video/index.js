@@ -389,6 +389,7 @@ function play(fileName) {
                             editing = true;
                             scriptBeforeDel = "";
                         }, 200);
+
                         $(".scriptInput").on("keydown", function (event) {
                             event.stopPropagation();
                             if (event.key == "Delete" || event.key == "Backspace") {
@@ -648,7 +649,9 @@ $(function () {
     $("#buttonReplacerConfirm").on("click", function () {
         toReplace();
     });
-
+    $("#segmentName").on("keydown", function (event) {
+        event.stopPropagation();
+    });
 
     $("#buttonStart").on("click", function () {
         buttonStartClicked();
