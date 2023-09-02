@@ -264,15 +264,7 @@ function play(fileName) {
     });
     player.on('pause', function () {
         updatePosition();
-        if (playingId > -1) {
-            let ele = $("#script_" + playingId);
-            if (!share.isInView__(ele)) {
-                ele[0].scrollIntoView({
-                    behavior: "smooth",  // 平滑滚动
-                    block: "center"      // 将元素滚动到视野中间
-                });
-            }
-        }
+        scrollScript();
     });
 
     function updatePosition() {
@@ -314,6 +306,7 @@ function play(fileName) {
             $(".scriptLine").removeClass("selected");
             $("#script_" + id).addClass("selected");
             playingId = id;
+            scrollScript();
         }
     });
 
@@ -458,6 +451,18 @@ function play(fileName) {
                 }, dblClickInterval);
             });
         });
+    }
+}
+
+function scrollScript() {
+    if (playingId > -1) {
+        let ele = $("#script_" + playingId);
+        if (!share.isInView__(ele)) {
+            ele[0].scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
     }
 }
 
