@@ -606,14 +606,15 @@ function getMetadata(fileName) {
 function showStartEnd() {
     if (start > -1) {
         $("#replaceWords").html(share.getDurationText1__(start) + " => ");
+        $("#segmentNameDiv").removeClass("hide");
         if (end > start) {
             $("#replaceWords").html(share.getDurationText1__(start) + " => " + share.getDurationText1__(end));
-            
+
         } else {
-            
         }
     } else {
         $("#replaceWords").html();
+        $("#segmentNameDiv").addClass("hide");
     }
 
 }
