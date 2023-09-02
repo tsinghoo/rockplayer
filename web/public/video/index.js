@@ -264,7 +264,6 @@ function play(fileName) {
     });
     player.on('pause', function () {
         updatePosition();
-        scrollScript();
     });
 
     function updatePosition() {
@@ -453,16 +452,20 @@ function play(fileName) {
         });
     }
 }
-
+let scrolling = false;
 function scrollScript() {
-    if (playingId > -1) {
-        let ele = $("#script_" + playingId);
-        if (!share.isInView__(ele)) {
-            ele[0].scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
+    if (!scrolling) {
+        scrolling = true;
+        if (playingId > -1) {
+            let ele = $("#script_" + playingId);
+            if (!share.isInView__(ele)) {
+                ele[0].scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+            }
         }
+        setTimeout(() => { scrolling = false; }, 200);
     }
 }
 
