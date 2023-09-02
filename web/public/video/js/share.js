@@ -2533,10 +2533,7 @@ window.mhgl_share =
         var childTop = childElement.offset().top;
         var childBottom = childTop + childElement.outerHeight();
 
-        var parentViewportTop = parentElement.scrollTop();
-        var parentViewportBottom = parentViewportTop + parentElement.height();
-
-        if (childTop >= parentTop && childBottom <= parentBottom && childTop >= parentViewportTop && childBottom <= parentViewportBottom) {
+        if (childTop >= parentTop && childBottom <= parentBottom) {
           return true;
         } else {
           return false;
