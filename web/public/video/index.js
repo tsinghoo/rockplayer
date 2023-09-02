@@ -465,7 +465,7 @@ function scrollScript() {
                 });
             }
         }
-        setTimeout(() => { scrolling = false; }, 200);
+        setTimeout(() => { scrolling = false; }, 1000);
     }
 }
 
