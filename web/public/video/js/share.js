@@ -2523,6 +2523,25 @@ window.mhgl_share =
         return share.dialog__;
       },
 
+      isInView__: function (ele) {
+        var parentElement = ele.parent();
+        var childElement = ele;
+
+        var parentTop = parentElement.offset().top;
+        var parentBottom = parentTop + parentElement.outerHeight();
+
+        var childTop = childElement.offset().top;
+        var childBottom = childTop + childElement.outerHeight();
+
+        var parentViewportTop = parentElement.scrollTop();
+        var parentViewportBottom = parentViewportTop + parentElement.height();
+
+        if (childTop >= parentTop && childBottom <= parentBottom && childTop >= parentViewportTop && childBottom <= parentViewportBottom) {
+          return true;
+        } else {
+          return false;
+        }
+      },
       showActionSheet__: function (content, buttons, onHide, onShown, title) {
         share.dialog__ = share.showSelfActionSheet__(
           content,

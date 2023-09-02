@@ -264,11 +264,14 @@ function play(fileName) {
     });
     player.on('pause', function () {
         updatePosition();
-        if (playingId > 0) {
-            $("#script_" + playingId)[0].scrollIntoView({
-                behavior: "smooth",  // 平滑滚动
-                block: "center"      // 将元素滚动到视野中间
-            });
+        if (playingId > -1) {
+            let ele = $("#script_" + playingId);
+            if (!share.isInView__(ele)) {
+                ele[0].scrollIntoView({
+                    behavior: "smooth",  // 平滑滚动
+                    block: "center"      // 将元素滚动到视野中间
+                });
+            }
         }
     });
 
@@ -605,9 +608,9 @@ function showStartEnd() {
         $("#replaceWords").html(share.getDurationText1__(start) + " => ");
         if (end > start) {
             $("#replaceWords").html(share.getDurationText1__(start) + " => " + share.getDurationText1__(end));
-            $("#segmentNameDiv").removeClass("hide");
+            
         } else {
-            $("#segmentNameDiv").addClass("hide");
+            
         }
     } else {
         $("#replaceWords").html();
