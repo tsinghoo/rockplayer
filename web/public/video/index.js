@@ -7,6 +7,7 @@ let recentFiles = share.getCache__("recent");
 let start = -1;
 let end = -1;
 let playingId = -1;
+let lastActionTime = new Date().getTime();
 
 if (recentFiles == null) {
     recentFiles = [];
@@ -342,6 +343,7 @@ function play(fileName) {
 
             $(".scriptLine").on("dblclick", function (e) {
                 dblclick = true;
+                lastActionTime = new Date().getTime();
                 let line = $(this).html();
                 let time = getSeconds(line);
                 if (time > -1) {
@@ -356,6 +358,7 @@ function play(fileName) {
 
             $(".scriptLine").on("click", function (e) {
 
+                lastActionTime = new Date().getTime();
                 let ele = $(this);
                 if (ele.html().indexOf("<input type") > 0) {
                     return;
@@ -386,6 +389,7 @@ function play(fileName) {
                         }, 200);
 
                         $(".scriptInput").on("keydown", function (event) {
+                            lastActionTime = new Date().getTime();
                             event.stopPropagation();
                             if (event.key == "Delete" || event.key == "Backspace") {
                                 scriptBeforeDel = event.target.value;
@@ -454,18 +458,21 @@ function play(fileName) {
 }
 let scrolling = false;
 function scrollScript() {
-    if (!scrolling) {
-        scrolling = true;
-        if (playingId > -1) {
-            let ele = $("#script_" + playingId);
-            if (!share.isInView__(ele)) {
-                ele[0].scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
+    var now = new Date().getTime();
+    if (now - lastActionTime > 1000 * 10) {
+        if (!scrolling) {
+            scrolling = true;
+            if (playingId > -1) {
+                let ele = $("#script_" + playingId);
+                if (!share.isInView__(ele)) {
+                    ele[0].scrollIntoView({
+                        behavior: "smooth",
+                        block: "center"
+                    });
+                }
             }
+            setTimeout(() => { scrolling = false; }, 1000);
         }
-        setTimeout(() => { scrolling = false; }, 1000);
     }
 }
 
@@ -661,7 +668,17 @@ $(function () {
     $("#buttonReplacerConfirm").on("click", function () {
         toReplace();
     });
+
+    $("#script").on("mousemove", function (e) {
+        lastActionTime = new Date().getTime();
+    });
+
+    $("#script").on("wheel", function (e) {
+        lastActionTime = new Date().getTime();
+    });
+
     $("#segmentName").on("keydown", function (event) {
+        lastActionTime = new Date().getTime();
         event.stopPropagation();
     });
 
