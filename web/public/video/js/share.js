@@ -671,6 +671,148 @@ window.mhgl_share =
         }
       },
 
+      httpPost__: function (
+        url,
+        params,
+        success,
+        fail,
+        headers,
+        notNeedLogin,
+        notHandleCodes,
+        showDialog
+      ) {
+        if (showDialog == null) {
+          showDialog = "查询中";
+          showDialog = "";
+        }
+        var openId = share.getParameter__("openId");
+        var appId = share.getParameter__("appId");
+        var otp = share.getParameter__("otp");
+        var browser = "browser";
+        if (share.isFromWechatBrowser__()) {
+          browser = "wechat";
+        }
+        $.extend(params, {
+          mhgl: share.mhgl__,
+          openId: openId,
+          otp: otp,
+          browser: browser
+        });
+        if (!notNeedLogin && share.user__ != null) {
+          $.extend(params, {
+            JSESSIONID: share.user__.token,
+            userId: share.user__.id,
+            v: share.version__
+          });
+        }
+
+        var dialog = showDialog == "" ? null : share.toastWaiting__(showDialog);
+        share.log__("Post " + url);
+        share.log__("Request:" + JSON.stringify(params, null, 2));
+
+        var baseUrl = share.getBaseUrl__();
+        if (url.indexOf(baseUrl) == 0 && params.encode != 0) {
+          params.uri = url.substring(baseUrl.length);
+          var newParams = share.encode__(params);
+          params = newParams;
+          url = share.getBaseUrl__() + "/mvc/pe";
+        }
+
+        $.ajax({
+          type: "POST",
+          async: true,
+          url: url,
+          contentType: 'application/json',
+          data: JSON.stringify(params),
+          headers: headers,
+          //dataType: "jsonp",
+          success: function (json) {
+            // share.log__("Response:" + JSON.stringify(json, null, 2));
+            json = JSON.parse(json);
+            dialog && dialog.close();
+            if (json.d) {
+              var str = share.decode__(json.d);
+              json = JSON.parse(str);
+            }
+
+            share.log__(function () {
+              return "Response:" + JSON.stringify(json, null, 2);
+            });
+            var error = share.errorProcessed__(json, notHandleCodes);
+            if (error == 401) {
+              if (fail != null) fail(json);
+            } else if (error == share.code__.needCharge) {
+              // share.toCharge__();
+              var charge = null;
+              try {
+                charge = JSON.parse(json.message);
+              } catch (e) { }
+
+              if (charge == null) {
+                share.log__("error:need charge");
+              } else {
+                if (share.isFromWechatBrowser__()) {
+                  var cred = JSON.parse(charge.credential);
+                  if (charge.comment) {
+                    var title = "提示";
+                    var content = charge.comment;
+                    var buttons = [
+                      {
+                        text: "去支付",
+                        onTap: function () {
+                          share.closeDialog__(function () {
+                            share.wxPay__(cred.c_wx_pub, success, fail);
+                          });
+                        }
+                      },
+                      {
+                        text: "去充值",
+                        onTap: function () {
+                          share.open__("./charge.htm");
+                        }
+                      },
+                      {
+                        text: "取消",
+                        onTap: function () {
+                          share.closeDialog__();
+                        }
+                      }
+                    ];
+                    share.showDialog__(title, content, buttons);
+                  } else {
+                    share.wxPay__(cred.c_wx_pub, success, fail);
+                  }
+                } else {
+                  var message = $("#templatePayQr").html();
+                  if (charge.comment) {
+                    message = $("#templatePayQrWithComment").html();
+                    message = message.replace(/#comment#/g, charge.comment);
+                  }
+                  message = message.replace(/#qrUrl#/g, charge.qrUrl);
+                  message = message.replace(/#amount#/g, charge.amount / 100);
+                  share.toastInfo__(message);
+                }
+              }
+            } else if (error != 0) {
+              if (fail != null) fail(json);
+            } else {
+              if (success != null) success(json);
+              setTimeout(share.autoSetSize__, 1000);
+              share.setParentLocation__();
+            }
+          },
+          error: function (e) {
+            share.log__("Response:" + JSON.stringify(e, null, 2));
+            dialog && dialog.close();
+            if (fail) {
+              fail(e);
+            } else {
+              share.handleAjaxError__(e);
+            }
+          }
+        });
+      },
+
       httpGet__: function (
         url,
         params,

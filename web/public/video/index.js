@@ -199,7 +199,7 @@ function updateScript(index, file, oldScript, newScript, deletedWord, newWord, o
     };
 
 
-    share.httpGet__(
+    share.httpPost__(
         url,
         params,
         success,

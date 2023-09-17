@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const mime = require('mime');
 const app = express();
+app.use(express.json());
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
 const args = process.argv;
@@ -260,10 +261,10 @@ app.get('/video/addSegment', (req, res) => {
     var resp = req.query.js + "(" + JSON.stringify({ data: m }) + ");";
     res.send(resp);
 });
-app.get('/video/updateScript', (req, res) => {
+app.post('/video/updateScript', (req, res) => {
     console.log("video/updateScript");
-    const params = JSON.parse(req.query.params);
-    console.log("params:" + req.query.params);
+    console.log("params:" + JSON.stringify(req.body));
+    const params = JSON.parse(req.body.params);
     var filePath = path.join(directoryPath, params.file);
     console.log("filePath:" + filePath);
     var rPath = path.join(directoryPath, "replacers");
@@ -291,7 +292,7 @@ app.get('/video/updateScript', (req, res) => {
     }
     fs.writeFileSync(filePath, scripts);
 
-    var resp = req.query.js + "(" + JSON.stringify({ data: {} }) + ");";
+    var resp = JSON.stringify({ data: {} });
     //resp = JSON.stringify(otags);
     //res.jsonp(resp);
     res.send(resp);
