@@ -175,9 +175,9 @@ window.mhgl_file_list =
           deleteFile(self.clickedFile);
         }
       },
-      toSplit: function (fileName) {
+      toSplit: function () {
         if (confirm('确定要切分该文件吗？')) {
-          splitFile(fileName);
+          splitFile(self.clickedFile);
         }
       },
       moreAction: function (fn) {
