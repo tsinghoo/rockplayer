@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const mime = require('mime');
 const app = express();
+const { spawn, exec } = require('child_process');
+let response = [];
+let splitting = 0;
 app.use(express.json());
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
@@ -100,7 +103,6 @@ function deleteFiles(prefix) {
     });
 }
 
-// 删除文件
 function toStt(fileName) {
     var todo = path.join(directoryPath, "todo");
     fs.readFile(todo, 'utf8', (err, data) => {
@@ -131,6 +133,106 @@ function toStt(fileName) {
         });
 
     });
+}
+
+function toSplit(fileName) {
+    var toSplit = path.join(directoryPath, "toSplit");
+    fs.readFile(toSplit, 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        var files = data.split("\n");
+        var exists = 0;
+        for (var i = 0; i < files.length; ++i) {
+            if (files[i] == fileName) {
+                exists = 1;
+                break;
+            }
+        }
+
+        if (!exists) {
+            files.push(fileName);
+        }
+
+        fs.writeFile(toSplit, files.join("\n"), 'utf8', (err) => {
+            if (err) {
+                console.error(err);
+                return;
+            }
+
+            console.log('toSplit写入成功。');
+        });
+
+    });
+}
+
+function splitVideo(inputFilePath) {
+    return new Promise((resolve, reject) => {
+        const outputDir = path.dirname(inputFilePath);
+        var pos = inputFilePath.lastIndexOf(".");
+        if (pos < 0) {
+            console.log("bad file:" + inputFilePath);
+            return;
+        }
+
+        var fileName = inputFilePath.substring(0, pos);
+        var fileExt = inputFilePath.substring(pos + 1, inputFilePath.length);
+
+        const outputPattern = `${fileName}.%02d.${fileExt}`;
+        const command = `ffmpeg -i ${inputFilePath} -c copy -f segment -segment_time 900 -reset_timestamps 1 -map 0 ${outputPattern}`;
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve();
+        });
+    });
+}
+async function doSplit() {
+    var toSplit = path.join(directoryPath, "toSplit");
+    if (splitting == 1) {
+        return;
+    }
+    splitting = 1;
+
+    try {
+        var data = fs.readFileSync(toSplit, 'utf8');
+        var files = data.split("\n");
+        console.log(files.length);
+        for (var i = 0; i < files.length; ++i) {
+            var ele = files[i];
+            if (fs.existsSync(path.join(directoryPath, ele))) {
+                var pos = ele.lastIndexOf(".");
+                if (pos < 0) {
+                    response.push("bad file:" + ele);
+                    continue;
+                }
+
+                var fileName = ele.substring(0, pos);
+                var fileExt = ele.substring(pos + 1, ele.length);
+
+                if (fs.existsSync(path.join(directoryPath, fileName + ".00." + fileExt))) {
+                    response.push("split skipped:" + ele);
+                    continue;
+                }
+                response.push(`${ele} splitting`);
+                try {
+                    await splitVideo(path.join(directoryPath, ele));
+                    response.push(`${ele} splitted`);
+                } catch (e) {
+                    response.push("error:" + e.message);
+                }
+            }
+        }
+    } catch (e) {
+        console.log(e.message);
+        response.push("error:" + e.message);
+    }
+
+    splitting = 0;
 }
 
 // 设置模板引擎
@@ -414,6 +516,29 @@ app.post('/video/toStt', (req, res) => {
     res.redirect('/video');
 });
 
+app.post('/video/toSplit', (req, res) => {
+    const filePath = req.query.file;
+    toSplit(filePath);
+    res.redirect('/video');
+});
+
+app.get('/video/doSplit', (req, res) => {
+    console.log("splitting=" + splitting);
+    if (response.length > 0) {
+        res.send("<pre>" + response.join("\n") + "</pre>");
+        if (splitting == 0) {
+            response = [];
+            return;
+        }
+    }
+
+    if (splitting == 0) {
+        doSplit().then();
+        res.send("started");
+    } else {
+        res.send(JSON.stringify(response));
+    }
+});
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });

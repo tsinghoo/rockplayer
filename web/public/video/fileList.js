@@ -175,12 +175,21 @@ window.mhgl_file_list =
           deleteFile(self.clickedFile);
         }
       },
+      toSplit: function (fileName) {
+        if (confirm('确定要切分该文件吗？')) {
+          splitFile(fileName);
+        }
+      },
       moreAction: function (fn) {
         self.clickedFile = fn;
         var buttons = [];
         buttons.push({
           text: '删除',
           onTap: self.toDelete
+        });
+        buttons.push({
+          text: '切分',
+          onTap: self.toSplit
         });
         buttons.push({
           text: '标签',
@@ -321,12 +330,23 @@ function deleteFile(fileName) {
 function toStt(fileName) {
   fetch('./toStt?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
     if (response.ok) {
-      refresh();
+      //refresh();
     } else {
       alert('加入字幕出错！');
     }
   }).catch(error => {
     alert('加入字幕出错！');
+  });
+}
+function splitFile(fileName) {
+  fetch('./toSplit?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
+    if (response.ok) {
+      mhgl_share.closeDialog__();
+    } else {
+      alert('加入分割队列出错！');
+    }
+  }).catch(error => {
+    alert('加入分割队列出错！');
   });
 }
 
