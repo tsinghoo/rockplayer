@@ -103,6 +103,25 @@ function deleteFiles(prefix) {
     });
 }
 
+function cleanFileMetadata() {
+    var rPath = path.join(directoryPath, "metadata");
+    var data = {};
+    try {
+        data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+    } catch (e) {
+        console.log("error parsing replacers:" + e.message);
+    }
+
+    Object.keys(data).forEach(fileName => {
+        let fp = path.join(directoryPath, fileName);
+        if (fs.existsSync(fp)) {
+            delete data[fileName];
+        }
+    });
+
+    fs.writeFileSync(rPath, JSON.stringify(data));
+}
+
 function toStt(fileName) {
     var todo = path.join(directoryPath, "todo");
     fs.readFile(todo, 'utf8', (err, data) => {
@@ -507,6 +526,7 @@ app.post('/video/delete', (req, res) => {
         res.status(403).send("forbidden");
     } else {
         deleteFiles(filePath);
+        cleanFileMetadata();
         res.redirect('/video');
     }
 });

@@ -40,10 +40,15 @@ window.mhgl_file_list =
         var success = function (res) {
           share.closeDialog__();
           self.metadata = res.data;
-          self.files = Object.keys(self.metadata).map((fn, i) => {
+          self.files = [];
+          Object.keys(self.metadata).map((fn, i) => {
             var file = self.allFiles[fn];
-            if (file != null && self.metadata[fn] != null) {
-              file.lastUpdateTime = self.metadata[fn].lastUpdateTime;
+            if (file != null) {
+              if (self.metadata[fn] != null) {
+                file.lastUpdateTime = self.metadata[fn].lastUpdateTime;
+              }
+              
+              self.files.push(file);
             }
             return file ? file : self.metadata[fn];
           });
