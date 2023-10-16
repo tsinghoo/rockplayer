@@ -50,7 +50,7 @@ window.mhgl_file_list =
 
           self.doShowFiles(function (a, b) {
             if (a == null || b == null) {
-              return 1;
+              return -1;
             }
             let res = a.lastUpdateTime < b.lastUpdateTime ? 1 : -1;
             return res;
