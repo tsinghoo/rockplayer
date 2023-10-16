@@ -47,7 +47,7 @@ window.mhgl_file_list =
               if (self.metadata[fn] != null) {
                 file.lastUpdateTime = self.metadata[fn].lastUpdateTime;
               }
-              
+
               self.files.push(file);
             }
             return file ? file : self.metadata[fn];
@@ -143,6 +143,7 @@ window.mhgl_file_list =
         if (s.length > 2 && id.length == 11) {
           name = fileName.substring(id.length + 1);
         }
+        name = share.shrinkString__(name, 20);
         return name;
       },
       showTags: function () {
