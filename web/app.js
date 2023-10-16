@@ -114,7 +114,7 @@ function cleanFileMetadata() {
 
     Object.keys(data).forEach(fileName => {
         let fp = path.join(directoryPath, fileName);
-        if (fs.existsSync(fp)) {
+        if (!fs.existsSync(fp)) {
             delete data[fileName];
         }
     });
