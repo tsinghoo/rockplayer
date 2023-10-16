@@ -45,7 +45,7 @@ window.mhgl_file_list =
             if (file != null && self.metadata[fn] != null) {
               file.lastUpdateTime = self.metadata[fn].lastUpdateTime;
             }
-            return file;
+            return file ? file : self.metadata[fn];
           });
 
           self.doShowFiles(function (a, b) {
