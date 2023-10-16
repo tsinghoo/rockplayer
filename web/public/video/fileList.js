@@ -143,7 +143,7 @@ window.mhgl_file_list =
         if (s.length > 2 && id.length == 11) {
           name = fileName.substring(id.length + 1);
         }
-        name = share.shrinkString__(name, 20);
+        name = share.shrinkString__(name, 60);
         return name;
       },
       showTags: function () {
