@@ -42,7 +42,9 @@ window.mhgl_file_list =
           self.metadata = res.data;
           self.files = Object.keys(self.metadata).map((fn, i) => {
             var file = self.allFiles[fn];
-            file.lastUpdateTime = self.metadata[fn].lastUpdateTime;
+            if (self.metadata[fn]) {
+              file.lastUpdateTime = self.metadata[fn].lastUpdateTime;
+            }
             return file;
           });
 
