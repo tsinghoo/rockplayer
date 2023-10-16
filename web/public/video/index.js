@@ -349,6 +349,7 @@ function play(fileName) {
                 if (time > -1) {
                     player.currentTime(time);
                     player.play();
+                    updatePosition();
                 }
 
                 setTimeout(function () {
