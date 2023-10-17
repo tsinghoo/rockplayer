@@ -183,27 +183,18 @@ let getSeconds = function (line) {
     return -1;
 };
 
-function updateScript(index, file, oldScript, newScript, deletedWord, newWord, oldWords) {
+function updateScript(index, file, oldScript, newScript, deletedWord, newWord, oldWords, success, fail) {
     var url = "./updateScript";
     var params = {
         "params": JSON.stringify({
             index, file, oldScript, newScript, deletedWord, newWord, oldWords
         })
     };
-
-    var success = function (res) {
-    };
-
-    var fail = function (e) {
-        share.toastError__(e);
-    };
-
-
     share.httpPost__(
         url,
         params,
         success,
-        fail
+        fail ? fail : share.toastError__
     );
 }
 
@@ -545,7 +536,10 @@ function showReplacer() {
 function toReplace() {
     var fileName = share.getParameter__("f");
     var oldWords = Object.keys(self.replacers);
-    updateScript("", fileName + ".htm", "", "", "", "", JSON.stringify(oldWords));
+    updateScript("", fileName + ".htm", "", "", "", "", JSON.stringify(oldWords), function () {
+        location.reload();
+    });
+
     $("#replacerContainer").addClass("hide");
 }
 
