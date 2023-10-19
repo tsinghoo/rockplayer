@@ -1,119 +1,120 @@
 <html>
 
-    <head>
-        <meta charset="utf-8">
-        <title>Video Player</title>
-        <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet"/>
-        <link rel="stylesheet" href="./css/lqh.css"/>
-        <link href="css/jquery.enhsplitter.css" rel="stylesheet"/>
-        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css"/>
-        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap-theme.css"/>
-        <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet"/>
-        <link rel="stylesheet" href="vendor/lqh.css"/>
-        <style>
-            html,
-            body {
-                padding: 0;
-                margin: 0;
-                overflow: hidden;
-            }
+  <head>
+    <meta charset="utf-8">
+    <title>Video Player</title>
+    <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="./css/lqh.css"/>
+    <link href="css/jquery.enhsplitter.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css"/>
+    <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap-theme.css"/>
+    <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="vendor/lqh.css"/>
+    <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
 
-            .video-js {
-                position: relative !important;
-                width: 100% !important;
-                height: 100% !important;
-            }
-            .scriptInput {
-                width: 100%;
-            }
-            .modal-backdrop.in {
-                filter: alpha(opacity=50);
-                opacity: .05;
-            }
-        </style>
-    </head>
+      .video-js {
+        position: relative !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+      .scriptInput {
+        width: 100%;
+      }
+      .modal-backdrop.in {
+        filter: alpha(opacity=50);
+        opacity: .05;
+      }
+    </style>
+  </head>
 
-    <body>
-        <div id="holder" class="flexrow height100p">
-            <div class="width100p height100p">
-                <div class="width100p height100p" style="position: relative;">
-                    <div id="mask" class="bg_black width100p height100p" style="z-index:1;position:absolute;left:0;top:0;"></div>
-                    <div id="video_container" class="width100p height100p" style="z-index:10;position:absolute;left:0;top:0;"></div>
-                </div>
-            </div>
-            <div class="flexcolumn height100p">
-                <div class="flexrow margintb6" style="margin-top:24px;">
-                    <div>
-                        关闭视频<input id="maskCheckbox" type="checkbox">
-                        <button id="buttonReplace" type="button" class="btn btn-info btn-sm marginlr2">替换</button>
-                    </div>
-                    <div id="replacerContainer" class="hide">
-                        <div id="replacers" class="flexcolumn"></div>
-                        <div>
-                            <button id="buttonReplacerClose" class="btn btn-info btn-sm marginlr2">关闭</button>
-                            <button id="buttonReplacerConfirm" class="btn btn-info btn-sm marginlr2">替换</button>
-                        </div>
-                    </div>
-
-                    <div id="replaceWords" class="marginlr2 flexrow center bg_gray"></div>
-                    <div>
-                        <div class="flexrow">
-                            <button id="buttonStart" class="btn btn-info btn-sm marginlr2">[</button>
-                            <button id="buttonEnd" class="btn btn-info btn-sm marginlr2">]</button>
-                            <div id="segmentNameDiv" class="hide flexrow">
-                                <input type="text" class="" id="segmentName" placeholder="片段名">
-                                <button id="buttonAddSegment" class="btn btn-info btn-sm marginlr2">+</button>
-                            </div>
-                            <button id="buttonSegments" class="btn btn-info btn-sm marginlr2">...</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="script" class="flexcolumn bg_black gray " style="overflow: auto;padding-right: 80px;padding-left:6px;font-family:serif;">
-                    无字幕
-                </div>
-            </div>
+  <body>
+    <div id="holder" class="flexrow height100p">
+      <div class="width100p height100p">
+        <div class="width100p height100p" style="position: relative;">
+          <div id="mask" class="bg_black width100p height100p" style="z-index:1;position:absolute;left:0;top:0;"></div>
+          <div id="video_container" class="width100p height100p" style="z-index:10;position:absolute;left:0;top:0;"></div>
         </div>
+      </div>
+      <div class="flexcolumn height100p">
+        <div class="flexrow margintb6" style="margin-top:24px;">
+          <div>
+            关闭视频<input id="maskCheckbox" type="checkbox">
+            <button id="buttonReplace" type="button" class="btn btn-info btn-sm marginlr2">替换</button>
+          </div>
 
-
-        <div id="recent" class="hide"></div>
-
-        <div id="scriptTemplate" class="hide">
-            <div id="script_#id#" class="scriptLine">
-                #script#
-            </div>
-        </div>
-
-        <div id="editorTemplate" class="hide">
+          <div id="replaceWords" class="marginlr2 flexrow center bg_gray"></div>
+          <div>
             <div class="flexrow">
-                #time#<input type="text" class="scriptInput" id="input_#id#" value="#script#">
+              <button id="buttonStart" class="btn btn-info btn-sm marginlr2">[</button>
+              <button id="buttonEnd" class="btn btn-info btn-sm marginlr2">]</button>
+              <div id="segmentNameDiv" class="hide flexrow">
+                <input type="text" class="" id="segmentName" placeholder="片段名">
+                <button id="buttonAddSegment" class="btn btn-info btn-sm marginlr2">+</button>
+              </div>
+              <button id="buttonSegments" class="btn btn-info btn-sm marginlr2">...</button>
             </div>
+          </div>
         </div>
-        <div id="recentTemplate" class="hide">
-            <div id="recent_#id#" class="recentItem">
-                #name#
-            </div>
+
+        <div id="replacerContainer" class="hide">
+          <div>
+            <button id="buttonReplacerClose" class="btn btn-info btn-sm marginlr2">关闭</button>
+            <button id="buttonReplacerConfirm" class="btn btn-info btn-sm marginlr2">替换</button>
+          </div>
+          <div id="replacers" class="flexcolumn"></div>
         </div>
-    </body>
+
+        <div id="script" class="flexcolumn bg_black gray " style="overflow: auto;padding-right: 80px;padding-left:6px;font-family:serif;">
+          无字幕
+        </div>
+      </div>
+    </div>
+
+
+    <div id="recent" class="hide"></div>
+
+    <div id="scriptTemplate" class="hide">
+      <div id="script_#id#" class="scriptLine">
+        #script#
+      </div>
+    </div>
+
+    <div id="editorTemplate" class="hide">
+      <div class="flexrow">
+        #time#<input type="text" class="scriptInput" id="input_#id#" value="#script#">
+      </div>
+    </div>
+    <div id="recentTemplate" class="hide">
+      <div id="recent_#id#" class="recentItem">
+        #name#
+      </div>
+    </div>
+  </body>
 </html>
 
 <div id="templateReplacer">
-    <div class="flexrow left">
-        <input data="#data#" type="checkbox" checked><div class="replacerContent widthauto">#content#</div>
-    </div>
+  <div class="flexrow left">
+    <input data="#data#" type="checkbox" checked><div class="replacerContent widthauto">#content#</div>
+  </div>
 </div>
 
 <div id="templateActionSheetButton" style="display:none">
-    <button id="actionSheetButton_#id#" type="button" class="btn btn-info btn-sm widthAuto margintb6">
-        #name#
-    </button>
+  <button id="actionSheetButton_#id#" type="button" class="btn btn-info btn-sm widthAuto margintb6">
+    #name#
+  </button>
 </div>
 <div id="templateActionSheet" class="hide">
-    <div class="row text-center">#content#</div>
-    <br>
-    <div id="actionSheetButtons" class="flexcolumn">
-        #buttons#
-    </div>
+  <div class="row text-center">#content#</div>
+  <br>
+  <div id="actionSheetButtons" class="flexcolumn">
+    #buttons#
+  </div>
 </div>
 <script src="./js/jquery.js"></script>
 <script src="vendor/store.legacy.min.js"></script>
