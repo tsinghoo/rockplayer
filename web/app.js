@@ -244,6 +244,8 @@ async function doSplit() {
                 } catch (e) {
                     response.push("error:" + e.message);
                 }
+            } else {
+                response.push(`${ele} not exist`);
             }
         }
     } catch (e) {
