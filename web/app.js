@@ -390,6 +390,7 @@ app.post('/video/updateScript', (req, res) => {
     const params = JSON.parse(req.body.params);
     var filePath = path.join(directoryPath, params.file);
     console.log("filePath:" + filePath);
+    var replaceAll = params.replaceAll;
     var rPath = path.join(directoryPath, "replacers");
     var scripts = fs.readFileSync(filePath, "utf-8");
     var replacers = {};
@@ -406,8 +407,10 @@ app.post('/video/updateScript', (req, res) => {
         });
     } else if (params.deletedWord != '' && params.newWord != '') {
         scripts = scripts.replace(new RegExp(params.deletedWord, "g"), params.newWord);
-        replacers[params.deletedWord] = params.newWord;
-        fs.writeFileSync(rPath, JSON.stringify(replacers));
+        if (replaceAll) {
+            replacers[params.deletedWord] = params.newWord;
+            fs.writeFileSync(rPath, JSON.stringify(replacers));
+        }
     } else {
         var script = scripts.split("\n");
         script[params.index] = script[params.index].replace(new RegExp(params.oldScript, "g"), params.newScript);

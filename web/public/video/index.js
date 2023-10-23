@@ -183,11 +183,11 @@ let getSeconds = function (line) {
     return -1;
 };
 
-function updateScript(index, file, oldScript, newScript, deletedWord, newWord, oldWords, success, fail) {
+function updateScript(index, file, oldScript, newScript, deletedWord, newWord, oldWords, success, fail, replaceAll) {
     var url = "./updateScript";
     var params = {
         "params": JSON.stringify({
-            index, file, oldScript, newScript, deletedWord, newWord, oldWords
+            index, file, oldScript, newScript, deletedWord, newWord, oldWords, replaceAll
         })
     };
     share.httpPost__(
@@ -396,7 +396,7 @@ function play(fileName) {
                         });
                         $(".scriptInput").on("keyup", function (event) {
                             event.stopPropagation();
-                            if (event.key == "Enter" && !event.shiftKey) {
+                            if (event.key == "Enter") {
                                 let newScript = $(this).val().trim();
                                 //line = time + " " + newScript;
                                 //script[id] = line;
@@ -408,7 +408,8 @@ function play(fileName) {
                                     $("#replaceWords").html("");
                                 }
                                 var fileName = share.getParameter__("f");
-                                updateScript(id, fileName + ".htm", oldScript, newScript, deletedWord, newWord, "");
+                                var replaceAll = event.shiftKey;
+                                updateScript(id, fileName + ".htm", oldScript, newScript, deletedWord, newWord, "", null, null, replaceAll);
                                 if (deletedWord != "" && newWord != "") {
                                     console.log(deletedWord + "->" + newWord);
                                     for (let i = 0; i < script.length; ++i) {
