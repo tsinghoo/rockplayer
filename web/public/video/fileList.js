@@ -300,6 +300,9 @@ window.mhgl_file_list =
       tagFile: function (tags) {
         var url = "./tag";
         var files = [self.clickedFile];
+        if (Object.keys(self.checkedFiles).length > 0) {
+          files = Object.keys(self.checkedFiles);
+        }
         var params = {
           tags: JSON.stringify(tags),
           files: JSON.stringify(files)
@@ -317,7 +320,7 @@ window.mhgl_file_list =
         };
 
 
-        share.httpGet__(
+        share.httpPost__(
           url,
           params,
           success,

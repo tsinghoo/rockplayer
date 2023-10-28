@@ -283,42 +283,56 @@ app.get('/video/i', (req, res) => {
     const tags = getTags();
     res.render('fileList', { files: files, tags: tags, remove: remove });
 });
-app.get('/video/tag', (req, res) => {
+app.post('/video/tag', (req, res) => {
     console.log("video/tag");
-    console.log("files=" + req.query.files);
-    console.log("tags=" + req.query.tags);
-    const files = JSON.parse(req.query.files);
-    const tags = JSON.parse(req.query.tags);
+    console.log("files=" + req.body.files);
+    console.log("tags=" + req.body.tags);
+    const files = JSON.parse(req.body.files);
+    const tags = JSON.parse(req.body.tags);
+
     let otags = getTags();
 
-    for (var j = 0; j < files.length; ++j) {
-        console.log("file:" + files[j]);
-        Object.keys(otags).map(
-            (tag) => {
-                var f = otags[tag];
-                delete f[files[j]];
-            }
-        );
-    }
-
-    console.log("otags=" + JSON.stringify(otags));
-
-    for (var i = 0; i < tags.length; ++i) {
-        var f = otags[tags[i]];
-        if (f == null) {
-            f = {};
-            otags[tags[i]] = f;
+    if (files.length == 1) {
+        for (var j = 0; j < files.length; ++j) {
+            console.log("file:" + files[j]);
+            Object.keys(otags).map(
+                (tag) => {
+                    var f = otags[tag];
+                    delete f[files[j]];
+                }
+            );
         }
 
-        for (var j = 0; j < files.length; ++j) {
-            f[files[j]] = 1;
+        console.log("otags=" + JSON.stringify(otags));
+
+        for (var i = 0; i < tags.length; ++i) {
+            var f = otags[tags[i]];
+            if (f == null) {
+                f = {};
+                otags[tags[i]] = f;
+            }
+
+            for (var j = 0; j < files.length; ++j) {
+                f[files[j]] = 1;
+            }
+        }
+
+    } else {
+        for (var i = 0; i < tags.length; ++i) {
+            var f = otags[tags[i]];
+            if (f == null) {
+                f = {};
+                otags[tags[i]] = f;
+            }
+
+            for (var j = 0; j < files.length; ++j) {
+                f[files[j]] = 1;
+            }
         }
     }
 
     fs.writeFileSync(path.join(directoryPath, "tags"), JSON.stringify(otags));
-    var resp = req.query.js + "(" + JSON.stringify({ data: otags }) + ");";
-    //resp = JSON.stringify(otags);
-    //res.jsonp(resp);
+    var resp = JSON.stringify({ data: otags });
     res.send(resp);
 });
 app.get('/video/replacers', (req, res) => {
