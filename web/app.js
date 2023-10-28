@@ -77,30 +77,35 @@ function getTags() {
 }
 
 // 删除文件
-function deleteFiles(prefix) {
-    if (prefix.indexOf("../") >= 0) {
-        console.error();
-    }
-    fs.readdir(directoryPath, (err, files) => {
-        if (err) {
-            console.error('Error reading directory:', err);
-            return;
-        }
+function deleteFiles(prefixs) {
+    console.log("files to delete:" + JSON.stringify(prefixs));
+    prefixs.forEach(
+        prefix => {
+            if (prefix.indexOf("../") >= 0) {
+                console.error();
+            }
+            fs.readdir(directoryPath, (err, files) => {
+                if (err) {
+                    console.error('Error reading directory:', err);
+                    return;
+                }
 
-        files.forEach(file => {
-            if (file.startsWith(prefix) && isVideo(file)) {
-                const filePath = path.join(directoryPath, file);
+                files.forEach(file => {
+                    if (file.startsWith(prefix)) {
+                        const filePath = path.join(directoryPath, file);
 
-                fs.unlink(filePath, err => {
-                    if (err) {
-                        console.error('Error deleting file:', err);
-                    } else {
-                        console.log('File deleted:', filePath);
+                        fs.unlink(filePath, err => {
+                            if (err) {
+                                console.error('Error deleting file:', err);
+                            } else {
+                                console.log('File deleted:', filePath);
+                            }
+                        });
                     }
                 });
-            }
-        });
-    });
+            });
+        }
+    )
 }
 
 function cleanFileMetadata() {
@@ -525,14 +530,22 @@ app.get('/video/download/:filename', (req, res) => {
 
 // 路由：删除文件
 app.post('/video/delete', (req, res) => {
-    const filePath = req.query.file;
-    const remove = req.query.remove;
+    const files = JSON.parse(req.body.files);
+    const remove = req.body.remove;
+    console.log("remove:" + remove);
     if (remove != pwd) {
-        res.status(403).send("forbidden");
+        var resp = JSON.stringify({ ok: 0 });
+        //resp = JSON.stringify(otags);
+        //res.jsonp(resp);
+        res.send(resp);
     } else {
-        deleteFiles(filePath);
+        deleteFiles(files);
         cleanFileMetadata();
-        res.redirect('/video');
+
+        var resp = JSON.stringify({ ok: 1 });
+        //resp = JSON.stringify(otags);
+        //res.jsonp(resp);
+        res.send(resp);
     }
 });
 app.post('/video/toStt', (req, res) => {

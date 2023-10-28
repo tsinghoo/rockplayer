@@ -10,7 +10,7 @@ window.mhgl_file_list =
       remove: window.remove,
       selectedTag: "未标",
       i: 0,
-
+      checkedFiles: {},
       initialize: function () {
         share.log__("mhgl_file_list.init");
         //$("body").html();
@@ -125,6 +125,16 @@ window.mhgl_file_list =
         var fileName = self.files[id].name;
         self.moreAction(fileName);
       },
+      checkFileClicked: function (e) {
+        var id = e.currentTarget.id;
+        var index = id.split("_")[1];
+        var fileName = self.files[index].name;
+        if ($('#' + id).prop('checked')) {
+          self.checkedFiles[fileName] = 1;
+        } else {
+          delete self.checkedFiles[fileName];
+        }
+      },
       tagClicked: function (e) {
         var id = e.currentTarget.id;
         id = id.split("_")[1];
@@ -183,7 +193,7 @@ window.mhgl_file_list =
       },
       toDelete: function () {
         if (confirm('确定要删除该文件吗？')) {
-          deleteFile(self.clickedFile);
+          self.deleteFile(self.clickedFile);
         }
       },
       toSplit: function () {
@@ -193,6 +203,12 @@ window.mhgl_file_list =
       },
       moreAction: function (fn) {
         self.clickedFile = fn;
+        if (Object.keys(self.checkedFiles).length > 0) {
+          if (self.checkedFiles[self.clickedFile]) {
+          } else {
+            return;
+          }
+        }
         var buttons = [];
         buttons.push({
           text: '删除',
@@ -247,6 +263,29 @@ window.mhgl_file_list =
         $(".itemOrigUrl").on("click", self.itemOrigUrlClicked);
         $(".script").on("click", self.scriptClicked);
         $(".fileAction").on("click", self.fileActionClicked);
+        $(".checkFile").on("click", self.checkFileClicked);
+        self.checkedFiles = {};
+      },
+      deleteFile: function (fileName) {
+        var files = self.checkedFiles;
+
+        var url = "./delete";
+        var params = {
+          files: JSON.stringify(Object.keys(files)),
+          remove: window.remove
+        };
+        share.httpPost__(
+          url,
+          params,
+          function (response) {
+            if (response.ok) {
+              refresh();
+            } else {
+              alert('删除文件出错！');
+            }
+          },
+          share.toastError__
+        );
       },
       toTag: function () {
         share.closeDialog__();
@@ -323,19 +362,6 @@ function toPlayer(fileName) {
 
 function toYoutube(id) {
   window.open("https://www.youtube.com/watch?v=" + id, id);
-}
-
-function deleteFile(fileName) {
-  fetch('./delete?remove=' + self.remove + '&file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
-    if (response.ok) {
-      refresh();
-    } else {
-      alert('删除文件出错！');
-    }
-  }).catch(error => {
-    console.error('删除文件出错:', error);
-    alert('删除文件出错！');
-  });
 }
 
 function toStt(fileName) {
