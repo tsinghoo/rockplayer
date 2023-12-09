@@ -376,9 +376,17 @@ const multer = require('multer');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // 指定文件存储的目录
+    console.log("dest:" + file.originalname);
+    const path = path.join(directoryPath, file.originalname);
+    if (fs.existsSync(path)) {
+        console.log("文件已存在");
+        fs.unlinkSync(path);
+    } else {
+    }
     cb(null, directoryPath);
   },
   filename: function (req, file, cb) {
+    console.log("fileName:" + file.originalname);
     // 指定文件名
     cb(null, file.originalname);
   }
@@ -394,7 +402,7 @@ app.post('/video/upload', upload.single('file'), function (req, res, next) {
   }else{
     toStt(file);
   }
-  
+  console.log(file+" saved");
   // 文件上传成功
   res.send('文件上传成功');
 });
