@@ -372,6 +372,30 @@ app.get('/video/metadata', (req, res) => {
     var resp = req.query.js + "(" + JSON.stringify({ data: m }) + ");";
     res.send(resp);
 });
+const multer = require('multer');
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    // 指定文件存储的目录
+    cb(null, directoryPath);
+  },
+  filename: function (req, file, cb) {
+    // 指定文件名
+    cb(null, file.originalname);
+  }
+});
+// 创建 multer 实例并配置存储引擎
+const upload = multer({ storage: storage });
+// 定义上传文件的路由
+app.post('/video/upload', upload.single('file'), function (req, res, next) {
+  // 处理上传的文件
+  const file = req.file;
+  if (!file) {
+    return res.status(400).send('没有选择上传的文件');
+  }
+  
+  // 文件上传成功
+  res.send('文件上传成功');
+});
 app.get('/video/addSegment', (req, res) => {
     console.log("video/addSegment");
     var fileName = req.query.fileName;
