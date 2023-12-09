@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const mime = require('mime');
+const fileUpload = require('express-fileupload');
 const app = express();
 const { spawn, exec } = require('child_process');
 let response = [];
@@ -16,6 +17,9 @@ if (args.length < 4) {
     console.log("node app.js 3000 /your/directory");
     return;
 }
+app.use(fileUpload({
+    createParentPath: true
+}));
 const port = parseInt(args[2]);
 directoryPath = args[3];
 console.log(directoryPath);
@@ -391,21 +395,26 @@ const storage = multer.diskStorage({
     cb(null, file.originalname);
   }
 });
-// 创建 multer 实例并配置存储引擎
-const upload = multer({ storage: storage });
 // 定义上传文件的路由
-app.post('/video/upload', upload.single('file'), function (req, res, next) {
-  // 处理上传的文件
-  const file = req.file;
-  if (!file) {
-    return res.status(400).send('没有选择上传的文件');
-  }else{
-    toStt(file);
-  }
-  console.log(file+" saved");
-  // 文件上传成功
-  res.send('文件上传成功');
-});
+app.post('/video/upload', (req, res) => {
+    console.log("file uploading");
+    if (!req.files || !req.files.file) {
+      return res.status(400).send('No file uploaded.');
+    }
+  
+    const file = req.files.file;
+    const filePath = path.join(directoryPath, file.name);
+  
+    // 将文件保存到服务器上指定目录
+    file.mv(filePath, err => {
+      if (err) {
+        console.error(err);
+        return res.status(500).send(err);
+      }
+  
+      res.send(`File ${file.name} uploaded successfully.`);
+    });
+  });
 app.get('/video/addSegment', (req, res) => {
     console.log("video/addSegment");
     var fileName = req.query.fileName;
