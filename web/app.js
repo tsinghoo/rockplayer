@@ -391,6 +391,8 @@ app.post('/video/upload', upload.single('file'), function (req, res, next) {
   const file = req.file;
   if (!file) {
     return res.status(400).send('没有选择上传的文件');
+  }else{
+    toStt(file);
   }
   
   // 文件上传成功
