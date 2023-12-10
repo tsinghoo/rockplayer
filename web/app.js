@@ -411,7 +411,7 @@ app.post('/video/upload', (req, res) => {
         console.error(err);
         return res.status(500).send(err);
       }
-  
+      toStt(file.name);
       res.send(`File ${file.name} uploaded successfully.`);
     });
   });
