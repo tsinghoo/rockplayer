@@ -207,7 +207,7 @@ function splitVideo(inputFilePath) {
         var fileName = inputFilePath.substring(0, pos);
         var fileExt = inputFilePath.substring(pos + 1, inputFilePath.length);
 
-        const outputPattern = `${fileName}.%02d.${fileExt}`;
+        const outputPattern = `"${fileName}.%02d.${fileExt}"`;
         const command = `ffmpeg -i "${inputFilePath}" -c copy -f segment -segment_time 1800 -reset_timestamps 1 -map 0 ${outputPattern}`;
 
         exec(command, (error, stdout, stderr) => {
