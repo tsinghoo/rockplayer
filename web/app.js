@@ -378,43 +378,43 @@ app.get('/video/metadata', (req, res) => {
 });
 const multer = require('multer');
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // 指定文件存储的目录
-    console.log("dest:" + file.originalname);
-    const path = path.join(directoryPath, file.originalname);
-    if (fs.existsSync(path)) {
-        console.log("文件已存在");
-        fs.unlinkSync(path);
-    } else {
+    destination: function (req, file, cb) {
+        // 指定文件存储的目录
+        console.log("dest:" + file.originalname);
+        const path = path.join(directoryPath, file.originalname);
+        if (fs.existsSync(path)) {
+            console.log("文件已存在");
+            fs.unlinkSync(path);
+        } else {
+        }
+        cb(null, directoryPath);
+    },
+    filename: function (req, file, cb) {
+        console.log("fileName:" + file.originalname);
+        // 指定文件名
+        cb(null, file.originalname);
     }
-    cb(null, directoryPath);
-  },
-  filename: function (req, file, cb) {
-    console.log("fileName:" + file.originalname);
-    // 指定文件名
-    cb(null, file.originalname);
-  }
 });
 // 定义上传文件的路由
 app.post('/video/upload', (req, res) => {
     console.log("file uploading");
     if (!req.files || !req.files.file) {
-      return res.status(400).send('No file uploaded.');
+        return res.status(400).send('No file uploaded.');
     }
-  
+
     const file = req.files.file;
     const filePath = path.join(directoryPath, file.name);
-  
+
     // 将文件保存到服务器上指定目录
     file.mv(filePath, err => {
-      if (err) {
-        console.error(err);
-        return res.status(500).send(err);
-      }
-      toStt(file.name);
-      res.send(`File ${file.name} uploaded successfully.`);
+        if (err) {
+            console.error(err);
+            return res.status(500).send(err);
+        }
+        toStt(file.name);
+        res.send(`File ${file.name} uploaded successfully.`);
     });
-  });
+});
 app.get('/video/addSegment', (req, res) => {
     console.log("video/addSegment");
     var fileName = req.query.fileName;
@@ -542,8 +542,31 @@ app.get('/video/config', (req, res) => {
         const file = fs.createReadStream(path);
         file.pipe(res);
     } else {
+        var defaultConfig = {
+            updateTime: 0,
+            uploaded: 0,
+            uploadFailed: 0,
+            toDetect: false,
+            maxNoSoundSeconds: 10,
+            minContinuousSoundCount: 10
+        };
 
+        fs.writeFileSync(path, JSON.stringify(defaultConfig));
+        res.send(JSON.stringify(defaultConfig));
     }
+});
+
+app.post('/video/ping', (req, res) => {
+    const path = path.join(directoryPath, "config.json");
+    var text = fs.readFileSync(path, "utf-8");
+    var config = JSON.parse(text);
+    var status = req.body.status
+    status = JSON.parse(status);
+    config = Object.assign(config, status);
+    config.updateTime = new Date().getTime();
+    config = JSON.stringify(config);
+    fs.writeFileSync(path, config);
+    res.send(config);
 });
 
 app.get('/video/download/:filename', (req, res) => {
