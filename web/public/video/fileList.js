@@ -31,6 +31,45 @@ window.mhgl_file_list =
         let res = an > bn ? 1 : -1;
         return res;
       },
+      showDetect: function () {
+        var url = "./config";
+        var params = {
+          fileName: ""
+        };
+
+        var success = function (res) {
+          share.closeDialog__();
+          self.detect = res.data;
+          var html = "";
+          Object.keys(self.detect).map((ele, i) => {
+            var info = self.detect[ele];
+            var template = $("#templateDetect").html();
+            var ih = template.replace(/#name#/g, ele);
+            if (info != null) {
+              ih = ih.replace(/#detecting#/g, info.detecting);
+              ih = ih.replace(/#savedCount#/g, info.savedCount);
+              ih = ih.replace(/#fileCount#/g, info.fileCount);
+              ih = ih.replace(/#uploaded#/g, info.uploaded);
+              ih = ih.replace(/#uploadFailed#/g, info.uploadFailed);
+              ih = ih.replace(/#updateTime#/g, share.timeFormat__(info.updateTime));
+              html += ih;
+            }
+          });
+
+          $("#files").html(html);
+        };
+
+        var fail = function (e) {
+          share.toastError__(e);
+        };
+
+        share.httpGet__(
+          url,
+          params,
+          success,
+          fail
+        );
+      },
       showRecentFiles: function () {
         var url = "./metadata";
         var params = {
@@ -78,6 +117,10 @@ window.mhgl_file_list =
         if (self.selectedTag == "最近") {
 
           self.showRecentFiles();
+          return;
+        } else if (self.selectedTag == "detect") {
+
+          self.showDetect();
           return;
         } else if (self.selectedTag == "未标") {
           var k = Object.keys(self.allFiles);
@@ -175,6 +218,7 @@ window.mhgl_file_list =
 
         var temp = $("#templateTag").html();
         var tags = Object.keys(self.tags);
+        tags.unshift("detect");
         tags.unshift("未标");
         tags.unshift("所有");
         tags.unshift("最近");

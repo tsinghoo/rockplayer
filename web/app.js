@@ -537,35 +537,24 @@ app.get('/video/player', (req, res) => {
     res.render('player');
 });
 app.get('/video/config', (req, res) => {
-    const path = path.join(directoryPath, "config.json");
-    if (fs.existsSync(path)) {
-        const file = fs.createReadStream(path);
-        file.pipe(res);
-    } else {
-        var defaultConfig = {
-            updateTime: 0,
-            uploaded: 0,
-            uploadFailed: 0,
-            toDetect: false,
-            maxNoSoundSeconds: 10,
-            minContinuousSoundCount: 10
-        };
-
-        fs.writeFileSync(path, JSON.stringify(defaultConfig));
-        res.send(JSON.stringify(defaultConfig));
-    }
+    const fp = path.join(directoryPath, "config.json");
+    var text = fs.readFileSync(fp, "utf-8");
+    var json = { data: JSON.parse(text) }
+    var resp = req.query.js + "(" + JSON.stringify(json) + ");";
+    res.send(resp);
 });
 
 app.post('/video/ping', (req, res) => {
-    const path = path.join(directoryPath, "config.json");
-    var text = fs.readFileSync(path, "utf-8");
+    const fp = path.join(directoryPath, "config.json");
+    var text = fs.readFileSync(fp, "utf-8");
     var config = JSON.parse(text);
-    var status = req.body.status
-    status = JSON.parse(status);
-    config = Object.assign(config, status);
-    config.updateTime = new Date().getTime();
+    var bd = req.body
+    console.log("body:" + JSON.stringify(bd));
+    Object.keys(bd).forEach((item) => {
+        config[item] = Object.assign(config[item], bd[item])
+    });
     config = JSON.stringify(config);
-    fs.writeFileSync(path, config);
+    fs.writeFileSync(fp, config);
     res.send(config);
 });
 
