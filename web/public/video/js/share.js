@@ -692,19 +692,6 @@ window.mhgl_share =
         if (share.isFromWechatBrowser__()) {
           browser = "wechat";
         }
-        $.extend(params, {
-          mhgl: share.mhgl__,
-          openId: openId,
-          otp: otp,
-          browser: browser
-        });
-        if (!notNeedLogin && share.user__ != null) {
-          $.extend(params, {
-            JSESSIONID: share.user__.token,
-            userId: share.user__.id,
-            v: share.version__
-          });
-        }
 
         var dialog = showDialog == "" ? null : share.toastWaiting__(showDialog);
         share.log__("Post " + url);
@@ -1662,6 +1649,9 @@ window.mhgl_share =
         }
       },
       timeFormat__: function (time, fmt) {
+        if (time == null) {
+          return "";
+        }
         if (time.time) {
           time = new Date(time.time);
         } else {

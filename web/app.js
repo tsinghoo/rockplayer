@@ -551,7 +551,9 @@ app.post('/video/ping', (req, res) => {
     var bd = req.body
     console.log("body:" + JSON.stringify(bd));
     Object.keys(bd).forEach((item) => {
-        config[item] = {};
+        if (config[item] == null) {
+            config[item] = {};
+        }
         config[item] = Object.assign(config[item], bd[item])
     });
     config = JSON.stringify(config);

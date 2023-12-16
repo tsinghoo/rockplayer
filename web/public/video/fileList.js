@@ -77,7 +77,7 @@ window.mhgl_file_list =
       },
       toDetect: function (deviceName) {
         var cfg = self.detect[deviceName];
-        var toDetect = (cfg.detecting == 1) ? 0 : 1;
+        var toDetect = (cfg.detecting == true) ? 0 : 1;
         var url = "./ping";
         var params = {
         };
@@ -87,7 +87,7 @@ window.mhgl_file_list =
           url,
           params,
           function (response) {
-            if (response.ok) {
+            if (response.code == 0) {
               refresh();
             } else {
               alert('设置失败');
