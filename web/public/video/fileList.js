@@ -57,6 +57,11 @@ window.mhgl_file_list =
           });
 
           $("#files").html(html);
+
+          $(".deviceName").on("click", function (e) {
+            var id = e.currentTarget.id;
+            self.toDetect(id);
+          });
         };
 
         var fail = function (e) {
@@ -68,6 +73,27 @@ window.mhgl_file_list =
           params,
           success,
           fail
+        );
+      },
+      toDetect: function (deviceName) {
+        var cfg = self.detect[deviceName];
+        var toDetect = (cfg.detecting == 1) ? 0 : 1;
+        var url = "./ping";
+        var params = {
+        };
+        params[deviceName] = { toDetect: toDetect }
+
+        share.httpPost__(
+          url,
+          params,
+          function (response) {
+            if (response.ok) {
+              refresh();
+            } else {
+              alert('设置失败');
+            }
+          },
+          share.toastError__
         );
       },
       showRecentFiles: function () {
