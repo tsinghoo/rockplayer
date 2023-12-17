@@ -51,7 +51,7 @@ window.mhgl_file_list =
               ih = ih.replace(/#fileCount#/g, info.fileCount);
               ih = ih.replace(/#uploaded#/g, info.uploaded);
               ih = ih.replace(/#uploadFailed#/g, info.uploadFailed);
-              ih = ih.replace(/#updateTime#/g, share.timeFormat__(info.updateTime, "yyyy-MM-dd HH:mm:ss"));
+              ih = ih.replace(/#updateTime#/g, share.timeFormat__(info.updateTime, "yyyy-MM-dd hh:mm:ss"));
               html += ih;
             }
           });
