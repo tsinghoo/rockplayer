@@ -403,7 +403,8 @@ app.post('/video/upload', (req, res) => {
     }
 
     const file = req.files.file;
-    const filePath = path.join(directoryPath, file.name);
+    var fileName = decodeURIComponent(file.name);
+    const filePath = path.join(directoryPath, fileName);
 
     // 将文件保存到服务器上指定目录
     file.mv(filePath, err => {
@@ -411,7 +412,7 @@ app.post('/video/upload', (req, res) => {
             console.error(err);
             return res.status(500).send(err);
         }
-        toStt(file.name);
+        toStt(fileName);
         res.send(`File ${file.name} uploaded successfully.`);
     });
 });
