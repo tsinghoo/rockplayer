@@ -682,7 +682,8 @@ window.mhgl_share =
         showDialog
       ) {
         if (showDialog == null) {
-          showDialog = "数据加载中";
+          showDialog = "查询中";
+          showDialog = "";
         }
         var openId = share.getParameter__("openId");
         var appId = share.getParameter__("appId");
@@ -811,7 +812,7 @@ window.mhgl_share =
       ) {
         if (showDialog == null) {
           showDialog = "查询中";
-          showDialog = "加载中";
+          showDialog = "";
         }
         var openId = share.getParameter__("openId");
         var appId = share.getParameter__("appId");

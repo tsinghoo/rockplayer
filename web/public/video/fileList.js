@@ -72,7 +72,11 @@ window.mhgl_file_list =
           url,
           params,
           success,
-          fail
+          fail,
+          null,
+          null,
+          null,
+          "查询中"
         );
       },
       toDetect: function (deviceName) {
@@ -93,7 +97,11 @@ window.mhgl_file_list =
               alert('设置失败');
             }
           },
-          share.toastError__
+          share.toastError__,
+          null,
+          null,
+          null,
+          "设置中"
         );
       },
       showRecentFiles: function () {
