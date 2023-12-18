@@ -88,7 +88,7 @@ window.mhgl_file_list =
           params,
           function (response) {
             if (response.code == 0) {
-              refresh();
+              self.showDetect();
             } else {
               alert('设置失败');
             }

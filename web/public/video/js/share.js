@@ -811,7 +811,7 @@ window.mhgl_share =
       ) {
         if (showDialog == null) {
           showDialog = "查询中";
-          showDialog = "";
+          showDialog = "加载中";
         }
         var openId = share.getParameter__("openId");
         var appId = share.getParameter__("appId");
