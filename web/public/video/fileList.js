@@ -47,6 +47,7 @@ window.mhgl_file_list =
             var ih = template.replace(/#name#/g, ele);
             if (info != null) {
               ih = ih.replace(/#detecting#/g, info.detecting);
+              ih = ih.replace(/#toDetect#/g, info.toDetect);
               ih = ih.replace(/#savedCount#/g, info.savedCount);
               ih = ih.replace(/#fileCount#/g, info.fileCount);
               ih = ih.replace(/#uploaded#/g, info.uploaded);
@@ -58,7 +59,7 @@ window.mhgl_file_list =
 
           $("#files").html(html);
 
-          $(".deviceName").on("click", function (e) {
+          $(".toDetect").on("click", function (e) {
             var id = e.currentTarget.id;
             self.toDetect(id);
           });
