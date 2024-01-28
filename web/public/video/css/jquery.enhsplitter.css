@@ -23,6 +23,7 @@
   overflow: auto;
   padding: 0;
   margin: 0;
+  border-left:0px solid gray;
 }
 .splitter_container > .splitter_panel > :not(.splitter_container) {
   overflow: auto;
@@ -43,6 +44,7 @@
 .splitter_container.splitter-vertical > .splitter_panel {
   top: 0;
   height: 100%;
+  border-left:0px solid gray;
 }
 .splitter_container.splitter-vertical > .splitter_panel:first-child {
   /* Left panel */
@@ -90,12 +92,13 @@
   display: none;
 }
 .splitter-vertical > .splitter_bar {
-  border-left: 1px solid #eeeeee;
-  border-right: 1px solid #666666;
+  border-left: 0px solid #eeeeee;
+  border-right: 0px solid #666666;
   cursor: ew-resize;
   z-index: 900;
   width: 7px;
   height: 100%;
+  background-color: black;
 }
 .splitter-vertical > .splitter_bar > .splitter_handle {
   top: 50%;
