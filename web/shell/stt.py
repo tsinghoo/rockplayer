@@ -67,7 +67,7 @@ def convertVtt(vtt):
     for i in range(len(lines[3:])//2):
         time = lines[3:][i*2]
         script = lines[3:][i*2+1]
-        content = "{}\n<br>[{}] {}".format(content, time, script)
+        content = "{}\n <br>[{}] {}".format(content, time, script)
 
     return content
 
