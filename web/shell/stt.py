@@ -41,36 +41,33 @@ def read_file(file_path):
 
 def getScript(file_name):
     fn = os.path.splitext(file_name)[0]
-    search = os.path.join(dir_path, fn)
-    search = "{}.*.vtt".format(search)
-    files = glob.glob(search)
+    log("searching {}".format(fn))
+    files = os.listdir(dir_path)
     res = None
-    if len(files) <= 0:
-        return res
-
     for file in files:
-        if (res is None):
-            res = file
-        elif ".zh" in file:
-            res = file
-        elif ".cn" in file:
-            res = file
+        if (fn in file):
+            if (".vtt" in file):
+              if (res is None):
+                res = file
+              if ".zh" in file:
+                res =file
+              if ".cn" in file:
+                  res=file
     return res
-
 
 def convertVtt(vtt):
     log("converting '{}'".format(vtt));
     lines = []
-    with open(vtt) as f:
+    with open(os.path.join(dir_path,vtt)) as f:
         for line in f:
             line = line.strip()  # 去除每行的首尾空格和换行符
             if line:  # 如果不是空行
                 lines.append(line)
     content = ""
-    for i in range(len(lines[4:])/2):
-        time = lines[i]
-        script = lines[i+1]
-        content = "{}<br>[{}] {}".format(content, time, script)
+    for i in range(len(lines[3:])//2):
+        time = lines[3:][i*2]
+        script = lines[3:][i*2+1]
+        content = "{}\n<br>[{}] {}".format(content, time, script)
 
     return content
 
