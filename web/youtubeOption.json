@@ -1,0 +1,6 @@
+{
+  "trim_file_name":60, 
+  "outtmpl":"%(id)s.%(title).50s.%(ext)s",
+  "writesubtitles":true,
+  "subtitleslangs":["en","-live_chat"]
+}
