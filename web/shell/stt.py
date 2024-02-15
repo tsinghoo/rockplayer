@@ -4,7 +4,6 @@ import subprocess
 import datetime
 import sys
 import re
-import glob
 
 # 指定目录路径
 dir_path = "/flv"
@@ -47,28 +46,31 @@ def getScript(file_name):
     for file in files:
         if (fn in file):
             if (".vtt" in file):
-              if (res is None):
-                res = file
-              if ".zh" in file:
-                res =file
-              if ".cn" in file:
-                  res=file
+                if (res is None):
+                    res = file
+                if ".zh" in file:
+                    res = file
+                if ".cn" in file:
+                    res = file
     return res
 
+
 def convertVtt(vtt):
-    log("converting '{}'".format(vtt));
+    log("converting '{}'".format(vtt))
     lines = []
-    with open(os.path.join(dir_path,vtt)) as f:
+    timeFound = 0
+    content = ""
+    pat = r'^\d{2}:\d{2}:\d{2}'
+    with open(os.path.join(dir_path, vtt)) as f:
         for line in f:
             line = line.strip()  # 去除每行的首尾空格和换行符
-            if line:  # 如果不是空行
-                lines.append(line)
-    content = ""
-    for i in range(len(lines[3:])//2):
-        time = lines[3:][i*2]
-        script = lines[3:][i*2+1]
-        content = "{}\n <br>[{}] {}".format(content, time, script)
-
+            m = re.match(pat, line)
+            if m:
+                timeFound = 1
+                content = "{}\n <br>[{}]".format(content, line)
+            elif timeFound == 1:
+                content = "{} {}".format(content, line)
+                
     return content
 
 
@@ -96,7 +98,7 @@ with open('/flv/todo') as f:
                         # 添加新的一行文本
                         f.write(
                             "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head></html>\n")
-                        # 
+                        #
                         f.write(content)
                 else:
                     try:
