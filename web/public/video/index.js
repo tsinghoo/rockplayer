@@ -115,7 +115,7 @@ window.document.onkeydown = (event) => {
     else if (event.code === "ArrowRight") {
         if (player) {
             let time = player.currentTime();
-            var step = 5;
+            var step = 3;
             if (event.ctrlKey) {
                 step = 15;
             }
@@ -126,7 +126,7 @@ window.document.onkeydown = (event) => {
     else if (event.code === "ArrowLeft") {
         if (player) {
             let time = player.currentTime();
-            var step = 5;
+            var step = 3;
             if (event.ctrlKey) {
                 step = 15;
             }
