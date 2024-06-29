@@ -197,6 +197,12 @@ window.mhgl_file_list =
         var id = s[0];
         toYoutube(id);
       },
+      itemDownloadClicked: function (e) {
+        var id = e.currentTarget.id;
+        id = id.split("_")[1];
+        var fileName = self.files[id].name;
+        toDownload(fileName);
+      },
       fileActionClicked: function (e) {
         var id = e.currentTarget.id;
         id = id.split("_")[1];
@@ -333,13 +339,13 @@ window.mhgl_file_list =
             html = html.replace(/#fileName#/g, self.getFileName(item));
             html = html.replace(/#scriptHide#/g, (item.script || self.remove == null) ? "hide" : "");
             html = html.replace(/#actionHide#/g, (self.remove == null) ? "hide" : "");
-            html = html.replace(/#orig#/g, "原链");
             return html;
           }
         }).join(""));
 
         $(".itemFileName").on("click", self.itemFileNameClicked);
         $(".itemOrigUrl").on("click", self.itemOrigUrlClicked);
+        $(".itemDownload").on("click", self.itemDownloadClicked);
         $(".script").on("click", self.scriptClicked);
         $(".fileAction").on("click", self.fileActionClicked);
         $(".checkFile").on("click", self.checkFileClicked);
@@ -444,6 +450,10 @@ function toPlayer(fileName) {
 
 function toYoutube(id) {
   window.open("https://www.youtube.com/watch?v=" + id, id);
+}
+
+function toDownload(fileName) {
+  window.open("./download/" + fileName);
 }
 
 function toStt(fileName) {
