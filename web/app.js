@@ -47,7 +47,6 @@ function listFiles() {
     let matchedFiles = files;
     if (suffix.length > 0) {
         matchedFiles = files.filter(file => {
-            return true;
             for (var i = 0; i < suffix.length; ++i) {
                 if (file.endsWith(suffix[i])) {
                     return true;

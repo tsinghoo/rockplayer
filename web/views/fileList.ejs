@@ -1,23 +1,20 @@
 <!DOCTYPE html>
 <html>
-
-  <head>
-    <title>文件列表</title>
-
-    <script>
+    <head>
+        <title>文件列表</title>
+        <script>
       window.files = <%-JSON.stringify(files)%>;
       <% if (remove=="995560" ){
             %>
       window.remove = "995560";
       <% } %>
       window.tags = <%-JSON.stringify(tags)%>;
-    </script>
-    <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css"/>
-    <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap-theme.css"/>
-    <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="vendor/lqh.css"/>
-
-    <style>
+        </script>
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap-theme.css">
+        <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+        <link rel="stylesheet" href="vendor/lqh.css">
+        <style>
       li {
         display: inline;
       }
@@ -25,117 +22,118 @@
         filter: alpha(opacity=50);
         opacity: .05;
       }
-    </style>
-  </head>
-
-  <body class="marginlr4">
-    <div class="flexrow" id="tags"></div>
-    <div id="files" class="marginlr4"></div>
-  </body>
-
-  <div id="templateActionSheetButton" style="display:none">
-    <button id="actionSheetButton_#id#" type="button" class="btn btn-info btn-sm widthAuto margintb6">
-      #name#
-    </button>
-  </div>
-  <div id="templateActionSheet" class="hide">
-    <div class="row text-center">#content#</div>
-    <br>
-    <div id="actionSheetButtons" class="flexcolumn">
-      #buttons#
+        </style>
+    </head>
+    <body class="marginlr4">
+        <div class="flexrow" id="tags"></div>
+        <div id="files" class="marginlr4"></div>
+    </body>
+    <div id="templateActionSheetButton" style="display:none">
+        <button id="actionSheetButton_#id#" type="button" class="btn btn-info btn-sm widthAuto margintb6">
+            #name#
+        </button>
     </div>
-  </div>
-
-  <div id="tagSelectionContainer" class="hide">
-
-    <div class="tsSelectedTags flexrow margintb4">
-      <div>已选标签:</div>
+    <div id="templateActionSheet" class="hide">
+        <div class="row text-center">#content#</div>
+        <br>
+        <div id="actionSheetButtons" class="flexcolumn">
+            #buttons#
+        </div>
     </div>
-    <div id="selectedTags#id#" class="left margintb2"></div>
-    <div><input type="text" id="newTagInput#id#" placeholder="输入新标签"></div>
-
-    <div class="flexrow">
-      <div>所有标签:</div>
+    <div id="tagSelectionContainer" class="hide">
+        <div class="tsSelectedTags flexrow margintb4">
+            <div>已选标签:</div>
+        </div>
+        <div id="selectedTags#id#" class="left margintb2"></div>
+        <div>
+            <input type="text" id="newTagInput#id#" placeholder="输入新标签">
+        </div>
+        <div class="flexrow">
+            <div>所有标签:</div>
+        </div>
+        <div id="tagContainer#id#" class="left margintb2"></div>
+        <button class="stConfirm btn btn-info btn-sm widthAuto">确定</button>
     </div>
-    <div id="tagContainer#id#" class="left margintb2"></div>
-    <button class="stConfirm btn btn-info btn-sm widthAuto">确定</button>
-  </div>
-
-  <div id="templateDialogButton" style="display:none">
-    <button id="dialogButton#id#" type="button" class="btn btn-info btn-sm marginlr2">
-      #name#
-    </button>
-  </div>
-  <div id="templateDialog" style="display: none">
-    <div class="row text-center">#content#</div>
-    <div id="dialogButtons" class="flexrow center">
-      #buttons#
+    <div id="templateDialogButton" style="display:none">
+        <button id="dialogButton#id#" type="button" class="btn btn-info btn-sm marginlr2">
+            #name#
+        </button>
     </div>
-  </div>
-  <div id="templateTag" style="display: none">
-    <a id="tag_#id#" href="##id#" class="clickable itemTag marginlr4 #selected#">#tag#</a>
-  </div>
-  <div id="templateFile" style="display: none">
-    <div id="file_#id#" class="margintb2 itemFile flexrow">
-      <input type="checkbox" id="check_#id#" class="checkFile">
-      <span>#id#.&nbsp;&nbsp;
-      </span>
-      <a href="#fileName_#id#" id="fileName_#id#" class="itemFileName clickable">#fileName#</a>
-      &nbsp;&nbsp;<a id="script_#id#" class="#scriptHide# script red clickable">♣</a>
-      &nbsp;&nbsp;<a id="orig_#id#" class="itemOrigUrl clickable">#orig#</a>
-      &nbsp;&nbsp;<div id="fileAction_#id#" class="#actionHide# fileAction clickable">⋯</div>
+    <div id="templateDialog" style="display: none">
+        <div class="row text-center">#content#</div>
+        <div id="dialogButtons" class="flexrow center">
+            #buttons#
+        </div>
     </div>
-  </div>
-  <div id="templateDetect" style="display: none">
-    <div id="detect" class="margintb2 itemFile flexcolumn">
-      <span class="">#name#</span>
-      <div class="marginlr4">
-        <span>- detecting:</span>
-        <span>#detecting#</span>
-      </div>
-      <div id="#name#" class="marginlr4 toDetect clickable">
-        <span>- toDetect:</span>
-        <span>#toDetect#</span>
-      </div>
-      <div class="marginlr4">
-        <span>- updateTime:</span>
-        <span>#updateTime#</span>
-      </div>
-      <div class="marginlr4">
-        <span>- saved:</span>
-        <span>#savedCount#</span>
-      </div>
-      <div class="marginlr4">
-        <span>- to upload:</span>
-        <span>#fileCount#</span>
-      </div>
-      <div class="marginlr4">
-        <span>- uploaded:</span>
-        <span>#uploaded#</span>
-      </div>
-      <div class="marginlr4">
-        <span>- uploadFailed:</span>
-        <span>#uploadFailed#</span>
-      </div>
-  </div>
-
-  <div id="templateFile" style="display: none">
+    <div id="templateTag" style="display: none">
+        <a id="tag_#id#" href="##id#" class="clickable itemTag marginlr4 #selected#">#tag#</a>
+    </div>
+    <div id="templateFile" style="display: none">
         <div id="file_#id#" class="margintb2 itemFile flexrow">
             <input type="checkbox" id="check_#id#" class="checkFile">
-            <span>#id#.&nbsp;&nbsp;
+            <span>
+                #id#.&nbsp;&nbsp;
             </span>
-            <a href="#" id="fileName_#id#" class="itemFileName clickable">#fileName#</a>
-            &nbsp;&nbsp;<a href="#script_#id#" id="script_#id#" class="#scriptHide# script red clickable">♣</a>
-            &nbsp;&nbsp;<a href="#orig_#id#" id="orig_#id#" class="itemOrigUrl clickable">#orig#</a>
-            &nbsp;&nbsp;<div id="fileAction_#id#" class="#actionHide# fileAction clickable">⋯</div>
+            <a href="#fileName_#id#" id="fileName_#id#" class="itemFileName clickable">#fileName#</a>
+            &nbsp;&nbsp;
+            <a id="script_#id#" class="#scriptHide# script red clickable">♣</a>
+            &nbsp;&nbsp;
+            <a id="orig_#id#" class="itemOrigUrl clickable">#orig#</a>
+            &nbsp;&nbsp;
+            <div id="fileAction_#id#" class="#actionHide# fileAction clickable">⋯</div>
         </div>
-  </div>
-
-</html>
-
-<script src="./js/jquery.js"></script>
-<script src="vendor/store.legacy.min.js"></script>
-<script src="vendor/bootstrap-3.3.7-dist/js/bootstrap.js" defer="defer"></script>
-<script src="vendor/bootstrap3-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
-<script src="./js/share.js"></script>
-<script src="./fileList.js"></script>
+    </div>
+    <div id="templateDetect" style="display: none">
+        <div id="detect" class="margintb2 itemFile flexcolumn">
+            <span class="">#name#</span>
+            <div class="marginlr4">
+                <span>- detecting:</span>
+                <span>#detecting#</span>
+            </div>
+            <div id="#name#" class="marginlr4 toDetect clickable">
+                <span>- toDetect:</span>
+                <span>#toDetect#</span>
+            </div>
+            <div class="marginlr4">
+                <span>- updateTime:</span>
+                <span>#updateTime#</span>
+            </div>
+            <div class="marginlr4">
+                <span>- saved:</span>
+                <span>#savedCount#</span>
+            </div>
+            <div class="marginlr4">
+                <span>- to upload:</span>
+                <span>#fileCount#</span>
+            </div>
+            <div class="marginlr4">
+                <span>- uploaded:</span>
+                <span>#uploaded#</span>
+            </div>
+            <div class="marginlr4">
+                <span>- uploadFailed:</span>
+                <span>#uploadFailed#</span>
+            </div>
+        </div>
+        <div id="templateFile" style="display: none">
+            <div id="file_#id#" class="margintb2 itemFile flexrow">
+                <input type="checkbox" id="check_#id#" class="checkFile">
+                <span>
+                    #id#.&nbsp;&nbsp;
+                </span>
+                <a href="#" id="fileName_#id#" class="itemFileName clickable">#fileName#</a>
+                &nbsp;&nbsp;
+                <a href="#script_#id#" id="script_#id#" class="#scriptHide# script red clickable">♣</a>
+                &nbsp;&nbsp;
+                <a href="#orig_#id#" id="orig_#id#" class="itemOrigUrl clickable">#orig#</a>
+                &nbsp;&nbsp;
+                <div id="fileAction_#id#" class="#actionHide# fileAction clickable">⋯</div>
+            </div>
+        </div>
+    </html>
+    <script src="./js/jquery.js"></script>
+    <script src="vendor/store.legacy.min.js"></script>
+    <script src="vendor/bootstrap-3.3.7-dist/js/bootstrap.js" defer="defer"></script>
+    <script src="vendor/bootstrap3-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
+    <script src="./js/share.js"></script>
+    <script src="./fileList.js"></script>
