@@ -1,1 +1,1 @@
-sudo docker run -d -p 8081:8081 --name youtube -v /home/liqinghu/flv:/downloads -e YTDL_OPTIONS='{"trim_file_name":60,"outtmpl":"%(id)s.%(title).50s.%(ext)s","writesubtitles":true}' alexta69/metube:2024-01-26
+sudo docker run -d -p 8081:8081 --name youtube -v /home/liqinghu/flv:/downloads -e YTDL_OPTIONS='{"trim_file_name":60,"outtmpl":"%(id)s.%(title).50s.%(ext)s","writesubtitles":true}' alexta69/metube

@@ -5,7 +5,7 @@ import datetime
 import re
 
 # 指定目录路径
-dir_path = "/home/liqinghu/flv"
+dir_path = "/flv"
 
 def log(content):
     # 获取当前时间
