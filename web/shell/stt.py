@@ -43,7 +43,7 @@ def read_file(file_path):
 def genScript(file_name):
     # 检查是否是文件，检查文件是否是 .mp4 文件
     # if os.path.isfile("{}".format(os.path.join(dir_path, file_name))) :
-    if os.path.isfile(os.path.join(dir_path, file_name)) and (file_name.endswith(".mp4") or file_name.endswith(".webm")):
+    if os.path.isfile(os.path.join(dir_path, file_name)) and (file_name.endswith(".mp4") or file_name.endswith(".mp3") or file_name.endswith(".m4a") or file_name.endswith(".webm")):
         log(os.path.join(dir_path, file_name))
         name, extension = os.path.splitext(file_name)
         txtFileName = "{}.htm".format(file_name)
