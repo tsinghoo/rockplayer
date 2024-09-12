@@ -495,6 +495,18 @@ window.mhgl_share =
         );
       },
 
+      getSeconds: function (text) {
+        var ss = text.split(":");
+        var s = ss[ss.length - 1];
+        var m = ss[ss.length - 2];
+        var h = 0;
+        if (ss.length > 2) {
+          h = ss[0];
+        }
+
+        return h * 3600 + m * 60 + s;
+      },
+
       getDurationText__: function (seconds) {
         seconds = parseInt(seconds);
         var m = parseInt(seconds / 60);

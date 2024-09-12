@@ -389,7 +389,7 @@ function play(fileName) {
                                 if (dw == "") {
                                 } else {
                                     deletedWord = dw;
-                                    $("#replaceWords").html(deletedWord + " => ");
+                                    $("#replaceWords").val(deletedWord + " => ");
                                 }
                                 console.log("Deleted word: " + deletedWord);
                             }
@@ -403,9 +403,9 @@ function play(fileName) {
 
                                 let newWord = newScript.substring(event.target.selectionStart, event.target.selectionEnd);
                                 if (deletedWord != "" && newWord != "") {
-                                    $("#replaceWords").html(deletedWord + " => " + newWord);
+                                    $("#replaceWords").val(deletedWord + " => " + newWord);
                                 } else {
-                                    $("#replaceWords").html("");
+                                    $("#replaceWords").val("");
                                 }
                                 var fileName = share.getParameter__("f");
                                 var replaceAll = event.shiftKey;
@@ -616,15 +616,15 @@ function getMetadata(fileName) {
 
 function showStartEnd() {
     if (start > -1) {
-        $("#replaceWords").html(share.getDurationText1__(start) + " => ");
+        $("#replaceWords").val(share.getDurationText1__(start) + " => ");
         $("#segmentNameDiv").removeClass("hide");
         if (end > start) {
-            $("#replaceWords").html(share.getDurationText1__(start) + " => " + share.getDurationText1__(end));
+            $("#replaceWords").val(share.getDurationText1__(start) + " => " + share.getDurationText1__(end));
 
         } else {
         }
     } else {
-        $("#replaceWords").html();
+        $("#replaceWords").val();
         $("#segmentNameDiv").addClass("hide");
     }
 
@@ -696,6 +696,9 @@ $(function () {
             return;
         }
         var fileName = share.getParameter__("f");
+        var ss = $("#replaceWords").val().split("=>");
+        start = share.getSeconds(ss[0]);
+        end = share.getSeconds(ss[1]);
         var params = {
             start, end, name, fileName
         };
