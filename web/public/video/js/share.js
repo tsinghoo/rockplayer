@@ -504,7 +504,7 @@ window.mhgl_share =
           h = ss[0];
         }
 
-        return h * 3600 + m * 60 + s;
+        return h * 3600 + m * 60 + s * 1;
       },
 
       getDurationText__: function (seconds) {
