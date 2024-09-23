@@ -58,9 +58,11 @@ function listFiles() {
     }
     return matchedFiles.map(file => {
         var script = fs.existsSync(path.join(directoryPath, file + ".htm"));
+        const stats = fs.statSync(path.join(directoryPath, file));
 
         return {
             name: file,
+            mtime: stats.mtime,
             path: path.join(directoryPath, file),
             script: script
         };

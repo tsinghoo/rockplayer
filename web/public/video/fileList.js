@@ -8,7 +8,7 @@ window.mhgl_file_list =
       allFiles: {},
       tags: window.tags,
       remove: window.remove,
-      selectedTag: "未标",
+      selectedTag: "加入",
       i: 0,
       checkedFiles: {},
       initialize: function () {
@@ -29,6 +29,13 @@ window.mhgl_file_list =
         let an = self.getFileName(a);
         let bn = self.getFileName(b);
         let res = an > bn ? 1 : -1;
+        return res;
+      },
+      sortByMTime: (a, b) => {
+        self.i++;
+        let an = a.mtime;
+        let bn = b.mtime;
+        let res = an > bn ? -1 : 1;
         return res;
       },
       showDetect: function () {
@@ -149,6 +156,7 @@ window.mhgl_file_list =
       },
       showFiles: function () {
         self.files = [];
+        let sf = self.sortFileName;
         if (self.selectedTag == "最近") {
 
           self.showRecentFiles();
@@ -164,6 +172,12 @@ window.mhgl_file_list =
               self.files.push(self.allFiles[k[i]]);
             }
           }
+        } else if (self.selectedTag == "加入") {
+          sf = self.sortByMTime;
+          var k = Object.keys(self.allFiles);
+          for (var i = 0; i < k.length; ++i) {
+            self.files.push(self.allFiles[k[i]]);
+          }
         } else if (self.selectedTag == "所有") {
           var k = Object.keys(self.allFiles);
           for (var i = 0; i < k.length; ++i) {
@@ -175,7 +189,7 @@ window.mhgl_file_list =
           });
         }
 
-        self.doShowFiles();
+        self.doShowFiles(sf);
       },
       itemFileNameClicked: function (e) {
         var id = e.currentTarget.id;
@@ -262,6 +276,7 @@ window.mhgl_file_list =
         tags.unshift("detect");
         tags.unshift("未标");
         tags.unshift("所有");
+        tags.unshift("加入");
         tags.unshift("最近");
         $("#tags").html(tags.map(function (tag, index) {
           var html = temp.replace(/#tag#/g, tag);
@@ -326,7 +341,7 @@ window.mhgl_file_list =
         });
 
         if (sf == null) {
-          sf = self.sortFileName;
+          sf = self.sortByMTime;
         }
 
         self.files = self.files.sort(sf);
