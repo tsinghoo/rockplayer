@@ -176,7 +176,9 @@ window.mhgl_file_list =
           sf = self.sortByMTime;
           var k = Object.keys(self.allFiles);
           for (var i = 0; i < k.length; ++i) {
-            self.files.push(self.allFiles[k[i]]);
+            if (Object.keys(self.allFiles[k[i]].tags).length == 0) {
+              self.files.push(self.allFiles[k[i]]);
+            }
           }
         } else if (self.selectedTag == "所有") {
           var k = Object.keys(self.allFiles);
