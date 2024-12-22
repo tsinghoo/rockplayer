@@ -1,7 +1,9 @@
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
 
 stt(){
   today=`date +%Y-%m-%d`
-  python /temp/stt.py  >> /temp/stt.$today.log 2>&1 
+  python ./stt.py  >> ./stt.$today.log 2>&1 
 }
 
 toexit=0
