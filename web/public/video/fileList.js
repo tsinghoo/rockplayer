@@ -506,7 +506,7 @@ function toDownload(fileName) {
 function toStt(fileName) {
   fetch('./toStt?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
     if (response.ok) {
-      //refresh();
+      share.toastSuccess__(fileName, 200);
     } else {
       alert('加入字幕出错！');
     }
