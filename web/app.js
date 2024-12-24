@@ -346,7 +346,7 @@ app.post('/video/cookies', (req, res) => {
     let cookies = req.body.cookies;
     console.log(req.body.cookies);
 
-    fs.writeFileSync(path.join(directoryPath, "cookies"), cookies);
+    fs.writeFileSync(path.join(directoryPath, "cookies.txt"), cookies);
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
 });
