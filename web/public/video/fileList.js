@@ -87,6 +87,32 @@ window.mhgl_file_list =
           "查询中"
         );
       },
+      submitCookie: function () {
+        var url = "./cookies";
+        let cookies = $(".cookies").val();
+        var params = {
+          "cookies": cookies
+        };
+        let success = function () {
+          share.toastSuccess__("submitted");
+        };
+
+        let fail = share.toastError__;
+
+        share.httpPost__(
+          url,
+          params,
+          success,
+          fail ? fail : share.toastError__
+        );
+      },
+      showCookies: function () {
+        var template = $("#templateCookies").html();
+        var html = template;
+
+        $("#files").html(html);
+        $("#submitCookies").on("click", self.submitCookie);
+      },
       toDetect: function (deviceName) {
         var cfg = self.detect[deviceName];
         var toDetect = (cfg.detecting == true) ? 0 : 1;
@@ -164,6 +190,9 @@ window.mhgl_file_list =
         } else if (self.selectedTag == "detect") {
 
           self.showDetect();
+          return;
+        } else if (self.selectedTag == "cookies") {
+          self.showCookies();
           return;
         } else if (self.selectedTag == "未标") {
           var k = Object.keys(self.allFiles);
@@ -275,6 +304,7 @@ window.mhgl_file_list =
 
         var temp = $("#templateTag").html();
         var tags = Object.keys(self.tags);
+        tags.unshift("cookies");
         tags.unshift("detect");
         tags.unshift("未标");
         tags.unshift("所有");

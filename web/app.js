@@ -341,6 +341,15 @@ app.post('/video/tag', (req, res) => {
     var resp = JSON.stringify({ data: otags });
     res.send(resp);
 });
+app.post('/video/cookies', (req, res) => {
+    console.log("video/cookies");
+    let cookies = req.body.cookies;
+    console.log(req.body.cookies);
+
+    fs.writeFileSync(path.join(directoryPath, "cookies"), cookies);
+    var resp = JSON.stringify({ data: "success" });
+    res.send(resp);
+});
 app.get('/video/replacers', (req, res) => {
     console.log("video/replacers");
     var rPath = path.join(directoryPath, "replacers");
