@@ -232,7 +232,18 @@ window.mhgl_file_list =
         var id = e.currentTarget.id;
         id = id.split("_")[1];
         var fileName = self.files[id].name;
-        toStt(fileName);
+        self.toStt(fileName);
+      },
+      toStt: function (fileName) {
+        fetch('./toStt?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
+          if (response.ok) {
+            share.toastSuccess__(fileName, 200);
+          } else {
+            alert('加入字幕出错！');
+          }
+        }).catch(error => {
+          alert('加入字幕出错！');
+        });
       },
       itemOrigUrlClicked: function (e) {
         var id = e.currentTarget.id;
@@ -501,18 +512,6 @@ function toYoutube(id) {
 
 function toDownload(fileName) {
   window.open("./download/" + fileName);
-}
-
-function toStt(fileName) {
-  fetch('./toStt?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
-    if (response.ok) {
-      share.toastSuccess__(fileName, 200);
-    } else {
-      alert('加入字幕出错！');
-    }
-  }).catch(error => {
-    alert('加入字幕出错！');
-  });
 }
 function splitFile(fileName) {
   fetch('./toSplit?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
