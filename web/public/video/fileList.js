@@ -237,7 +237,7 @@ window.mhgl_file_list =
       toStt: function (fileName) {
         fetch('./toStt?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
           if (response.ok) {
-            share.toastSuccess__(fileName, 200);
+            share.toastSuccess__(fileName, 1000);
           } else {
             alert('加入字幕出错！');
           }
