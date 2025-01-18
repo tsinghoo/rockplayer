@@ -517,6 +517,7 @@ function splitFile(fileName) {
   fetch('./toSplit?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
     if (response.ok) {
       mhgl_share.closeDialog__();
+      window.open("./doSplit", "_doSplit");
     } else {
       alert('加入分割队列出错！');
     }

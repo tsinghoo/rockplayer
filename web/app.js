@@ -197,12 +197,37 @@ function toSplit(fileName) {
     });
 }
 
+function extractVideo(inputFilePath, i, startTime, endTime) {
+    return new Promise((resolve, reject) => {
+        console.log("extractVideo:" + inputFilePath);
+        const outputDir = path.dirname(inputFilePath);
+        var pos = inputFilePath.lastIndexOf(".");
+        if (pos < 0) {
+            response.push("bad file:" + inputFilePath);
+            return;
+        }
+
+        var fileName = inputFilePath.substring(0, pos);
+        var fileExt = inputFilePath.substring(pos + 1, inputFilePath.length);
+        const outputFile = `"${fileName}.${add0(i)}.${fileExt}"`;
+        const command = `ffmpeg -i "${inputFilePath}" -ss ${startTime} -to ${endTime} -c copy ${outputFile}`;
+        response.push("exec:" + command);
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve();
+        });
+    });
+}
+
 function splitVideo(inputFilePath) {
     return new Promise((resolve, reject) => {
         const outputDir = path.dirname(inputFilePath);
         var pos = inputFilePath.lastIndexOf(".");
         if (pos < 0) {
-            console.log("bad file:" + inputFilePath);
+            response.push("bad file:" + inputFilePath);
             return;
         }
 
@@ -221,23 +246,61 @@ function splitVideo(inputFilePath) {
         });
     });
 }
+
+function add0(str, length) {
+    if (length == null) {
+        length = 2;
+    }
+    var len = length - ("" + str).length;
+    var zero = "000000";
+    if (len > 0) {
+        str = zero.substring(0, len) + str;
+    }
+
+    return str;
+}
+
+function getDurationText1__(seconds) {
+    seconds = parseInt(seconds);
+    var h = parseInt(seconds / 3600);
+    var m = parseInt((seconds % 3600) / 60);
+    var s = seconds % 60;
+    var text = h > 0 ? h + ":" : "";
+    text = text + add0(m, 2) + ":";
+    text = text + add0(s, 2);
+    return text;
+}
+
 async function doSplit() {
     var toSplit = path.join(directoryPath, "toSplit");
     if (splitting == 1) {
         return;
     }
+
     splitting = 1;
 
     try {
+        var rPath = path.join(directoryPath, "metadata");
+        var metadata = {};
+        try {
+            metadata = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+        } catch (e) {
+            console.log("error parsing replacers:" + e.message);
+        }
+
         var data = fs.readFileSync(toSplit, 'utf8');
         var files = data.split("\n");
-        console.log(files.length);
+        files.forEach(ele => {
+            console.log(ele);
+        });
+
         for (var i = 0; i < files.length; ++i) {
             var ele = files[i];
+            console.log(`processing '${ele}'`);
             if (fs.existsSync(path.join(directoryPath, ele))) {
                 var pos = ele.lastIndexOf(".");
                 if (pos < 0) {
-                    response.push("bad file:" + ele);
+                    console.log("bad file:" + ele);
                     continue;
                 }
 
@@ -249,9 +312,22 @@ async function doSplit() {
                     continue;
                 }
                 response.push(`${ele} splitting`);
+
                 try {
-                    await splitVideo(path.join(directoryPath, ele));
-                    response.push(`${ele} splitted`);
+                    var m = metadata[ele];
+                    if (m && m.segments) {
+                        let i = 0;
+                        Object.keys(m.segments).forEach(async (e) => {
+                            console.log(`seg:${e}`);
+                            let segs = m.segments[e];
+                            let startTime = getDurationText1__(segs.start);
+                            let endTime = getDurationText1__(segs.end);
+                            await extractVideo(path.join(directoryPath, ele), i++, startTime, endTime);
+                        });
+                    } else {
+                        await splitVideo(path.join(directoryPath, ele));
+                        response.push(`${ele} splitted`);
+                    }
                 } catch (e) {
                     response.push("error:" + e.message);
                 }
