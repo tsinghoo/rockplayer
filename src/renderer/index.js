@@ -109,6 +109,65 @@ document.onkeydown = (event) => {
             }
         }
         return false;
+    } else if (event.code === "ArrowRight") {
+        if (player) {
+            player.currentTime += 3;
+            if (event.ctrlKey) {
+                player.currentTime += 2;
+            }
+
+            // 判断是否按下了Shift键
+            if (event.shiftKey) {
+                player.currentTime += 7;
+            }
+
+            // 判断是否按下了Alt键
+            if (event.altKey) {
+                player.currentTime += 12;
+            }
+
+            // 判断是否按下了Meta键（例如 Windows 键或 Command 键）
+            if (event.metaKey) {
+                player.currentTime += 27;
+            }
+        }
+
+        return false;
+    } else if (event.code === "ArrowLeft") {
+        if (player) {
+            player.currentTime -= 3;
+            if (event.ctrlKey) {
+                player.currentTime -= 2;
+            }
+
+            // 判断是否按下了Shift键
+            if (event.shiftKey) {
+                player.currentTime -= 7;
+            }
+
+            // 判断是否按下了Alt键
+            if (event.altKey) {
+                player.currentTime -= 12;
+            }
+
+            // 判断是否按下了Meta键（例如 Windows 键或 Command 键）
+            if (event.metaKey) {
+                player.currentTime -= 27;
+            }
+        }
+
+        return false;
+    } else if (event.code === "ArrowUp") {
+        if (player) {
+            player.volume = Math.min(video.volume + 0.1, 1);
+        }
+
+        return false;
+    } else if (event.code === "ArrowDown") {
+        if (player) {
+            player.volume = Math.max(video.volume - 0.1, 0);
+        }
+        return false;
     }
 }
 
