@@ -171,7 +171,6 @@ document.onkeydown = (event) => {
     }
 }
 
-
 ipcRenderer.on('resize', function () {
     console.log('resize')
     const vid = document.getElementById('my-video')
