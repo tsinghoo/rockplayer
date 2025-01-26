@@ -101,6 +101,11 @@ holder.ondragleave = holder.ondragend = function () {
 };
 window.document.onkeydown = (event) => {
     console.log("onkeypress", event);
+
+    if (document.querySelector('#replaceWords:focus')) {
+        return true;
+    }
+    
     if (event.code === "Space") {
         if (player) {
             if (player.paused()) {
@@ -716,8 +721,13 @@ $(function () {
         lastActionTime = new Date().getTime();
     });
 
+    $("#replaceWords").on("keydown", function (event) {
+        //lastActionTime = new Date().getTime();
+        event.stopPropagation();
+    });
+
     $("#segmentName").on("keydown", function (event) {
-        lastActionTime = new Date().getTime();
+        //lastActionTime = new Date().getTime();
         event.stopPropagation();
     });
 
