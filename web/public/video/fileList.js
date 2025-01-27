@@ -511,7 +511,7 @@ function toYoutube(id) {
 }
 
 function toDownload(fileName) {
-  window.open("./download/" + fileName);
+  window.open("./download/" + encodeURIComponent(fileName));
 }
 function splitFile(fileName) {
   fetch('./toSplit?file=' + encodeURIComponent(fileName), { method: 'POST' }).then(response => {
