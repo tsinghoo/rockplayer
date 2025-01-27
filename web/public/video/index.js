@@ -105,7 +105,7 @@ window.document.onkeydown = (event) => {
     if (document.querySelector('#replaceWords:focus')) {
         return true;
     }
-    
+
     if (event.code === "Space") {
         if (player) {
             if (player.paused()) {
@@ -118,7 +118,7 @@ window.document.onkeydown = (event) => {
         }
     } else if (event.code === "ArrowRight") {
         if (player) {
-            
+
             let time = player.currentTime();
             var step = 3;
             if (event.ctrlKey) {
@@ -179,7 +179,7 @@ window.document.onkeydown = (event) => {
         if (player) {
             player.volume = Math.max(video.volume - 0.1, 0);
         }
-        
+
         return false;
     }
 
@@ -677,21 +677,44 @@ function showStartEnd() {
     }
 
 }
-function buttonStartClicked() {
-    start = player.currentTime();
-    if (end < start) {
-        end = -1;
+function buttonStartClicked(e) {
+    if (e.shiftKey) {
+        let end = $("#replaceWords").val().split("=>")[0].trim();
+        let str = end.split(":");
+        let s = 1 * str[str.length - 1] + 60 * str[str.length - 2];
+        if (str.length == 3) {
+            s += 3600 * str[0];
+        }
+
+        player.currentTime(s);
+    } else {
+        start = player.currentTime();
+        if (end < start) {
+            end = -1;
+        }
+        showStartEnd();
     }
-    showStartEnd();
 }
 
-function buttonEndClicked() {
-    end = player.currentTime();
+function buttonEndClicked(e) {
+    if (e.shiftKey) {
+        let end = $("#replaceWords").val().split("=>")[1].trim();
+        let str = end.split(":");
+        let s = 1 * str[str.length - 1] + 60 * str[str.length - 2];
+        if (str.length == 3) {
+            s += 3600 * str[0];
+        }
 
-    if (end < start) {
-        start = -1;
+        player.currentTime(s);
+    } else {
+        end = player.currentTime();
+
+        if (end < start) {
+            start = -1;
+        }
+
+        showStartEnd();
     }
-    showStartEnd();
 }
 
 $(function () {
@@ -731,11 +754,11 @@ $(function () {
         event.stopPropagation();
     });
 
-    $("#buttonStart").on("click", function () {
-        buttonStartClicked();
+    $("#buttonStart").on("click", function (e) {
+        buttonStartClicked(e);
     });
-    $("#buttonEnd").on("click", function () {
-        buttonEndClicked();
+    $("#buttonEnd").on("click", function (e) {
+        buttonEndClicked(e);
     });
     $("#buttonAddSegment").on("click", function () {
         toAddSegment();
