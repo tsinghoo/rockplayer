@@ -4,6 +4,9 @@ import subprocess
 import datetime
 import sys
 import re
+import json
+import shutil
+
 
 # 指定目录路径
 dir_path = "/flv"
@@ -38,8 +41,26 @@ def read_file(file_path):
     return lines
 
 
+def hasScript(str, fileName):
+    try:
+        # 将json字符串转换为字典
+        data = json.loads(str)
+
+        # 检查是否存在键 "脚本" 且其值为列表
+        if "脚本" in data and isinstance(data["脚本"], list):
+            if fileName in data["脚本"]:
+                return True
+            else:
+                return False
+        else:
+            return "'脚本' key is either missing or its value is not a list."
+    except json.JSONDecodeError:
+        return False
+
 # 循环遍历目录中的每一个文件
 # for file_name in os.listdir(dir_path):
+
+
 def genScript(file_name):
     # 检查是否是文件，检查文件是否是 .mp4 文件
     # if os.path.isfile("{}".format(os.path.join(dir_path, file_name))) :
@@ -51,32 +72,52 @@ def genScript(file_name):
         txtFilePath = os.path.join(dir_path, txtFileName)
         srtFilePath = os.path.join(dir_path, srtFileName)
         filePath = os.path.join(dir_path, file_name)
-        if os.path.exists(srtFilePath):
+        if os.path.exists(srtFilePath) or os.path.exists(txtFilePath):
             log("skipped")
         else:
             try:
-                command = "whisper \"{}\" > \"{}\"".format(filePath.replace(
-                    "\"", "\\\""), txtFilePath.replace("\"", "\\\"'")+".tmp")
-                if (hasChinese(file_name)):
-                    command = "whisper \"{}\" --language Chinese > \"{}\"".format(
-                        filePath.replace("\"", "\\\""), txtFilePath.replace("\"", "\\\"'")+".tmp")
-                log(command)
-                subprocess.call(command, shell=True)
-                log("done")
-                with fileinput.input(txtFilePath+".tmp", inplace=True, backup=".bak") as file:
-                    # 遍历文件中的每一行
-                    for line in file:
-                        # 输出每一行（因为 inplace=True，所以输出的结果将写入文件中）
-                        print("{} <br>".format(line), end="")
+                with open(os.path.join(dir_path, "tags"), 'r', encoding='utf-8') as file:
+                    tags = file.read()
+                    if (hasScript(tags, file_name)):
+                        command = "VideoSubFinderCli.run -c -r -i \"{}\" -te 0.3 -be 0.05 -le 0.1 -re 0.9 -o \"{}\"".format(filePath.replace(
+                            "\"", "\\\""), dir_path)
+                        log(command)
+                        subprocess.call(command, shell=True)
+                        log("done")
+                        command = "rapid_videocr -i \"{}/RGBImages\" -s \"{}\" ".format(
+                            dir_path, dir_path)
+                        log(command)
+                        subprocess.call(command, shell=True)
+                        log("done")
+                        log("move {}/result.srt to {}/{}.srt".format(dir_path,
+                            dir_path, file_name))
+                        shutil.move("{}/result.srt".format(dir_path),
+                                    "{}/{}.srt".format(dir_path, file_name))
 
-                with open(txtFilePath+".tmp") as f:
-                    content = f.read()
-                    with open(txtFilePath, 'w') as f:
-                        # 添加新的一行文本
-                        f.write(
-                            "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head></html>\n")
-                        # 将原始内容写回文件中
-                        f.write(content)
+                    else:
+
+                        command = "whisper \"{}\" --output_dir \"{}\"  > \"{}\"".format(filePath.replace(
+                            "\"", "\\\""), dir_path, txtFilePath.replace("\"", "\\\"'")+".tmp")
+                        if (hasChinese(file_name)):
+                            command = "whisper \"{}\" --output_dir \"{}\" --language Chinese > \"{}\"".format(
+                                filePath.replace("\"", "\\\""), dir_path, txtFilePath.replace("\"", "\\\"'")+".tmp")
+                        log(command)
+                        subprocess.call(command, shell=True)
+                        log("done")
+                        with fileinput.input(txtFilePath+".tmp", inplace=True, backup=".bak") as file:
+                            # 遍历文件中的每一行
+                            for line in file:
+                                # 输出每一行（因为 inplace=True，所以输出的结果将写入文件中）
+                                print("{} <br>".format(line), end="")
+
+                        with open(txtFilePath+".tmp") as f:
+                            content = f.read()
+                            with open(txtFilePath, 'w') as f:
+                                # 添加新的一行文本
+                                f.write(
+                                    "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head></html>\n")
+                                # 将原始内容写回文件中
+                                f.write(content)
             except Exception as e:
                 log("error")
 
