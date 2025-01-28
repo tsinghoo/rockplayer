@@ -47,9 +47,11 @@ def genScript(file_name):
         log(os.path.join(dir_path, file_name))
         name, extension = os.path.splitext(file_name)
         txtFileName = "{}.htm".format(file_name)
+        srtFileName = "{}.srt".format(file_name)
         txtFilePath = os.path.join(dir_path, txtFileName)
+        srtFilePath = os.path.join(dir_path, srtFileName)
         filePath = os.path.join(dir_path, file_name)
-        if os.path.exists(txtFilePath):
+        if os.path.exists(srtFilePath):
             log("skipped")
         else:
             try:

@@ -262,6 +262,7 @@ window.mhgl_file_list =
       fileActionClicked: function (e) {
         var id = e.currentTarget.id;
         id = id.split("_")[1];
+        self.clickedId = id;
         var fileName = self.files[id].name;
         self.moreAction(fileName);
       },
@@ -339,6 +340,46 @@ window.mhgl_file_list =
           self.deleteFile(self.clickedFile);
         }
       },
+      toRename: function () {
+        var title = "重命名";
+        var content = $("#renameTemplate").html();
+
+        var buttons = null;
+        var onHide = null;
+        var onShown = function () {
+          let input = $(".fileName").closest(".modal-dialog").find(".fileName");
+          input.val(self.clickedFile);
+          $('.buttonConfirm').on("click", function () {
+            var url = "./rename";
+            var params = {
+              fileName: self.clickedFile,
+              newName: input.val().trim()
+            };
+
+            var success = function (res) {
+              if (res.error) {
+                share.toastError__(res.error);
+              } else {
+                share.closeDialog__();
+                $(`#fileName_${self.clickedId}`).html(params.newName);
+              }
+            };
+
+            var fail = function (e) {
+              share.toastError__(e.message);
+            };
+
+            share.httpGet__(
+              url,
+              params,
+              success,
+              fail
+            );
+          });
+        };
+
+        share.dialog__ = share.showDialog__(title, content, buttons, onHide, onShown);
+      },
       toSplit: function () {
         if (confirm('确定要切分该文件吗？')) {
           splitFile(self.clickedFile);
@@ -353,6 +394,10 @@ window.mhgl_file_list =
           }
         }
         var buttons = [];
+        buttons.push({
+          text: '重命名',
+          onTap: self.toRename
+        });
         buttons.push({
           text: '删除',
           onTap: self.toDelete

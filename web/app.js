@@ -708,6 +708,24 @@ app.post('/video/delete', (req, res) => {
         res.send(resp);
     }
 });
+
+app.get('/video/rename', (req, res) => {
+    const fileName = path.join(directoryPath, req.query.fileName);
+    const newName = path.join(directoryPath, req.query.newName);
+
+    console.log("rename:'" + fileName + "' to '" + newName + "'");
+
+    var resp = { ok: 1 };
+    try {
+        fs.renameSync(fileName, newName);
+    } catch (err) {
+        console.error(`failed:${err.message}`);
+        resp = { error: err.message };
+    }
+
+    var resp = req.query.js + "(" + JSON.stringify(resp) + ");";
+    res.send(resp);
+});
 app.post('/video/toStt', (req, res) => {
     const filePath = req.query.file;
     toStt(filePath);
