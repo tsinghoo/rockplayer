@@ -42,21 +42,25 @@ def read_file(file_path):
 
 
 def hasScript(str, fileName):
+    log("hasScript")
     try:
         # 将json字符串转换为字典
         data = json.loads(str)
 
+        log("json loaded")
         # 检查是否存在键 "脚本" 且其值为列表
-        if "脚本" in data and isinstance(data["脚本"], list):
-            if fileName in data["脚本"]:
+        if "script" in data: 
+            log("脚本存在")
+            if (fileName in data["script"]):
                 return True
             else:
                 return False
         else:
-            return "'脚本' key is either missing or its value is not a list."
+            log("脚本不存在")
     except json.JSONDecodeError:
+        log("json decode error")
         return False
-
+    return False
 # 循环遍历目录中的每一个文件
 # for file_name in os.listdir(dir_path):
 
@@ -78,6 +82,7 @@ def genScript(file_name):
             try:
                 with open(os.path.join(dir_path, "tags"), 'r', encoding='utf-8') as file:
                     tags = file.read()
+                    log(tags)
                     if (hasScript(tags, file_name)):
                         command = "VideoSubFinderCli.run -c -r -i \"{}\" -te 0.3 -be 0.05 -le 0.1 -re 0.9 -o \"{}\"".format(filePath.replace(
                             "\"", "\\\""), dir_path)
