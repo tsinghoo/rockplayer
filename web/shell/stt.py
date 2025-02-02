@@ -40,6 +40,52 @@ def read_file(file_path):
                 lines.append(line)
     return lines
 
+def vtt2htm(fp):
+    # 获取文件名的基础部分（去掉扩展名）
+    base_filename = fp.rsplit('.', 1)[0]
+    output_filename = base_filename + '.htm'
+
+    with open(fp, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+    
+    result = []
+    timestamp = ''
+    text = []
+
+    for line in lines:
+        line = line.strip()
+        
+        # 时间戳行
+        if '-->' in line:
+            # 如果之前有字幕内容，拼接它
+            if text:
+                result.append(f"<br>[{timestamp}] {''.join(text)}")
+                text = []  # 清空文本，准备下一段字幕
+            timestamp = line  # 保存当前时间戳
+
+        # 字幕内容
+        elif line and not line.startswith('NOTE') and not line.startswith('WEBVTT'):
+            text.append(line)
+
+    # 最后一段字幕也需要添加
+    if text:
+        result.append(f"{timestamp} {''.join(text)}")
+
+    # 将结果写入到 HTML 文件
+    with open(output_filename, 'w', encoding='utf-8') as out_file:
+        out_file.write('<html><body>\n')
+        out_file.write('<h1>VTT Subtitle</h1>\n')
+        out_file.write('<ul>\n')
+        
+        for line in result:
+            out_file.write(f'<li>{line}</li>\n')
+        
+        out_file.write('</ul>\n')
+        out_file.write('</body></html>\n')
+
+    print(f"结果已保存到 {output_filename}")
+
+
 
 def hasScript(str, fileName):
     log("hasScript")
