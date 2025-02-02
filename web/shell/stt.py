@@ -46,13 +46,13 @@ def getVtt(vfp):
     dir_path, file_name = os.path.split(vfp)
     # 生成与输入文件相同的前缀（去掉 .mp4 后缀）
     base_name = os.path.splitext(file_name)[0]
-
+    log("getVtt:" + dir_path+ ","+ base_name)
     # 遍历目录查找匹配的 .vtt 文件
     for file in os.listdir(dir_path):
-        if file.startswith(base_name) and file.endswith('.vtt') and file[base_name.rfind('.')+1:].startswith('zh'):
-            return file
+        if file.startswith(base_name) and file.endswith('.vtt') and file.rsplit('.', 2)[1].startswith('zh'):
+            return os.path.join(dir_path, file)
+    log("not found")
     return None
-
 
 def vtt2htm(fp):
     # 获取文件名的基础部分（去掉扩展名）
@@ -67,12 +67,15 @@ def vtt2htm(fp):
     result = []
     timestamp = ''
     text = []
-
+    firstTime = 0
     for line in lines:
         line = line.strip()
 
         # 时间戳行
         if '-->' in line:
+            if firstTime == 0:
+                text = []
+                firstTime =1 
             # 如果之前有字幕内容，拼接它
             if text:
                 result.append(f"<br>[{timestamp}] {''.join(text)}")
@@ -91,10 +94,8 @@ def vtt2htm(fp):
     with open(output_filename, 'w', encoding='utf-8') as out_file:
         out_file.write(
             "<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head></html>\n")
-
         for line in result:
             out_file.write(f'{line}\n')
-
 
 def srt2htm(fp):
     log("srt2htm")
@@ -181,12 +182,14 @@ def genScript(file_name):
             log("skipped")
         else:
             try:
-                vttFile = getVtt(file_name)
-                if vttFile != None:
+                vttFile = getVtt(filePath)
+                #log("found:"+vttFile);
+                if vttFile is not None:
                     vtt2htm(vttFile)
                 elif os.path.exists(srtFilePath):
                     srt2htm(srtFilePath)
                 else:
+                    return
                     with open(os.path.join(dir_path, "tags"), 'r', encoding='utf-8') as file:
                         tags = file.read()
                         log(tags)
@@ -231,7 +234,7 @@ def genScript(file_name):
                                     # 将原始内容写回文件中
                                     f.write(content)
             except Exception as e:
-                log("error")
+                log("error:"+e)
 
 
 with open('/flv/todo') as f:
