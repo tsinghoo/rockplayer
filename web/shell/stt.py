@@ -156,21 +156,16 @@ def hasScript(str, fileName):
     try:
         # 将json字符串转换为字典
         data = json.loads(str)
-
         log("json loaded")
         # 检查是否存在键 "脚本" 且其值为列表
-        if "script" in data:
-            log("脚本存在")
-            if (fileName in data["script"]):
-                return True
-            else:
-                return False
+        if (fileName in data):
+            return data[fileName] 
         else:
-            log("脚本不存在")
+            return None
     except json.JSONDecodeError:
         log("json decode error")
-        return False
-    return False
+        return None
+    return None
 # 循环遍历目录中的每一个文件
 # for file_name in os.listdir(dir_path):
 
@@ -197,12 +192,12 @@ def genScript(file_name):
                 elif os.path.exists(srtFilePath):
                     srt2htm(srtFilePath)
                 else:
-                    with open(os.path.join(dir_path, "setScriptPos"), 'r', encoding='utf-8') as file:
+                    with open(os.path.join(dir_path, "scripts"), 'r', encoding='utf-8') as file:
                         tags = file.read()
                         log(tags)
-                        if (hasScript(tags, file_name)):
-                            command = "VideoSubFinderCli.run -c -r -i \"{}\" -te 0.3 -be 0.05 -le 0.1 -re 0.9 -o \"{}\"".format(filePath.replace(
-                                "\"", "\\\""), dir_path)
+                        spos=(hasScript(tags, file_name))
+                        if (spos is not None):
+                            command = "VideoSubFinderCli.run -c -r -i \"{}\" -te \"{}\"  -be \"{}\"  -le \"{}\"  -re \"{}\"  -o \"{}\"".format(filePath.replace("\"", "\\\""),spos["top"], spos["bottom"],spos["left"],spos["right"], dir_path)
                             log(command)
                             subprocess.call(command, shell=True)
                             log("done")
