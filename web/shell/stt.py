@@ -54,12 +54,11 @@ def getVtt(vfp):
     log("not found")
     return None
 
-def vtt2htm(fp):
+def vtt2htm(fp,output_filename ):
     # 获取文件名的基础部分（去掉扩展名）
     log("vtt2htm")
     base_filename = fp.rsplit('.', 1)[0]
     base_filename = base_filename.rsplit('.', 1)[0]
-    output_filename = base_filename + '.htm'
 
     with open(fp, 'r', encoding='utf-8') as file:
         lines = file.readlines()
@@ -78,7 +77,7 @@ def vtt2htm(fp):
                 firstTime =1 
             # 如果之前有字幕内容，拼接它
             if text:
-                result.append(f"<br>[{timestamp}] {''.join(text)}")
+                result.append(f"[{timestamp}] {''.join(text)}")
                 text = []  # 清空文本，准备下一段字幕
             timestamp = line  # 保存当前时间戳
 
@@ -88,7 +87,7 @@ def vtt2htm(fp):
 
     # 最后一段字幕也需要添加
     if text:
-        result.append(f"<br>[{timestamp}] {''.join(text)}")
+        result.append(f"[{timestamp}] {''.join(text)}")
 
     # 将结果写入到 HTML 文件
     with open(output_filename, 'w', encoding='utf-8') as out_file:
@@ -112,6 +111,7 @@ def srt2htm(fp):
 
     # 逐行处理文件内容
     i = 0
+    lastTitle=""
     while i < len(lines):
         line = lines[i].strip()
 
@@ -124,13 +124,18 @@ def srt2htm(fp):
 
             # 获取该时间戳下的所有字幕内容
             i += 1
+            lastLine=""
             while i < len(lines) and lines[i].strip() != '':
-                subtitle_content += lines[i].strip() + ' '
+                if lastLine!=lines[i].strip():
+                    subtitle_content += lines[i].strip() + ' '
+                    lastLine=lines[i].strip()
+
                 i += 1
 
             # 拼接时间和字幕内容，并添加到列表中
-            subtitle_html.append(
-                f'<br>[{start_time} --> {end_time}] {subtitle_content.strip()}')
+            if lastTitle != subtitle_content.strip():
+                subtitle_html.append(f'[{start_time} --> {end_time}] {subtitle_content.strip()}')
+                lastTitle = subtitle_content.strip()
         else:
             i += 1
 
@@ -185,11 +190,10 @@ def genScript(file_name):
                 vttFile = getVtt(filePath)
                 #log("found:"+vttFile);
                 if vttFile is not None:
-                    vtt2htm(vttFile)
+                    vtt2htm(vttFile,txtFilePath)
                 elif os.path.exists(srtFilePath):
                     srt2htm(srtFilePath)
                 else:
-                    return
                     with open(os.path.join(dir_path, "tags"), 'r', encoding='utf-8') as file:
                         tags = file.read()
                         log(tags)
