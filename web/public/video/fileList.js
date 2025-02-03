@@ -343,7 +343,7 @@ window.mhgl_file_list =
       setScript: function () {
         var title = " 设置字幕位置";
         var content = $("#scriptTemplate").html();
-
+        share.closeDialog__();
         var buttons = null;
         var onHide = null;
         var onShown = function () {
@@ -360,10 +360,38 @@ window.mhgl_file_list =
           de.find('.buttonConfirm').on("click", function () {
             var url = "./setScriptPos";
             var params = {
+              fileName: self.clickedFile,
               top: top.val(),
               bottom: bottom.val(),
               left: left.val(),
               right: right.val()
+            };
+
+            var success = function (res) {
+              share.closeDialog__();
+              if (res.error) {
+                share.toastError__(res.error);
+              } else {
+                share.closeDialog__();
+              }
+            };
+
+            var fail = function (e) {
+              share.toastError__(e.message);
+            };
+
+            share.httpGet__(
+              url,
+              params,
+              success,
+              fail
+            );
+          });
+
+          de.find('.buttonNoScript').on("click", function () {
+            var url = "./removeScriptPos";
+            var params = {
+              fileName: self.clickedFile
             };
 
             var success = function (res) {

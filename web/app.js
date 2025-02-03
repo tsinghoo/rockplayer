@@ -757,6 +757,33 @@ app.get('/video/setScriptPos', (req, res) => {
     var resp = req.query.js + "(" + JSON.stringify(resp) + ");";
     res.send(resp);
 });
+
+app.get('/video/removeScriptPos', (req, res) => {
+    const fileName = req.query.fileName;
+
+    console.log(`removeScript:${fileName}`);
+
+    var rPath = path.join(directoryPath, "scripts");
+    var data = {};
+    try {
+        data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+    } catch (e) {
+        console.log("error parsing replacers:" + e.message);
+    }
+
+    delete data[fileName];
+
+    var resp = { ok: 1 };
+    try {
+        fs.writeFileSync(rPath, JSON.stringify(data));
+    } catch (err) {
+        console.error(`failed:${err.message}`);
+        resp = { error: err.message };
+    }
+
+    var resp = req.query.js + "(" + JSON.stringify(resp) + ");";
+    res.send(resp);
+});
 app.post('/video/toStt', (req, res) => {
     const filePath = req.query.file;
     toStt(filePath);
