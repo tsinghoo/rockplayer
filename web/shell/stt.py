@@ -46,7 +46,7 @@ def getVtt(vfp):
     dir_path, file_name = os.path.split(vfp)
     # 生成与输入文件相同的前缀（去掉 .mp4 后缀）
     base_name = os.path.splitext(file_name)[0]
-    log("getVtt:" + dir_path+ ","+ base_name)
+    log("getVtt:" + dir_path + "," + base_name)
     # 遍历目录查找匹配的 .vtt 文件
     for file in os.listdir(dir_path):
         if file.startswith(base_name) and file.endswith('.vtt') and file.rsplit('.', 2)[1].startswith('zh'):
@@ -54,7 +54,8 @@ def getVtt(vfp):
     log("not found")
     return None
 
-def vtt2htm(fp,output_filename ):
+
+def vtt2htm(fp, output_filename):
     # 获取文件名的基础部分（去掉扩展名）
     log("vtt2htm")
     base_filename = fp.rsplit('.', 1)[0]
@@ -74,7 +75,7 @@ def vtt2htm(fp,output_filename ):
         if '-->' in line:
             if firstTime == 0:
                 text = []
-                firstTime =1 
+                firstTime = 1
             # 如果之前有字幕内容，拼接它
             if text:
                 result.append(f"[{timestamp}] {''.join(text)}")
@@ -96,6 +97,7 @@ def vtt2htm(fp,output_filename ):
         for line in result:
             out_file.write(f'{line}\n')
 
+
 def srt2htm(fp):
     log("srt2htm")
     # 打开原始的 .srt 文件
@@ -111,7 +113,7 @@ def srt2htm(fp):
 
     # 逐行处理文件内容
     i = 0
-    lastTitle=""
+    lastTitle = ""
     while i < len(lines):
         line = lines[i].strip()
 
@@ -124,17 +126,18 @@ def srt2htm(fp):
 
             # 获取该时间戳下的所有字幕内容
             i += 1
-            lastLine=""
+            lastLine = ""
             while i < len(lines) and lines[i].strip() != '':
-                if lastLine!=lines[i].strip():
+                if lastLine != lines[i].strip():
                     subtitle_content += lines[i].strip() + ' '
-                    lastLine=lines[i].strip()
+                    lastLine = lines[i].strip()
 
                 i += 1
 
             # 拼接时间和字幕内容，并添加到列表中
             if lastTitle != subtitle_content.strip():
-                subtitle_html.append(f'[{start_time} --> {end_time}] {subtitle_content.strip()}')
+                subtitle_html.append(
+                    f'[{start_time} --> {end_time}] {subtitle_content.strip()}')
                 lastTitle = subtitle_content.strip()
         else:
             i += 1
@@ -188,13 +191,13 @@ def genScript(file_name):
         else:
             try:
                 vttFile = getVtt(filePath)
-                #log("found:"+vttFile);
+                # log("found:"+vttFile);
                 if vttFile is not None:
-                    vtt2htm(vttFile,txtFilePath)
+                    vtt2htm(vttFile, txtFilePath)
                 elif os.path.exists(srtFilePath):
                     srt2htm(srtFilePath)
                 else:
-                    with open(os.path.join(dir_path, "tags"), 'r', encoding='utf-8') as file:
+                    with open(os.path.join(dir_path, "setScriptPos"), 'r', encoding='utf-8') as file:
                         tags = file.read()
                         log(tags)
                         if (hasScript(tags, file_name)):

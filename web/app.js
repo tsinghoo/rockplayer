@@ -726,6 +726,37 @@ app.get('/video/rename', (req, res) => {
     var resp = req.query.js + "(" + JSON.stringify(resp) + ");";
     res.send(resp);
 });
+
+app.get('/video/setScriptPos', (req, res) => {
+    const top = req.query.top;
+    const bottom = req.query.bottom;
+    const left = req.query.left;
+    const right = req.query.right;
+    const fileName = req.query.fileName;
+
+    console.log(`setScript:${top},${bottom},${left},${right},${fileName}`);
+
+    var rPath = path.join(directoryPath, "scripts");
+    var data = {};
+    try {
+        data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
+    } catch (e) {
+        console.log("error parsing replacers:" + e.message);
+    }
+
+    data[fileName] = { top: top, bottom: bottom, left: left, right: right };
+
+    var resp = { ok: 1 };
+    try {
+        fs.writeFileSync(rPath, JSON.stringify(data));
+    } catch (err) {
+        console.error(`failed:${err.message}`);
+        resp = { error: err.message };
+    }
+
+    var resp = req.query.js + "(" + JSON.stringify(resp) + ");";
+    res.send(resp);
+});
 app.post('/video/toStt', (req, res) => {
     const filePath = req.query.file;
     toStt(filePath);

@@ -340,6 +340,55 @@ window.mhgl_file_list =
           self.deleteFile(self.clickedFile);
         }
       },
+      setScript: function () {
+        var title = " 设置字幕位置";
+        var content = $("#scriptTemplate").html();
+
+        var buttons = null;
+        var onHide = null;
+        var onShown = function () {
+          let de = $(".scriptTop").closest(".modal-dialog");
+          let top = de.find(".scriptTop");
+          let bottom = de.find(".scriptBottom");
+          let left = de.find(".scriptLeft");
+          let right = de.find(".scriptRight");
+          top.val("0.3");
+          bottom.val("0.05");
+          left.val("0.1");
+          right.val("0.9");
+
+          de.find('.buttonConfirm').on("click", function () {
+            var url = "./setScriptPos";
+            var params = {
+              top: top.val(),
+              bottom: bottom.val(),
+              left: left.val(),
+              right: right.val()
+            };
+
+            var success = function (res) {
+              if (res.error) {
+                share.toastError__(res.error);
+              } else {
+                share.closeDialog__();
+              }
+            };
+
+            var fail = function (e) {
+              share.toastError__(e.message);
+            };
+
+            share.httpGet__(
+              url,
+              params,
+              success,
+              fail
+            );
+          });
+        };
+
+        share.dialog__ = share.showDialog__(title, content, buttons, onHide, onShown);
+      },
       toRename: function () {
         var title = "重命名";
         var content = $("#renameTemplate").html();
@@ -347,9 +396,10 @@ window.mhgl_file_list =
         var buttons = null;
         var onHide = null;
         var onShown = function () {
-          let input = $(".fileName").closest(".modal-dialog").find(".fileName");
+          let de = $(".fileName").closest(".modal-dialog");
+          let input = de.find(".fileName");
           input.val(self.clickedFile);
-          $('.buttonConfirm').on("click", function () {
+          de.find('.buttonConfirm').on("click", function () {
             var url = "./rename";
             var params = {
               fileName: self.clickedFile,
@@ -401,6 +451,10 @@ window.mhgl_file_list =
         buttons.push({
           text: '删除',
           onTap: self.toDelete
+        });
+        buttons.push({
+          text: '有字幕',
+          onTap: self.setScript
         });
         buttons.push({
           text: '切分',
