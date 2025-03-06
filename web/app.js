@@ -4,9 +4,12 @@ const path = require('path');
 const mime = require('mime');
 const fileUpload = require('express-fileupload');
 const app = express();
+//引入sqlite库
+const sqlite3 = require('sqlite3').verbose();
 const { spawn, exec } = require('child_process');
 let response = [];
 let splitting = 0;
+let DB;
 app.use(express.json());
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
@@ -426,6 +429,122 @@ app.post('/video/cookies', (req, res) => {
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
 });
+async function getDb() {
+    if (DB) {
+        return DB;
+    }
+
+    const dbFilePath = path.join(directoryPath, "stock.db");
+    DB = new sqlite3.Database(dbFilePath);
+
+    DB.runSync = (sql, params) => {
+        return new Promise((resolve, reject) => {
+            DB.run(sql, params, function (err) {
+                if (err) {
+                    resolve({ error: err });
+                } else {
+                    resolve({});
+                }
+            });
+        })
+    }
+
+    DB.allSync = (sql, params) => {
+        return new Promise((resolve, reject) => {
+            DB.all(sql, params, function (err, rows) {
+                if (err) {
+                    resolve({ error: err });
+                } else {
+                    resolve({ rows: rows });
+                }
+            });
+        });
+    }
+
+    await DB.runSync(`CREATE TABLE IF NOT EXISTS tstock (
+        tid text PRIMARY KEY,
+        scode text,
+        sname TEXT,
+        tday text,
+        ttime text,
+        tprice REAL,
+        operationDirection text,
+        operationName text,
+        market text,
+        tamount integer,
+        tcash REAL,
+        taccount text,
+        tpair text
+    )`);
+
+    await DB.runSync(`CREATE TABLE IF NOT EXISTS tsql (
+        id text primary key,
+        name text,
+        sql text,
+        lastUseTime integer
+    )`);
+
+    return DB;
+}
+
+
+app.post('/stock/update', async (req, res) => {
+    console.log("/stock/update");
+
+    let rows = req.body.rows.split("\n");
+    let db = await getDb();
+    for (var i = 0; i < rows.length; ++i) {
+        var row = rows[i].split("\t");
+        var sql = `insert or replace into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?)`;
+        let res = await db.run(sql, row);
+        if (res.error) {
+            console.log(res.error);
+            res.send(res);
+            db.close();
+            return;
+        } else {
+
+        }
+    };
+
+    var resp = JSON.stringify({ data: "success" });
+    res.send(resp);
+});
+
+app.post('/stock/query', async (req, res) => {
+    let db = getDb();
+    let sql = req.body.sql;
+    let name = req.body.name;
+    let r = await db.allSync(sql);
+    if (r.error) {
+        console.log(r.error);
+        res.send(r);
+        db.close();
+        return;
+    }
+
+    await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
+        [name, name, sql, Date.now()]);
+
+    var resp = JSON.stringify({ data: r.rows });
+    res.send(resp);
+});
+
+app.get('/stock/sqls', async (req, res) => {
+    let db = getDb();
+    let sql = "select * from tsql order by lastUseTime desc";
+    let r = await db.allSync(sql);
+    if (r.error) {
+        console.log(r.error);
+        res.send(r);
+        return;
+    }
+
+    var resp = JSON.stringify({ data: r.rows });
+    res.send(resp);
+});
+
 app.get('/video/replacers', (req, res) => {
     console.log("video/replacers");
     var rPath = path.join(directoryPath, "replacers");
@@ -439,6 +558,7 @@ app.get('/video/replacers', (req, res) => {
     var resp = req.query.js + "(" + JSON.stringify({ data: replacers }) + ");";
     res.send(resp);
 });
+
 app.get('/video/metadata', (req, res) => {
     console.log("video/metadata");
     var fileName = req.query.fileName;
@@ -816,3 +936,5 @@ app.get('/video/doSplit', (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+
+

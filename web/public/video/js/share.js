@@ -5,6 +5,13 @@ window.mhgl_share =
     var share = {
       packageName: "com.lbdd.email",
       mhgl__: "web",
+      defaultAnimationInterval: 100,
+      rockWidth: 10,
+      computePosition: window.FloatingUIDOM.computePosition,
+      flip: window.FloatingUIDOM.flip,
+      shift: window.FloatingUIDOM.shift,
+      offset: window.FloatingUIDOM.offset,
+      arrow: window.FloatingUIDOM.arrow,
       cache__: {},
       uiDebug: 0,
       logData__: [],
@@ -683,6 +690,19 @@ window.mhgl_share =
         }
       },
 
+      postSync__: function (url, params) {
+        return new Promise(function (resolve, reject) {
+          let succ = function (res) {
+            resolve(res);
+          };
+
+          let fail = function (err) {
+            resolve({ error: err });
+          };
+          share.httpPost__(url, params, succ, fail);
+        });
+      },
+
       httpPost__: function (
         url,
         params,
@@ -809,6 +829,193 @@ window.mhgl_share =
               share.handleAjaxError__(e);
             }
           }
+        });
+      },
+
+
+      popup__: async function (target, content, placement, onShown, document) {
+        if (target == null) {
+          target = share.currentTarget;
+        }
+
+        if (document == null) {
+          document = window.document;
+        }
+
+        let popupId = share.uuid__();
+
+        $("body", document).append(`<div id="bg${popupId}" class="modal-backdrop init"/>`);
+        $("body", document).append(`<div id="${popupId}" class="popup" role="tooltip" />`);
+        $(`#${popupId}`, document).html(content);
+        $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
+
+        async function setPosition() {
+          let tooltip = $(`#${popupId}`, document)[0];
+          let arrow = $(`#arrow${popupId}`, document)[0];
+          let res = await share.computePosition(target, tooltip, {
+            placement: placement ? placement : "bottom",
+            middleware: [
+              share.offset(6),
+              share.flip(),
+              share.shift({ padding: 5 }),
+              share.arrow({ element: arrow }),
+            ],
+          });
+
+          Object.assign(tooltip.style, {
+            left: `${res.x}px`,
+            top: `${res.y}px`,
+            //opacity: 0
+          });
+
+          const staticSide = {
+            top: 'bottom',
+            right: 'left',
+            bottom: 'top',
+            left: 'right',
+          }[res.middlewareData.offset.placement.split('-')[0]];
+
+          let x = res.middlewareData.arrow.x;
+          let y = res.middlewareData.arrow.y;
+          Object.assign(arrow.style, {
+            left: x != null ? `${x}px` : '',
+            top: y != null ? `${y}px` : '',
+            right: '',
+            bottom: '',
+            [staticSide]: '-4px',
+          });
+        }
+
+        await setPosition();
+
+        share.rocktb__($(`#${popupId}`, document));
+        share.rocktb__($(`#arrow${popupId}`, document));
+        $(`#bg${popupId}`, document).animate({ opacity: .2 }, 100);
+        onShown && onShown(popupId);
+
+        let popup = {
+          id: popupId,
+          update: async function (newContent) {
+            $(`#${popupId}`, document).html(newContent);
+            $(`#${popupId}`, document).append(`<div class="arrow" ></div>`);
+            onShown && onShown();
+            await setPosition();
+          },
+          close: async function () {
+            let p = [];
+            p.push(share.fadeOut__($(`#bg${popupId}`, document)));
+            p.push(share.fadeOut__($(`#${popupId}`, document)));
+            await Promise.allSettled(p);
+          }
+        }
+
+        $(`#bg${popupId}`, document).off("click").on("click", async function () {
+          await popup.close();
+          popup.onClosed && popup.onClosed();
+        });
+
+        return popup;
+      },
+      rock__: function (selector) {
+        let ol = $(selector)[0].style.left;
+        let olp = ol.split("px");
+
+        if (olp.length > 1) {
+          $(selector).animate({ left: `${+olp[0] - 2}px` }, 200)
+            .animate({ left: `${+olp[0] + 2}px` }, 200)
+            .animate({ left: `${olp[0]}px` }, 200);
+        }
+      },
+      rocktb__: function (selector) {
+        if (typeof selector === 'string') {
+          selector = $(selector);
+        }
+        let ol = selector[0].style.top;
+        let olp = ol.split("px");
+
+        if (olp.length > 1) {
+          selector.animate({ top: `${+olp[0] - 2}px` }, 200).animate({ top: `${+olp[0] + 2}px` }, 200).animate({ top: `${olp[0]}px` }, 200);
+        }
+      },
+      fadeOut__: async function (selector, interval) {
+        if (typeof selector === 'string') {
+          selector = $(selector);
+        }
+
+        let job = (resolve, reject) => {
+
+          selector.fadeOut(interval ? interval : share.defaultAnimationInterval, function () {
+            $(this).remove();
+            resolve();
+          });
+        };
+
+        return new Promise(job);
+      },
+      popupAction__: async function (content, buttons, target, placement, onShown, document) {
+        var buttonTemplate = $("#templateActionSheetButton", parent.parent.document).html();
+        var html = [];
+
+        if (document == null) {
+          document = window.document;
+        }
+
+        if (buttons)
+          buttons.forEach(function (item, i) {
+            var itemHtml = buttonTemplate.replace(
+              /#id#/g,
+              item.id ? item.id : i
+            );
+            itemHtml = itemHtml.replace(/#name#/g, item.text);
+            itemHtml = itemHtml.replace(/#icon#/g, item.icon ? item.icon : "");
+            itemHtml = itemHtml.replace(/#class#/g, `${item.clazz ? item.clazz.join(" ") : ""}`);
+
+            html.push(itemHtml);
+          });
+
+        let buttonHtml = html.join("");
+        if (content == null || content == "") {
+          html = `<div class="flexcolumn hcenter">
+                  ${buttonHtml}
+                  </div>`;
+        } else {
+          html = `<div class="flexcolumn hcenter">
+                    <div style="max-width:300px; max-height:600px;" class="breakword scrollX scrollY">${content}</div>
+                    ${buttonHtml}
+                  </div>`;
+        }
+        if (target == null) {
+          target = share.currentTarget;
+        }
+
+        var shown = function (popupId) {
+          if (buttons)
+            buttons.forEach(function (item, i) {
+              $("#actionSheetButton" + (item.id ? item.id : i), $(`#${popupId}`, document)).on(
+                "click",
+                function (e) {
+                  item.onTap(e);
+                }
+              );
+            });
+
+          if (onShown) onShown(popupId);
+        };
+
+        share.dialog__ = await share.popup__(target, html, placement, shown, document);
+        return share.dialog__;
+      },
+
+      getSync__: function (url, params) {
+        return new Promise(function (resolve, reject) {
+          let succ = function (res) {
+            resolve(res);
+          };
+
+          let fail = function (err) {
+            resolve({ error: err });
+          };
+          share.httpGet__(url, params, succ, fail);
         });
       },
 
