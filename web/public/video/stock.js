@@ -50,7 +50,13 @@ window.feed_list = window.feed_list || (function () {
                 {
                     text: "精简",
                     onTap: function () {
-                        self.showRows(false);
+                        let trs = $(`.repeatCode`);
+                        if (trs.is(":visible")) {
+                            self.showRows(false);
+                        } else {
+                            self.showRows(true);
+                        }
+
                     }
                 }
             ];
