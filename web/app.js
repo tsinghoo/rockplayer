@@ -431,12 +431,16 @@ app.post('/video/cookies', (req, res) => {
 });
 async function getDb() {
     if (DB) {
+        console.log("DB exist");
         return DB;
     }
 
+
+    console.log("open stock.db");
     const dbFilePath = path.join(directoryPath, "stock.db");
     DB = new sqlite3.Database(dbFilePath);
 
+    console.log("open stock.db ok");
     DB.runSync = (sql, params) => {
         return new Promise((resolve, reject) => {
             DB.run(sql, params, function (err) {
@@ -461,6 +465,8 @@ async function getDb() {
         });
     }
 
+    console.log("db inited");
+
     await DB.runSync(`CREATE TABLE IF NOT EXISTS tstock (
         tid text PRIMARY KEY,
         scode text,
@@ -484,24 +490,29 @@ async function getDb() {
         lastUseTime integer
     )`);
 
+    console.log("table inited");
+
     return DB;
 }
-
 
 app.post('/stock/update', async (req, res) => {
     console.log("/stock/update");
 
     let rows = req.body.rows.split("\n");
+    console.log(rows.join("\n"));
     let db = await getDb();
     for (var i = 0; i < rows.length; ++i) {
-        var row = rows[i].split("\t");
+        if (rows[i].trim() == "") {
+            continue;
+        }
+
+        var fields = rows[i].split("\t");
         var sql = `insert or replace into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?)`;
-        let res = await db.run(sql, row);
+        let res = await db.run(sql, fields);
         if (res.error) {
             console.log(res.error);
             res.send(res);
-            db.close();
             return;
         } else {
 
@@ -513,14 +524,14 @@ app.post('/stock/update', async (req, res) => {
 });
 
 app.post('/stock/query', async (req, res) => {
-    let db = getDb();
+    let db = await getDb();
     let sql = req.body.sql;
     let name = req.body.name;
+    console.log(`sql:${sql}`);
     let r = await db.allSync(sql);
     if (r.error) {
         console.log(r.error);
         res.send(r);
-        db.close();
         return;
     }
 
@@ -532,7 +543,8 @@ app.post('/stock/query', async (req, res) => {
 });
 
 app.get('/stock/sqls', async (req, res) => {
-    let db = getDb();
+    let db = await getDb();
+    let js = req.query.js;
     let sql = "select * from tsql order by lastUseTime desc";
     let r = await db.allSync(sql);
     if (r.error) {
@@ -541,7 +553,7 @@ app.get('/stock/sqls', async (req, res) => {
         return;
     }
 
-    var resp = JSON.stringify({ data: r.rows });
+    var resp = `${js}(${JSON.stringify({ data: r.rows })})`;
     res.send(resp);
 });
 

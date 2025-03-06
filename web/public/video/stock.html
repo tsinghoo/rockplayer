@@ -1,0 +1,90 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Video Player</title>
+        <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/lqh.css">
+        <link href="css/jquery.enhsplitter.css" rel="stylesheet">
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap-theme.css">
+        <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+        <link rel="stylesheet" href="vendor/lqh.css">
+        <style>
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+      }
+/* 表格样式 */
+#stockTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#stockTable th, #stockTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#stockTable th {
+    background-color: #f2f2f2;
+    cursor: col-resize;
+}
+
+/* 调整列宽的样式 */
+.resizable {
+    position: relative;
+}
+
+.resizable:after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+}
+      .modal-backdrop.in {
+        filter: alpha(opacity=50);
+        opacity: .05;
+      }
+        </style>
+    </head>
+    <body>
+        <div class="flexrow">
+            <div class="flexcolumn paddinglr4">
+                <div class="addButton width100p clickable">
+                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                </div>
+                <div id="sqls" class="flexcolumn paddinglr4"></div>
+            </div>
+            <div id="stockTableContainer">
+                <table id="stockTable" class="table table-striped"></table>
+            </div>
+        </div>
+    </body>
+
+    <div id="rows" class="hide">
+        <div class="flexcolumn" style="width:500px;">
+            <span>交易记录</span>
+            <textarea class="rows" rows="20" ></textarea>
+            <div class="flexrow center">
+                <input type="button" class="submitRows" value="submit">
+            </div>
+        </div>
+    </div>
+</html>
+<script src="vendor/math.uuid.js"></script>
+<script src="./js/jquery.js"></script>
+<script src="./vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
+<script src="./vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+<script src="vendor/store.legacy.min.js"></script>
+<script src="js/jquery.enhsplitter.js"></script>
+<script src="https://vjs.zencdn.net/8.3.0/video.min.js"></script>
+<script src="js/store.legacy.min.js"></script>
+<script src="vendor/bootstrap-3.3.7-dist/js/bootstrap.js" defer="defer"></script>
+<script src="vendor/bootstrap3-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
+<script src="./js/share.js" defer="defer"></script>
+<script src="./stock.js" defer="defer"></script>
