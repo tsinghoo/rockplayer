@@ -15,6 +15,8 @@
         padding: 0;
         margin: 0;
       }
+
+      
 /* 表格样式 */
 #stockTable {
     width: 100%;
@@ -55,7 +57,7 @@
     <body>
         <div class="flexrow">
             <div class="flexcolumn paddinglr4">
-                <div class="addButton width100p clickable">
+                <div class="addButton width100p center clickable padding4">
                     <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
                 </div>
                 <div id="sqls" class="flexcolumn paddinglr4"></div>
@@ -74,6 +76,11 @@
                 <input type="button" class="submitRows" value="submit">
             </div>
         </div>
+    </div>
+    <div id="templateActionSheetButton" style="display:none">
+        <button id="actionSheetButton#id#" type="button" class="btn btn-primary widthAuto margintb4 #class#">
+            #icon# #name#
+        </button>
     </div>
 </html>
 <script src="vendor/math.uuid.js"></script>

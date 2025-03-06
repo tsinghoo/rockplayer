@@ -12,7 +12,7 @@ window.feed_list = window.feed_list || (function () {
                 //将rows里的数据显示在id是sqls的div里，并且每行的内容是rows的第i个元素，点击每行的时候拿对应的sql去调用"/stock/query"接口，并且将返回的数据显示在表格里
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
-                    let div = $("<div class='clickable'>");
+                    let div = $("<div class='clickable padding4'>");
                     div.text(row.name);
                     div.click(function () {
                         self.sqlClicked(row);
@@ -33,40 +33,44 @@ window.feed_list = window.feed_list || (function () {
             if (res.error) {
                 table.html(res.error);
             } else {
-                let rows = res.data;
-                table.empty();
-                let thead = $("<thead>");
-                let tr = $("<tr>");
-                let keys = Object.keys(rows[0]);
-                for (let i = 0; i < keys.length; i++) {
-                    let th = $("<th>");
-                    th.text(keys[i]);
-                    tr.append(th);
-                }
-
-                thead.append(tr);
-                table.append(thead);
-
-                let tbody = $("<tbody>");
-                for (let i = 1; i < rows.length; i++) {
-                    let tr = $("<tr>");
-                    let row = rows[i];
-                    for (let j = 0; j < keys.length; j++) {
-                        let key = keys[j];
-                        let td = $("<td>");
-                        td.text(row[key]);
-                        tr.append(td);
+                self.rows = res.data;
+                self.showRows(false);
+            }
+        },
+        addButtonClicked__: async function () {
+            let buttons = [
+                {
+                    text: "新交易记录",
+                    onTap: self.showCookies
+                },
+                {
+                    text: "配对",
+                    onTap: self.toPair
+                },
+                {
+                    text: "精简",
+                    onTap: function () {
+                        self.showRows(false);
                     }
-                    tbody.append(tr);
                 }
+            ];
 
-                table.append(tbody);
+            let popup = await share.popupAction__("", buttons);
+
+        },
+        toPair: async function () {
+            share.closePopup__();
+            let res = await share.getSync__("/stock/pair");
+            if (res.error) {
+                share.toastError__(res.error);
+            } else {
+                share.toastSuccess__("pair success");
             }
         },
         bindEvents: function () {
             $(".addButton").click(function () {
                 share.currentTarget = this;
-                self.showCookies();
+                self.addButtonClicked__();
             });
 
             // 列宽调整功能
@@ -93,6 +97,7 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         showCookies: async function () {
+            await share.closePopup__();
             let template = $("#rows").html();
             let popup = await share.popup__(null,
                 template
@@ -120,6 +125,69 @@ window.feed_list = window.feed_list || (function () {
                     fail ? fail : share.toastError__
                 );
             });
+        },
+        showRows: function (expanded) {
+            let table = $("#stockTable");
+            let rows = self.rows;
+            table.empty();
+            let thead = $("<thead>");
+            let tr = $("<tr>");
+            let keys = Object.keys(rows[0]);
+            for (let i = 0; i < keys.length; i++) {
+                let th = $("<th>");
+                th.text(keys[i]);
+                tr.append(th);
+            }
+
+            thead.append(tr);
+            table.append(thead);
+
+            let tbody = $("<tbody>");
+            let lastCode;
+            for (let i = 1; i < rows.length; i++) {
+                let tr = $("<tr>");
+                let row = rows[i];
+                for (let j = 0; j < keys.length; j++) {
+                    let key = keys[j];
+                    let td = $("<td>");
+                    if (key == "代码") {
+                        if (row[key] === lastCode) {
+                            tr.addClass("repeatCode");
+                            tr.addClass(`repeatCode${lastCode}`);
+                            td.text("");
+                        } else {
+                            td.text(row[key]);
+                            tr.addClass("firstCode clickable");
+                            tr.attr("code", row[key]);
+                        }
+
+                        lastCode = row[key];
+                    } else {
+                        td.text(row[key]);
+                    }
+
+                    tr.append(td);
+                }
+                tbody.append(tr);
+            }
+
+            table.append(tbody);
+
+            if (expanded) {
+                $(".repeatCode").show();
+            } else {
+                $(".repeatCode").hide();
+            }
+
+            $(".firstCode").click(function () {
+                let code = $(this).attr("code");
+                let trs = $(`.repeatCode${code}`);
+                if (trs.is(":visible")) {
+                    trs.hide();
+                } else {
+                    trs.show();
+                }
+            })
         },
         // 填充表格数据
         show: function (data) {
@@ -169,6 +237,7 @@ window.feed_list = window.feed_list || (function () {
 
     return self;
 })();
+
 
 
 

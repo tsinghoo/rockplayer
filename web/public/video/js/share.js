@@ -952,6 +952,15 @@ window.mhgl_share =
 
         return new Promise(job);
       },
+      closePopup__: async function () {
+        try {
+          if (share.dialog__) {
+            await share.dialog__.close();
+          }
+        } catch (e) {
+
+        }
+      },
       popupAction__: async function (content, buttons, target, placement, onShown, document) {
         var buttonTemplate = $("#templateActionSheetButton", parent.parent.document).html();
         var html = [];

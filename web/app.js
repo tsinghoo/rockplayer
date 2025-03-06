@@ -523,6 +523,31 @@ app.post('/stock/update', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/pair', async (req, res) => {
+    console.log("/stock/pair");
+    let js = req.query.js;
+    let db = await getDb();
+    let r = await db.allSync("select * from tstock where tamount<0");
+    let sells = r.rows;
+    console.log(`${sells.length} sells`);
+    for (var i = 0; i < sells.length; ++i) {
+        let sell = sells[i];
+        console.log(`${sell.sname}(${sell.scode}):${sell.tid}`);
+        let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tprice desc",
+            [sell.tamount * -1, sell.scode, sell.tprice]);
+        let buys = r.rows;
+        if (buys.length > 0) {
+            let buy = buys[0];
+            console.log(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`);
+            await db.runSync(`update tstock set tpair=? where tid=?`, [buy.tid, sell.tid]);
+            await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
+        }
+    };
+
+    var resp = `${js}(${JSON.stringify({ data: "success" })})`;
+    res.send(resp);
+});
+
 app.post('/stock/query', async (req, res) => {
     let db = await getDb();
     let sql = req.body.sql;
