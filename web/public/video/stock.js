@@ -218,10 +218,10 @@ window.feed_list = window.feed_list || (function () {
         },
         showChart: async function (rows) {
             // 提取日期和价格数据
-            let dates = rows.map(row => row.日期);
+            let dates = rows.map(row => `${row.日期} ${row.时间}`);
             let prices = rows.map(row => row.价格);
 
-            let html = `<canvas id="priceChart" style="width: 100%; height: 400px;"></canvas>`;
+            let html = `<canvas id="priceChart" style="width: 600px; height: 400px;"></canvas>`;
             let popup = await share.popup__(null, html);
             let c = $(`#${popup.id}`);
 
@@ -238,6 +238,28 @@ window.feed_list = window.feed_list || (function () {
                         data: prices,
                         borderColor: 'rgba(75, 192, 192, 1)',
                         borderWidth: 2,
+                        pointStyle: (context) => {
+                            const i = context.dataIndex;
+                            if (rows[i]["数量"] > 0) {
+                                return "circle";
+                            }
+                            return "triangle";
+                        },
+                        pointBackgroundColor: (context) => {
+                            const i = context.dataIndex;
+                            if (rows[i]["数量"] > 0) {
+                                return "green";
+                            }
+                            return "red";
+                        },
+                        borderColor: "lightgray",
+                        pointBorderColor: (context) => {
+                            const i = context.dataIndex;
+                            if (rows[i]["数量"] > 0) {
+                                return "green";
+                            }
+                            return "red";
+                        },
                         fill: false
                     }]
                 },
@@ -248,9 +270,8 @@ window.feed_list = window.feed_list || (function () {
                             type: 'time', // 设置 X 轴为时间类型
                             time: {
                                 unit: 'day',  // 按天显示
-                                tooltipFormat: 'll', // 显示工具提示格式
                                 displayFormats: {
-                                    day: 'yyyyMMdd', // 显示日期的格式
+                                    day: 'yyyyMMdd hh:mm:ss', // 显示日期的格式
                                 },
                             },
                         },
