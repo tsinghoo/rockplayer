@@ -217,17 +217,76 @@ window.feed_list = window.feed_list || (function () {
 
         },
         showChart: async function (rows) {
-            // 提取日期和价格数据
+            let max = 0;
+            let min = 100000;
+            let last = 0;
+            let ratio = 2;
             let dates = rows.map(row => `${row.日期} ${row.时间}`);
-            let prices = rows.map(row => row.价格);
+            let prices = rows.map(row => {
+                if (row.价格 > max) {
+                    max = row.价格;
+                }
+                if (row.价格 < min) {
+                    min = row.价格;
+                }
+                last = row.价格;
+                return row.价格
+            });
 
-            let html = `<canvas id="priceChart" style="width: 600px; height: 400px;"></canvas>`;
+            let html = `
+<div class="flexcolumn center">
+    <div class="flexrow width100p">
+        <div class="flexcolumn center">
+            <input type="text" id="ratio" value="${ratio}">
+        </div>
+        <div class="flexcolumn center">
+            <div class="flexrow width100p">
+                <div class="marginlr10">最近: <input type="text" id="last" value="${last}"></div>
+                <div class="marginlr10 recentUp">+${ratio}%: ${last * (1 + ratio / 100)}</div>
+                <div class="marginlr10 recentDown">-${ratio}%: ${last * (1 - ratio / 100)}</div>
+            </div>
+            <div class="flexrow width100p">
+                <div class="marginlr10">最大: ${max}</div>
+                <div class="marginlr10 maxUp">+${ratio}%: ${max * (1 + ratio / 100)}</div>
+                <div class="marginlr10 maxDown">-${ratio}%: ${max * (1 - ratio / 100)}</div>
+            </div>
+            <div class="flexrow width100p">
+                <div class="marginlr10">最小: ${min}</div>
+                <div class="marginlr10 minUp">+${ratio}%: ${min * (1 + ratio / 100)}</div>
+                <div class="marginlr10 minDown">-${ratio}%: ${min * (1 - ratio / 100)}</div>
+            </div>
+        </div>
+    </div>
+    <canvas id="priceChart" style="width: 600px; height: 400px;"></canvas>
+</div>
+            `;
             let popup = await share.popup__(null, html);
             let c = $(`#${popup.id}`);
 
             // 获取 canvas 元素
             let ctx = $('#priceChart', c)[0].getContext('2d');
-
+            let input=$('#ratio', c);
+            input.change(function () {
+                let r = input.val();
+                let l=$('#last', c).val();
+                $(".recentUp", c).text(`+${r}%: ${l * (1 + r / 100)}`);
+                $(".recentDown", c).text(`-${r}%: ${l * (1 - r / 100)}`);
+                $(".maxUp", c).text(`+${r}%: ${max * (1 + r / 100)}`);
+                $(".maxDown", c).text(`-${r}%: ${max * (1 - r / 100)}`);
+                $(".minUp", c).text(`+${r}%: ${min * (1 + r / 100)}`);
+                $(".minDown", c).text(`-${r}%: ${min * (1 - r / 100)}`);
+            });
+            $('#last', c).change(function () {
+                let r = input.val();
+                let l=$('#last', c).val();
+                $(".recentUp", c).text(`+${r}%: ${l * (1 + r / 100)}`);
+                $(".recentDown", c).text(`-${r}%: ${l * (1 - r / 100)}`);
+                $(".maxUp", c).text(`+${r}%: ${max * (1 + r / 100)}`);
+                $(".maxDown", c).text(`-${r}%: ${max * (1 - r / 100)}`);
+                $(".minUp", c).text(`+${r}%: ${min * (1 + r / 100)}`);
+                $(".minDown", c).text(`-${r}%: ${min * (1 - r / 100)}`);
+            });
+            
             // 创建折线图
             let chart = new Chart(ctx, {
                 type: 'line',
