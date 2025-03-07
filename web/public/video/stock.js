@@ -265,10 +265,10 @@ window.feed_list = window.feed_list || (function () {
 
             // 获取 canvas 元素
             let ctx = $('#priceChart', c)[0].getContext('2d');
-            let input=$('#ratio', c);
+            let input = $('#ratio', c);
             input.change(function () {
                 let r = input.val();
-                let l=$('#last', c).val();
+                let l = $('#last', c).val();
                 $(".recentUp", c).text(`+${r}%: ${l * (1 + r / 100)}`);
                 $(".recentDown", c).text(`-${r}%: ${l * (1 - r / 100)}`);
                 $(".maxUp", c).text(`+${r}%: ${max * (1 + r / 100)}`);
@@ -278,7 +278,7 @@ window.feed_list = window.feed_list || (function () {
             });
             $('#last', c).change(function () {
                 let r = input.val();
-                let l=$('#last', c).val();
+                let l = $('#last', c).val();
                 $(".recentUp", c).text(`+${r}%: ${l * (1 + r / 100)}`);
                 $(".recentDown", c).text(`-${r}%: ${l * (1 - r / 100)}`);
                 $(".maxUp", c).text(`+${r}%: ${max * (1 + r / 100)}`);
@@ -286,7 +286,7 @@ window.feed_list = window.feed_list || (function () {
                 $(".minUp", c).text(`+${r}%: ${min * (1 + r / 100)}`);
                 $(".minDown", c).text(`-${r}%: ${min * (1 - r / 100)}`);
             });
-            
+
             // 创建折线图
             let chart = new Chart(ctx, {
                 type: 'line',
