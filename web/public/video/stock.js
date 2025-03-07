@@ -3,6 +3,8 @@ window.feed_list = window.feed_list || (function () {
     var page = window.mhgl_page;
     var navbar = parent.navFrame ? parent.navFrame.mhgl_navbar : window.mhgl_navbar;
     var self = {
+        data: {},
+        rows: [],
         init: async function () {
             let res = await share.getSync__("/stock/sqls");
             if (res.error) {
@@ -139,6 +141,7 @@ window.feed_list = window.feed_list || (function () {
         showRows: function (expanded) {
             let table = $("#stockTable");
             let rows = self.rows;
+            self.data = {};
             table.empty();
             let thead = $("<thead>");
             let tr = $("<tr>");
@@ -161,11 +164,14 @@ window.feed_list = window.feed_list || (function () {
                     let key = keys[j];
                     let td = $("<td>");
                     if (key == "代码") {
+                        tr.addClass(`code${row[key]}`);
                         if (row[key] === lastCode) {
+                            //td.text(row[key]);
+                            self.data[row[key]].push(row);
                             tr.addClass("repeatCode");
                             tr.addClass(`repeatCode${lastCode}`);
-                            td.text("");
                         } else {
+                            self.data[row[key]] = [row];
                             td.text(row[key]);
                             tr.addClass("firstCode clickable");
                             tr.attr("code", row[key]);
@@ -198,6 +204,18 @@ window.feed_list = window.feed_list || (function () {
                     trs.show();
                 }
             })
+
+            //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
+            $(".firstCode").mouseover(function () {
+                let code = $(this).attr("code");
+                let rows = self.data[code];
+                //将rows里的数据展示在一个折线图里，横坐标是“日期”，纵坐标是“价格”
+                
+
+
+            })
+
+
         },
         // 填充表格数据
         show: function (data) {
