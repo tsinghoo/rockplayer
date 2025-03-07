@@ -23,7 +23,7 @@ window.feed_list = window.feed_list || (function () {
                     $("#sqls").append(div);
                 }
             }
-
+            Chart.register(ChartDataLabels);
             self.bindEvents();
         },
         sqlClicked: function (row) {
@@ -265,6 +265,16 @@ window.feed_list = window.feed_list || (function () {
                 },
                 options: {
                     responsive: true,  // 自适应
+                    plugins: {
+                        datalabels: {
+                            color: 'black', // 设置标签颜色
+                            align: 'top', // 标签的位置，可以是 'top', 'bottom', 'left', 'right'
+                            //anchor: 'start', // 'start' means the label will be aligned with the point
+                            formatter: function (value, context) {
+                                return value; // 返回 y 值
+                            }
+                        }
+                    },
                     scales: {
                         x: {
                             type: 'time', // 设置 X 轴为时间类型
