@@ -237,11 +237,11 @@ window.feed_list = window.feed_list || (function () {
 <div class="flexcolumn center">
     <div class="flexrow width100p">
         <div class="flexcolumn center">
-            <input type="text" id="ratio" value="${ratio}">
+            <input type="text" id="ratio" style="width:40px;" value="${ratio}">
         </div>
         <div class="flexcolumn center">
             <div class="flexrow width100p">
-                <div class="marginlr10">最近: <input type="text" id="last" value="${last}"></div>
+                <div class="marginlr10">最近: <input style="width:60px;" type="text" id="last" value="${last}"></div>
                 <div class="marginlr10 recentUp">+${ratio}%: ${last * (1 + ratio / 100)}</div>
                 <div class="marginlr10 recentDown">-${ratio}%: ${last * (1 - ratio / 100)}</div>
             </div>
