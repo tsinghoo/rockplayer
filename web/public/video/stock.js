@@ -175,6 +175,7 @@ window.feed_list = window.feed_list || (function () {
                             td.text(row[key]);
                             tr.addClass("firstCode clickable");
                             tr.attr("code", row[key]);
+                            td.addClass("code");
                         }
 
                         lastCode = row[key];
@@ -206,55 +207,58 @@ window.feed_list = window.feed_list || (function () {
             })
 
             //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
-            $(".firstCode").mouseover(function () {
-                let code = $(this).attr("code");
+            $(".code").click(function () {
+                let code = $(this).parents("tr").attr("code");
                 let rows = self.data[code];
-                //将rows里的数据展示在一个折线图里，横坐标是“日期”，纵坐标是“价格”
-                
-
-
+                share.currentTarget = this;
+                // 初始化折线图
+                self.showChart(rows);
             })
 
-
         },
-        // 填充表格数据
-        show: function (data) {
-            var tbody = $('#stockTable tbody');
-            tbody.empty();
-            data.forEach(function (record) {
-                var row = $('<tr>');
-                row.append($('<td>').text(record.date));
-                row.append($('<td>').text(record.code));
-                row.append($('<td>').text(record.name));
-                row.append($('<td>').text(record.openPrice));
-                row.append($('<td>').text(record.highPrice));
-                row.append($('<td>').text(record.lowPrice));
-                row.append($('<td>').text(record.closePrice));
-                row.append($('<td>').text(record.volume));
-                row.append($('<td>').text(record.turnover));
-                row.append($('<td>').text(record.changeRate));
-                row.append($('<td>').text(record.changeAmount));
-                row.append($('<td>').text(record.turnoverRate));
-                // 最后一列可编辑
-                var editCell = $('<td>');
-                var editInput = $('<input>', {
-                    type: 'text',
-                    value: record.action,
-                    class: 'form-control',
-                    style: 'display: none;'
-                });
-                var editSpan = $('<span>').text(record.action).css('cursor', 'pointer').click(function () {
-                    editSpan.hide();
-                    editInput.show().focus();
-                });
-                editInput.blur(function () {
-                    editSpan.text(editInput.val()).show();
-                    editInput.hide();
-                });
-                editCell.append(editSpan);
-                editCell.append(editInput);
-                row.append(editCell);
-                tbody.append(row);
+        showChart: async function (rows) {
+            // 提取日期和价格数据
+            let dates = rows.map(row => row.日期);
+            let prices = rows.map(row => row.价格);
+
+            let html = `<canvas id="priceChart" style="width: 100%; height: 400px;"></canvas>`;
+            let popup = await share.popup__(null, html);
+            let c = $(`#${popup.id}`);
+
+            // 获取 canvas 元素
+            let ctx = $('#priceChart', c)[0].getContext('2d');
+
+            // 创建折线图
+            let chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: '价格',
+                        data: prices,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,  // 自适应
+                    scales: {
+                        x: {
+                            type: 'time', // 设置 X 轴为时间类型
+                            time: {
+                                unit: 'day',  // 按天显示
+                                tooltipFormat: 'll', // 显示工具提示格式
+                                displayFormats: {
+                                    day: 'yyyyMMdd', // 显示日期的格式
+                                },
+                            },
+                        },
+                        y: {
+                            beginAtZero: false  // Y轴从零开始
+                        }
+                    }
+                }
             });
         },
     };
@@ -265,7 +269,3 @@ window.feed_list = window.feed_list || (function () {
 
     return self;
 })();
-
-
-
-
