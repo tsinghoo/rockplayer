@@ -41,7 +41,7 @@ window.feed_list = window.feed_list || (function () {
             let buttons = [
                 {
                     text: "新交易记录",
-                    onTap: self.showCookies
+                    onTap: self.showTradeInput
                 },
                 {
                     text: "增量配对",
@@ -106,7 +106,7 @@ window.feed_list = window.feed_list || (function () {
                 });
             });
         },
-        showCookies: async function () {
+        showTradeInput: async function () {
             await share.closePopup__();
             let template = $("#rows").html();
             let popup = await share.popup__(null,

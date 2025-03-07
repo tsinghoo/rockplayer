@@ -490,6 +490,15 @@ async function getDb() {
         lastUseTime integer
     )`);
 
+    await DB.runSync(`CREATE TABLE IF NOT EXISTS tStockBasic (
+        id text primary key,
+        scode text,
+        sname text,
+        buy real default 0,
+        sell real default 0,
+        updateTime integer
+    )`);
+
     console.log("table inited");
 
     return DB;
@@ -523,6 +532,33 @@ app.post('/stock/update', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/trade/update', async (req, res) => {
+    console.log("/stock/pair");
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let sname = req.query.sname;
+    let buy = req.query.buy;
+    let sell = req.query.sell
+    let db = await getDb();
+
+    let sql = `insert or ignore into tstockbasic (id, scode, sname,buy,sell,updateTime) values (?,?,?,?,?,?)`;
+    let r = await db.run(sql, [scode, sname, buy, sell, Date.now()]);
+
+    var resp = `${js}(${JSON.stringify({ data: "success" })})`;
+    res.send(resp);
+});
+
+app.get('/stock/trade/all', async (req, res) => {
+    console.log("/stock/pair");
+    let js = req.query.js;
+    let db = await getDb();
+
+    let sql = `select * from tstockbasic `;
+    let r = await db.allSync(sql);
+
+    var resp = `${js}(${JSON.stringify({ data: r.rows })})`;
+    res.send(resp);
+});
 app.get('/stock/pair', async (req, res) => {
     console.log("/stock/pair");
     let js = req.query.js;
