@@ -526,14 +526,20 @@ app.post('/stock/update', async (req, res) => {
 app.get('/stock/pair', async (req, res) => {
     console.log("/stock/pair");
     let js = req.query.js;
+    let reset = req.query.reset;
     let db = await getDb();
-    let r = await db.allSync("select * from tstock where tamount<0");
+    let sql = `select * from tstock where tamount<0 and tpair is null or tpair=''`;
+    if (reset) {
+        await db.runSync(`update tstock set tpair=''`);
+        sql = "select * from tstock where tamount<0";
+    }
+    let r = await db.allSync(sql);
     let sells = r.rows;
     console.log(`${sells.length} sells`);
     for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
         console.log(`${sell.sname}(${sell.scode}):${sell.tid}`);
-        let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tprice desc",
+        let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tday,ttime",
             [sell.tamount * -1, sell.scode, sell.tprice]);
         let buys = r.rows;
         if (buys.length > 0) {

@@ -44,8 +44,12 @@ window.feed_list = window.feed_list || (function () {
                     onTap: self.showCookies
                 },
                 {
-                    text: "配对",
-                    onTap: self.toPair
+                    text: "增量配对",
+                    onTap: function () { self.toPair(0) }
+                },
+                {
+                    text: "重新配对",
+                    onTap: function () { self.toPair(1) }
                 },
                 {
                     text: "精简",
@@ -64,9 +68,9 @@ window.feed_list = window.feed_list || (function () {
             let popup = await share.popupAction__("", buttons);
 
         },
-        toPair: async function () {
+        toPair: async function (reset) {
             share.closePopup__();
-            let res = await share.getSync__("/stock/pair");
+            let res = await share.getSync__("/stock/pair", { reset });
             if (res.error) {
                 share.toastError__(res.error);
             } else {

@@ -32,6 +32,8 @@
 #stockTable th {
     background-color: #f2f2f2;
     cursor: col-resize;
+    position:sticky;
+    top:0;
 }
 
 /* 调整列宽的样式 */
@@ -52,26 +54,33 @@
         filter: alpha(opacity=50);
         opacity: .05;
       }
+
+      #leftPanel {
+    position: sticky;
+    top: 0;
+    z-index: 1; /* 确保 leftPanel 在内容之上 */
+}
         </style>
     </head>
     <body>
-        <div class="flexrow">
-            <div class="flexcolumn paddinglr4">
-                <div class="addButton width100p center clickable padding4">
-                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+        <div class="flexrow relative">
+            <div>
+                <div id="leftPanel" class="flexcolumn paddinglr4">
+                    <div class="addButton width100p center clickable padding4">
+                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    </div>
+                    <div id="sqls" class="flexcolumn paddinglr4"></div>
                 </div>
-                <div id="sqls" class="flexcolumn paddinglr4"></div>
             </div>
             <div id="stockTableContainer">
                 <table id="stockTable" class="table table-striped"></table>
             </div>
         </div>
     </body>
-
     <div id="rows" class="hide">
         <div class="flexcolumn" style="width:500px;">
             <span>交易记录</span>
-            <textarea class="rows" rows="20" ></textarea>
+            <textarea class="rows" rows="20"></textarea>
             <div class="flexrow center">
                 <input type="button" class="submitRows" value="submit">
             </div>
