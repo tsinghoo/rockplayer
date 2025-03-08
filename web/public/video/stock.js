@@ -6,28 +6,86 @@ window.feed_list = window.feed_list || (function () {
         data: {},
         rows: [],
         init: async function () {
+            await self.getSqls();
+            Chart.register(ChartDataLabels);
+            self.bindEvents();
+        },
+        getSqls: async function () {
             let res = await share.getSync__("/stock/sqls");
             if (res.error) {
                 $("#sqls").html(res.error);
             } else {
                 let rows = res.data;
+                $("#sqls").html("");
                 //将rows里的数据显示在id是sqls的div里，并且每行的内容是rows的第i个元素，点击每行的时候拿对应的sql去调用"/stock/query"接口，并且将返回的数据显示在表格里
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
                     let div = $("<div class='clickable padding4'>");
                     div.text(row.name);
                     div.click(function () {
+                        share.currentTarget = this;
                         self.sqlClicked(row);
                     });
 
                     $("#sqls").append(div);
                 }
             }
-            Chart.register(ChartDataLabels);
-            self.bindEvents();
         },
         sqlClicked: function (row) {
-            self.exeSql(row);
+            //弹出菜单
+            let buttons = [
+                {
+                    text: "执行",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.exeSql(row);
+                    }
+                },
+                {
+                    text: "编辑",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toEditSql(row);
+                    }
+                }
+            ];
+
+            share.popupAction__("", buttons);
+        },
+        toEditSql: async function (row) {
+            //弹出的窗口中有两个输入框，一个是name,一个是sql，name是row.name,sql是row.sql，点击确定后，将name和sql更新到数据库
+            let html = `    <div class="sqlEditor flexcolumn" style="width: 500px;">
+                                <div class="flexcolumn">
+                                    <input type="text" class="name" value="${row.name}" placeholder="名称">
+                                    <textarea class="sql" rows="10" placeholder="sql">${row.sql}</textarea>
+                                </div>
+                                <div class="flexrow justify">
+                                    <button class="btn btn-primary buttonSave">保存</button>
+                                    <button class="btn btn-secondary buttonCancel">取消</button>
+                                </div>
+                            </div>
+                            `;
+            let popup = await share.popup__(null, html);
+            let c = $(`#${popup.id}`);
+            $(".buttonSave", c).click(function () {
+                let name = $(".name", c).val();
+                let sql = $(".sql", c).val();
+                row.name = name;
+                row.sql = sql;
+                self.updateSql(row);
+            });
+            $(".buttonCancel", c).click(function () {
+                popup.close();
+            })
+        },
+        updateSql: async function (row) {
+            let res = await share.postSync__("/stock/sql/update", row);
+            if (res.error) {
+                share.toastError__(res.error);
+            } else {
+                share.closePopup__();
+                await self.getSqls();
+            }
         },
         exeSql: async function (row) {
             let res = await share.postSync__("/stock/query", row);
@@ -44,6 +102,10 @@ window.feed_list = window.feed_list || (function () {
                 {
                     text: "新交易记录",
                     onTap: self.showTradeInput
+                },
+                {
+                    text: "新sql",
+                    onTap: function () { self.toEditSql({ name: "", sql: "" }); }
                 },
                 {
                     text: "增量配对",
@@ -168,7 +230,7 @@ window.feed_list = window.feed_list || (function () {
                         tr.addClass(`code${row[key]}`);
                         if (row[key] === lastCode) {
                             td.text(row[key]);
-                            td.addClass("gray");
+                            td.addClass("almostWhite");
                             self.data[row[key]].push(row);
                             tr.addClass("repeatCode");
                             tr.addClass(`repeatCode${lastCode}`);

@@ -624,6 +624,17 @@ app.get('/stock/sqls', async (req, res) => {
     res.send(resp);
 });
 
+app.post('/stock/sql/update', async (req, res) => {
+    let db = await getDb();
+    let sql = req.body.sql;
+    let name = req.body.name;
+    let r = await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
+        [name, name, sql, Date.now()]);
+        
+    var resp = JSON.stringify({ data: "success" });
+    res.send(resp);
+});
+
 app.get('/video/replacers', (req, res) => {
     console.log("video/replacers");
     var rPath = path.join(directoryPath, "replacers");
