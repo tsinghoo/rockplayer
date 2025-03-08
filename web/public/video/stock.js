@@ -145,7 +145,7 @@ window.feed_list = window.feed_list || (function () {
             table.empty();
             let thead = $("<thead>");
             let tr = $("<tr>");
-            let keys = Object.keys(rows[0]);
+            let keys = ["日期", "时间", "名称", "代码", "买卖", "业务名称", "市场", "数量", "价格", "总额", "tid", "taccount", "配对"];
             for (let i = 0; i < keys.length; i++) {
                 let th = $("<th>");
                 th.text(keys[i]);
@@ -163,16 +163,19 @@ window.feed_list = window.feed_list || (function () {
                 for (let j = 0; j < keys.length; j++) {
                     let key = keys[j];
                     let td = $("<td>");
+                    td.addClass("nowrap");
                     if (key == "代码") {
                         tr.addClass(`code${row[key]}`);
                         if (row[key] === lastCode) {
-                            //td.text(row[key]);
+                            td.text(row[key]);
+                            td.addClass("gray");
                             self.data[row[key]].push(row);
                             tr.addClass("repeatCode");
                             tr.addClass(`repeatCode${lastCode}`);
                         } else {
                             self.data[row[key]] = [row];
                             td.text(row[key]);
+                            td.addClass("bold");
                             tr.addClass("firstCode clickable");
                             tr.attr("code", row[key]);
                             td.addClass("code");
@@ -257,7 +260,7 @@ window.feed_list = window.feed_list || (function () {
             </div>
         </div>
     </div>
-    <canvas id="priceChart" style="width: 600px; height: 400px;"></canvas>
+    <canvas id="priceChart" style="width: 500px; height: 300px;"></canvas>
 </div>
             `;
             let popup = await share.popup__(null, html);
