@@ -20,7 +20,7 @@ window.feed_list = window.feed_list || (function () {
                 //将rows里的数据显示在id是sqls的div里，并且每行的内容是rows的第i个元素，点击每行的时候拿对应的sql去调用"/stock/query"接口，并且将返回的数据显示在表格里
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
-                    let div = $("<div class='clickable padding4'>");
+                    let div = $("<div class='clickable padding4 nowrap'>");
                     div.text(row.name);
                     div.click(function () {
                         share.currentTarget = this;
