@@ -2,6 +2,7 @@ window.mhgl_share =
   window.mhgl_share ||
   (function () {
     var navbar = window.mhgl_navbar;
+    window.FloatingUIDOM = window.FloatingUIDOM || {};
     var share = {
       packageName: "com.lbdd.email",
       mhgl__: "web",
