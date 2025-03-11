@@ -996,6 +996,9 @@ window.mhgl_share =
         if (target == null) {
           target = share.currentTarget;
         }
+        if (placement == null) {
+          placement = share.popupPlacement;
+        }
 
         var shown = function (popupId) {
           if (buttons)

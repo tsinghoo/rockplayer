@@ -1,3 +1,5 @@
+//mairui.club: free: FF5BCE92-17AE-4A9D-A0E5-B4B0C20248C2
+
 window.feed_list = window.feed_list || (function () {
     var share = window.mhgl_share;
     var page = window.mhgl_page;
@@ -272,10 +274,14 @@ window.feed_list = window.feed_list || (function () {
             })
 
             //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
-            $(".code").click(function () {
+            $(".code").click(function (e) {
+                e.stopPropagation();
                 let code = $(this).parents("tr").attr("code");
                 let rows = self.data[code];
                 share.currentTarget = this;
+                share.popupPlacement="top";
+                let trs = $(`.repeatCode${code}`);
+                trs.show();
                 // 初始化折线图
                 self.showChart(rows);
             })

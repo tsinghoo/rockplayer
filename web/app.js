@@ -533,7 +533,7 @@ app.post('/stock/update', async (req, res) => {
 });
 
 app.get('/stock/trade/update', async (req, res) => {
-    console.log("/stock/pair");
+    console.log("/stock/trade/update");
     let js = req.query.js;
     let scode = req.query.scode;
     let sname = req.query.sname;
@@ -548,8 +548,19 @@ app.get('/stock/trade/update', async (req, res) => {
     res.send(resp);
 });
 
+
+app.get('/mvc/fe/user/login', async (req, res) => {
+    console.log("/mvc/fe/user/login");
+    let js = req.query.js;
+    let login = req.query.login;
+    let password = req.query.password;
+    //todo
+    var resp = `${js}(${JSON.stringify({ login: login })})`;
+    res.send(resp);
+});
+
 app.get('/stock/trade/all', async (req, res) => {
-    console.log("/stock/pair");
+    console.log("/stock/trade/all");
     let js = req.query.js;
     let db = await getDb();
 
@@ -559,6 +570,7 @@ app.get('/stock/trade/all', async (req, res) => {
     var resp = `${js}(${JSON.stringify({ data: r.rows })})`;
     res.send(resp);
 });
+
 app.get('/stock/pair', async (req, res) => {
     console.log("/stock/pair");
     let js = req.query.js;
@@ -575,7 +587,7 @@ app.get('/stock/pair', async (req, res) => {
     for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
         console.log(`${sell.sname}(${sell.scode}):${sell.tid}`);
-        let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tday,ttime",
+        let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tprice desc",
             [sell.tamount * -1, sell.scode, sell.tprice]);
         let buys = r.rows;
         if (buys.length > 0) {
