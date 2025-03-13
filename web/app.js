@@ -442,6 +442,8 @@ async function getDb() {
 
     console.log("open stock.db ok");
     DB.runSync = (sql, params) => {
+        console.log("runSync:" + sql);
+        console.log(JSON.stringify(params));
         return new Promise((resolve, reject) => {
             DB.run(sql, params, function (err) {
                 if (err) {
@@ -455,6 +457,8 @@ async function getDb() {
 
     DB.allSync = (sql, params) => {
         return new Promise((resolve, reject) => {
+            console.log("allSync:" + sql);
+            console.log(JSON.stringify(params));
             DB.all(sql, params, function (err, rows) {
                 if (err) {
                     resolve({ error: err });
@@ -549,8 +553,8 @@ app.get('/stock/trade/update', async (req, res) => {
 });
 
 
-app.get('/mvc/fe/user/login', async (req, res) => {
-    console.log("/mvc/fe/user/login");
+app.get('/stock/fe/user/login', async (req, res) => {
+    console.log("/stock/fe/user/login");
     let js = req.query.js;
     let login = req.query.login;
     let password = req.query.password;
@@ -578,6 +582,7 @@ app.get('/stock/pair', async (req, res) => {
     let db = await getDb();
     let sql = `select * from tstock where tamount<0 and tpair is null or tpair=''`;
     if (reset) {
+        console.log("reset before pair");
         await db.runSync(`update tstock set tpair=''`);
         sql = "select * from tstock where tamount<0";
     }
