@@ -536,6 +536,30 @@ app.post('/stock/update', async (req, res) => {
     res.send(resp);
 });
 
+app.post('/stock/screen/nodes', async (req, res) => {
+    console.log("post /stock/screen/nodes");
+
+    let nodes = req.body.nodes;
+    //将nodes写入文件
+    fs.writeFileSync(path.join(directoryPath, "screen.json"), nodes);
+
+    var resp = JSON.stringify({ data: "success" });
+    res.send(resp);
+});
+
+app.get('/stock/screen/nodes', async (req, res) => {
+    console.log("get /stock/screen/nodes");
+    let js = req.query.js;
+    let nodes = fs.readFileSync(path.join(directoryPath, "screen.json"), "utf-8");
+    let data = JSON.parse(nodes);
+    var resp = JSON.stringify({ data: data });
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+    
+    res.send(resp);
+});
+
 app.get('/stock/trade/update', async (req, res) => {
     console.log("/stock/trade/update");
     let js = req.query.js;
@@ -647,7 +671,7 @@ app.post('/stock/sql/update', async (req, res) => {
     let name = req.body.name;
     let r = await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
         [name, name, sql, Date.now()]);
-        
+
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
 });
