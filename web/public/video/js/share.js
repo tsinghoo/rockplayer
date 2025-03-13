@@ -86,7 +86,7 @@ window.mhgl_share =
         if (path.charAt(0) != "@") {
           path = encodeURIComponent(path);
         }
-        path = share.getBaseUrl__() + "/mvc/wx/robot/image?url=" + path;
+        path = share.getBaseUrl__() + "/stock/wx/robot/image?url=" + path;
         path = path + "&selfNickName=" + selfNickName;
         path = path + "&nickName=" + nickName;
         path = path + "&remarkName=" + remarkName;
@@ -735,7 +735,7 @@ window.mhgl_share =
           params.uri = url.substring(baseUrl.length);
           var newParams = share.encode__(params);
           params = newParams;
-          url = share.getBaseUrl__() + "/mvc/pe";
+          url = share.getBaseUrl__() + "/stock/pe";
         }
 
         $.ajax({
@@ -1076,7 +1076,7 @@ window.mhgl_share =
           params.uri = url.substring(baseUrl.length);
           var newParams = share.encode__(params);
           params = newParams;
-          url = share.getBaseUrl__() + "/mvc/pe";
+          url = share.getBaseUrl__() + "/stock/pe";
         }
 
         $.ajax({
@@ -1570,7 +1570,7 @@ window.mhgl_share =
             async: true,
             url:
               share.getBaseUrl__() +
-              "/mvc/wx/getConfig?gzhName=lbddService&url=" +
+              "/stock/wx/getConfig?gzhName=lbddService&url=" +
               encodeURIComponent(url),
             dataType: "jsonp",
             jsonp: "js",
@@ -2254,7 +2254,7 @@ window.mhgl_share =
       },
 
       getClass__: function (classId, success, fail, notHandleCodes) {
-        var url = share.getBaseUrl__() + "/mvc/fe/class";
+        var url = share.getBaseUrl__() + "/stock/fe/class";
         var params = {
           classId: classId
         };
@@ -2263,7 +2263,7 @@ window.mhgl_share =
       },
 
       getShow__: function (classId, showId, success, fail) {
-        var url = share.getBaseUrl__() + "/mvc/fe/show/detail";
+        var url = share.getBaseUrl__() + "/stock/fe/show/detail";
         var params = {
           classId: classId,
           id: showId
@@ -3215,7 +3215,7 @@ window.mhgl_share =
         $.ajax({
           type: "GET",
           async: true,
-          url: share.getBaseUrl__() + "/mvc/fe/user/logout",
+          url: share.getBaseUrl__() + "/stock/fe/user/logout",
           dataType: "jsonp",
           jsonp: "js",
           success: function (json) {
@@ -3256,7 +3256,7 @@ window.mhgl_share =
           async: true,
           url:
             share.getBaseUrl__() +
-            "/mvc/fe/user/login?login=" +
+            "/stock/fe/user/login?login=" +
             login +
             "&password=" +
             password,
