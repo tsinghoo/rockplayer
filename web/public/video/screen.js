@@ -39,13 +39,13 @@ window.mhgl_screen = window.mhgl_screen || (function () {
                     if (children == null) {
                         return ele;
                     }
-                    
+
                     data.children = null;
                     ele.attr("data", JSON.stringify(data));
                     data.children = children;
 
                     for (let i = 0; i < children.length; i++) {
-                        let child = getHtml(children[i], level + i);
+                        let child = getHtml(children[i], level + "." + i);
                         ele.append(child);
                     }
 

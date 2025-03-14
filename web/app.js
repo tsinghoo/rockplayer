@@ -539,10 +539,60 @@ app.post('/stock/update', async (req, res) => {
 app.post('/stock/screen/nodes', async (req, res) => {
     console.log("post /stock/screen/nodes");
 
-    let nodes = req.body;
-    console.log(nodes);
+    let root = req.body;
+    console.log(root);
+
     //将nodes写入文件
-    fs.writeFileSync(path.join(directoryPath, "screen.json"), JSON.stringify(nodes));
+    fs.writeFileSync(path.join(directoryPath, "screen.json"), JSON.stringify(root));
+
+    function findNode(node, cName) {
+        if (node.cName == cName) {
+            return node;
+        }
+        if (node.children) {
+            for (var i = 0; i < node.children.length; i++) {
+                var child = node.children[i];
+                var foundNode = findNode(child, cName);
+                if (foundNode) {
+                    return foundNode;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function findChild(root, pathArr) {
+        if (pathArr == null) {
+            return null;
+        }
+        if (pathArr.length == 0) {
+            return root;
+        }
+
+        var index = pathArr[0];
+        if (index < root.children.length) {
+            let node = root.children[index];
+            return findChild(node, pathArr.slice(1));
+        } else {
+            return null;
+        }
+    }
+
+    function getChildProperty(root, path, key) {
+        let node = findChild(root, path.split("."));
+        if (node) {
+            return node[key];
+        }
+
+        return null;
+    }
+
+    var node = findNode(root, "com.gf.client:id/rv_price_refresh_anim");
+    if (node) {
+        let name = getChildProperty(node, "1.1.1", "text");
+        let code = getChildProperty(node, "1.1.1", "text");
+    }
 
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
