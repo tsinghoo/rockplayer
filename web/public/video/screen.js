@@ -38,6 +38,9 @@ window.mhgl_screen = window.mhgl_screen || (function () {
 
                     return ele;
                 }
+                
+                $("#eventClassName").html(data.eventClassName);
+                $("#eventPackageName").html(data.eventPackageName);
 
                 $(".nodes").html("");
                 $(".nodes").append(getHtml(data, ""));
