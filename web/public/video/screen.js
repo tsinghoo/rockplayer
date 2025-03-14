@@ -31,14 +31,19 @@ window.mhgl_screen = window.mhgl_screen || (function () {
                     </div>
                     `);
 
-                    for (let i = 0; i < data.children.length; i++) {
-                        let child = getHtml(data.children[i], level + i);
+                    let children = data.children;
+                    data.children = null;
+                    ele.attr("data", JSON.stringify(data));
+                    data.children = children;
+
+                    for (let i = 0; i < children.length; i++) {
+                        let child = getHtml(children[i], level + i);
                         ele.append(child);
                     }
 
                     return ele;
                 }
-                
+
                 $("#eventClassName").html(data.eventClassName);
                 $("#eventPackageName").html(data.eventPackageName);
 
