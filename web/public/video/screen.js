@@ -17,9 +17,13 @@ window.mhgl_screen = window.mhgl_screen || (function () {
             } else {
                 let data = res.data;
                 function getHtml(data, level) {
-                    let strs = data.className.split(".");
-                    let className = strs[strs.length - 1];
-                    let resourceId = data.resourceId ? data.resourceId : "";
+                    let className = data.cName;
+                    if (className == null) {
+                        className = "";
+                    }
+                    let strs = className.split(".");
+                    className = strs[strs.length - 1];
+                    let resourceId = data.rId ? data.rId : "";
                     let ele = $(`
                     <div class="node clickable" style="margin-left:${level.length * 4}px">
 
