@@ -587,11 +587,18 @@ app.post('/stock/screen/nodes', async (req, res) => {
 
         return null;
     }
-
-    var node = findNode(root, "com.gf.client:id/rv_price_refresh_anim");
+    //0.0.0.0.0.0.0.1.0.1.3.0.1
+    //0.0.0.0.0.0.0.1.0.1.3.0.1.1.0.0.0.0
+    //0.0.0.0.0.0.0.1.0.1.3.0.1.2.1.2.0.0
+    var node = findNode(root, "com.gf.client:id/refresh_child");
     if (node) {
-        let name = getChildProperty(node, "1.1.1", "text");
-        let code = getChildProperty(node, "1.1.1", "text");
+        let name = getChildProperty(node, "1.x.0.0.0", "text");
+        let code = getChildProperty(node, "1.x.0.0.1.0", "text");
+        let price = getChildProperty(node, "2.1.2.x.0", "text");
+        let delta = getChildProperty(node, "2.1.2.x+1.0", "text");
+        let ratio = getChildProperty(node, "2.1.2.x+2.0.0", "text");
+        let unknown = getChildProperty(node, "2.1.2.x+3.0", "text");
+        
     }
 
     var resp = JSON.stringify({ data: "success" });
