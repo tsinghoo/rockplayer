@@ -36,6 +36,10 @@ window.mhgl_screen = window.mhgl_screen || (function () {
                     `);
 
                     let children = data.children;
+                    if (children == null) {
+                        return ele;
+                    }
+                    
                     data.children = null;
                     ele.attr("data", JSON.stringify(data));
                     data.children = children;
