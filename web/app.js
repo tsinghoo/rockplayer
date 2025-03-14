@@ -539,7 +539,7 @@ app.post('/stock/update', async (req, res) => {
 app.post('/stock/screen/nodes', async (req, res) => {
     console.log("post /stock/screen/nodes");
 
-    let nodes = req.body.nodes;
+    let nodes = req.body;
     console.log(nodes);
     //将nodes写入文件
     fs.writeFileSync(path.join(directoryPath, "screen.json"), JSON.stringify(nodes));
