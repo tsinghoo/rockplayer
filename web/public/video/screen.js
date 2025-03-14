@@ -29,7 +29,7 @@ window.mhgl_screen = window.mhgl_screen || (function () {
 
                         <span class="childPath">${level == "" ? "" : level + ":"}</span>
                         ${className}${data.text ? "." + data.text : ""}
-                        <span class="childCount">(${data.children.length})</span>
+                        <span class="childCount">(${data.children ? data.children.length : 0})</span>
                         <span class="resourceId">${resourceId}</span>
 
                     </div>
