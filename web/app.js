@@ -594,7 +594,10 @@ app.post('/stock/screen/nodes', async (req, res) => {
     info("post /stock/screen/nodes");
 
     let root = req.body;
+    let children = root.children;
+    delete root["children"];
     info(JSON.stringify(root));
+    root.children = children;
 
     //将nodes写入文件
     fs.writeFileSync(path.join(directoryPath, "screen.json"), JSON.stringify(root));
@@ -650,23 +653,28 @@ app.post('/stock/screen/nodes', async (req, res) => {
     //0.0.0.0.0.0.0.1.0.1.3.0.1
     //0.0.0.0.0.0.0.1.0.1.3.0.1.1.0.0.0.0
     //0.0.0.0.0.0.0.1.0.1.3.0.1.2.1.2.0.0
-    var node = findNode(root, "com.gf.client:id/refresh_child");
-    if (node) {
-        for (let i = 0; ; i++) {
-            let name = getChildProperty(node, `1.${i}.0.0.0`, "text");
-            let code = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
-            let price = getChildProperty(node, `2.1.2.${i}.0`, "text");
-            let delta = getChildProperty(node, `2.1.2.${i + 1}.0`, "text");
-            let ratio = getChildProperty(node, `2.1.2.${i + 2}.0.0`, "text");
-            let uratio = getChildProperty(node, `2.1.2.${i + 3}.0`, "text");
+    if (root.isGfStatus == 1) {
+        info("isGfStatus");
+        var node = findNode(root, "com.gf.client:id/refresh_child");
+        if (node) {
+            info("refresh_child found");
+            for (let i = 0; ; i++) {
+                let name = getChildProperty(node, `1.${i}.0.0.0`, "text");
+                let code = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
+                let price = getChildProperty(node, `2.1.2.${i}.0`, "text");
+                let delta = getChildProperty(node, `2.1.2.${i + 1}.0`, "text");
+                let ratio = getChildProperty(node, `2.1.2.${i + 2}.0.0`, "text");
+                let uratio = getChildProperty(node, `2.1.2.${i + 3}.0`, "text");
 
-            if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
-                break;
+                if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
+                    info("no more stock found");
+                    break;
+                }
+
+                info(`${name}(${code}):${price},${delta},${ratio},${uratio}`);
+
+
             }
-
-            info(`${name}(${code}):${price},${delta},${ratio},${uratio}`);
-
-
         }
     }
 
