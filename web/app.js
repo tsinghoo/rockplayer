@@ -637,6 +637,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
     }
 
     function getChildProperty(root, path, key) {
+        info(`getChildProperty:${path}.${key}`);
         let node = findChild(root, path.split("."));
         if (node) {
             return node[key];
@@ -666,12 +667,10 @@ app.post('/stock/screen/nodes', async (req, res) => {
                 let ratio = getChildProperty(node, `2.1.2.${i + 2}.0.0`, "text");
                 let uratio = getChildProperty(node, `2.1.2.${i + 3}.0`, "text");
 
-                info(`${name}(${code}):${price},${delta},${ratio},${uratio}`);
+                info(`${i}:${name}(${code}),${price},${delta},${ratio},${uratio}`);
                 if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
                     break;
                 }
-
-
 
             }
         }
