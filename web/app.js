@@ -594,7 +594,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
     info("post /stock/screen/nodes");
 
     let root = req.body;
-    info(root);
+    info(JSON.stringify(root));
 
     //将nodes写入文件
     fs.writeFileSync(path.join(directoryPath, "screen.json"), JSON.stringify(root));
