@@ -667,7 +667,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
                 let uratio = getChildProperty(node, `2.1.2.${i + 3}.0`, "text");
 
                 if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
-                    info("no more stock found");
+                    info(`no more stock found:${name},${code},${price},${delta},${ratio},${uratio}`);
                     break;
                 }
 
