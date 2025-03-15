@@ -602,14 +602,14 @@ app.post('/stock/screen/nodes', async (req, res) => {
     //将nodes写入文件
     fs.writeFileSync(path.join(directoryPath, "screen.json"), JSON.stringify(root));
 
-    function findNode(node, cName) {
-        if (node.cName == cName) {
+    function findNodeById(node, rId) {
+        if (node.rId == rId) {
             return node;
         }
         if (node.children) {
             for (var i = 0; i < node.children.length; i++) {
                 var child = node.children[i];
-                var foundNode = findNode(child, cName);
+                var foundNode = findNodeById(child, rId);
                 if (foundNode) {
                     return foundNode;
                 }
@@ -655,7 +655,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
     //0.0.0.0.0.0.0.1.0.1.3.0.1.2.1.2.0.0
     if (root.isGfStatus == 1) {
         info("isGfStatus");
-        var node = findNode(root, "com.gf.client:id/refresh_child");
+        var node = findNodeById(root, "com.gf.client:id/refresh_child");
         if (node) {
             info("refresh_child found");
             for (let i = 0; ; i++) {
