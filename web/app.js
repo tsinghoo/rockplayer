@@ -14,6 +14,9 @@ app.use(express.json());
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
 const args = process.argv;
+let DEBUG = 2;
+let INFO = 3;
+let logLevel = 3;
 info(args.length);
 const pwd = "995560";
 if (args.length < 4) {
@@ -46,6 +49,17 @@ function isVideo(file) {
 }
 
 function info(msg) {
+    if (logLevel > INFO) {
+        return;
+    }
+    let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
+    console.log(time + ":" + msg);
+}
+function debug(msg) {
+    if (logLevel > DEBUG) {
+        return;
+    }
+
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
     console.log(time + ":" + msg);
 }
@@ -658,7 +672,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
         info("isGfStatus");
         var node = findNodeById(root, "com.gf.client:id/refresh_child");
         if (node) {
-            info("refresh_child found");
+            debug("refresh_child found");
             for (let i = 0; ; i++) {
                 let name = getChildProperty(node, `1.${i}.0.0.0`, "text");
                 let code = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
@@ -667,7 +681,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
                 let ratio = getChildProperty(node, `2.1.2.${i * 4 + 2}.0.0`, "text");
                 let uratio = getChildProperty(node, `2.1.2.${i * 4 + 3}.0`, "text");
 
-                info(`${i}:${name}(${code}),${price},${delta},${ratio},${uratio}`);
+                debug(`${i}:${name}(${code}),${price},${delta},${ratio},${uratio}`);
                 if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
                     break;
                 }
@@ -683,6 +697,12 @@ app.post('/stock/screen/nodes', async (req, res) => {
 app.get('/stock/screen/nodes', async (req, res) => {
     info("get /stock/screen/nodes");
     let js = req.query.js;
+    let log = req.query.log;
+    if (log) {
+        info("logLevel to " + log);
+        logLevel = log;
+    }
+
     let nodes = fs.readFileSync(path.join(directoryPath, "screen.json"), "utf-8");
     let data = JSON.parse(nodes);
     var resp = JSON.stringify({ data: data });
