@@ -14,10 +14,10 @@ app.use(express.json());
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
 const args = process.argv;
-console.log(args.length);
+info(args.length);
 const pwd = "995560";
 if (args.length < 4) {
-    console.log("node app.js 3000 /your/directory");
+    info("node app.js 3000 /your/directory");
     return;
 }
 app.use(fileUpload({
@@ -25,13 +25,13 @@ app.use(fileUpload({
 }));
 const port = parseInt(args[2]);
 directoryPath = args[3];
-console.log(directoryPath);
+info(directoryPath);
 let suffix = [];
 if (args.length > 4) {
     suffix = args[4].split(";");
 }
-console.log(args[4]);
-console.log(suffix.join(" "));
+info(args[4]);
+info(suffix.join(" "));
 
 function isVideo(file) {
     if (suffix.length > 0) {
@@ -44,6 +44,12 @@ function isVideo(file) {
 
     return false;
 }
+
+function info(msg) {
+    let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
+    console.log(time + ":" + msg);
+}
+
 // 列出目录下的所有文件
 function listFiles() {
     const files = fs.readdirSync(directoryPath);
@@ -79,7 +85,7 @@ function getTags() {
         var text = fs.readFileSync(file, "utf-8");
         tags = JSON.parse(text);
     } catch (e) {
-        console.log(file + " not exists");
+        info(file + " not exists");
     }
 
     return tags;
@@ -87,7 +93,7 @@ function getTags() {
 
 // 删除文件
 function deleteFiles(prefixs) {
-    console.log("files to delete:" + JSON.stringify(prefixs));
+    info("files to delete:" + JSON.stringify(prefixs));
     prefixs.forEach(
         prefix => {
             if (prefix.indexOf("../") >= 0) {
@@ -107,7 +113,7 @@ function deleteFiles(prefixs) {
                             if (err) {
                                 console.error('Error deleting file:', err);
                             } else {
-                                console.log('File deleted:', filePath);
+                                info('File deleted:', filePath);
                             }
                         });
                     }
@@ -123,7 +129,7 @@ function cleanFileMetadata() {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     Object.keys(data).forEach(fileName => {
@@ -162,7 +168,7 @@ function toStt(fileName) {
                 return;
             }
 
-            console.log('文件写入成功。');
+            info('文件写入成功。');
         });
 
     });
@@ -194,7 +200,7 @@ function toSplit(fileName) {
                 return;
             }
 
-            console.log('toSplit写入成功。');
+            info('toSplit写入成功。');
         });
 
     });
@@ -202,7 +208,7 @@ function toSplit(fileName) {
 
 function extractVideo(inputFilePath, i, startTime, endTime) {
     return new Promise((resolve, reject) => {
-        console.log("extractVideo:" + inputFilePath);
+        info("extractVideo:" + inputFilePath);
         const outputDir = path.dirname(inputFilePath);
         var pos = inputFilePath.lastIndexOf(".");
         if (pos < 0) {
@@ -274,6 +280,54 @@ function getDurationText1__(seconds) {
     return text;
 }
 
+function timeFormat(time, fmt) {
+    if (time == null) {
+        return "";
+    }
+    if (time.time) {
+        time = new Date(time.time);
+    } else {
+        time = new Date(time);
+    }
+    if (fmt == null) {
+        var ms = time.getTime();
+        var now = new Date();
+        if (now - ms < 24 * 60 * 60 * 1000) {
+            fmt = "hh:mm";
+        } else if (now.getYear() == time.getYear()) {
+            fmt = "MM-dd";
+        } else {
+            fmt = "yyyy-MM";
+        }
+    }
+    var qua = Math.floor((time.getMonth() + 3) / 3);
+    var o = {
+        "M+": time.getMonth() + 1, // 月份
+        "d+": time.getDate(), // 日
+        "h+": time.getHours(), // 小时
+        "m+": time.getMinutes(), // 分
+        "s+": time.getSeconds(), // 秒
+        "q+": qua, // 季度
+        S: time.getMilliseconds()
+        // 毫秒
+    };
+    if (/(y+)/.test(fmt))
+        fmt = fmt.replace(
+            RegExp.$1,
+            (time.getYear() + 1900 + "").substr(4 - RegExp.$1.length)
+        );
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt))
+            fmt = fmt.replace(
+                RegExp.$1,
+                RegExp.$1.length == 1
+                    ? o[k]
+                    : ("00" + o[k]).substr(("" + o[k]).length)
+            );
+    return fmt;
+}
+
+
 async function doSplit() {
     var toSplit = path.join(directoryPath, "toSplit");
     if (splitting == 1) {
@@ -288,22 +342,22 @@ async function doSplit() {
         try {
             metadata = JSON.parse(fs.readFileSync(rPath, "utf-8"));
         } catch (e) {
-            console.log("error parsing replacers:" + e.message);
+            info("error parsing replacers:" + e.message);
         }
 
         var data = fs.readFileSync(toSplit, 'utf8');
         var files = data.split("\n");
         files.forEach(ele => {
-            console.log(ele);
+            info(ele);
         });
 
         for (var i = 0; i < files.length; ++i) {
             var ele = files[i];
-            console.log(`processing '${ele}'`);
+            info(`processing '${ele}'`);
             if (fs.existsSync(path.join(directoryPath, ele))) {
                 var pos = ele.lastIndexOf(".");
                 if (pos < 0) {
-                    console.log("bad file:" + ele);
+                    info("bad file:" + ele);
                     continue;
                 }
 
@@ -321,7 +375,7 @@ async function doSplit() {
                     if (m && m.segments) {
                         let i = 0;
                         Object.keys(m.segments).forEach(async (e) => {
-                            console.log(`seg:${e}`);
+                            info(`seg:${e}`);
                             let segs = m.segments[e];
                             let startTime = getDurationText1__(segs.start);
                             let endTime = getDurationText1__(segs.end);
@@ -339,7 +393,7 @@ async function doSplit() {
             }
         }
     } catch (e) {
-        console.log(e.message);
+        info(e.message);
         response.push("error:" + e.message);
     }
 
@@ -369,9 +423,9 @@ app.get('/video/i', (req, res) => {
     res.render('fileList', { files: files, tags: tags, remove: remove });
 });
 app.post('/video/tag', (req, res) => {
-    console.log("video/tag");
-    console.log("files=" + req.body.files);
-    console.log("tags=" + req.body.tags);
+    info("video/tag");
+    info("files=" + req.body.files);
+    info("tags=" + req.body.tags);
     const files = JSON.parse(req.body.files);
     const tags = JSON.parse(req.body.tags);
 
@@ -379,7 +433,7 @@ app.post('/video/tag', (req, res) => {
 
     if (files.length == 1) {
         for (var j = 0; j < files.length; ++j) {
-            console.log("file:" + files[j]);
+            info("file:" + files[j]);
             Object.keys(otags).map(
                 (tag) => {
                     var f = otags[tag];
@@ -388,7 +442,7 @@ app.post('/video/tag', (req, res) => {
             );
         }
 
-        console.log("otags=" + JSON.stringify(otags));
+        info("otags=" + JSON.stringify(otags));
 
         for (var i = 0; i < tags.length; ++i) {
             var f = otags[tags[i]];
@@ -421,9 +475,9 @@ app.post('/video/tag', (req, res) => {
     res.send(resp);
 });
 app.post('/video/cookies', (req, res) => {
-    console.log("video/cookies");
+    info("video/cookies");
     let cookies = req.body.cookies;
-    console.log(req.body.cookies);
+    info(req.body.cookies);
 
     fs.writeFileSync(path.join(directoryPath, "cookies.txt"), cookies);
     var resp = JSON.stringify({ data: "success" });
@@ -431,19 +485,19 @@ app.post('/video/cookies', (req, res) => {
 });
 async function getDb() {
     if (DB) {
-        console.log("DB exist");
+        info("DB exist");
         return DB;
     }
 
 
-    console.log("open stock.db");
+    info("open stock.db");
     const dbFilePath = path.join(directoryPath, "stock.db");
     DB = new sqlite3.Database(dbFilePath);
 
-    console.log("open stock.db ok");
+    info("open stock.db ok");
     DB.runSync = (sql, params) => {
-        console.log("runSync:" + sql);
-        console.log(JSON.stringify(params));
+        info("runSync:" + sql);
+        info(JSON.stringify(params));
         return new Promise((resolve, reject) => {
             DB.run(sql, params, function (err) {
                 if (err) {
@@ -457,8 +511,8 @@ async function getDb() {
 
     DB.allSync = (sql, params) => {
         return new Promise((resolve, reject) => {
-            console.log("allSync:" + sql);
-            console.log(JSON.stringify(params));
+            info("allSync:" + sql);
+            info(JSON.stringify(params));
             DB.all(sql, params, function (err, rows) {
                 if (err) {
                     resolve({ error: err });
@@ -469,7 +523,7 @@ async function getDb() {
         });
     }
 
-    console.log("db inited");
+    info("db inited");
 
     await DB.runSync(`CREATE TABLE IF NOT EXISTS tstock (
         tid text PRIMARY KEY,
@@ -503,16 +557,16 @@ async function getDb() {
         updateTime integer
     )`);
 
-    console.log("table inited");
+    info("table inited");
 
     return DB;
 }
 
 app.post('/stock/update', async (req, res) => {
-    console.log("/stock/update");
+    info("/stock/update");
 
     let rows = req.body.rows.split("\n");
-    console.log(rows.join("\n"));
+    info(rows.join("\n"));
     let db = await getDb();
     for (var i = 0; i < rows.length; ++i) {
         if (rows[i].trim() == "") {
@@ -524,7 +578,7 @@ app.post('/stock/update', async (req, res) => {
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?)`;
         let res = await db.run(sql, fields);
         if (res.error) {
-            console.log(res.error);
+            info(res.error);
             res.send(res);
             return;
         } else {
@@ -537,10 +591,10 @@ app.post('/stock/update', async (req, res) => {
 });
 
 app.post('/stock/screen/nodes', async (req, res) => {
-    console.log("post /stock/screen/nodes");
+    info("post /stock/screen/nodes");
 
     let root = req.body;
-    console.log(root);
+    info(root);
 
     //将nodes写入文件
     fs.writeFileSync(path.join(directoryPath, "screen.json"), JSON.stringify(root));
@@ -602,15 +656,15 @@ app.post('/stock/screen/nodes', async (req, res) => {
             let name = getChildProperty(node, `1.${i}.0.0.0`, "text");
             let code = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
             let price = getChildProperty(node, `2.1.2.${i}.0`, "text");
-            let delta = getChildProperty(node, `2.1.2.${i+1}.0`, "text");
-            let ratio = getChildProperty(node, `2.1.2.${i+2}.0.0`, "text");
-            let uratio = getChildProperty(node, `2.1.2.${i+3}.0`, "text");
+            let delta = getChildProperty(node, `2.1.2.${i + 1}.0`, "text");
+            let ratio = getChildProperty(node, `2.1.2.${i + 2}.0.0`, "text");
+            let uratio = getChildProperty(node, `2.1.2.${i + 3}.0`, "text");
 
             if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
                 break;
             }
 
-            console.log(`${name}(${code}):${price},${delta},${ratio},${uratio}`);
+            info(`${name}(${code}):${price},${delta},${ratio},${uratio}`);
 
 
         }
@@ -621,7 +675,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
 });
 
 app.get('/stock/screen/nodes', async (req, res) => {
-    console.log("get /stock/screen/nodes");
+    info("get /stock/screen/nodes");
     let js = req.query.js;
     let nodes = fs.readFileSync(path.join(directoryPath, "screen.json"), "utf-8");
     let data = JSON.parse(nodes);
@@ -634,7 +688,7 @@ app.get('/stock/screen/nodes', async (req, res) => {
 });
 
 app.get('/stock/trade/update', async (req, res) => {
-    console.log("/stock/trade/update");
+    info("/stock/trade/update");
     let js = req.query.js;
     let scode = req.query.scode;
     let sname = req.query.sname;
@@ -651,7 +705,7 @@ app.get('/stock/trade/update', async (req, res) => {
 
 
 app.get('/stock/fe/user/login', async (req, res) => {
-    console.log("/stock/fe/user/login");
+    info("/stock/fe/user/login");
     let js = req.query.js;
     let login = req.query.login;
     let password = req.query.password;
@@ -661,7 +715,7 @@ app.get('/stock/fe/user/login', async (req, res) => {
 });
 
 app.get('/stock/trade/all', async (req, res) => {
-    console.log("/stock/trade/all");
+    info("/stock/trade/all");
     let js = req.query.js;
     let db = await getDb();
 
@@ -673,28 +727,28 @@ app.get('/stock/trade/all', async (req, res) => {
 });
 
 app.get('/stock/pair', async (req, res) => {
-    console.log("/stock/pair");
+    info("/stock/pair");
     let js = req.query.js;
     let reset = req.query.reset;
     let db = await getDb();
     let sql = `select * from tstock where tamount<0 and tpair is null or tpair=''`;
     if (reset) {
-        console.log("reset before pair");
+        info("reset before pair");
         await db.runSync(`update tstock set tpair=''`);
         sql = "select * from tstock where tamount<0";
     }
     let r = await db.allSync(sql);
     let sells = r.rows;
-    console.log(`${sells.length} sells`);
+    info(`${sells.length} sells`);
     for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
-        console.log(`${sell.sname}(${sell.scode}):${sell.tid}`);
+        info(`${sell.sname}(${sell.scode}):${sell.tid}`);
         let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tprice desc",
             [sell.tamount * -1, sell.scode, sell.tprice]);
         let buys = r.rows;
         if (buys.length > 0) {
             let buy = buys[0];
-            console.log(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`);
+            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`);
             await db.runSync(`update tstock set tpair=? where tid=?`, [buy.tid, sell.tid]);
             await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
         }
@@ -708,10 +762,10 @@ app.post('/stock/query', async (req, res) => {
     let db = await getDb();
     let sql = req.body.sql;
     let name = req.body.name;
-    console.log(`sql:${sql}`);
+    info(`sql:${sql}`);
     let r = await db.allSync(sql);
     if (r.error) {
-        console.log(r.error);
+        info(r.error);
         res.send(r);
         return;
     }
@@ -729,7 +783,7 @@ app.get('/stock/sqls', async (req, res) => {
     let sql = "select * from tsql order by lastUseTime desc";
     let r = await db.allSync(sql);
     if (r.error) {
-        console.log(r.error);
+        info(r.error);
         res.send(r);
         return;
     }
@@ -750,13 +804,13 @@ app.post('/stock/sql/update', async (req, res) => {
 });
 
 app.get('/video/replacers', (req, res) => {
-    console.log("video/replacers");
+    info("video/replacers");
     var rPath = path.join(directoryPath, "replacers");
     var replacers = {};
     try {
         replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     var resp = req.query.js + "(" + JSON.stringify({ data: replacers }) + ");";
@@ -764,14 +818,14 @@ app.get('/video/replacers', (req, res) => {
 });
 
 app.get('/video/metadata', (req, res) => {
-    console.log("video/metadata");
+    info("video/metadata");
     var fileName = req.query.fileName;
     var rPath = path.join(directoryPath, "metadata");
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     var m = data[fileName];
@@ -791,24 +845,24 @@ const multer = require('multer');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // 指定文件存储的目录
-        console.log("dest:" + file.originalname);
+        info("dest:" + file.originalname);
         const path = path.join(directoryPath, file.originalname);
         if (fs.existsSync(path)) {
-            console.log("文件已存在");
+            info("文件已存在");
             fs.unlinkSync(path);
         } else {
         }
         cb(null, directoryPath);
     },
     filename: function (req, file, cb) {
-        console.log("fileName:" + file.originalname);
+        info("fileName:" + file.originalname);
         // 指定文件名
         cb(null, file.originalname);
     }
 });
 // 定义上传文件的路由
 app.post('/video/upload', (req, res) => {
-    console.log("file uploading");
+    info("file uploading");
     if (!req.files || !req.files.file) {
         return res.status(400).send('No file uploaded.');
     }
@@ -828,7 +882,7 @@ app.post('/video/upload', (req, res) => {
     });
 });
 app.get('/video/addSegment', (req, res) => {
-    console.log("video/addSegment");
+    info("video/addSegment");
     var fileName = req.query.fileName;
     var start = req.query.start;
     var end = req.query.end;
@@ -838,7 +892,7 @@ app.get('/video/addSegment', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing metadata:" + e.message);
+        info("error parsing metadata:" + e.message);
     }
 
     var m = data[fileName];
@@ -859,11 +913,11 @@ app.get('/video/addSegment', (req, res) => {
     res.send(resp);
 });
 app.post('/video/updateScript', (req, res) => {
-    console.log("video/updateScript");
-    console.log("params:" + JSON.stringify(req.body));
+    info("video/updateScript");
+    info("params:" + JSON.stringify(req.body));
     const params = JSON.parse(req.body.params);
     var filePath = path.join(directoryPath, params.file);
-    console.log("filePath:" + filePath);
+    info("filePath:" + filePath);
     var replaceAll = params.replaceAll;
     var rPath = path.join(directoryPath, "replacers");
     var scripts = fs.readFileSync(filePath, "utf-8");
@@ -871,7 +925,7 @@ app.post('/video/updateScript', (req, res) => {
     try {
         replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     if (params.oldWords != "") {
@@ -898,7 +952,7 @@ app.post('/video/updateScript', (req, res) => {
     res.send(resp);
 });
 app.get('/video/updatePosition', (req, res) => {
-    console.log("video/updatePosition");
+    info("video/updatePosition");
     var fileName = req.query.fileName;
     var position = req.query.position;
     var rPath = path.join(directoryPath, "metadata");
@@ -906,7 +960,7 @@ app.get('/video/updatePosition', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     m = data[fileName];
@@ -922,7 +976,7 @@ app.get('/video/updatePosition', (req, res) => {
     res.send(resp);
 });
 app.get('/video/updatePosition', (req, res) => {
-    console.log("video/updatePosition");
+    info("video/updatePosition");
     var fileName = req.query.fileName;
     var position = req.query.position;
     var rPath = path.join(directoryPath, "metadata");
@@ -930,7 +984,7 @@ app.get('/video/updatePosition', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     m = data[fileName];
@@ -961,7 +1015,7 @@ app.post('/video/ping', (req, res) => {
     var text = fs.readFileSync(fp, "utf-8");
     var config = JSON.parse(text);
     var bd = req.body
-    console.log("body:" + JSON.stringify(bd));
+    info("body:" + JSON.stringify(bd));
     Object.keys(bd).forEach((item) => {
         if (config[item] == null) {
             config[item] = {};
@@ -976,7 +1030,7 @@ app.post('/video/ping', (req, res) => {
 app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const videoPath = path.join(directoryPath, fileName);
-    console.log("videoPath:" + videoPath);
+    info("videoPath:" + videoPath);
     const stat = fs.statSync(videoPath);
     const fileSize = stat.size;
 
@@ -1016,7 +1070,7 @@ app.get('/video/download/:filename', (req, res) => {
 app.post('/video/delete', (req, res) => {
     const files = JSON.parse(req.body.files);
     const remove = req.body.remove;
-    console.log("remove:" + remove);
+    info("remove:" + remove);
     if (remove != pwd) {
         var resp = JSON.stringify({ ok: 0 });
         //resp = JSON.stringify(otags);
@@ -1037,7 +1091,7 @@ app.get('/video/rename', (req, res) => {
     const fileName = path.join(directoryPath, req.query.fileName);
     const newName = path.join(directoryPath, req.query.newName);
 
-    console.log("rename:'" + fileName + "' to '" + newName + "'");
+    info("rename:'" + fileName + "' to '" + newName + "'");
 
     var resp = { ok: 1 };
     try {
@@ -1058,14 +1112,14 @@ app.get('/video/setScriptPos', (req, res) => {
     const right = req.query.right;
     const fileName = req.query.fileName;
 
-    console.log(`setScript:${top},${bottom},${left},${right},${fileName}`);
+    info(`setScript:${top},${bottom},${left},${right},${fileName}`);
 
     var rPath = path.join(directoryPath, "scripts");
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     data[fileName] = { top: top, bottom: bottom, left: left, right: right };
@@ -1085,14 +1139,14 @@ app.get('/video/setScriptPos', (req, res) => {
 app.get('/video/removeScriptPos', (req, res) => {
     const fileName = req.query.fileName;
 
-    console.log(`removeScript:${fileName}`);
+    info(`removeScript:${fileName}`);
 
     var rPath = path.join(directoryPath, "scripts");
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        console.log("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message);
     }
 
     delete data[fileName];
@@ -1121,7 +1175,7 @@ app.post('/video/toSplit', (req, res) => {
 });
 
 app.get('/video/doSplit', (req, res) => {
-    console.log("splitting=" + splitting);
+    info("splitting=" + splitting);
     if (response.length > 0) {
         res.send("<pre>" + response.join("\n") + "</pre>");
         if (splitting == 0) {
@@ -1138,7 +1192,7 @@ app.get('/video/doSplit', (req, res) => {
     }
 });
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+    info(`Server is running on port ${port}`);
 });
 
 
