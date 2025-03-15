@@ -662,10 +662,10 @@ app.post('/stock/screen/nodes', async (req, res) => {
             for (let i = 0; ; i++) {
                 let name = getChildProperty(node, `1.${i}.0.0.0`, "text");
                 let code = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
-                let price = getChildProperty(node, `2.1.2.${i}.0`, "text");
-                let delta = getChildProperty(node, `2.1.2.${i + 1}.0`, "text");
-                let ratio = getChildProperty(node, `2.1.2.${i + 2}.0.0`, "text");
-                let uratio = getChildProperty(node, `2.1.2.${i + 3}.0`, "text");
+                let price = getChildProperty(node, `2.1.2.${i * 4}.0`, "text");
+                let delta = getChildProperty(node, `2.1.2.${i * 4 + 1}.0`, "text");
+                let ratio = getChildProperty(node, `2.1.2.${i * 4 + 2}.0.0`, "text");
+                let uratio = getChildProperty(node, `2.1.2.${i * 4 + 3}.0`, "text");
 
                 info(`${i}:${name}(${code}),${price},${delta},${ratio},${uratio}`);
                 if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
