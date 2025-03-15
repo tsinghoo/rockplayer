@@ -651,7 +651,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
     }
 
     function getChildProperty(root, path, key) {
-        info(`getChildProperty:${path}.${key}`);
+        debug(`getChildProperty:${path}.${key}`);
         let node = findChild(root, path.split("."));
         if (node) {
             return node[key];
