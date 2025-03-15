@@ -587,18 +587,33 @@ app.post('/stock/screen/nodes', async (req, res) => {
 
         return null;
     }
+
+    if (root.children.length == 0) {
+        var resp = JSON.stringify({ data: "success" });
+        res.send(resp);
+        return;
+    }
     //0.0.0.0.0.0.0.1.0.1.3.0.1
     //0.0.0.0.0.0.0.1.0.1.3.0.1.1.0.0.0.0
     //0.0.0.0.0.0.0.1.0.1.3.0.1.2.1.2.0.0
     var node = findNode(root, "com.gf.client:id/refresh_child");
     if (node) {
-        let name = getChildProperty(node, "1.x.0.0.0", "text");
-        let code = getChildProperty(node, "1.x.0.0.1.0", "text");
-        let price = getChildProperty(node, "2.1.2.x.0", "text");
-        let delta = getChildProperty(node, "2.1.2.x+1.0", "text");
-        let ratio = getChildProperty(node, "2.1.2.x+2.0.0", "text");
-        let unknown = getChildProperty(node, "2.1.2.x+3.0", "text");
-        
+        for (let i = 0; ; i++) {
+            let name = getChildProperty(node, `1.${i}.0.0.0`, "text");
+            let code = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
+            let price = getChildProperty(node, `2.1.2.${i}.0`, "text");
+            let delta = getChildProperty(node, `2.1.2.${i+1}.0`, "text");
+            let ratio = getChildProperty(node, `2.1.2.${i+2}.0.0`, "text");
+            let uratio = getChildProperty(node, `2.1.2.${i+3}.0`, "text");
+
+            if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
+                break;
+            }
+
+            console.log(`${name}(${code}):${price},${delta},${ratio},${uratio}`);
+
+
+        }
     }
 
     var resp = JSON.stringify({ data: "success" });
