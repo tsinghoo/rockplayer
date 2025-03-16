@@ -790,7 +790,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
                 let delta = getChildProperty(node, `2.1.2.${i * 4 + 1}.0`, "text");
                 let ratio = getChildProperty(node, `2.1.2.${i * 4 + 2}.0.0`, "text");
                 let ratio1 = getChildProperty(node, `2.1.2.${i * 4 + 3}.0`, "text");
-
+                scodes.push(scode);
                 debug(`${i}:${sname}(${scode}),${price},${delta},${ratio},${ratio1}`);
                 if (sname == null || scode == null || price == null || delta == null || ratio == null || ratio1 == null) {
                     break;
@@ -811,6 +811,19 @@ app.post('/stock/screen/nodes', async (req, res) => {
         }
     }
 
+    var resp = JSON.stringify({ data: "success" });
+    res.send(resp);
+});
+
+app.post('/stock/prices', async (req, res) => {
+    info("post /stock/prices");
+
+    let prices = req.body;
+    for (let i = 0; i < prices.length; i++) {
+        let price = prices[i];
+        await insertOrReplace("tStockPrice", price);
+    }
+    
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
 });
