@@ -16,7 +16,8 @@ let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要�
 const args = process.argv;
 let DEBUG = 2;
 let INFO = 3;
-let logLevel = 3;
+let ERROR = 4;
+let logLevel = 2;
 info(args.length);
 const pwd = "995560";
 if (args.length < 4) {
@@ -57,6 +58,14 @@ function info(msg) {
 }
 function debug(msg) {
     if (logLevel > DEBUG) {
+        return;
+    }
+
+    let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
+    console.log(time + ":" + msg);
+}
+function error(msg) {
+    if (logLevel > ERROR) {
         return;
     }
 
@@ -499,7 +508,7 @@ app.post('/video/cookies', (req, res) => {
 });
 async function getDb() {
     if (DB) {
-        info("DB exist");
+        debug("DB exist");
         return DB;
     }
 
@@ -515,6 +524,7 @@ async function getDb() {
         return new Promise((resolve, reject) => {
             DB.run(sql, params, function (err) {
                 if (err) {
+                    error(err);
                     resolve({ error: err });
                 } else {
                     resolve({});
@@ -529,6 +539,7 @@ async function getDb() {
             info(JSON.stringify(params));
             DB.all(sql, params, function (err, rows) {
                 if (err) {
+                    error(err);
                     resolve({ error: err });
                 } else {
                     resolve({ rows: rows });
@@ -537,44 +548,26 @@ async function getDb() {
         });
     }
 
-    info("db inited");
-
-    await DB.runSync(`CREATE TABLE IF NOT EXISTS tstock (
-        tid text PRIMARY KEY,
-        scode text,
-        sname TEXT,
-        tday text,
-        ttime text,
-        tprice REAL,
-        operationDirection text,
-        operationName text,
-        market text,
-        tamount integer,
-        tcash REAL,
-        taccount text,
-        tpair text
-    )`);
-
-    await DB.runSync(`CREATE TABLE IF NOT EXISTS tsql (
-        id text primary key,
-        name text,
-        sql text,
-        lastUseTime integer
-    )`);
-
-    await DB.runSync(`CREATE TABLE IF NOT EXISTS tStockBasic (
-        id text primary key,
-        scode text,
-        sname text,
-        buy real default 0,
-        sell real default 0,
-        updateTime integer
-    )`);
-
-    info("table inited");
+    DB.getSync = DB.getSync || function (sql, params) {
+        info("getSync:" + sql);
+        info(JSON.stringify(params));
+        return new Promise((resolve, reject) => {
+            DB.get(sql, params, function (err, row) {
+                if (err != null) {
+                    error(err);
+                    resolve({ error: err });
+                    //return;
+                } else {
+                    resolve(row);
+                }
+            });
+        });
+    };
 
     return DB;
 }
+
+
 
 app.post('/stock/update', async (req, res) => {
     info("/stock/update");
@@ -603,6 +596,123 @@ app.post('/stock/update', async (req, res) => {
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
 });
+
+
+async function dbCall(options) {
+    let db = await getDb();
+    for (let i = 0; i < options.length; ++i) {
+        let stat = options[i];
+
+        if (isArray(stat)) {
+            let sql = stat[0];
+            let params = stat[1];
+            debug("dbCall sql:" + sql);
+            debug("params:" + JSON.stringify(params));
+            await db.runSync(sql, params);
+        } else {
+            debug("sql:" + stat);
+            await db.runSync(stat);
+        }
+    }
+}
+
+function isArray(o) {
+    return Object.prototype.toString.call(o) === "[object Array]";
+}
+
+async function upgradeDb(succ, fail) {
+    debug("upgradeDb");
+    let db = await getDb();
+    let res = await db.getSync("SELECT * FROM config where key=?", "dbVersion");
+
+    var updates = [
+        "",
+        `CREATE TABLE IF NOT EXISTS tStockPrice (
+        id text primary key,
+        scode text,
+        sname text,
+        delta real default 0,
+        price real default 0,
+        ratio real default 0,
+        ratio1 real default 0,
+        updateTime integer);
+        `,
+        "update config set value='3' where key='dbVersion';",
+    ];
+
+    if (res == null || res.error) {
+        res = await db.runSync(`CREATE TABLE IF NOT EXISTS tstock (
+        tid text PRIMARY KEY,
+        scode text,
+        sname TEXT,
+        tday text,
+        ttime text,
+        tprice REAL,
+        operationDirection text,
+        operationName text,
+        market text,
+        tamount integer,
+        tcash REAL,
+        taccount text,
+        tpair text);`);
+
+        await db.runSync("create table config(key varchar(50) primary key, value text);");
+
+        await db.runSync(`CREATE TABLE IF NOT EXISTS tsql (
+        id text primary key,
+        name text,
+        sql text,
+        lastUseTime integer);`);
+
+        await db.runSync(`CREATE TABLE IF NOT EXISTS tStockBasic (
+        id text primary key,
+        scode text,
+        sname text,
+        buy real default 0,
+        sell real default 0,
+        updateTime integer);`);
+
+        await db.runSync("insert into config values('dbVersion', 1);");
+
+        updates.forEach(async (sql, i) => {
+            await db.runSync(sql);
+        });
+
+    } else {
+        debug(JSON.stringify(res));
+
+        var ver = res.value;
+        updates.splice(0, parseInt(ver));
+
+        if (updates.length > 0) {
+            await dbCall(updates);
+        }
+
+        let row = await db.getSync("SELECT * FROM config where key=?", ["dbVersion"]);
+        if (row == null) {
+            debug("dbVersion:null");
+        } else {
+            debug("dbVersion:" + row.value);
+        }
+    }
+}
+
+async function insertOrReplace(table, row) {
+    debug("replace:" + table);
+    let keys = Object.keys(row);
+    let cols = keys.join(",");
+    let vs = keys.map((k, i) => "?").join(",");
+    let sql = `insert or replace into ${table}(${cols}) values(${vs})`;
+    let vals = keys.map((k, i) => {
+        let val = row[k];
+        if (val != null && typeof (val) == "object") {
+            val = JSON.stringify(val);
+        }
+
+        return val;
+    });
+    await dbCall([[sql, vals]]);
+}
 
 app.post('/stock/screen/nodes', async (req, res) => {
     info("post /stock/screen/nodes");
@@ -669,23 +779,34 @@ app.post('/stock/screen/nodes', async (req, res) => {
     //0.0.0.0.0.0.0.1.0.1.3.0.1.1.0.0.0.0
     //0.0.0.0.0.0.0.1.0.1.3.0.1.2.1.2.0.0
     if (root.isGfStatus == 1) {
-        info("isGfStatus");
+        debug("isGfStatus");
         var node = findNodeById(root, "com.gf.client:id/refresh_child");
         if (node) {
             debug("refresh_child found");
             for (let i = 0; ; i++) {
-                let name = getChildProperty(node, `1.${i}.0.0.0`, "text");
-                let code = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
+                let sname = getChildProperty(node, `1.${i}.0.0.0`, "text");
+                let scode = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
                 let price = getChildProperty(node, `2.1.2.${i * 4}.0`, "text");
                 let delta = getChildProperty(node, `2.1.2.${i * 4 + 1}.0`, "text");
                 let ratio = getChildProperty(node, `2.1.2.${i * 4 + 2}.0.0`, "text");
-                let uratio = getChildProperty(node, `2.1.2.${i * 4 + 3}.0`, "text");
+                let ratio1 = getChildProperty(node, `2.1.2.${i * 4 + 3}.0`, "text");
 
-                debug(`${i}:${name}(${code}),${price},${delta},${ratio},${uratio}`);
-                if (name == null || code == null || price == null || delta == null || ratio == null || uratio == null) {
+                debug(`${i}:${sname}(${scode}),${price},${delta},${ratio},${ratio1}`);
+                if (sname == null || scode == null || price == null || delta == null || ratio == null || ratio1 == null) {
                     break;
                 }
 
+                let updateTime = Date.now();
+                await insertOrReplace("tStockPrice", {
+                    id: `${scode}_${updateTime}`,
+                    scode: scode,
+                    sname: sname,
+                    delta: delta,
+                    price: price,
+                    ratio: ratio,
+                    ratio1: ratio1,
+                    updateTime: updateTime
+                })
             }
         }
     }
@@ -1217,8 +1338,15 @@ app.get('/video/doSplit', (req, res) => {
         res.send(JSON.stringify(response));
     }
 });
-app.listen(port, () => {
-    info(`Server is running on port ${port}`);
-});
+
+async function init() {
+    await getDb()
+    await upgradeDb();
+    app.listen(port, () => {
+        info(`Server is running on port ${port}`);
+    });
+}
+
+init();
 
 
