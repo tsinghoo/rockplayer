@@ -279,7 +279,7 @@ window.feed_list = window.feed_list || (function () {
                 let code = $(this).parents("tr").attr("code");
                 let rows = self.data[code];
                 share.currentTarget = this;
-                share.popupPlacement="top";
+                share.popupPlacement = "top";
                 let trs = $(`.repeatCode${code}`);
                 trs.show();
                 // 初始化折线图
@@ -291,7 +291,7 @@ window.feed_list = window.feed_list || (function () {
             let max = 0;
             let min = 100000;
             let last = 0;
-            let ratio = 2;
+            let ratio = 3;
             let dates = rows.map(row => `${row.日期} ${row.时间}`);
             let prices = rows.map(row => {
                 if (row.价格 > max) {
@@ -308,23 +308,29 @@ window.feed_list = window.feed_list || (function () {
 <div class="flexcolumn center">
     <div class="flexrow width100p">
         <div class="flexcolumn center">
-            <input type="text" id="ratio" style="width:40px;" value="${ratio}">
+            <div class="flexrow width100p">
+                <input type="text" id="ratio" style="width:40px;" value="${ratio}">%
+            </div>
+            <div class="ratio clickable" ratio="2">2%</div>
+            <div class="ratio clickable" ratio="3">3%</div>
+            <div class="ratio clickable" ratio="5">5%</div>
+            <div class="ratio clickable" ratio="10">10%</div>
         </div>
-        <div class="flexcolumn center">
+        <div class="flexcolumn center width100p">
             <div class="flexrow width100p">
-                <div class="marginlr10">最近: <input style="width:60px;" type="text" id="last" value="${last}"></div>
-                <div class="marginlr10 recentUp">+${ratio}%: ${last * (1 + ratio / 100)}</div>
-                <div class="marginlr10 recentDown">-${ratio}%: ${last * (1 - ratio / 100)}</div>
+                <div class="marginlr10 col-xs-4 left">最近: <input style="width:60px;" type="text" id="last" value="${last}"></div>
+                <div class="marginlr10 col-xs-4 recentUp">+${ratio}%: ${(last * (1 + ratio / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-4 recentDown">-${ratio}%: ${(last * (1 - ratio / 100)).toFixed(2)}</div>
             </div>
             <div class="flexrow width100p">
-                <div class="marginlr10">最大: ${max}</div>
-                <div class="marginlr10 maxUp">+${ratio}%: ${max * (1 + ratio / 100)}</div>
-                <div class="marginlr10 maxDown">-${ratio}%: ${max * (1 - ratio / 100)}</div>
+                <div class="marginlr10 col-xs-4 left">最大: ${max}</div>
+                <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${(max * (1 + ratio / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${(max * (1 - ratio / 100)).toFixed(2)}</div>
             </div>
             <div class="flexrow width100p">
-                <div class="marginlr10">最小: ${min}</div>
-                <div class="marginlr10 minUp">+${ratio}%: ${min * (1 + ratio / 100)}</div>
-                <div class="marginlr10 minDown">-${ratio}%: ${min * (1 - ratio / 100)}</div>
+                <div class="marginlr10 col-xs-4 left">最小: ${min}</div>
+                <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${(min * (1 + ratio / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${(min * (1 - ratio / 100)).toFixed(2)}</div>
             </div>
         </div>
     </div>
@@ -337,25 +343,28 @@ window.feed_list = window.feed_list || (function () {
             // 获取 canvas 元素
             let ctx = $('#priceChart', c)[0].getContext('2d');
             let input = $('#ratio', c);
-            input.change(function () {
+
+            function calc() {
                 let r = input.val();
                 let l = $('#last', c).val();
-                $(".recentUp", c).text(`+${r}%: ${l * (1 + r / 100)}`);
-                $(".recentDown", c).text(`-${r}%: ${l * (1 - r / 100)}`);
-                $(".maxUp", c).text(`+${r}%: ${max * (1 + r / 100)}`);
-                $(".maxDown", c).text(`-${r}%: ${max * (1 - r / 100)}`);
-                $(".minUp", c).text(`+${r}%: ${min * (1 + r / 100)}`);
-                $(".minDown", c).text(`-${r}%: ${min * (1 - r / 100)}`);
+                $(".recentUp", c).text(`+${r}%: ${(l * (1 + r / 100)).toFixed(2)}`);
+                $(".recentDown", c).text(`-${r}%: ${(l * (1 - r / 100)).toFixed(2)}`);
+                $(".maxUp", c).text(`+${r}%: ${(max * (1 + r / 100)).toFixed(2)}`);
+                $(".maxDown", c).text(`-${r}%: ${(max * (1 - r / 100)).toFixed(2)}`);
+                $(".minUp", c).text(`+${r}%: ${(min * (1 + r / 100)).toFixed(2)}`);
+                $(".minDown", c).text(`-${r}%: ${(min * (1 - r / 100)).toFixed(2)}`);
+            }
+            input.change(function () {
+                calc();
             });
             $('#last', c).change(function () {
-                let r = input.val();
-                let l = $('#last', c).val();
-                $(".recentUp", c).text(`+${r}%: ${l * (1 + r / 100)}`);
-                $(".recentDown", c).text(`-${r}%: ${l * (1 - r / 100)}`);
-                $(".maxUp", c).text(`+${r}%: ${max * (1 + r / 100)}`);
-                $(".maxDown", c).text(`-${r}%: ${max * (1 - r / 100)}`);
-                $(".minUp", c).text(`+${r}%: ${min * (1 + r / 100)}`);
-                $(".minDown", c).text(`-${r}%: ${min * (1 - r / 100)}`);
+                calc();
+            });
+
+            $('.ratio', c).click(function () {
+                let ratio = $(this).attr("ratio");
+                input.val(ratio);
+                calc();
             });
 
             // 创建折线图
