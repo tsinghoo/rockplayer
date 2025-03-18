@@ -572,18 +572,18 @@ async function getDb() {
 app.post('/stock/update', async (req, res) => {
     info("/stock/update");
 
-    let rows = req.body.rows.split("\n");
-    info(rows.join("\n"));
+    let data = req.body.rows.split("\n");
+    info(data.join("\n"));
     let db = await getDb();
-    for (var i = 0; i < rows.length; ++i) {
-        if (rows[i].trim() == "") {
+    for (var i = 0; i < data.length; ++i) {
+        if (data[i].trim() == "") {
             continue;
         }
 
-        var fields = rows[i].split("\t");
+        var fields = data[i].split("\t");
         var sql = `insert or replace into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?)`;
-        let res = await db.run(sql, fields);
+        let res = await db.runSync(sql, fields);
         if (res.error) {
             info(res.error);
             res.send(res);
@@ -857,7 +857,7 @@ app.get('/stock/trade/update', async (req, res) => {
     let db = await getDb();
 
     let sql = `insert or ignore into tstockbasic (id, scode, sname,buy,sell,updateTime) values (?,?,?,?,?,?)`;
-    let r = await db.run(sql, [scode, sname, buy, sell, Date.now()]);
+    let r = await db.runSync(sql, [scode, sname, buy, sell, Date.now()]);
 
     var resp = `${js}(${JSON.stringify({ data: "success" })})`;
     res.send(resp);
