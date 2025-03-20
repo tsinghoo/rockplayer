@@ -9,7 +9,7 @@ const sqlite3 = require('sqlite3').verbose();
 const { spawn, exec } = require('child_process');
 let response = [];
 let splitting = 0;
-let DB;
+
 app.use(express.json());
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
@@ -36,6 +36,57 @@ if (args.length > 4) {
 }
 info(args[4]);
 info(suffix.join(" "));
+
+
+info("open stock.db");
+const dbFilePath = path.join(directoryPath, "stock.db");
+let db = new sqlite3.Database(dbFilePath);
+
+db.runSync = (sql, params) => {
+    info("runSync:" + sql);
+    info(JSON.stringify(params));
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+            if (err) {
+                error(err);
+                resolve({ error: err });
+            } else {
+                resolve({});
+            }
+        });
+    })
+}
+
+db.allSync = (sql, params) => {
+    return new Promise((resolve, reject) => {
+        info("allSync:" + sql);
+        info(JSON.stringify(params));
+        db.all(sql, params, function (err, rows) {
+            if (err) {
+                error(err);
+                resolve({ error: err });
+            } else {
+                resolve({ rows: rows });
+            }
+        });
+    });
+}
+
+db.getSync = db.getSync || function (sql, params) {
+    info("getSync:" + sql);
+    info(JSON.stringify(params));
+    return new Promise((resolve, reject) => {
+        db.get(sql, params, function (err, row) {
+            if (err != null) {
+                error(err);
+                resolve({ error: err });
+                //return;
+            } else {
+                resolve(row);
+            }
+        });
+    });
+};
 
 function isVideo(file) {
     if (suffix.length > 0) {
@@ -506,75 +557,13 @@ app.post('/video/cookies', (req, res) => {
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
 });
-async function getDb() {
-    if (DB) {
-        debug("DB exist");
-        return DB;
-    }
-
-
-    info("open stock.db");
-    const dbFilePath = path.join(directoryPath, "stock.db");
-    DB = new sqlite3.Database(dbFilePath);
-
-    info("open stock.db ok");
-    DB.runSync = (sql, params) => {
-        info("runSync:" + sql);
-        info(JSON.stringify(params));
-        return new Promise((resolve, reject) => {
-            DB.run(sql, params, function (err) {
-                if (err) {
-                    error(err);
-                    resolve({ error: err });
-                } else {
-                    resolve({});
-                }
-            });
-        })
-    }
-
-    DB.allSync = (sql, params) => {
-        return new Promise((resolve, reject) => {
-            info("allSync:" + sql);
-            info(JSON.stringify(params));
-            DB.all(sql, params, function (err, rows) {
-                if (err) {
-                    error(err);
-                    resolve({ error: err });
-                } else {
-                    resolve({ rows: rows });
-                }
-            });
-        });
-    }
-
-    DB.getSync = DB.getSync || function (sql, params) {
-        info("getSync:" + sql);
-        info(JSON.stringify(params));
-        return new Promise((resolve, reject) => {
-            DB.get(sql, params, function (err, row) {
-                if (err != null) {
-                    error(err);
-                    resolve({ error: err });
-                    //return;
-                } else {
-                    resolve(row);
-                }
-            });
-        });
-    };
-
-    return DB;
-}
-
-
 
 app.post('/stock/update', async (req, res) => {
     info("/stock/update");
 
     let data = req.body.rows.split("\n");
     info(data.join("\n"));
-    let db = await getDb();
+
     for (var i = 0; i < data.length; ++i) {
         if (data[i].trim() == "") {
             continue;
@@ -599,7 +588,7 @@ app.post('/stock/update', async (req, res) => {
 
 
 async function dbCall(options) {
-    let db = await getDb();
+
     for (let i = 0; i < options.length; ++i) {
         let stat = options[i];
 
@@ -622,7 +611,7 @@ function isArray(o) {
 
 async function upgradeDb(succ, fail) {
     debug("upgradeDb");
-    let db = await getDb();
+
     let res = await db.getSync("SELECT * FROM config where key=?", "dbVersion");
 
     var updates = [
@@ -638,6 +627,8 @@ async function upgradeDb(succ, fail) {
         updateTime integer);
         `,
         "update config set value='3' where key='dbVersion';",
+        `create table tStockAction(id text primary key, scode text, sname text, type text, price real, step real,amount int, entrustPrice real, entrustNo text, createTime integer, updateTime integer);`,
+        "update config set value='5' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -823,8 +814,15 @@ app.post('/stock/prices', async (req, res) => {
         let price = prices[i];
         await insertOrReplace("tStockPrice", price);
     }
-    
-    var resp = JSON.stringify({ data: "success" });
+
+    //从tStockAction中读取未执行的行并返回
+
+    let r = await db.getSync("select * from tStockAction where entrustPrice>0 and entrustNo=''");
+    if (r != null) {
+        db.runSync("update tStockAction set entrustNo='fired' and updateTime=? where id=?", [Date.now(), r.id]);
+    }
+
+    let resp = JSON.stringify({ action: r });
     res.send(resp);
 });
 
@@ -847,6 +845,17 @@ app.get('/stock/screen/nodes', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/entrustno', async (req, res) => {
+    info("get /stock/entrustno");
+    let scode = req.query.scode;
+    let no = req.query.no;
+
+
+    db.runSync(`update tStockAction set entrustNo=? where scode=?`, [no, scode]);
+
+    res.send(resp);
+});
+
 app.get('/stock/trade/update', async (req, res) => {
     info("/stock/trade/update");
     let js = req.query.js;
@@ -854,10 +863,10 @@ app.get('/stock/trade/update', async (req, res) => {
     let sname = req.query.sname;
     let buy = req.query.buy;
     let sell = req.query.sell
-    let db = await getDb();
+
 
     let sql = `insert or ignore into tstockbasic (id, scode, sname,buy,sell,updateTime) values (?,?,?,?,?,?)`;
-    let r = await db.runSync(sql, [scode, sname, buy, sell, Date.now()]);
+    let r = await db.runSync(sql, [scode, scode, sname, buy, sell, Date.now()]);
 
     var resp = `${js}(${JSON.stringify({ data: "success" })})`;
     res.send(resp);
@@ -877,7 +886,7 @@ app.get('/stock/fe/user/login', async (req, res) => {
 app.get('/stock/trade/all', async (req, res) => {
     info("/stock/trade/all");
     let js = req.query.js;
-    let db = await getDb();
+
 
     let sql = `select * from tstockbasic `;
     let r = await db.allSync(sql);
@@ -890,7 +899,7 @@ app.get('/stock/pair', async (req, res) => {
     info("/stock/pair");
     let js = req.query.js;
     let reset = req.query.reset;
-    let db = await getDb();
+
     let sql = `select * from tstock where tamount<0 and tpair is null or tpair=''`;
     if (reset) {
         info("reset before pair");
@@ -919,7 +928,7 @@ app.get('/stock/pair', async (req, res) => {
 });
 
 app.post('/stock/query', async (req, res) => {
-    let db = await getDb();
+
     let sql = req.body.sql;
     let name = req.body.name;
     info(`sql:${sql}`);
@@ -938,7 +947,7 @@ app.post('/stock/query', async (req, res) => {
 });
 
 app.get('/stock/sqls', async (req, res) => {
-    let db = await getDb();
+
     let js = req.query.js;
     let sql = "select * from tsql order by lastUseTime desc";
     let r = await db.allSync(sql);
@@ -953,7 +962,7 @@ app.get('/stock/sqls', async (req, res) => {
 });
 
 app.post('/stock/sql/update', async (req, res) => {
-    let db = await getDb();
+
     let sql = req.body.sql;
     let name = req.body.name;
     let r = await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
@@ -1353,7 +1362,6 @@ app.get('/video/doSplit', (req, res) => {
 });
 
 async function init() {
-    await getDb()
     await upgradeDb();
     app.listen(port, () => {
         info(`Server is running on port ${port}`);
