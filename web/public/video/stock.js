@@ -291,7 +291,7 @@ window.feed_list = window.feed_list || (function () {
             let max = 0;
             let min = 100000;
             let last = 0;
-            let ratio = 3;
+            let ratio = 2;
             let dates = rows.map(row => `${row.日期} ${row.时间}`);
             let prices = rows.map(row => {
                 if (row.价格 > max) {
@@ -307,27 +307,43 @@ window.feed_list = window.feed_list || (function () {
             let html = `
 <div class="flexcolumn center">
     <div class="flexrow width100p">
-        <div class="flexcolumn center">
-            <div class="flexrow width100p">
-                <input type="text" id="ratio" style="width:40px;" value="${ratio}">%
-            </div>
-            <div class="ratio clickable" ratio="2">2%</div>
-            <div class="ratio clickable" ratio="3">3%</div>
-            <div class="ratio clickable" ratio="5">5%</div>
-            <div class="ratio clickable" ratio="10">10%</div>
-        </div>
         <div class="flexcolumn center width100p">
             <div class="flexrow width100p">
+                <div class="flexrow col-xs-2">
+                    <input type="text" id="ratio" style="width:25px;" value="${ratio}">%
+                </div>
                 <div class="marginlr10 col-xs-4 left">最近: <input style="width:60px;" type="text" id="last" value="${last}"></div>
-                <div class="marginlr10 col-xs-4 recentUp">+${ratio}%: ${(last * (1 + ratio / 100)).toFixed(2)}</div>
-                <div class="marginlr10 col-xs-4 recentDown">-${ratio}%: ${(last * (1 - ratio / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-3 recentUp">+${ratio}%: ${(last * (1 + ratio / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-3 recentDown">-${ratio}%: ${(last * (1 - ratio / 100)).toFixed(2)}</div>
+            </div>
+
+            <div class="flexrow width100p">
+                <div class="flexrow col-xs-2"></div>
+                <div class="marginlr10 col-xs-4 left">${last}</div>
+                <div class="marginlr10 col-xs-3">+3%: ${(last * (1 + 3 / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-3">-3%: ${(last * (1 - 3 / 100)).toFixed(2)}</div>
             </div>
             <div class="flexrow width100p">
+                <div class="flexrow col-xs-2"></div>
+                <div class="marginlr10 col-xs-4 left">${last}</div>
+                <div class="marginlr10 col-xs-3">+5%: ${(last * (1 + 5 / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-3">-5%: ${(last * (1 - 5 / 100)).toFixed(2)}</div>
+            </div>
+            <div class="flexrow width100p">
+                <div class="flexrow col-xs-2"></div>
+                <div class="marginlr10 col-xs-4 left">${last}</div>
+                <div class="marginlr10 col-xs-3">+10%: ${(last * (1 + 10 / 100)).toFixed(2)}</div>
+                <div class="marginlr10 col-xs-3">-10%: ${(last * (1 - 10 / 100)).toFixed(2)}</div>
+            </div>
+
+            <div class="flexrow width100p">
+                <div class="flexrow col-xs-2"></div>
                 <div class="marginlr10 col-xs-4 left">最大: ${max}</div>
                 <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${(max * (1 + ratio / 100)).toFixed(2)}</div>
                 <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${(max * (1 - ratio / 100)).toFixed(2)}</div>
             </div>
             <div class="flexrow width100p">
+                <div class="flexrow col-xs-2"></div>
                 <div class="marginlr10 col-xs-4 left">最小: ${min}</div>
                 <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${(min * (1 + ratio / 100)).toFixed(2)}</div>
                 <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${(min * (1 - ratio / 100)).toFixed(2)}</div>

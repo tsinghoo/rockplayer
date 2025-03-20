@@ -812,7 +812,18 @@ app.post('/stock/prices', async (req, res) => {
     let prices = req.body;
     for (let i = 0; i < prices.length; i++) {
         let price = prices[i];
+        let now = Date.now();
+        price.id = `${price.scode}_${now}`;
+        price.updateTime = now;
         await insertOrReplace("tStockPrice", price);
+
+        await insertOrReplace("tStockBasic", {
+            id: price.scode,
+            scode: price.scode,
+            sname: price.sname,
+            buy: price.price,
+            updateTime: now
+        });
     }
 
     //从tStockAction中读取未执行的行并返回
