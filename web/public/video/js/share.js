@@ -1880,6 +1880,22 @@ window.mhgl_share =
           });
         }
       },
+      getTimePassed__: function (time) {
+        var now = new Date();
+        var diff = now - time;
+        diff = Math.floor(diff / 1000);
+        var mm = Math.floor(diff / 60);
+        var ss = diff % 60;
+        if (mm < 10) {
+          mm = "0" + mm;
+        }
+        if (ss < 10) {
+          ss = "0" + ss;
+        }
+        return mm + ":" + ss;
+
+      },
+
       timeFormat__: function (time, fmt) {
         if (time == null) {
           return "";

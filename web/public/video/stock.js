@@ -7,6 +7,7 @@ window.feed_list = window.feed_list || (function () {
     var self = {
         data: {},
         rows: [],
+        currentPrices: {},
         init: async function () {
             await self.getSqls();
             Chart.register(ChartDataLabels);
@@ -128,6 +129,17 @@ window.feed_list = window.feed_list || (function () {
                         }
 
                     }
+                },
+                {
+                    text: "现价",
+                    onTap: function () {
+                        let tds = $(`.curPrice`);
+                        if (tds.is(":visible")) {
+                            tds.hide();
+                        } else {
+                            tds.show();
+                        }
+                    }
                 }
             ];
 
@@ -209,11 +221,14 @@ window.feed_list = window.feed_list || (function () {
             table.empty();
             let thead = $("<thead>");
             let tr = $("<tr>");
-            let keys = ["日期", "时间", "名称", "代码", "买卖", "业务名称", "市场", "数量", "价格", "总额", "tid", "taccount", "配对"];
+            let keys = ["日期", "时间", "名称", "代码", "买卖", "业务名称", "市场", "数量", "价格", "现价", "总额", "tid", "taccount", "配对"];
             for (let i = 0; i < keys.length; i++) {
                 let th = $("<th>");
                 th.text(keys[i]);
                 tr.append(th);
+                if (keys[i] == "现价") {
+                    th.addClass("curPrice");
+                }
             }
 
             thead.append(tr);
@@ -241,13 +256,18 @@ window.feed_list = window.feed_list || (function () {
                             td.text(row[key]);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
-                            tr.attr("code", row[key]);
                             td.addClass("code");
                         }
+
+                        tr.attr("code", row[key]);
+                        tr.attr("data", JSON.stringify(row));
 
                         lastCode = row[key];
                     } else {
                         td.text(row[key]);
+                        if (key == "现价") {
+                            td.addClass("curPrice");
+                        }
                     }
 
                     tr.append(td);
@@ -286,6 +306,33 @@ window.feed_list = window.feed_list || (function () {
                 self.showChart(rows);
             })
 
+            self.getCurrentPrices();
+        },
+        getCurrentPrices: async function () {
+            let res = await share.getSync__(`/stock/price/current`);
+            res.rows.forEach(row => {
+                self.currentPrices[row.scode] = row;
+                if (self.currentPrices[row.scode]) {
+                    let tr = $(`[code="${row.scode}"]`);
+                    tr.each(function () {
+                        let th = $(this);
+                        let cpl = th.find(".curPrice");
+                        let text = row.buy;
+                        let data = th.attr("data");
+                        data = JSON.parse(data);
+                        let tp = share.getTimePassed__(row.updateTime);
+                        cpl.text(`${text} (${tp})`);
+                        if (data["价格"] < row.buy && data["买卖"] == "买入") {
+                            cpl.addClass("red");
+                        }
+
+                        if (data["价格"] > row.buy && data["买卖"] == "卖出") {
+                            cpl.addClass("red");
+                        }
+
+                    })
+                }
+            });
         },
         showChart: async function (rows) {
             let max = 0;

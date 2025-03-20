@@ -894,7 +894,7 @@ app.get('/stock/fe/user/login', async (req, res) => {
     res.send(resp);
 });
 
-app.get('/stock/trade/all', async (req, res) => {
+app.get('/stock/price/current', async (req, res) => {
     info("/stock/trade/all");
     let js = req.query.js;
 
@@ -902,7 +902,7 @@ app.get('/stock/trade/all', async (req, res) => {
     let sql = `select * from tstockbasic `;
     let r = await db.allSync(sql);
 
-    var resp = `${js}(${JSON.stringify({ data: r.rows })})`;
+    var resp = `${js}(${JSON.stringify({ rows: r.rows })})`;
     res.send(resp);
 });
 
