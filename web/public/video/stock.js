@@ -11,6 +11,9 @@ window.feed_list = window.feed_list || (function () {
         init: async function () {
             await self.getSqls();
             Chart.register(ChartDataLabels);
+            setInterval(async function () {
+                await self.getCurrentPrices();
+            }, 3000);
             self.bindEvents();
         },
         getSqls: async function () {
