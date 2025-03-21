@@ -320,12 +320,12 @@ window.feed_list = window.feed_list || (function () {
                         let text = row.buy;
                         let data = th.attr("data");
                         data = JSON.parse(data);
+                        let tp = share.getTimePassed__(row.updateTime);
                         if (th.hasClass("repeatCode") && data["配对"] != "") {
                             text = "";
+                        }else{
+                            cpl.text(`${text} (${tp})`);
                         }
-
-                        let tp = share.getTimePassed__(row.updateTime);
-                        cpl.text(`${text} (${tp})`);
                         if (data["价格"] < row.buy && data["买卖"] == "买入") {
                             cpl.addClass("red");
                         }
