@@ -320,20 +320,23 @@ window.feed_list = window.feed_list || (function () {
                     tr.each(function () {
                         let th = $(this);
                         let cpl = th.find(".curPrice");
-                        let text = row.buy;
                         let data = th.attr("data");
                         data = JSON.parse(data);
+                        const curPrice = row.buy;
+                        const price = data["价格"];
+                        let delta = ((curPrice - price) / price * 100).toFixed(1);
                         let tp = share.getTimePassed__(row.updateTime);
                         if (th.hasClass("repeatCode") && data["配对"] != "") {
-                            text = "";
-                        }else{
-                            cpl.text(`${text} (${tp})`);
+
+                        } else {
+                            cpl.text(`${curPrice} (${delta}% ${tp})`);
                         }
-                        if (data["价格"] < row.buy && data["买卖"] == "买入") {
+
+                        if (delta > 0 && data["买卖"] == "买入") {
                             cpl.addClass("red");
                         }
 
-                        if (data["价格"] > row.buy && data["买卖"] == "卖出") {
+                        if (delta < 0 && data["买卖"] == "卖出") {
                             cpl.addClass("red");
                         }
 
