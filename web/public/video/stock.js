@@ -337,11 +337,20 @@ window.feed_list = window.feed_list || (function () {
                         }
 
                         if (delta < -5 && data["买卖"] == "买入") {
-                            cpl.addClass("green");
+                            if (data["配对"]!=null){
+                                cpl.addClass("gold");
+                            }else{
+                                cpl.addClass("green");
+                            }
                         }
 
                         if (delta < 0 && data["买卖"] == "卖出") {
-                            cpl.addClass("red");
+                            if (data["配对"]!=null){
+                                cpl.addClass("gold");
+                            }else{
+                                cpl.addClass("red");
+                            }
+                            
                         }
 
                     })
