@@ -336,6 +336,10 @@ window.feed_list = window.feed_list || (function () {
                             cpl.addClass("red");
                         }
 
+                        if (delta < -5 && data["买卖"] == "买入") {
+                            cpl.addClass("green");
+                        }
+
                         if (delta < 0 && data["买卖"] == "卖出") {
                             cpl.addClass("red");
                         }
