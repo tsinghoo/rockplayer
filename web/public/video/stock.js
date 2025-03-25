@@ -333,7 +333,7 @@ window.feed_list = window.feed_list || (function () {
                         }
 
                         if (delta > 0 && data["买卖"] == "买入") {
-                            if (data["配对"] != null) {
+                            if (data["配对"] != "") {
                                 cpl.addClass("gold");
                             } else {
                                 cpl.addClass("red");
@@ -341,7 +341,7 @@ window.feed_list = window.feed_list || (function () {
                         }
 
                         if (delta < -5 && data["买卖"] == "买入") {
-                            if (data["配对"] != null) {
+                            if (data["配对"] != "") {
                                 cpl.addClass("gold");
                             } else {
                                 cpl.addClass("green");
@@ -349,7 +349,7 @@ window.feed_list = window.feed_list || (function () {
                         }
 
                         if (delta < 0 && data["买卖"] == "卖出") {
-                            if (data["配对"] != null) {
+                            if (data["配对"] != "") {
                                 cpl.addClass("gold");
                             } else {
                                 cpl.addClass("red");
