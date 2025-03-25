@@ -349,12 +349,7 @@ window.feed_list = window.feed_list || (function () {
                         }
 
                         if (delta < 0 && data["买卖"] == "卖出") {
-                            if (data["配对"] != "") {
-                                cpl.addClass("gold");
-                            } else {
-                                cpl.addClass("red");
-                            }
-
+                            cpl.addClass("red");
                         }
 
                     })
