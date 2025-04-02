@@ -570,7 +570,7 @@ app.post('/stock/update', async (req, res) => {
         }
 
         var fields = data[i].split("\t");
-        var sql = `insert or replace into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair) 
+        var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?)`;
         let res = await db.runSync(sql, fields);
         if (res.error) {
@@ -864,22 +864,6 @@ app.get('/stock/entrustno', async (req, res) => {
 
     db.runSync(`update tStockAction set entrustNo=? where scode=?`, [no, scode]);
 
-    res.send(resp);
-});
-
-app.get('/stock/trade/update', async (req, res) => {
-    info("/stock/trade/update");
-    let js = req.query.js;
-    let scode = req.query.scode;
-    let sname = req.query.sname;
-    let buy = req.query.buy;
-    let sell = req.query.sell
-
-
-    let sql = `insert or ignore into tstockbasic (id, scode, sname,buy,sell,updateTime) values (?,?,?,?,?,?)`;
-    let r = await db.runSync(sql, [scode, scode, sname, buy, sell, Date.now()]);
-
-    var resp = `${js}(${JSON.stringify({ data: "success" })})`;
     res.send(resp);
 });
 
