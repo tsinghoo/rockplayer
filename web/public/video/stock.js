@@ -239,7 +239,7 @@ window.feed_list = window.feed_list || (function () {
 
             let tbody = $("<tbody>");
             let lastCode;
-            for (let i = 1; i < rows.length; i++) {
+            for (let i = 0; i < rows.length; i++) {
                 let tr = $("<tr>");
                 let row = rows[i];
                 for (let j = 0; j < keys.length; j++) {
