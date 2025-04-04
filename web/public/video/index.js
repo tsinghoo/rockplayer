@@ -791,20 +791,22 @@ function bindVideoEvent() {
     // 鼠标按下开始绘制
     $video.on('mousedown', function (e) {
         console.log("mouse down on video");
-        if ($video[0].paused) {
+        if (isDrawing) {
+            isDrawing = false;
+            calculateAndDisplayRatios(true);
+        } else {
+            isDrawing = true;
+            startX = e.pageX - $video.offset().left;
+            startY = e.pageY - $video.offset().top;
 
+            $rectangle.css({
+                'left': startX,
+                'top': startY,
+                'width': 0,
+                'height': 0
+            }).show();
         }
 
-        isDrawing = true;
-        startX = e.pageX - $video.offset().left;
-        startY = e.pageY - $video.offset().top;
-
-        $rectangle.css({
-            'left': startX,
-            'top': startY,
-            'width': 0,
-            'height': 0
-        }).show();
     });
 
     // 鼠标移动绘制矩形
