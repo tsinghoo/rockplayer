@@ -496,8 +496,13 @@ function play(fileName) {
             });
         });
     }
+
+    bindVideoEvent();
 }
 let scrolling = false;
+let $rectangle = $('#rectangle');
+let isDrawing = false;
+let $video = $("video");
 function scrollScript() {
     var now = new Date().getTime();
     if (now - lastActionTime > 1000 * 10) {
@@ -715,6 +720,127 @@ function buttonEndClicked(e) {
 
         showStartEnd();
     }
+}
+
+// 更新比例显示
+function updateRatioDisplay(left, right, top, bottom) {
+    console.log("left:" + left + ", right:" + right + ", top:" + top + ", bottom:" + bottom);
+    $('#leftRatio').text(left.toFixed(4));
+    $('#rightRatio').text(right.toFixed(4));
+    $('#topRatio').text(top.toFixed(4));
+    $('#bottomRatio').text(bottom.toFixed(4));
+}
+function updateRatio(left, right, top, bottom) {
+    var url = "./setScriptPos";
+    var fileName = share.getParameter__("f");
+    var params = {
+        fileName: fileName,
+        top: top,
+        bottom: bottom,
+        left: left,
+        right: right
+    };
+
+    var success = function (res) {
+        share.closeDialog__();
+        if (res.error) {
+            share.toastError__(res.error);
+        } else {
+            share.closeDialog__();
+        }
+    };
+
+    var fail = function (e) {
+        share.toastError__(e.message);
+    };
+
+    share.httpGet__(
+        url,
+        params,
+        success,
+        fail
+    );
+}
+
+// 计算并显示比例
+function calculateAndDisplayRatios(update) {
+    var videoWidth = $video.width();
+    var videoHeight = $video.height();
+
+    var rectLeft = parseInt($rectangle.css('left')) || 0;
+    var rectTop = parseInt($rectangle.css('top')) || 0;
+    var rectWidth = parseInt($rectangle.css('width')) || 0;
+    var rectHeight = parseInt($rectangle.css('height')) || 0;
+
+    var rectRight = rectLeft + rectWidth;
+    var rectBottom = rectTop + rectHeight;
+
+    var leftRatio = rectLeft / videoWidth;
+    var rightRatio = rectRight / videoWidth;
+    var topRatio = rectTop / videoHeight;
+    var bottomRatio = rectBottom / videoHeight;
+    if (update) {
+        updateRatio(leftRatio, rightRatio, topRatio, bottomRatio);
+    }
+
+    updateRatioDisplay(leftRatio, rightRatio, topRatio, bottomRatio);
+}
+
+function bindVideoEvent() {
+    $video = $("video");
+    // 鼠标按下开始绘制
+    $video.on('mousedown', function (e) {
+        console.log("mouse down on video");
+        if ($video[0].paused) {
+
+        }
+
+        isDrawing = true;
+        startX = e.pageX - $video.offset().left;
+        startY = e.pageY - $video.offset().top;
+
+        $rectangle.css({
+            'left': startX,
+            'top': startY,
+            'width': 0,
+            'height': 0
+        }).show();
+    });
+
+    // 鼠标移动绘制矩形
+    $video.on('mousemove', function (e) {
+        if (!isDrawing) return;
+
+        console.log("mouse move on video");
+
+        var currentX = e.pageX - $video.offset().left;
+        var currentY = e.pageY - $video.offset().top;
+
+        var width = currentX - startX;
+        var height = currentY - startY;
+
+        // 确保矩形不超出视频边界
+        currentX = Math.max(0, Math.min(currentX, $video.width()));
+        currentY = Math.max(0, Math.min(currentY, $video.height()));
+
+        $rectangle.css({
+            'width': Math.abs(width),
+            'height': Math.abs(height),
+            'left': width > 0 ? startX : currentX,
+            'top': height > 0 ? startY : currentY
+        });
+
+        calculateAndDisplayRatios();
+    });
+
+    // 鼠标释放结束绘制
+    $video.on('mouseup', function () {
+        if (!isDrawing) return;
+        isDrawing = false;
+        calculateAndDisplayRatios(true);
+    });
+
+
 }
 
 $(function () {
