@@ -781,6 +781,13 @@ function calculateAndDisplayRatios(update) {
     var bottomRatio = rectBottom / videoHeight;
     if (update) {
         updateRatio(leftRatio, rightRatio, topRatio, bottomRatio);
+
+        $rectangle.css({
+            'width': 0,
+            'height': 0,
+            'left': 0,
+            'top': 0
+        });
     }
 
     updateRatioDisplay(leftRatio, rightRatio, topRatio, bottomRatio);
