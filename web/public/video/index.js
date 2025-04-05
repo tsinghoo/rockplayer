@@ -747,6 +747,14 @@ function updateRatio(left, right, top, bottom) {
             share.toastError__(res.error);
         } else {
             share.closeDialog__();
+            share.toastSuccess__("字幕位置已更新", 1000, function () {
+                $rectangle.css({
+                    'width': 0,
+                    'height': 0,
+                    'left': 0,
+                    'top': 0
+                });
+            });
         }
     };
 
@@ -777,17 +785,11 @@ function calculateAndDisplayRatios(update) {
 
     var leftRatio = rectLeft / videoWidth;
     var rightRatio = rectRight / videoWidth;
-    var topRatio = rectTop / videoHeight;
-    var bottomRatio = rectBottom / videoHeight;
+    var topRatio = 1 - rectTop / videoHeight;
+    var bottomRatio = 1 - rectBottom / videoHeight;
     if (update) {
         updateRatio(leftRatio, rightRatio, topRatio, bottomRatio);
 
-        $rectangle.css({
-            'width': 0,
-            'height': 0,
-            'left': 0,
-            'top': 0
-        });
     }
 
     updateRatioDisplay(leftRatio, rightRatio, topRatio, bottomRatio);
