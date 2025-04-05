@@ -1291,6 +1291,13 @@ app.get('/video/setScriptPos', (req, res) => {
     var resp = { ok: 1 };
     try {
         fs.writeFileSync(rPath, JSON.stringify(data));
+        fs.unlink(path.join(directoryPath, `${fileName}.htm`), err => {
+            if (err) {
+                console.error('Error deleting file:', err);
+            } else {
+                info('File deleted:', filePath);
+            }
+        });
     } catch (err) {
         console.error(`failed:${err.message}`);
         resp = { error: err.message };

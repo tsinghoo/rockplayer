@@ -782,14 +782,21 @@ function calculateAndDisplayRatios(update) {
 
     var rectRight = rectLeft + rectWidth;
     var rectBottom = rectTop + rectHeight;
-
     var leftRatio = rectLeft / videoWidth;
     var rightRatio = rectRight / videoWidth;
     var topRatio = 1 - rectTop / videoHeight;
     var bottomRatio = 1 - rectBottom / videoHeight;
     if (update) {
-        updateRatio(leftRatio, rightRatio, topRatio, bottomRatio);
-
+        if (rectWidth < 100) {
+            $rectangle.css({
+                'width': 0,
+                'height': 0,
+                'left': 0,
+                'top': 0
+            }).hide();
+        } else {
+            updateRatio(leftRatio, rightRatio, topRatio, bottomRatio);
+        }
     }
 
     updateRatioDisplay(leftRatio, rightRatio, topRatio, bottomRatio);
@@ -802,7 +809,10 @@ function bindVideoEvent() {
         console.log("mouse down on video");
         if (isDrawing) {
             isDrawing = false;
-            calculateAndDisplayRatios(true);
+            $rectangle.css({
+                'width': 0,
+                'height': 0
+            }).hide();
         } else {
             isDrawing = true;
             startX = e.pageX - $video.offset().left;
