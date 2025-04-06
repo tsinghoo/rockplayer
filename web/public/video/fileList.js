@@ -399,6 +399,7 @@ window.mhgl_file_list =
                 share.toastError__(res.error);
               } else {
                 share.closeDialog__();
+                share.toastSuccess__("字幕位置已移除", 1000);
               }
             };
 
