@@ -1295,7 +1295,7 @@ app.get('/video/setScriptPos', (req, res) => {
             if (err) {
                 console.error('Error deleting file:', err);
             } else {
-                info('File deleted:', filePath);
+                info('File deleted:', fileName);
             }
         });
     } catch (err) {
