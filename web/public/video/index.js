@@ -265,7 +265,7 @@ function play(fileName) {
 
     var vh = createVideoHtml(message.videoSource);
     //videoContainer.innerHTML = vh;
-    $("#video_container").html(vh);
+    $("#video_container").append($(vh));
     document.title = share.shrinkString__(message.videoSource, 80);
     vid = document.getElementById("my-video");
     if (message.type === 'native') {
@@ -747,7 +747,11 @@ function updateRatio(left, right, top, bottom) {
             share.toastError__(res.error);
         } else {
             share.closeDialog__();
-            share.toastSuccess__("字幕位置已更新", 1000, function () {
+            share.toastSuccess__(`字幕位置已更新<br>
+                left:${left}<br>
+                right:${right}<br>
+                top:${top}<br>
+                bottom:${bottom}`, 10000, function () {
                 $rectangle.css({
                     'width': 0,
                     'height': 0,
@@ -780,12 +784,16 @@ function calculateAndDisplayRatios(update) {
     var rectWidth = parseInt($rectangle.css('width')) || 0;
     var rectHeight = parseInt($rectangle.css('height')) || 0;
 
+    let vr = getVideoContentPosition($video[0]);
+
+    rectLeft = rectLeft - vr.x;
+    rectTop = rectTop - vr.y;
     var rectRight = rectLeft + rectWidth;
     var rectBottom = rectTop + rectHeight;
-    var leftRatio = rectLeft / videoWidth;
-    var rightRatio = rectRight / videoWidth;
-    var topRatio = 1 - rectTop / videoHeight;
-    var bottomRatio = 1 - rectBottom / videoHeight;
+    var leftRatio = rectLeft / vr.width;
+    var rightRatio = rectRight / vr.width;
+    var topRatio = 1 - rectTop / vr.height;
+    var bottomRatio = 1 - rectBottom / vr.height;
     if (update) {
         if (rectWidth < 100) {
             $rectangle.css({
@@ -800,6 +808,77 @@ function calculateAndDisplayRatios(update) {
     }
 
     updateRatioDisplay(leftRatio, rightRatio, topRatio, bottomRatio);
+}
+
+function getVideoContentPosition(videoElement) {
+    // 获取video元素的位置和尺寸
+    const rect = videoElement.getBoundingClientRect();
+
+    // 获取视频的原始宽高和当前渲染宽高
+    const videoWidth = videoElement.videoWidth;
+    const videoHeight = videoElement.videoHeight;
+    const displayWidth = rect.width;
+    const displayHeight = rect.height;
+
+    // 计算宽高比
+    const videoAspect = videoWidth / videoHeight;
+    const displayAspect = displayWidth / displayHeight;
+
+    let contentWidth, contentHeight;
+    let offsetX = 0, offsetY = 0;
+
+    // 根据object-fit计算实际视频内容尺寸和位置
+    const objectFit = window.getComputedStyle(videoElement).objectFit || 'contain';
+
+    if (objectFit === 'contain' || objectFit === 'cover') {
+        if ((objectFit === 'contain' && displayAspect > videoAspect) ||
+            (objectFit === 'cover' && displayAspect < videoAspect)) {
+            contentHeight = displayHeight;
+            contentWidth = contentHeight * videoAspect;
+            offsetX = (displayWidth - contentWidth) / 2;
+        } else {
+            contentWidth = displayWidth;
+            contentHeight = contentWidth / videoAspect;
+            offsetY = (displayHeight - contentHeight) / 2;
+        }
+    } else if (objectFit === 'fill') {
+        contentWidth = displayWidth;
+        contentHeight = displayHeight;
+    } else { // none or scale-down (treat as contain)
+        if (displayAspect > videoAspect) {
+            contentHeight = displayHeight;
+            contentWidth = contentHeight * videoAspect;
+            offsetX = (displayWidth - contentWidth) / 2;
+        } else {
+            contentWidth = displayWidth;
+            contentHeight = contentWidth / videoAspect;
+            offsetY = (displayHeight - contentHeight) / 2;
+        }
+    }
+
+    // 考虑object-position (默认为50% 50%)
+    const objectPosition = window.getComputedStyle(videoElement).objectPosition.split(' ');
+    const posX = objectPosition[0];
+    const posY = objectPosition.length > 1 ? objectPosition[1] : posX;
+
+    // 计算偏移量
+    if (posX.endsWith('%')) {
+        const percentX = parseFloat(posX) / 100;
+        offsetX = (displayWidth - contentWidth) * percentX;
+    }
+
+    if (posY.endsWith('%')) {
+        const percentY = parseFloat(posY) / 100;
+        offsetY = (displayHeight - contentHeight) * percentY;
+    }
+
+    // 返回视频内容左上角在窗口中的坐标
+    return {
+        x: rect.left + offsetX,
+        y: rect.top + offsetY,
+        width: contentWidth,
+        height: contentHeight
+    };
 }
 
 function bindVideoEvent() {
