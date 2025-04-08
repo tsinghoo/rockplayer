@@ -1298,6 +1298,13 @@ app.get('/video/setScriptPos', (req, res) => {
                 info('File deleted:', fileName);
             }
         });
+        fs.unlink(path.join(directoryPath, `${fileName}.srt`), err => {
+            if (err) {
+                console.error('Error deleting file:', err);
+            } else {
+                info('File deleted:', fileName);
+            }
+        });
     } catch (err) {
         console.error(`failed:${err.message}`);
         resp = { error: err.message };
