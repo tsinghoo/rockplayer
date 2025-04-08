@@ -8,6 +8,7 @@ let start = -1;
 let end = -1;
 let playingId = -1;
 let lastActionTime = new Date().getTime();
+let videoContentPosition;
 
 if (recentFiles == null) {
     recentFiles = [];
@@ -722,14 +723,6 @@ function buttonEndClicked(e) {
     }
 }
 
-// 更新比例显示
-function updateRatioDisplay(left, right, top, bottom) {
-    console.log("left:" + left + ", right:" + right + ", top:" + top + ", bottom:" + bottom);
-    $('#leftRatio').text(left.toFixed(4));
-    $('#rightRatio').text(right.toFixed(4));
-    $('#topRatio').text(top.toFixed(4));
-    $('#bottomRatio').text(bottom.toFixed(4));
-}
 function updateRatio(left, right, top, bottom) {
     var url = "./setScriptPos";
     var fileName = share.getParameter__("f");
@@ -784,18 +777,17 @@ function calculateAndDisplayRatios(update) {
     var rectWidth = parseInt($rectangle.css('width')) || 0;
     var rectHeight = parseInt($rectangle.css('height')) || 0;
 
-    let vr = getVideoContentPosition($video[0]);
-
-    rectLeft = rectLeft - vr.x;
-    rectTop = rectTop - vr.y;
+    rectLeft = rectLeft - videoContentPosition.x;
+    rectTop = rectTop - videoContentPosition.y;
     var rectRight = rectLeft + rectWidth;
     var rectBottom = rectTop + rectHeight;
-    var leftRatio = rectLeft / vr.width;
-    var rightRatio = rectRight / vr.width;
-    var topRatio = 1 - rectTop / vr.height;
-    var bottomRatio = 1 - rectBottom / vr.height;
+    var leftRatio = rectLeft / videoContentPosition.width;
+    var rightRatio = rectRight / videoContentPosition.width;
+    var topRatio = 1 - rectTop / videoContentPosition.height;
+    var bottomRatio = 1 - rectBottom / videoContentPosition.height;
+
     if (update) {
-        if (rectWidth < 100) {
+        if (rectWidth < 300) {
             $rectangle.css({
                 'width': 0,
                 'height': 0,
@@ -807,7 +799,7 @@ function calculateAndDisplayRatios(update) {
         }
     }
 
-    updateRatioDisplay(leftRatio, rightRatio, topRatio, bottomRatio);
+    console.log(leftRatio, rightRatio, topRatio, bottomRatio);
 }
 
 function getVideoContentPosition(videoElement) {
@@ -883,17 +875,21 @@ function getVideoContentPosition(videoElement) {
 
 function bindVideoEvent() {
     $video = $("video");
+
     // 鼠标按下开始绘制
     $video.on('mousedown', function (e) {
+        
         console.log("mouse down on video");
         if (isDrawing) {
             isDrawing = false;
+            calculateAndDisplayRatios(true);
             $rectangle.css({
                 'width': 0,
                 'height': 0
             }).hide();
-        } else {
+        } else if (e.altKey) {
             isDrawing = true;
+            videoContentPosition = getVideoContentPosition($video[0]);
             startX = e.pageX - $video.offset().left;
             startY = e.pageY - $video.offset().top;
 
@@ -930,12 +926,14 @@ function bindVideoEvent() {
             'top': height > 0 ? startY : currentY
         });
 
-        calculateAndDisplayRatios();
+        //calculateAndDisplayRatios();
     });
 
     // 鼠标释放结束绘制
     $video.on('mouseup', function () {
+        console.log("mouse up on video");
         if (!isDrawing) return;
+        console.log("stop drawing");
         isDrawing = false;
         calculateAndDisplayRatios(true);
     });
