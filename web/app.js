@@ -1323,7 +1323,7 @@ app.get('/video/removeScriptPos', (req, res) => {
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
-        let command=`rm -rf "${path.join(directoryPath, `${fileName}.*`)}"`;
+        let command = `find ${directoryPath}/ -name "${fileName}.*" |xargs -I {} rm -rf "{}"`;
         console.log(command);
         exec(command, (error, stdout, stderr) => {
             console.log(stdout);
