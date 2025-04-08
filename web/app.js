@@ -1323,20 +1323,15 @@ app.get('/video/removeScriptPos', (req, res) => {
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
-        fs.unlink(path.join(directoryPath, `${fileName}.htm`), err => {
-            if (err) {
-                console.error('Error deleting file:', err);
-            } else {
-                info('File deleted:', fileName);
+        let command=`rm -rf "${path.join(directoryPath, `${fileName}.*`)}"`;
+        console.log(command);
+        exec(command, (error, stdout, stderr) => {
+            console.log(stdout);
+            if (error) {
+                console.error(stderr);
             }
         });
-        fs.unlink(path.join(directoryPath, `${fileName}.srt`), err => {
-            if (err) {
-                console.error('Error deleting file:', err);
-            } else {
-                info('File deleted:', fileName);
-            }
-        });
+
     } catch (e) {
         info("error parsing replacers:" + e.message);
     }
