@@ -25,7 +25,7 @@ def init(ContextInfo):
     ContextInfo.account = "620000558442"
     ContextInfo.set_account(ContextInfo.account)              # 交易账户
     ContextInfo.last_print_time = 0       # 上次打印时间
-    #ContextInfo.run_time("updateAccount", "2nSecond", "2025-04-09 13:20:00")
+    # ContextInfo.run_time("updateAccount", "2nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
 
 
@@ -73,9 +73,9 @@ def position_callback(ContextInfo, positonInfo):
 
 # 行情处理函数 - 每次行情更新时调用
 def handlebar(ContextInfo):
-    #print(ContextInfo.period)
-    #print(ContextInfo.barpos)
-    #print(ContextInfo.is_suspended_stock("600004.SH"))
+    # print(ContextInfo.period)
+    # print(ContextInfo.barpos)
+    # print(ContextInfo.is_suspended_stock("600004.SH"))
 
     pass
 
@@ -163,11 +163,11 @@ def query_info(C):
 def updateAccount(ContextInfo):
     data = query_info(ContextInfo)
     # 组装成json对象post到test1.91taogu.com
-
+    # 为data添加passcode属性
     print(data)
     try:
         response = requests.post(
-            "http://test1.91taogu.com/stock/account", json=data, timeout=5)
+            "http://test1.91taogu.com/stock/account", json={"data": data, "passcode": "995560"}, timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
             return

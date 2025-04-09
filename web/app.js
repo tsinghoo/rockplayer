@@ -609,7 +609,7 @@ app.post('/stock/account', async (req, res) => {
     let data = req.body.data;
     info(data);
     let sql = `insert or replace into config (key, value) values (?,?)`;
-    let result = await db.runSync(sql, ["stockAccount", data]);
+    let result = await db.runSync(sql, ["stockAccount", JSON.stringify(data)]);
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
 });
