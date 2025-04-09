@@ -26,21 +26,7 @@ def init(ContextInfo):
     ContextInfo.set_account(ContextInfo.account)              # 交易账户
     ContextInfo.last_print_time = 0       # 上次打印时间
     #ContextInfo.run_time("updateAccount", "2nSecond", "2025-04-09 13:20:00")
-    updateAccount()
-    try:
-        response = requests.get(
-            "http://test1.91taogu.com/video/stock.html", timeout=5)
-        if response.status_code != 200:
-            print("请求失败，状态码:", response.status_code)
-            return
-        else:
-            print("请求test1成功:", response.status_code)
-            response.encoding = 'utf-8'
-            html_content = response.text
-            # print(html_content)
-
-    except Exception as e:
-        print("请求失败:", str(e))
+    updateAccount(ContextInfo)
 
 
 def after_init(ContextInfo):
@@ -87,9 +73,9 @@ def position_callback(ContextInfo, positonInfo):
 
 # 行情处理函数 - 每次行情更新时调用
 def handlebar(ContextInfo):
-    print(ContextInfo.period)
-    print(ContextInfo.barpos)
-    print(ContextInfo.is_suspended_stock("600004.SH"))
+    #print(ContextInfo.period)
+    #print(ContextInfo.barpos)
+    #print(ContextInfo.is_suspended_stock("600004.SH"))
 
     pass
 

@@ -601,6 +601,7 @@ app.post('/stock/account', async (req, res) => {
     info("/stock/account");
     let passcode = req.body.passcode;
     if (passcode != "995560"){
+        info("bad request");
         res.send("bad request");
         return;
     }
