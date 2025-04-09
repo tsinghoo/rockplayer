@@ -599,6 +599,7 @@ app.get('/stock/account', async (req, res) => {
 
 app.post('/stock/account', async (req, res) => {
     info("/stock/account");
+    info(JSON.stringify(req.body));
     let passcode = req.body.passcode;
     if (passcode != "995560"){
         info("bad request");
