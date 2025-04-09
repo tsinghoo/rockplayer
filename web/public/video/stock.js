@@ -297,7 +297,7 @@ window.feed_list = window.feed_list || (function () {
             })
 
             //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
-            $(".code").click(function (e) {
+            $(".code").click(async function (e) {
                 e.stopPropagation();
                 let code = $(this).parents("tr").attr("code");
                 let rows = self.data[code];
@@ -305,11 +305,105 @@ window.feed_list = window.feed_list || (function () {
                 share.popupPlacement = "top";
                 let trs = $(`.repeatCode${code}`);
                 trs.show();
-                // 初始化折线图
-                self.showChart(rows);
+
+                let buttons = [
+                    {
+                        text: "历史交易",
+                        onTap: function () {
+                            // 初始化折线图
+                            self.showChart(rows);
+                        }
+                    },
+                    {
+                        text: "K线图",
+                        onTap: function () { self.showK(code); }
+                    }
+                ];
+
+                share.dialog__ = await share.popupAction__("", buttons);
             })
 
             self.getCurrentPrices();
+        },
+
+         createFloatingWindow:function(url, width) {
+            // 创建覆盖层
+            const overlay = document.createElement('div');
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            overlay.style.zIndex = '1000';
+            
+            // 创建浮动窗口容器
+            const floatingWindow = document.createElement('div');
+            floatingWindow.style.position = 'fixed';
+            floatingWindow.style.top = '0';
+            floatingWindow.style.left = '50%';
+            floatingWindow.style.transform = 'translateX(-50%)';
+            floatingWindow.style.width = `${width}px`;
+            floatingWindow.style.height = '300px';
+            floatingWindow.style.backgroundColor = 'white';
+            floatingWindow.style.zIndex = '1001';
+            floatingWindow.style.border = '1px solid #ccc';
+            floatingWindow.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
+            
+            // 创建iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            
+            // 创建关闭按钮
+            const closeButton = document.createElement('button');
+            closeButton.textContent = '×';
+            closeButton.style.position = 'absolute';
+            closeButton.style.right = '10px';
+            closeButton.style.top = '10px';
+            closeButton.style.background = 'none';
+            closeButton.style.border = 'none';
+            closeButton.style.fontSize = '20px';
+            closeButton.style.cursor = 'pointer';
+            
+            closeButton.onclick = function() {
+              document.body.removeChild(overlay);
+              document.body.removeChild(floatingWindow);
+            };
+            
+            // 组装元素
+            floatingWindow.appendChild(closeButton);
+            floatingWindow.appendChild(iframe);
+            document.body.appendChild(overlay);
+            document.body.appendChild(floatingWindow);
+          },
+          openMiniBrowser:function (url, width) {
+            // 计算窗口位置使其居中
+            const left = (window.screen.width - width) / 2;
+            const top = 0; // 顶部对齐
+            
+            // 打开新窗口
+            const features = `width=${width},height=700,left=${left},top=${top},resizable=yes,scrollbars=yes`;
+            window.open(url, 'miniBrowser', features);
+          },
+
+        showK: async function (code) {
+            share.closePopup__();
+            let link = `https://xueqiu.com/S/${code}`;
+            if (code.length == 6) {
+                link = `https://xueqiu.com/S/SZ${code}`;
+                if (code[0] == "8") {
+                    link = `https://xueqiu.com/S/BJ${code}`;
+                } else if (code[0] == "6") {
+                    link = `https://xueqiu.com/S/SH${code}`;
+                }
+            }
+            self.openMiniBrowser(link, 800);
+            //self.createFloatingWindow(link, 800);
+            //share.open__(link, `${code}`);
+
         },
         getCurrentPrices: async function () {
             let res = await share.getSync__(`/stock/price/current`);

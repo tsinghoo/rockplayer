@@ -586,6 +586,32 @@ app.post('/stock/update', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/account', async (req, res) => {
+    info("/stock/account");
+    let js = req.query.js;
+
+    let sql = `select * from config where key='stockAccount' `;
+    let r = await db.getSync(sql);
+
+    var resp = `${js}(${r.value})`;
+    res.send(resp);
+});
+
+app.post('/stock/account', async (req, res) => {
+    info("/stock/account");
+    let passcode = req.body.passcode;
+    if (passcode != "995560"){
+        res.send("bad request");
+        return;
+    }
+    let data = req.body.data;
+    info(data);
+    let sql = `insert or replace into config (key, value) values (?,?)`;
+    let res = await db.runSync(sql, ["stockAccount", data]);
+    var resp = JSON.stringify({ data: "success" });
+    res.send(resp);
+});
+
 
 async function dbCall(options) {
 
