@@ -256,7 +256,7 @@ window.feed_list = window.feed_list || (function () {
                             tr.addClass(`repeatCode${lastCode}`);
                         } else {
                             self.data[row[key]] = [row];
-                            td.text(row[key]);
+                            td.html(row[key]+`<span class="kLine">K</span>`);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
                             td.addClass("code");
@@ -305,22 +305,19 @@ window.feed_list = window.feed_list || (function () {
                 share.popupPlacement = "top";
                 let trs = $(`.repeatCode${code}`);
                 trs.show();
+                self.showChart(rows);
+            })
 
-                let buttons = [
-                    {
-                        text: "历史交易",
-                        onTap: function () {
-                            // 初始化折线图
-                            self.showChart(rows);
-                        }
-                    },
-                    {
-                        text: "K线图",
-                        onTap: function () { self.showK(code); }
-                    }
-                ];
-
-                share.dialog__ = await share.popupAction__("", buttons);
+            //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
+            $(".kLine").click(async function (e) {
+                e.stopPropagation();
+                let code = $(this).parents("tr").attr("code");
+                let rows = self.data[code];
+                share.currentTarget = this;
+                share.popupPlacement = "top";
+                let trs = $(`.repeatCode${code}`);
+                trs.show();
+                self.showK(code);
             })
 
             self.getCurrentPrices();
