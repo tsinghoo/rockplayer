@@ -949,6 +949,32 @@ app.get('/stock/fe/user/login', async (req, res) => {
     res.send(resp);
 });
 
+function formatScode(stockCode) {
+    // 转换为字符串并去除空格
+    const code = String(stockCode).trim();
+
+    // 检查代码是否有效
+    if (!code) {
+        throw new Error("股票代码不能为空");
+    }
+
+    // 判断交易所
+    let suffix = "";
+    if (/^(600|601|603|605|688|900)\d+$/.test(code)) {
+        suffix = "SH"; // 上海（600/601/603/605/688/900 开头）
+    } else if (/^(000|001|002|003|300)\d+$/.test(code)) {
+        suffix = "SZ"; // 深圳（000/001/002/003/300 开头）
+    } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
+        suffix = "HK"; // 香港（4-5位数字，或 08 开头）
+    } else {
+        suffix = "UN";
+    }
+
+    // 返回格式化结果（如 600023.SH）
+    return `${code}.${suffix}`;
+}
+
+
 app.get('/stock/codes', async (req, res) => {
     info("/stock/codes");
     let js = req.query.js;
@@ -958,7 +984,9 @@ app.get('/stock/codes', async (req, res) => {
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {
-        scodes.push(row.scode);
+        let code = row.code;
+        code=formatScode(code);
+        scodes.push(code);
     })
 
     var resp = JSON.stringify(scodes);
