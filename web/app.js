@@ -968,7 +968,11 @@ function formatScode(stockCode) {
     } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
         suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
     } else {
-        suffix = "UN";
+        info(`未知：${code}`);
+    }
+
+    if (suffix == "") {
+        return null;
     }
 
     // 返回格式化结果（如 600023.SH）
@@ -987,7 +991,10 @@ app.get('/stock/codes', async (req, res) => {
     r.rows.forEach((row) => {
         let code = row.scode;
         code = formatScode(code);
-        scodes.push(code);
+        if (code == null) {
+        } else {
+            scodes.push(code);
+        }
     })
 
     var resp = JSON.stringify(scodes);
