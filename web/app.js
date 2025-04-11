@@ -984,8 +984,8 @@ app.get('/stock/codes', async (req, res) => {
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {
-        let code = row.code;
-        code=formatScode(code);
+        let code = row.scode;
+        code = formatScode(code);
         scodes.push(code);
     })
 
