@@ -958,14 +958,15 @@ function formatScode(stockCode) {
         throw new Error("股票代码不能为空");
     }
 
-    // 判断交易所
     let suffix = "";
     if (/^(600|601|603|605|688|900)\d+$/.test(code)) {
-        suffix = "SH"; // 上海（600/601/603/605/688/900 开头）
+        suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
     } else if (/^(000|001|002|003|300)\d+$/.test(code)) {
-        suffix = "SZ"; // 深圳（000/001/002/003/300 开头）
+        suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
+    } else if (/^(8|43|83|87|88)\d+$/.test(code)) {
+        suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
     } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
-        suffix = "HK"; // 香港（4-5位数字，或 08 开头）
+        suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
     } else {
         suffix = "UN";
     }
