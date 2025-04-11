@@ -601,7 +601,7 @@ app.post('/stock/account', async (req, res) => {
     info("/stock/account");
     info(JSON.stringify(req.body));
     let passcode = req.body.passcode;
-    if (passcode != "995560"){
+    if (passcode != "995560") {
         info("bad request");
         res.send("bad request");
         return;
@@ -865,46 +865,47 @@ app.post('/stock/prices', async (req, res) => {
     res.send(resp);
 });
 
+function parseTime(str) {
+    //"20250411150002.585"
+    // 提取各个部分
+    const year = parseInt(str.substring(0, 4));
+    const month = parseInt(str.substring(4, 6)) - 1; // 月份从0开始
+    const day = parseInt(str.substring(6, 8));
+    const hours = parseInt(str.substring(8, 10));
+    const minutes = parseInt(str.substring(10, 12));
+    const seconds = parseInt(str.substring(12, 14));
+    const milliseconds = parseInt(str.substring(15, 18)); // 小数点后的部分
+
+    // 创建Date对象
+    return new Date(year, month, day, hours, minutes, seconds, milliseconds);
+}
+
 app.post('/stock/quotes', async (req, res) => {
     info("post /stock/quotes");
 
     info(JSON.stringify(req.body));
     let passcode = req.body.passcode;
-    if (passcode != "995560"){
+    if (passcode != "995560") {
         info("bad request");
         res.send("bad request");
         return;
     }
-    let data = req.body.data;
-    info(data);
     
+    let data = req.body.data;
+    Object.keys(data).forEach(async (scode) => {
+        let v = data[scode];
+        scode = scode.split(".")[0];
+        Object.keys(v).forEach(async (time) => {
+            let v1 = v[time];
+            let updateTime = parseTime(time).getTime();
+            let price = v1.bidPrice[0];
+
+            let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
+            await db.runSync(sql, [price, updateTime, scode]);
+        })
+    })
+
     res.send("ok");
-    return;
-    for (let i = 0; i < prices.length; i++) {
-        let price = prices[i];
-        let now = Date.now();
-        price.id = `${price.scode}_${now}`;
-        price.updateTime = now;
-        await insertOrReplace("tStockPrice", price);
-
-        await insertOrReplace("tStockBasic", {
-            id: price.scode,
-            scode: price.scode,
-            sname: price.sname,
-            buy: price.price,
-            updateTime: now
-        });
-    }
-
-    //从tStockAction中读取未执行的行并返回
-
-    let r = await db.getSync("select * from tStockAction where entrustPrice>0 and entrustNo=''");
-    if (r != null) {
-        db.runSync("update tStockAction set entrustNo='fired' and updateTime=? where id=?", [Date.now(), r.id]);
-    }
-
-    let resp = JSON.stringify({ action: r });
-    res.send(resp);
 });
 
 app.get('/stock/screen/nodes', async (req, res) => {

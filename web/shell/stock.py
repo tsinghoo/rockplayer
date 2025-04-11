@@ -54,10 +54,19 @@ def quote_callback(s):
                         continue
             '''
         print(stocks)
-        if (1 == 0):
-            requests.post(
-                "http://test1.91taogu.com/stock/quotes", json={"data": stocks, "passcode": "995560"}, timeout=5)
-            print("quote ticks post to test1\n")
+        if (1 == 1):
+            try:
+                response = requests.post("http://test1.91taogu.com/stock/quotes", json={"data": stocks, "passcode": "995560"}, timeout=5)
+                if response.status_code != 200:
+                    print("请求失败，状态码:", response.status_code)
+                    return
+                else:
+                    print("请求test1成功:", response.status_code)
+                    response.encoding = 'utf-8'
+                    html_content = response.text
+                    print(html_content)
+            except Exception as e:
+                print("请求失败:", str(e))
 
     return callback
 
