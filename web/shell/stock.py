@@ -32,7 +32,8 @@ def init(ContextInfo):
             response.encoding = 'utf-8'
             content = response.text
             print(content)
-            data = json.loads(content)
+            stocklist = json.loads(content)
+
     except Exception as e:
         print("获取stockk list失败:", str(e))
 
@@ -90,9 +91,16 @@ def quote_callback(s):
 
 def after_init(ContextInfo):
     print('系统会在init函数执行完后和执行handlebar之前调用after_init')
+    stocklist = ContextInfo.get_universe()
+    print("订阅", len(stocklist), "个股票中")
+    for stock_code in stocklist:
+        ContextInfo.subscribe_quote(
+            stock_code, "tick", "none", '', quote_callback(stock_code))
 
-    ContextInfo.subscribe_quote(
-        "603171.SH", "tick", "none", '', quote_callback('603171.SH'))
+    subs = ContextInfo.get_all_subscription()
+    # 打印subs有多少个股票
+
+    print("已订阅", len(subs), "个股票")
 
     '''
     df = ContextInfo.get_market_data_ex(['open', 'high', 'low', 'askPrice', 'bidPrice'], stock_code=ContextInfo.get_universe(
