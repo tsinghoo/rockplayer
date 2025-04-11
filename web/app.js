@@ -890,7 +890,7 @@ app.post('/stock/quotes', async (req, res) => {
         res.send("bad request");
         return;
     }
-    
+
     let data = req.body.data;
     Object.keys(data).forEach(async (scode) => {
         let v = data[scode];
@@ -949,6 +949,26 @@ app.get('/stock/fe/user/login', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/codes', async (req, res) => {
+    info("/stock/codes");
+    let js = req.query.js;
+
+
+    let sql = `select scode from tstockbasic `;
+    let r = await db.allSync(sql);
+    let scodes = [];
+    r.rows.forEach((row) => {
+        scodes.push(row.scode);
+    })
+
+    var resp = JSON.stringify(scodes);
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/price/current', async (req, res) => {
     info("/stock/trade/all");
     let js = req.query.js;
@@ -957,7 +977,11 @@ app.get('/stock/price/current', async (req, res) => {
     let sql = `select * from tstockbasic `;
     let r = await db.allSync(sql);
 
-    var resp = `${js}(${JSON.stringify({ rows: r.rows })})`;
+    var resp = JSON.stringify({ rows: r.rows });
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
     res.send(resp);
 });
 

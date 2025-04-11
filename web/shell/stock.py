@@ -19,7 +19,23 @@ def init(ContextInfo):
     print(sys.version)
     print(sys.executable)
     # 设置全局变量
+    # 从test1获取股票列表
     stocklist = ['000300.SH', '000004.SZ']
+    try:
+        response = requests.get(
+            "http://test1.91taogu.com/stock/codes", timeout=5)
+        if response.status_code != 200:
+            print("请求失败，状态码:", response.status_code)
+            return
+        else:
+            print("请求test1成功:", response.status_code)
+            response.encoding = 'utf-8'
+            content = response.text
+            print(content)
+            data = json.loads(content)
+    except Exception as e:
+        print("获取stockk list失败:", str(e))
+
     ContextInfo.set_universe(stocklist)
     ContextInfo.account = "620000558442"
     ContextInfo.set_account(ContextInfo.account)              # 交易账户
@@ -40,7 +56,7 @@ def quote_callback(s):
         stocks = {}
         for stock_code in datas:
             data = datas[stock_code]
-            js =  getattr(data, "T").to_json()
+            js = getattr(data, "T").to_json()
             stocks[stock_code] = json.loads(js)
 
             '''
@@ -56,7 +72,8 @@ def quote_callback(s):
         print(stocks)
         if (1 == 1):
             try:
-                response = requests.post("http://test1.91taogu.com/stock/quotes", json={"data": stocks, "passcode": "995560"}, timeout=5)
+                response = requests.post("http://test1.91taogu.com/stock/quotes", json={
+                                         "data": stocks, "passcode": "995560"}, timeout=5)
                 if response.status_code != 200:
                     print("请求失败，状态码:", response.status_code)
                     return
