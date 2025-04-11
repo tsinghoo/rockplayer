@@ -1,7 +1,6 @@
 # encoding:gbk
 '''
-本策略事先设定好交易的股票篮子，然后根据指数的CCI指标来判断超买和超卖
-当有超买和超卖发生时，交易事先设定好的股票篮子
+
 '''
 import datetime
 import json
@@ -29,52 +28,59 @@ def init(ContextInfo):
     updateAccount(ContextInfo)
 
 
+def quote_callback(s):
+    def callback(datas):
+        print("quote callback:\n")
+        print("details========", type(datas))
+        '''
+        js=json.dumps(datas,indent=2)
+        print(js)
+        return
+        '''
+        stocks = {}
+        for stock_code in datas:
+            data = datas[stock_code]
+            js =  getattr(data, "T").to_json()
+            stocks[stock_code] = json.loads(js)
+
+            '''
+            for field in dir(data):
+                if not field.startswith("__"):  # 过滤掉Python内置属性
+                    try:
+                        value = getattr(data, field)
+                        js = value.to_json()
+                        print(f"{field}:${type(value)}\n {js}")
+                    except:
+                        continue
+            '''
+        print(stocks)
+        if (1 == 0):
+            requests.post(
+                "http://test1.91taogu.com/stock/quotes", json={"data": stocks, "passcode": "995560"}, timeout=5)
+            print("quote ticks post to test1\n")
+
+    return callback
+
+
 def after_init(ContextInfo):
     print('系统会在init函数执行完后和执行handlebar之前调用after_init')
 
+    ContextInfo.subscribe_quote(
+        "603171.SH", "tick", "none", '', quote_callback('603171.SH'))
 
-# 资金账号状态变化主推 account_callback()
-def account_callback(ContextInfo, accountInfo):
-    print('accountInfo')
-    print(accountInfo.m_strStatus)  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
+    '''
+    df = ContextInfo.get_market_data_ex(['open', 'high', 'low', 'askPrice', 'bidPrice'], stock_code=ContextInfo.get_universe(
+    ), period='follow', start_time='', end_time='', count=-1, dividend_type='follow', fill_data=True, subscribe=True)
 
-    # 打印持仓信息
-    positions = get_positions(ContextInfo.account)
-    print("\n当前持仓:")
-    if len(positions) > 0:
-        for pos in positions:
-            print(f"{pos['stockcode']}: {pos['volume']}股 @ {pos['costprice']}")
-    else:
-        print("无持仓")
-
-# 账号任务状态变化主推
-
-
-def task_callback(ContextInfo, taskInfo):
-    print('taskInfo')
-# 账号委托状态变化主推
-
-
-def order_callback(ContextInfo, orderInfo):
-    print('orderInfo')
-
-# 账号成交状态变化主推
-
-
-def deal_callback(ContextInfo, dealInfo):
-    print('dealInfo')
-
-# 账号持仓状态变化主推
-
-
-def position_callback(ContextInfo, positonInfo):
-    print('positonInfo')
-
+    print(df)
+    '''
 
 # 行情处理函数 - 每次行情更新时调用
+
+
 def handlebar(ContextInfo):
     # print(ContextInfo.period)
-    # print(ContextInfo.barpos)
+    # print("handlebar ", ContextInfo.barpos)
     # print(ContextInfo.is_suspended_stock("600004.SH"))
 
     pass
@@ -180,6 +186,56 @@ def updateAccount(ContextInfo):
     except Exception as e:
         print("请求失败:", str(e))
 
+# 资金账号状态变化主推 account_callback()
+
+
+def account_callback(ContextInfo, accountInfo):
+    print('account_callback:', accountInfo)  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
+
+    # printObj(accountInfo)
+
+    # updateAccount(ContextInfo)
+
+# 账号任务状态变化主推
+
+
+def printObj(data, indent):
+    if (not indent):
+        indent = ""
+    dirs = dir(data)
+    if not dirs:
+        print(data)
+    else:
+        for field in dirs:
+            if not field.startswith("_"):  # 过滤掉Python内置属性
+                try:
+                    value = getattr(data, field)
+                    child = printObj(value, indent+"  ")
+                    print(f"{indent}{field}:{type(value)}\n {child}")
+                except Exception as e:
+                    print(f"{attr}: (无法获取值，错误: {e})")
+
+
+def task_callback(ContextInfo, taskInfo):
+    print('task_callback')
+# 账号委托状态变化主推
+
+
+def order_callback(ContextInfo, orderInfo):
+    print('order_callback')
+
+# 账号成交状态变化主推
+
+
+def deal_callback(ContextInfo, dealInfo):
+    print('deal_callback')
+
+# 账号持仓状态变化主推
+
+
+def position_callback(ContextInfo, positonInfo):
+    print('position_callback')
+
 
 def stop(ContextInfo):
-    print('strategy is stop !')
+    print('stop')

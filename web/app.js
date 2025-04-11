@@ -655,7 +655,7 @@ async function upgradeDb(succ, fail) {
         updateTime integer);
         `,
         "update config set value='3' where key='dbVersion';",
-        `create table tStockAction(id text primary key, scode text, sname text, type text, price real, step real,amount int, entrustPrice real, entrustNo text, createTime integer, updateTime integer);`,
+        `create table tStockAction(id text primary key, scode text, sname text, type text, price real, step real, amount int, entrustPrice real, entrustNo text, createTime integer, updateTime integer);`,
         "update config set value='5' where key='dbVersion';",
     ];
 
@@ -838,6 +838,48 @@ app.post('/stock/prices', async (req, res) => {
     info("post /stock/prices");
 
     let prices = req.body;
+    for (let i = 0; i < prices.length; i++) {
+        let price = prices[i];
+        let now = Date.now();
+        price.id = `${price.scode}_${now}`;
+        price.updateTime = now;
+        await insertOrReplace("tStockPrice", price);
+
+        await insertOrReplace("tStockBasic", {
+            id: price.scode,
+            scode: price.scode,
+            sname: price.sname,
+            buy: price.price,
+            updateTime: now
+        });
+    }
+
+    //从tStockAction中读取未执行的行并返回
+
+    let r = await db.getSync("select * from tStockAction where entrustPrice>0 and entrustNo=''");
+    if (r != null) {
+        db.runSync("update tStockAction set entrustNo='fired' and updateTime=? where id=?", [Date.now(), r.id]);
+    }
+
+    let resp = JSON.stringify({ action: r });
+    res.send(resp);
+});
+
+app.post('/stock/quotes', async (req, res) => {
+    info("post /stock/quotes");
+
+    info(JSON.stringify(req.body));
+    let passcode = req.body.passcode;
+    if (passcode != "995560"){
+        info("bad request");
+        res.send("bad request");
+        return;
+    }
+    let data = req.body.data;
+    info(data);
+    
+    res.send("ok");
+    return;
     for (let i = 0; i < prices.length; i++) {
         let price = prices[i];
         let now = Date.now();
