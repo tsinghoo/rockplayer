@@ -959,7 +959,7 @@ function formatScode(stockCode) {
     }
 
     let suffix = "";
-    if (suffix.length == 6) {
+    if (code.length == 6) {
         if (/^(600|601|603|605|688|900)\d+$/.test(code)) {
             suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
         } else if (/^(000|001|002|003|300)\d+$/.test(code)) {
