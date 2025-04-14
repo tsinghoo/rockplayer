@@ -14,6 +14,7 @@ import sys
 account = "620000558442"
 # 初始化函数 - 策略运行开始时调用一次
 
+stocks = {}
 
 def init(ContextInfo):
     print(sys.version)
@@ -41,7 +42,7 @@ def init(ContextInfo):
     ContextInfo.account = "620000558442"
     ContextInfo.set_account(ContextInfo.account)              # 交易账户
     ContextInfo.last_print_time = 0       # 上次打印时间
-    # ContextInfo.run_time("updateAccount", "2nSecond", "2025-04-09 13:20:00")
+    ContextInfo.run_time("uploadStockPrice", "3nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
 
 
@@ -54,11 +55,11 @@ def quote_callback(s):
         print(js)
         return
         '''
-        stocks = {}
         for stock_code in datas:
             data = datas[stock_code]
-            js = getattr(data, "T").to_json()
-            stocks[stock_code] = json.loads(js)
+            js = json.loads(getattr(data, "T").to_json())
+            stocks[stock_code] = js
+            print(stock_code, ":", list(js))
 
             '''
             for field in dir(data):
@@ -70,23 +71,26 @@ def quote_callback(s):
                     except:
                         continue
             '''
-        print(stocks)
-        if (1 == 1):
-            try:
-                response = requests.post("http://test1.91taogu.com/stock/quotes", json={
-                                         "data": stocks, "passcode": "995560"}, timeout=5)
-                if response.status_code != 200:
-                    print("请求失败，状态码:", response.status_code)
-                    return
-                else:
-                    print("请求test1成功:", response.status_code)
-                    response.encoding = 'utf-8'
-                    html_content = response.text
-                    print(html_content)
-            except Exception as e:
-                print("请求失败:", str(e))
 
     return callback
+
+def uploadStockPrice(ContextInfo):
+    # 组装成json对象post到test1.91taogu.com
+    # 为data添加passcode属性
+
+    try:
+        response = requests.post("http://test1.91taogu.com/stock/quotes", json={
+                                    "data": stocks, "passcode": "995560"}, timeout=5)
+        if response.status_code != 200:
+            print("请求失败，状态码:", response.status_code)
+            return
+        else:
+            print("请求test1成功:", response.status_code)
+            response.encoding = 'utf-8'
+            html_content = response.text
+            print(html_content)
+    except Exception as e:
+        print("请求失败:", str(e))
 
 
 def after_init(ContextInfo):
