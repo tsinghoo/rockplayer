@@ -376,13 +376,13 @@ window.feed_list = window.feed_list || (function () {
             document.body.appendChild(overlay);
             document.body.appendChild(floatingWindow);
           },
-          openMiniBrowser:function (url, width) {
+          openMiniBrowser:function (url, width,height) {
             // 计算窗口位置使其居中
             const left = (window.screen.width - width) / 2;
             const top = 0; // 顶部对齐
             
             // 打开新窗口
-            const features = `width=${width},height=700,left=${left},top=${top},resizable=yes,scrollbars=yes`;
+            const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
             window.open(url, 'miniBrowser', features);
           },
 
@@ -397,7 +397,7 @@ window.feed_list = window.feed_list || (function () {
                     link = `https://xueqiu.com/S/SH${code}`;
                 }
             }
-            self.openMiniBrowser(link, 800);
+            self.openMiniBrowser(link, 840,790);
             //self.createFloatingWindow(link, 800);
             //share.open__(link, `${code}`);
 
