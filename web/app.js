@@ -974,6 +974,7 @@ function formatScode(stockCode) {
     }
 
     if (suffix == "") {
+        info(`error scode：${code}`);
         return null;
     }
 
