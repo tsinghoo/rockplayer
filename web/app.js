@@ -1006,7 +1006,7 @@ app.get('/stock/codes', async (req, res) => {
     let js = req.query.js;
 
 
-    let sql = `select scode from tstockbasic `;
+    let sql = `select distinct scode from tstock`;
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {
@@ -1029,7 +1029,6 @@ app.get('/stock/codes', async (req, res) => {
 app.get('/stock/price/current', async (req, res) => {
     info("/stock/trade/all");
     let js = req.query.js;
-
 
     let sql = `select * from tstockbasic `;
     let r = await db.allSync(sql);
