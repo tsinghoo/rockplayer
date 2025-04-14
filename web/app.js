@@ -570,17 +570,33 @@ app.post('/stock/update', async (req, res) => {
         }
 
         var fields = data[i].split("\t");
-        var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair) 
-        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?)`;
-        let res = await db.runSync(sql, fields);
+        let tday = fields[0];
+        let ttime = fields[1];
+        if (fields.length < 13) {
+            fields = fields.concat([""]);
+        }
+
+        var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+        let res = await db.runSync(sql, fields.concat([tday + " " + ttime]));
         if (res.error) {
             info(res.error);
             res.send(res);
             return;
         } else {
-
         }
     };
+
+    let r = await db.allSync("select max(lastOperationTime) as maxOperationTime, scode from tstock group by scode");
+    info(`${r.rows.length} stocks`);
+    for (var i = 0; i < r.rows.length; ++i) {
+        let row = r.rows[i];
+        let scode = row.scode;
+        let maxOperationTime = row.maxOperationTime;
+        info(`updating ${scode} to ${maxOperationTime}`);
+        let sql = `update tstock set lastOperationTime=? where scode=?`;
+        await db.runSync(sql, [maxOperationTime, scode]);
+    }
 
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);
@@ -657,6 +673,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='3' where key='dbVersion';",
         `create table tStockAction(id text primary key, scode text, sname text, type text, price real, step real, amount int, entrustPrice real, entrustNo text, createTime integer, updateTime integer);`,
         "update config set value='5' where key='dbVersion';",
+        `alter table tstock add column lastOperationTime text;`,
+        "update config set value='7' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
