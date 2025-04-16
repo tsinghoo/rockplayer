@@ -256,7 +256,7 @@ window.feed_list = window.feed_list || (function () {
                             tr.addClass(`repeatCode${lastCode}`);
                         } else {
                             self.data[row[key]] = [row];
-                            td.html(row[key] + `<span class="kLine">K</span><span class="vote">V</span>`);
+                            td.html(row[key] + `<span class="kLine">K</span>`);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
                             td.addClass("code");
@@ -266,6 +266,8 @@ window.feed_list = window.feed_list || (function () {
                         tr.attr("data", JSON.stringify(row));
 
                         lastCode = row[key];
+                    } else if (key == "名称") {
+                        td.html(row[key] + `<span class="vote">V</span>`);
                     } else {
                         td.text(row[key]);
                         if (key == "现价") {
