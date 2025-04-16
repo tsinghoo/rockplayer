@@ -60,7 +60,7 @@ db.runSync = (sql, params) => {
 db.allSync = (sql, params) => {
     return new Promise((resolve, reject) => {
         info("allSync:" + sql);
-        info(JSON.stringify(params));
+        info("params:" + JSON.stringify(params));
         db.all(sql, params, function (err, rows) {
             if (err) {
                 error(err);
@@ -625,6 +625,18 @@ app.get('/stock/account', async (req, res) => {
     let r = await db.getSync(sql);
 
     var resp = `${js}(${r.value})`;
+    res.send(resp);
+});
+
+app.get('/stock/vote', async (req, res) => {
+    info("/stock/vote");
+    let js = req.query.js;
+    let code = req.query.code;
+    let sql = `update tstock set lastOperationTime=? where scode=? `;
+    let now = timeFormat(new Date(), "yyyyMMdd hhmmss");
+    await db.runSync(sql, [now, code]);
+
+    var resp = `${js}({})`;
     res.send(resp);
 });
 

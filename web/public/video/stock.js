@@ -256,7 +256,7 @@ window.feed_list = window.feed_list || (function () {
                             tr.addClass(`repeatCode${lastCode}`);
                         } else {
                             self.data[row[key]] = [row];
-                            td.html(row[key]+`<span class="kLine">K</span>`);
+                            td.html(row[key] + `<span class="kLine">K</span><span class="vote">V</span>`);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
                             td.addClass("code");
@@ -320,10 +320,22 @@ window.feed_list = window.feed_list || (function () {
                 self.showK(code);
             })
 
+            $(".vote").click(async function (e) {
+                e.stopPropagation();
+
+                let code = $(this).parents("tr").attr("code");
+                let res = await share.getSync__(`/stock/vote?code=${code}`);
+                if (res.error) {
+                    share.toastError__(res.error);
+                } else {
+                    share.toastSuccess__("已置顶", 1000);
+                }
+            })
+
             self.getCurrentPrices();
         },
 
-         createFloatingWindow:function(url, width) {
+        createFloatingWindow: function (url, width) {
             // 创建覆盖层
             const overlay = document.createElement('div');
             overlay.style.position = 'fixed';
@@ -333,7 +345,7 @@ window.feed_list = window.feed_list || (function () {
             overlay.style.height = '100%';
             overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
             overlay.style.zIndex = '1000';
-            
+
             // 创建浮动窗口容器
             const floatingWindow = document.createElement('div');
             floatingWindow.style.position = 'fixed';
@@ -346,14 +358,14 @@ window.feed_list = window.feed_list || (function () {
             floatingWindow.style.zIndex = '1001';
             floatingWindow.style.border = '1px solid #ccc';
             floatingWindow.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
-            
+
             // 创建iframe
             const iframe = document.createElement('iframe');
             iframe.src = url;
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
-            
+
             // 创建关闭按钮
             const closeButton = document.createElement('button');
             closeButton.textContent = '×';
@@ -364,27 +376,27 @@ window.feed_list = window.feed_list || (function () {
             closeButton.style.border = 'none';
             closeButton.style.fontSize = '20px';
             closeButton.style.cursor = 'pointer';
-            
-            closeButton.onclick = function() {
-              document.body.removeChild(overlay);
-              document.body.removeChild(floatingWindow);
+
+            closeButton.onclick = function () {
+                document.body.removeChild(overlay);
+                document.body.removeChild(floatingWindow);
             };
-            
+
             // 组装元素
             floatingWindow.appendChild(closeButton);
             floatingWindow.appendChild(iframe);
             document.body.appendChild(overlay);
             document.body.appendChild(floatingWindow);
-          },
-          openMiniBrowser:function (url, width,height) {
+        },
+        openMiniBrowser: function (url, width, height) {
             // 计算窗口位置使其居中
             const left = (window.screen.width - width) / 2;
             const top = 0; // 顶部对齐
-            
+
             // 打开新窗口
             const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
             window.open(url, 'miniBrowser', features);
-          },
+        },
 
         showK: async function (code) {
             share.closePopup__();
@@ -397,7 +409,7 @@ window.feed_list = window.feed_list || (function () {
                     link = `https://xueqiu.com/S/SH${code}`;
                 }
             }
-            self.openMiniBrowser(link, 840,790);
+            self.openMiniBrowser(link, 840, 790);
             //self.createFloatingWindow(link, 800);
             //share.open__(link, `${code}`);
 
