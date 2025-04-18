@@ -267,7 +267,13 @@ window.feed_list = window.feed_list || (function () {
 
                         lastCode = row[key];
                     } else if (key == "名称") {
-                        td.html(row[key] + `<span class="vote">V</span>`);
+                        if (row["代码"] === lastCode) {
+
+                            td.html(row[key] + `<span class="deleteRow clickable">X</span>`);
+
+                        } else {
+                            td.html(row[key] + `<span class="vote">V</span>`);
+                        }
                     } else {
                         td.text(row[key]);
                         if (key == "现价") {
@@ -331,6 +337,20 @@ window.feed_list = window.feed_list || (function () {
                     share.toastError__(res.error);
                 } else {
                     share.toastSuccess__("已置顶", 1000);
+                }
+            })
+
+            $(".deleteRow").click(async function (e) {
+                e.stopPropagation();
+                let tr = $(this).parents("tr");
+                let data = tr.attr("data");
+                data = JSON.parse(data);
+                let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                if (res.error) {
+                    share.toastError__(res.error);
+                } else {
+                    tr.remove();
+                    share.toastSuccess__("已删除", 1000);
                 }
             })
 

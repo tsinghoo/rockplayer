@@ -640,6 +640,17 @@ app.get('/stock/vote', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/deleteRow', async (req, res) => {
+    info("/stock/deleteRow");
+    let js = req.query.js;
+    let tid = req.query.tid;
+    let sql = `delete from tstock where tid=? `;
+    await db.runSync(sql, [tid]);
+
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
 app.post('/stock/account', async (req, res) => {
     info("/stock/account");
     info(JSON.stringify(req.body));

@@ -60,7 +60,7 @@ def quote_callback(s):
             data = datas[stock_code]
             js = json.loads(getattr(data, "T").to_json())
             stocks[stock_code] = js
-            print(stock_code, ":", list(js))
+            #print(stock_code, ":", list(js))
 
             '''
             for field in dir(data):
