@@ -279,6 +279,8 @@ window.feed_list = window.feed_list || (function () {
                         }
                     } else if (key == "tid") {
                         if (firstRow) {
+                            td.html(row[key]);
+                        } else {
                             if (row["配对"] == "") {
                                 td.html(row[key]);
                             } else {
