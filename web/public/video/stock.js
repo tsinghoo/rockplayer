@@ -242,37 +242,48 @@ window.feed_list = window.feed_list || (function () {
             for (let i = 0; i < rows.length; i++) {
                 let tr = $("<tr>");
                 let row = rows[i];
+                let firstRow = true;
+                if (row["代码"] == lastCode) {
+                    firstRow = false;
+                } else {
+                    lastCode = row["代码"];
+                }
+
                 for (let j = 0; j < keys.length; j++) {
                     let key = keys[j];
                     let td = $("<td>");
                     td.addClass("nowrap");
                     if (key == "代码") {
                         tr.addClass(`code${row[key]}`);
-                        if (row[key] === lastCode) {
-                            td.text(row[key]);
-                            td.addClass("almostWhite");
-                            self.data[row[key]].push(row);
-                            tr.addClass("repeatCode");
-                            tr.addClass(`repeatCode${lastCode}`);
-                        } else {
+                        if (firstRow) {
                             self.data[row[key]] = [row];
                             td.html(row[key] + `<span class="kLine">K</span>`);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
                             td.addClass("code");
+                        } else {
+                            td.text(row[key]);
+                            td.addClass("almostWhite");
+                            self.data[row[key]].push(row);
+                            tr.addClass("repeatCode");
+                            tr.addClass(`repeatCode${lastCode}`);
                         }
 
                         tr.attr("code", row[key]);
                         tr.attr("data", JSON.stringify(row));
-
-                        lastCode = row[key];
                     } else if (key == "名称") {
-                        if (row["代码"] === lastCode) {
-
-                            td.html(row[key] + `<span class="deleteRow clickable">X</span>`);
-
-                        } else {
+                        if (firstRow) {
                             td.html(row[key] + `<span class="vote">V</span>`);
+                        } else {
+                            td.html(row[key]);
+                        }
+                    } else if (key == "tid") {
+                        if (firstRow) {
+                            if (row["配对"] == "") {
+
+                            } else {
+                                td.html(`<span class="deleteRow clickable">X</span>` + row[key]);
+                            }
                         }
                     } else {
                         td.text(row[key]);
@@ -350,7 +361,6 @@ window.feed_list = window.feed_list || (function () {
                     share.toastError__(res.error);
                 } else {
                     tr.remove();
-                    share.toastSuccess__("已删除", 1000);
                 }
             })
 
