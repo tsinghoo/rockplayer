@@ -280,7 +280,7 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "tid") {
                         if (firstRow) {
                             if (row["配对"] == "") {
-
+                                td.html(row[key]);
                             } else {
                                 td.html(`<span class="deleteRow clickable">X</span>` + row[key]);
                             }
