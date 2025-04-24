@@ -563,7 +563,7 @@ app.post('/stock/update', async (req, res) => {
 
     let data = req.body.rows.split("\n");
     info(data.join("\n"));
-
+    let now = new Date().getTime();
     for (var i = 0; i < data.length; ++i) {
         if (data[i].trim() == "") {
             continue;
@@ -584,6 +584,14 @@ app.post('/stock/update', async (req, res) => {
                 return;
             } else {
             }
+
+            await insertOrReplace("tStockBasic", {
+                id: fields[3],
+                scode: fields[3],
+                sname: fields[2],
+                buy: 0,
+                updateTime: now
+            });
         } else if (fields.length == 22) {
             //tdx 国信证券
             fields = fields.concat([""]);
@@ -599,6 +607,14 @@ app.post('/stock/update', async (req, res) => {
                 return;
             } else {
             }
+
+            await insertOrReplace("tStockBasic", {
+                id: fields[2],
+                scode: fields[2],
+                sname: fields[3],
+                buy: fields[6],
+                updateTime: now
+            });
         } else if (fields.length == 15) {
             //tdx 国信证券 港股通
             fields = fields.concat([""]);
@@ -607,13 +623,21 @@ app.post('/stock/update', async (req, res) => {
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
 
             let res = await db.runSync(sql, [fields[1], fields[2], fields[5], fields[4], fields[6], fields[6], fields[0], fields[10], fields[9],
-                fields[11], fields[13], fields[14], '', tday + " " + ttime]);
+            fields[11], fields[13], fields[14], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error);
                 res.send(res);
                 return;
             } else {
             }
+
+            await insertOrReplace("tStockBasic", {
+                id: fields[4],
+                scode: fields[4],
+                sname: fields[5],
+                buy: fields[9],
+                updateTime: now
+            });
         }
     };
 
