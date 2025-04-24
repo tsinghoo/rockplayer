@@ -11,7 +11,9 @@ import requests
 import sys
 
 
-account = "620000558442"
+account = "620000558442"  #国信
+account = "8883949249"  #国金
+
 # 初始化函数 - 策略运行开始时调用一次
 
 stocks = {}
