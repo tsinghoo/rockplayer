@@ -615,6 +615,29 @@ app.post('/stock/update', async (req, res) => {
                 buy: fields[6],
                 updateTime: now
             });
+        } else if (fields.length == 13) {
+            //tdx 国金证券
+            fields = fields.concat([""]);
+            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+
+            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[5], fields[5], fields[11], fields[7], fields[6],
+                fields[8], fields[9], fields[11], '', tday + " " + ttime]);
+            if (res.error) {
+                info(res.error);
+                res.send(res);
+                return;
+            } else {
+            }
+
+            await insertOrReplace("tStockBasic", {
+                id: fields[2],
+                scode: fields[2],
+                sname: fields[3],
+                buy: fields[6],
+                updateTime: now
+            });
         } else if (fields.length == 15) {
             //tdx 国信证券 港股通
             fields = fields.concat([""]);
