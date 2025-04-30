@@ -432,17 +432,45 @@ window.feed_list = window.feed_list || (function () {
             window.open(url, 'miniBrowser', features);
         },
 
+
+        formatScode: function (stockCode) {
+            // 转换为字符串并去除空格
+            const code = String(stockCode).trim();
+
+            // 检查代码是否有效
+            if (!code) {
+                throw new Error("股票代码不能为空");
+            }
+
+            let suffix = "";
+            if (code.length == 6) {
+                if (/^(600|601|603|605|688|900|51)\d+$/.test(code)) {
+                    suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
+                } else if (/^(000|001|002|003|30|15)\d+$/.test(code)) {
+                    suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
+                } else if (/^(8|43|83|87|88)\d+$/.test(code)) {
+                    suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
+                }
+            } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
+                suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
+            } else {
+                info(`未知：${code}`);
+            }
+
+            if (suffix == "") {
+                info(`error scode：${code}`);
+                return null;
+            }
+
+            // 返回格式化结果（如 600023.SH）
+            return `${suffix}${code}`;
+        },
+
         showK: async function (code) {
             share.closePopup__();
-            let link = `https://xueqiu.com/S/${code}`;
-            if (code.length == 6) {
-                link = `https://xueqiu.com/S/SZ${code}`;
-                if (code[0] == "8") {
-                    link = `https://xueqiu.com/S/BJ${code}`;
-                } else if (code[0] == "6") {
-                    link = `https://xueqiu.com/S/SH${code}`;
-                }
-            }
+            let fullCode = self.formatScode(code);
+            let link = `https://xueqiu.com/S/${fullCode}`;
+
             self.openMiniBrowser(link, 840, 790);
             //self.createFloatingWindow(link, 800);
             //share.open__(link, `${code}`);
