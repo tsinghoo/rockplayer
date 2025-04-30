@@ -452,7 +452,7 @@ window.feed_list = window.feed_list || (function () {
                     suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
                 }
             } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
-                suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
+                suffix = ""; // 港交所（4-5位数字，或 08 开头）
             } else {
                 info(`未知：${code}`);
             }
