@@ -457,11 +457,6 @@ window.feed_list = window.feed_list || (function () {
                 info(`未知：${code}`);
             }
 
-            if (suffix == "") {
-                info(`error scode：${code}`);
-                return null;
-            }
-
             // 返回格式化结果（如 600023.SH）
             return `${suffix}${code}`;
         },
