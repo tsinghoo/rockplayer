@@ -9,10 +9,15 @@ import numpy as np
 import talib
 import requests
 import sys
+from xtquant import xtdata
 
+class G(): pass
+
+g = G()
 
 account = "620000558442"  #国信
 account = "8883949249"  #国金
+
 
 # 初始化函数 - 策略运行开始时调用一次
 
@@ -45,7 +50,7 @@ def init(ContextInfo):
     ContextInfo.account = "620000558442"
     ContextInfo.set_account(ContextInfo.account)              # 交易账户
     ContextInfo.last_print_time = 0       # 上次打印时间
-    ContextInfo.run_time("uploadStockPrice", "2nSecond", "2025-04-09 13:20:00")
+    #ContextInfo.run_time("uploadStockPrice", "2nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
 
 
@@ -100,6 +105,7 @@ def uploadStockPrice(ContextInfo):
 def after_init(ContextInfo):
     print('系统会在init函数执行完后和执行handlebar之前调用after_init')
     stocklist = ContextInfo.get_universe()
+    '''
     print("订阅", len(stocklist), "个股票中")
     for stock_code in stocklist:
         ContextInfo.subscribe_quote(
@@ -109,6 +115,7 @@ def after_init(ContextInfo):
     # 打印subs有多少个股票
 
     print("已订阅", len(subs), "个股票")
+'''
 
     '''
     df = ContextInfo.get_market_data_ex(['open', 'high', 'low', 'askPrice', 'bidPrice'], stock_code=ContextInfo.get_universe(
@@ -118,6 +125,21 @@ def after_init(ContextInfo):
     '''
 
 # 行情处理函数 - 每次行情更新时调用
+def getTradeDetail(ContextInfo):
+    # 获取一周内历史交易信息
+    # 遍历每个日期的交易信息
+
+    # 获取当前日期
+    today = datetime.datetime.now().strftime('%Y%m%d')
+    # 获取一周前的日期
+    startDate = (datetime.datetime.now() - datetime.timedelta(days=7)).strftime('%Y%m%d')
+    # 获取历史交易信息
+    obj_list = get_history_trade_detail_data(account, 'stock', 'position', startDate, today)
+
+    for time,data in obj_list:
+        for obj in data:
+            print(obj.m_strInstrumentID)
+            print(dir(obj))#查看有哪些属性字段
 
 
 def handlebar(ContextInfo):
