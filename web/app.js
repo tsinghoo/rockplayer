@@ -575,6 +575,7 @@ app.post('/stock/update', async (req, res) => {
         if (fields.length == 12) {
             //广发证券
             fields = fields.concat([""]);
+            fields[5] = "广发";
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
             let res = await db.runSync(sql, fields.concat([tday + " " + ttime]));
@@ -599,7 +600,7 @@ app.post('/stock/update', async (req, res) => {
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
 
-            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], fields[4], fields[21], fields[5], fields[6],
+            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], "国信", fields[21], fields[5], fields[6],
                 fields[7], fields[19], fields[20], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error);
@@ -622,7 +623,7 @@ app.post('/stock/update', async (req, res) => {
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
 
-            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[5], fields[5], fields[11], fields[7], fields[6],
+            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[5], "国金", fields[11], fields[7], fields[6],
                 fields[8], fields[9], fields[11], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error);
@@ -645,7 +646,7 @@ app.post('/stock/update', async (req, res) => {
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
 
-            let res = await db.runSync(sql, [fields[1], fields[2], fields[5], fields[4], fields[6], fields[6], fields[0], fields[10], fields[9],
+            let res = await db.runSync(sql, [fields[1], fields[2], fields[5], fields[4], fields[6], "国信", fields[0], fields[10], fields[9],
             fields[11], fields[13], fields[14], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error);
