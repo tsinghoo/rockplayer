@@ -1883,6 +1883,10 @@ window.mhgl_share =
       getTimePassed__: function (time) {
         var now = new Date();
         var diff = now - time;
+        if (diff < 0) {
+          return "00:00";
+        }
+        
         diff = Math.floor(diff / 1000);
         var mm = Math.floor(diff / 60);
         var ss = diff % 60;
