@@ -38,41 +38,26 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         sqlClicked: function (row) {
-            //弹出菜单
-            let buttons = [
-                {
-                    text: "执行",
-                    onTap: function () {
-                        share.closePopup__();
-                        self.exeSql(row);
-                    }
-                },
-                {
-                    text: "编辑",
-                    onTap: function () {
-                        share.closePopup__();
-                        self.toEditSql(row);
-                    }
-                }
-            ];
-
-            share.popupAction__("", buttons);
+            self.toEditSql(row);
         },
         toEditSql: async function (row) {
             //弹出的窗口中有两个输入框，一个是name,一个是sql，name是row.name,sql是row.sql，点击确定后，将name和sql更新到数据库
             let html = `    <div class="sqlEditor flexcolumn" style="width: 500px;">
+                                <div class="flexrow justify">
+                                    <button class="btn btn-secondary buttonRun"> 执行</button>
+                                    <button class="btn btn-primary buttonSave">保存</button>
+                                </div>
+                                <div class="height10">
+                                </div>
                                 <div class="flexcolumn">
                                     <input type="text" class="name" value="${row.name}" placeholder="名称">
                                     <textarea class="sql" rows="10" placeholder="sql">${row.sql}</textarea>
-                                </div>
-                                <div class="flexrow justify">
-                                    <button class="btn btn-primary buttonSave">保存</button>
-                                    <button class="btn btn-secondary buttonCancel">取消</button>
                                 </div>
                             </div>
                             `;
             let popup = await share.popup__(null, html);
             let c = $(`#${popup.id}`);
+
             $(".buttonSave", c).click(function () {
                 let name = $(".name", c).val();
                 let sql = $(".sql", c).val();
@@ -80,8 +65,23 @@ window.feed_list = window.feed_list || (function () {
                 row.sql = sql;
                 self.updateSql(row);
             });
-            $(".buttonCancel", c).click(function () {
-                popup.close();
+            $(".buttonRun", c).click(function () {
+                let name = $(".name", c).val();
+                let sql = $(".sql", c).val();
+                let start = $(".sql", c)[0].selectionStart;
+                let end = $(".sql", c)[0].selectionEnd;
+                let selection = null;
+                if (start >= 0 && end > start) {
+                    selection = sql.substring(start, end);
+                }
+
+                let param = { name, sql };
+                if (selection != null) {
+                    param.sql = selection;
+                    delete param["name"];
+                }
+
+                self.exeSql(param, selection == null);
             })
         },
         updateSql: async function (row) {
@@ -93,14 +93,16 @@ window.feed_list = window.feed_list || (function () {
                 await self.getSqls();
             }
         },
-        exeSql: async function (row) {
+        exeSql: async function (row, show) {
             let res = await share.postSync__("/stock/query", row);
             let table = $("#stockTable");
             if (res.error) {
                 table.html(res.error);
             } else {
-                self.rows = res.data;
-                self.showRows(false);
+                if (show) {
+                    self.rows = res.data;
+                    self.showRows(false);
+                }
             }
         },
         addButtonClicked__: async function () {

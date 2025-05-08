@@ -1193,9 +1193,11 @@ app.post('/stock/query', async (req, res) => {
         return;
     }
 
-    await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
-        [name, name, sql, Date.now()]);
-
+    if (name != null) {
+        await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
+            [name, name, sql, Date.now()]);
+    }
+    
     var resp = JSON.stringify({ data: r.rows });
     res.send(resp);
 });
