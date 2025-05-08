@@ -1813,6 +1813,30 @@ window.mhgl_share =
 
         return result.join("");
       },
+      isConfirmed__: async function (message, okLabel, cancelLabel) {
+        return new Promise((resolve, reject) => {
+          let result = false;
+          var dialog = BootstrapDialog.confirm({
+            type: BootstrapDialog.TYPE_PRIMARY,
+            title: share.getString__("confirm"),
+            message: message,
+            closable: true,
+            draggable: true,
+            btnCancelLabel: cancelLabel ? cancelLabel : BootstrapDialog.DEFAULT_TEXTS.CANCEL,
+            btnCancelClass: null,
+            btnCancelHotkey: null,
+            btnOKLabel: okLabel ? okLabel : BootstrapDialog.DEFAULT_TEXTS.OK,
+            btnOKClass: null,
+            btnOKHotkey: null,
+            onhide: null,
+            btnsOrder: BootstrapDialog.defaultOptions.btnsOrder,
+            callback: function (confirmed) {
+              dialog.close();
+              resolve(confirmed);
+            }
+          });
+        });
+      },
       confirm__: function (message, callback) {
         var dialog = BootstrapDialog.confirm({
           type: BootstrapDialog.TYPE_PRIMARY,

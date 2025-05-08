@@ -586,7 +586,7 @@ app.post('/stock/update', async (req, res) => {
             } else {
             }
 
-            await insertOrReplace("tStockBasic", {
+            await insertOrIgnore("tStockBasic", {
                 id: fields[3],
                 scode: fields[3],
                 sname: fields[2],
@@ -609,7 +609,7 @@ app.post('/stock/update', async (req, res) => {
             } else {
             }
 
-            await insertOrReplace("tStockBasic", {
+            await insertOrIgnore("tStockBasic", {
                 id: fields[2],
                 scode: fields[2],
                 sname: fields[3],
@@ -632,7 +632,7 @@ app.post('/stock/update', async (req, res) => {
             } else {
             }
 
-            await insertOrReplace("tStockBasic", {
+            await insertOrIgnore("tStockBasic", {
                 id: fields[2],
                 scode: fields[2],
                 sname: fields[3],
@@ -655,7 +655,7 @@ app.post('/stock/update', async (req, res) => {
             } else {
             }
 
-            await insertOrReplace("tStockBasic", {
+            await insertOrIgnore("tStockBasic", {
                 id: fields[4],
                 scode: fields[4],
                 sname: fields[5],
@@ -841,6 +841,23 @@ async function insertOrReplace(table, row) {
     let cols = keys.join(",");
     let vs = keys.map((k, i) => "?").join(",");
     let sql = `insert or replace into ${table}(${cols}) values(${vs})`;
+    let vals = keys.map((k, i) => {
+        let val = row[k];
+        if (val != null && typeof (val) == "object") {
+            val = JSON.stringify(val);
+        }
+
+        return val;
+    });
+    await dbCall([[sql, vals]]);
+}
+
+async function insertOrIgnore(table, row) {
+    debug("replace:" + table);
+    let keys = Object.keys(row);
+    let cols = keys.join(",");
+    let vs = keys.map((k, i) => "?").join(",");
+    let sql = `insert or ignore into ${table}(${cols}) values(${vs})`;
     let vals = keys.map((k, i) => {
         let val = row[k];
         if (val != null && typeof (val) == "object") {

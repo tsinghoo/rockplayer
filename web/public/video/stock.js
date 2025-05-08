@@ -281,10 +281,10 @@ window.feed_list = window.feed_list || (function () {
                         }
                     } else if (key == "tid") {
                         if (firstRow) {
-                            td.html(row[key]);
+                            td.html(`<span class="deleteRow clickable white">X</span>` + row[key]);
                         } else {
                             if (row["配对"] == "") {
-                                td.html(row[key]);
+                                td.html(`<span class="deleteRow clickable gray">X</span>` + row[key]);
                             } else {
                                 td.html(`<span class="deleteRow clickable">X</span>` + row[key]);
                             }
@@ -360,11 +360,14 @@ window.feed_list = window.feed_list || (function () {
                 let tr = $(this).parents("tr");
                 let data = tr.attr("data");
                 data = JSON.parse(data);
-                let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
-                if (res.error) {
-                    share.toastError__(res.error);
-                } else {
-                    tr.remove();
+                let isConfirmed = await share.isConfirmed__(`确定要删除${data.tid}吗?`);
+                if (isConfirmed) {
+                    let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                    if (res.error) {
+                        share.toastError__(res.error);
+                    } else {
+                        tr.remove();
+                    }
                 }
             })
 
