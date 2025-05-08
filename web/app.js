@@ -1022,8 +1022,12 @@ app.post('/stock/quotes', async (req, res) => {
                 price = v1.askPrice[0];
             }
 
-            let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
-            await db.runSync(sql, [price, updateTime, scode]);
+            if (price == 0) {
+
+            } else {
+                let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
+                await db.runSync(sql, [price, updateTime, scode]);
+            }
         })
     })
 
