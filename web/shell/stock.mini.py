@@ -295,7 +295,8 @@ def python_to_json(obj, indent=4, ensure_ascii=False):
     最终转换为 JSON 字符串
     """
     data = object_to_json(obj)
-    return json.dumps(data, indent=indent, ensure_ascii=ensure_ascii)
+    js = json.dumps(data, indent=indent, ensure_ascii=ensure_ascii)
+    return js
 
 
 def subscribe_whole_callback(data):
@@ -366,8 +367,9 @@ if __name__ == '__main__':
     positions = getPositions()
 
     print("positions:", len(positions))
-    js = python_to_json(positions)
-    print(js)
+    js = object_to_json(positions)
+
+    uploadPosition(js)
 
     # deals = getDeals()
     # print("deals:", len(deals))
