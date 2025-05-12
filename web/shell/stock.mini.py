@@ -147,7 +147,7 @@ def uploadStockPrice(sb):
     # 为data添加passcode属性
     print("上传", len(list(sb)), "个股票价格")
     try:
-        response = requests.post("http://test1.91taogu.com/stock/quotes/mini", json={
+        response = requests.post("http://test1.91taogu.com/stock/quotes.mini", json={
             "data": sb, "passcode": "995560"}, timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
