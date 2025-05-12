@@ -302,6 +302,7 @@ def python_to_json(obj, indent=4, ensure_ascii=False):
 def subscribe_whole_callback(data):
     uploadStockPrice(data)
 
+
 def printObj(data, indent):
     if (not indent):
         indent = ""
@@ -376,7 +377,8 @@ if __name__ == '__main__':
     # js = python_to_json(deals)
     # print(js)
 
-    xtdata.subscribe_whole_quote(g.stocklist, callback=subscribe_whole_callback)
+    xtdata.subscribe_whole_quote(
+        g.stocklist, callback=subscribe_whole_callback)
 
     # 阻塞主线程退出
     xt_trader.run_forever()
