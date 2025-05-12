@@ -758,7 +758,6 @@ async function upgradeDb(succ, fail) {
     debug("upgradeDb");
 
     let res = await db.getSync("SELECT * FROM config where key=?", "dbVersion");
-
     var updates = [
         "",
         `CREATE TABLE IF NOT EXISTS tStockPrice (
@@ -776,6 +775,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='5' where key='dbVersion';",
         `alter table tstock add column lastOperationTime text;`,
         "update config set value='7' where key='dbVersion';",
+        `create table tpositions(id text primary key, broker text, account_id text, avg_price real, can_use_volume real, frozen_volume real, market_value real, on_road_volume real, open_price real, stock_code text, volume real, updateTime integer);`,
+        "update config set value='9' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1001,6 +1002,35 @@ app.post('/stock/prices', async (req, res) => {
     res.send(resp);
 });
 
+app.post('/stock/positions', async (req, res) => {
+    info("post /stock/positions");
+
+    info(JSON.stringify(req.body));
+    let passcode = req.body.passcode;
+    if (passcode != "995560") {
+        info("bad request");
+        res.send("bad request");
+        return;
+    }
+
+    let positions = req.body.data;
+
+    for (let i = 0; i < positions.length; i++) {
+        let pos = positions[i];
+        let now = Date.now();
+        if (i == 0) {
+            await dbCall(`delete from tPosition where id like '${pos.broker}%'`);
+        }
+        pos.stock_code = pos.stock_code.split(".")[0]
+        pos.id = `${pos.broker}_${pos.account_id}_${pos.stock_code}`;
+        pos.updateTime = now;
+        await insertOrReplace("tPosition", pos);
+    }
+
+    let resp = JSON.stringify({});
+    res.send(resp);
+});
+
 function parseTime(str) {
     //"20250411150002.585"
     // 提取各个部分
@@ -1046,6 +1076,38 @@ app.post('/stock/quotes', async (req, res) => {
                 await db.runSync(sql, [price, updateTime, scode]);
             }
         })
+    })
+
+    res.send("ok");
+});
+
+app.post('/stock/quotes.mini', async (req, res) => {
+    info("post /stock/quotes.mini");
+
+    info(JSON.stringify(req.body));
+    let passcode = req.body.passcode;
+    if (passcode != "995560") {
+        info("bad request");
+        res.send("bad request");
+        return;
+    }
+
+    let data = req.body.data;
+    Object.keys(data).forEach(async (scode) => {
+        let v1 = data[scode];
+        scode = scode.split(".")[0];
+        let updateTime = v1.time;
+        let price = v1.bidPrice[0];
+        if (price == 0) {
+            price = v1.askPrice[0];
+        }
+
+        if (price == 0) {
+
+        } else {
+            let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
+            await db.runSync(sql, [price, updateTime, scode]);
+        }
     })
 
     res.send("ok");
@@ -1214,7 +1276,7 @@ app.post('/stock/query', async (req, res) => {
         await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
             [name, name, sql, Date.now()]);
     }
-    
+
     var resp = JSON.stringify({ data: r.rows });
     res.send(resp);
 });
