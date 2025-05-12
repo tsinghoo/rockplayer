@@ -1019,7 +1019,7 @@ app.post('/stock/positions', async (req, res) => {
         let pos = positions[i];
         let now = Date.now();
         if (i == 0) {
-            await dbCall(`delete from tPositions where id like '${pos.broker}%'`);
+            await dbCall([`delete from tPositions where id like '${pos.broker}%'`]);
         }
         pos.stock_code = pos.stock_code.split(".")[0]
         pos.id = `${pos.broker}_${pos.account_id}_${pos.stock_code}`;
