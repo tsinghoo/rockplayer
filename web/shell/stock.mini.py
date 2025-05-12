@@ -146,6 +146,7 @@ def uploadStockPrice(sb):
     # 组装成json对象post到test1.91taogu.com
     # 为data添加passcode属性
     print("上传", len(list(sb)), "个股票价格")
+    print(sb.keys())
     try:
         response = requests.post("http://test1.91taogu.com/stock/quotes.mini", json={
             "data": sb, "passcode": "995560"}, timeout=5)
