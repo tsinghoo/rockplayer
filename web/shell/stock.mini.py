@@ -387,7 +387,7 @@ if __name__ == '__main__':
     # print(js)
 
     xtdata.subscribe_whole_quote(
-        [g.stocklist], callback=subscribe_whole_callback)
+        g.stocklist, callback=subscribe_whole_callback)
 
     # while True:
     #     g.tick = xtdata.get_full_tick(g.stocklist)
