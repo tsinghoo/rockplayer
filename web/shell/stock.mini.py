@@ -22,7 +22,8 @@ g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
 g.session_id = 1000
 
-g.stocks = {}
+g.tick = {}
+g.uploading = 0
 g.stocklist = ['000300.SH', '000004.SZ']
 
 
@@ -142,9 +143,13 @@ def init():
         print("获取stockk list失败:", str(e))
 
 
-def uploadStockPrice(sb):
+def uploadStockPrice():
     # 组装成json对象post到test1.91taogu.com
     # 为data添加passcode属性
+    sb, g.tick = g.tick, {}  # 这行是原子的
+    if (len(list(sb)) < 1):
+        print("0 stocks, skip upload")
+        return
     print("上传", len(list(sb)), "个股票价格")
     print(sb.keys())
     try:
@@ -300,7 +305,11 @@ def python_to_json(obj, indent=4, ensure_ascii=False):
 
 
 def subscribe_whole_callback(data):
-    uploadStockPrice(data)
+
+    for stock in data:
+        if stock not in g.stocklist:
+            continue
+        g.tick[stock] = data[stock]
 
 
 def printObj(data, indent):
@@ -378,7 +387,15 @@ if __name__ == '__main__':
     # print(js)
 
     xtdata.subscribe_whole_quote(
-        g.stocklist, callback=subscribe_whole_callback)
+        [g.stocklist], callback=subscribe_whole_callback)
+
+    # while True:
+    #     g.tick = xtdata.get_full_tick(g.stocklist)
+    #     uploadStockPrice()
+
+    while True:
+        uploadStockPrice()
+        time.sleep(0.5)
 
     # 阻塞主线程退出
-    xt_trader.run_forever()
+    # xt_trader.run_forever()
