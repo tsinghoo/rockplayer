@@ -1138,10 +1138,10 @@ app.get('/stock/screen/nodes', async (req, res) => {
 
 app.get('/stock/rule/create', async (req, res) => {
     info("get /stock/rule/create");
+    let js = req.query.js;
     let json = JSON.parse(req.query.json);
-    let sql = `insert into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?)`;
-    let id = share.uuid__();
-    await db.runSync(sql, [id, json.scode, json.sname, JSON.stringify(json), Date.now()]);
+    let sql = `insert into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?,?)`;
+    await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), Date.now()]);
 
     var resp = JSON.stringify({});
     if (js) {

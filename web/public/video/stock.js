@@ -403,6 +403,7 @@ window.feed_list = window.feed_list || (function () {
                 let dip = c.find(".dip").val();
                 let scode = self.selectedCode;
                 let sname = self.selectedName;
+                let amount = c.find(".amount").val();
                 let json = { scode, sname, buy, bounce, sell, dip, amount };
                 let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                 if (res.error) {
