@@ -70,7 +70,7 @@ window.feed_list = window.feed_list || (function () {
             $(".buttonRun", c).click(function () {
                 let name = $(".name", c).val();
                 let sql = $(".sql", c).val();
-                let params=$(".params", c).val();
+                let params = $(".params", c).val();
                 let start = $(".sql", c)[0].selectionStart;
                 let end = $(".sql", c)[0].selectionEnd;
                 let selection = null;

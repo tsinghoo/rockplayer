@@ -1286,7 +1286,7 @@ app.post('/stock/query', async (req, res) => {
     let r = await db.allSync(sql);
     if (r.error) {
         info(r.error);
-        res.send(r);
+        res.send(JSON.stringify({ error: r.error }));
         return;
     }
 
