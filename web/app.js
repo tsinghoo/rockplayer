@@ -777,6 +777,10 @@ async function upgradeDb(succ, fail) {
         "update config set value='7' where key='dbVersion';",
         `create table tpositions(id text primary key, broker text, account_id text, avg_price real, can_use_volume real, frozen_volume real, market_value real, on_road_volume real, open_price real, stock_code text, volume real, updateTime integer);`,
         "update config set value='9' where key='dbVersion';",
+        `create table tTradeRule(id text primary key, scode text, sname text, rule text, createTime integer);`,
+        "update config set value='11' where key='dbVersion';",
+        `alter table tsql add column params text;`,
+        "update config set value='13' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1132,6 +1136,21 @@ app.get('/stock/screen/nodes', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/rule/create', async (req, res) => {
+    info("get /stock/rule/create");
+    let json = JSON.parse(req.query.json);
+    let sql = `insert into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?)`;
+    let id = share.uuid__();
+    await db.runSync(sql, [id, json.scode, json.sname, JSON.stringify(json), Date.now()]);
+
+    var resp = JSON.stringify({});
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/entrustno', async (req, res) => {
     info("get /stock/entrustno");
     let scode = req.query.scode;
@@ -1191,8 +1210,6 @@ function formatScode(stockCode) {
 app.get('/stock/codes', async (req, res) => {
     info("/stock/codes");
     let js = req.query.js;
-
-
     let sql = `select distinct scode from tstock`;
     let r = await db.allSync(sql);
     let scodes = [];
@@ -1264,6 +1281,7 @@ app.post('/stock/query', async (req, res) => {
 
     let sql = req.body.sql;
     let name = req.body.name;
+    let params = req.body.params;
     info(`sql:${sql}`);
     let r = await db.allSync(sql);
     if (r.error) {
@@ -1273,8 +1291,8 @@ app.post('/stock/query', async (req, res) => {
     }
 
     if (name != null) {
-        await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
-            [name, name, sql, Date.now()]);
+        await db.runSync(`insert or replace into tsql (id, name, sql,params,lastUseTime) values (?,?,?,?,?)`,
+            [name, name, sql, params, Date.now()]);
     }
 
     var resp = JSON.stringify({ data: r.rows });
@@ -1300,8 +1318,9 @@ app.post('/stock/sql/update', async (req, res) => {
 
     let sql = req.body.sql;
     let name = req.body.name;
-    let r = await db.runSync(`insert or replace into tsql (id, name, sql,lastUseTime) values (?, ?,?,?)`,
-        [name, name, sql, Date.now()]);
+    let params = req.body.params;
+    let r = await db.runSync(`insert or replace into tsql (id, name, params, sql,lastUseTime) values (?,?,?,?,?)`,
+        [name, name, params, sql, Date.now()]);
 
     var resp = JSON.stringify({ data: "success" });
     res.send(resp);

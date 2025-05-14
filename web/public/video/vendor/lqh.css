@@ -684,6 +684,54 @@ ul.pagination li span input {
 	transform: rotate(45deg);
 }
 
+
+
+.form-floating>input:focus~label,
+.form-floating>input:not(:placeholder-shown)~label,
+.form-floating>textarea:focus~label,
+.form-floating>textarea:not(:placeholder-shown)~label,
+.form-floating>.form-control-plaintext~label,
+.form-floating>.form-select~label {
+	line-height: 18px;
+	height: auto;
+	margin: 0 0 0 6px;
+	padding: 0 4px 0 4px;
+	color: blue !important;
+	background-color: white;
+}
+
+.form-floating>input::placeholder {
+	text-align: right;
+}
+
+.form-floating>.form-control:focus,
+.form-floating>.form-control:not(:placeholder-shown),
+.form-floating>.form-control-plaintext:focus,
+.form-floating>.form-control-plaintext:not(:placeholder-shown) {
+	box-shadow: none;
+}
+
+.form-floating>.form-control {
+	min-height: 0;
+}
+
+.form-floating>.form-select {
+	height: 35px;
+	min-height: 35px;
+	line-height: 1.25;
+	padding-top: 0;
+	padding-bottom: 0;
+	margin-bottom: 8px;
+}
+
+.form-floating>label {
+	padding: 0;
+	margin: 2px 2px 2px 8px;
+	height: auto;
+	color: lightgray;
+}
+
+
 .margintb2 {
 	margin-top: 2px;
 	margin-bottom: 2px;

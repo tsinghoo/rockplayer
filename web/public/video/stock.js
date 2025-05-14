@@ -50,24 +50,27 @@ window.feed_list = window.feed_list || (function () {
                                 <div class="height10">
                                 </div>
                                 <div class="flexcolumn">
-                                    <input type="text" class="name" value="${row.name}" placeholder="名称">
+                                    名称:<input type="text" class="name" value="${row.name}" placeholder="名称">
+                                    参数:<input type="text" class="params" value="${row.params}" placeholder="参数">
                                     <textarea class="sql" rows="10" placeholder="sql">${row.sql}</textarea>
                                 </div>
                             </div>
                             `;
             let popup = await share.popup__(null, html);
             let c = $(`#${popup.id}`);
-
+            c.find(".params").val(row.params);
             $(".buttonSave", c).click(function () {
                 let name = $(".name", c).val();
                 let sql = $(".sql", c).val();
                 row.name = name;
+                row.params = $(".params", c).val();
                 row.sql = sql;
                 self.updateSql(row);
             });
             $(".buttonRun", c).click(function () {
                 let name = $(".name", c).val();
                 let sql = $(".sql", c).val();
+                let params=$(".params", c).val();
                 let start = $(".sql", c)[0].selectionStart;
                 let end = $(".sql", c)[0].selectionEnd;
                 let selection = null;
@@ -75,7 +78,7 @@ window.feed_list = window.feed_list || (function () {
                     selection = sql.substring(start, end);
                 }
 
-                let param = { name, sql };
+                let param = { name, params, sql };
                 if (selection != null) {
                     param.sql = selection;
                     delete param["name"];
@@ -96,6 +99,7 @@ window.feed_list = window.feed_list || (function () {
         exeSql: async function (row, show) {
             let res = await share.postSync__("/stock/query", row);
             let table = $("#stockTable");
+            self.sql = row;
             if (res.error) {
                 table.html(res.error);
             } else {
@@ -226,7 +230,8 @@ window.feed_list = window.feed_list || (function () {
             table.empty();
             let thead = $("<thead>");
             let tr = $("<tr>");
-            let keys = ["日期", "时间", "名称", "代码", "买卖", "业务名称", "市场", "数量", "价格", "现价", "总额", "tid", "taccount", "配对"];
+            let params = JSON.parse(self.sql.params);
+            let keys = params.keys;
             for (let i = 0; i < keys.length; i++) {
                 let th = $("<th>");
                 th.text(keys[i]);
@@ -289,6 +294,9 @@ window.feed_list = window.feed_list || (function () {
                                 td.html(`<span class="deleteRow clickable">X</span>` + row[key]);
                             }
                         }
+                    } else if (key == "买卖") {
+                        td.text(row[key]);
+                        td.addClass("buySell");
                     } else {
                         td.text(row[key]);
                         if (key == "现价") {
@@ -317,6 +325,15 @@ window.feed_list = window.feed_list || (function () {
                 } else {
                     trs.show();
                 }
+            })
+
+            $(".buySell").click(function () {
+                let data = $(this).parent("tr").attr("data");
+                data = JSON.parse(data);
+                self.selectedCode = data["代码"];
+                self.selectedName = data["名称"];
+                share.currentTarget = this;
+                self.toBuySell();
             })
 
             //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
@@ -372,6 +389,31 @@ window.feed_list = window.feed_list || (function () {
             })
 
             self.getCurrentPrices();
+        },
+
+        toBuySell: async function () {
+            let c = $("#templateBuySell").html();
+            let popup = await share.popup__(null, c);
+            c = $(`#${popup.id}`);
+            c.find(".comment").text(`${self.selectedName}.${self.selectedCode}`);
+            c.find(".buttonConfirm").click(async function () {
+                let buy = c.find(".buy").val();
+                let bounce = c.find(".bounce").val();
+                let sell = c.find(".sell").val();
+                let dip = c.find(".dip").val();
+                let scode = self.selectedCode;
+                let sname = self.selectedName;
+                let json = { scode, sname, buy, bounce, sell, dip, amount };
+                let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
+                if (res.error) {
+                    share.toastError__(res.error);
+                }
+            })
+
+            c.find(".buttonToAll").click(function () {
+                share.open__("./rules.html");
+            })
+
         },
 
         createFloatingWindow: function (url, width) {

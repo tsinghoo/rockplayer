@@ -5,9 +5,9 @@
         <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet">
         <link href="css/jquery.enhsplitter.css" rel="stylesheet">
         <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css">
-        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap-theme.css">
         <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
         <link rel="stylesheet" href="vendor/lqh.css">
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/glyphicon.css">
         <style>
       html,
       body {
@@ -104,11 +104,89 @@
             #icon# #name#
         </button>
     </div>
+    <div id="templateBuySell" style="display:none">
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <label class="floating-label comment">说明</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control buy h20"
+                    name="buy"
+                    placeholder=" "
+                >
+                <label class="floating-label">买入价</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control bounce h20"
+                    name="bounce"
+                    placeholder=" "
+                >
+                <label class="floating-label">反弹差价</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input
+                    type="text"
+                    min="2"
+                    class="form-control sell h20"
+                    placeholder=" "
+                >
+                <label class="floating-label">卖出价</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control dip h20"
+                    name="pageIndex"
+                    placeholder=" "
+                >
+                <label class="floating-label">回落差价</label>
+            </div>
+        </div>
+        <div class="flexcolumninline  left">
+            <div class="form-check form-switch">
+                <input
+                    type="checkbox"
+                    class="buyFirst form-check-input"
+                    checked=""
+                    aria-label="..."
+                >
+                <span class="">先买后卖</span>
+            </div>
+            <div class="form-check form-switch">
+                <input type="checkbox" class="sellFirst form-check-input" aria-label="...">
+                <span class="">先卖后买</span>
+            </div>
+            <div class="flexrow width100p center">
+                <button type="button" class="btn btn-primary widthAuto margin4 buttonConfirm">
+                    确认
+                </button>
+                <button type="button" class="btn btn-outline-primary widthAuto margin4 buttonToAll">
+                    所有
+                </button>
+            </div>
+        </div>
+    </div>
 </html>
 <script src="vendor/math.uuid.js"></script>
 <script src="./js/jquery.js"></script>
 <script src="./vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
 <script src="./vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+<script src="vendor/jquery.form.js" defer="defer"></script>
 <script src="vendor/store.legacy.min.js"></script>
 <script src="js/jquery.enhsplitter.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
