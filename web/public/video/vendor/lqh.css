@@ -783,6 +783,10 @@ ul.pagination li span input {
 	padding: 6px 6px 6px 6px;
 }
 
+.h20 {
+	height: 20px !important;
+}
+
 .padding10 {
 	padding: 10px 10px 10px 10px;
 }

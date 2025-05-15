@@ -1,13 +1,29 @@
 <html>
     <head>
         <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="description" content="">
+        <meta name="author" content="">
         <title>Stock</title>
-        <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet">
-        <link href="css/jquery.enhsplitter.css" rel="stylesheet">
-        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/bootstrap.css">
-        <link rel="stylesheet" href="vendor/bootstrap3-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+        <link rel="stylesheet" href="vendor/bootstrap-5.3.3-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="vendor/bootstrap5-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
         <link rel="stylesheet" href="vendor/lqh.css">
         <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/glyphicon.css">
+        <script src="vendor/math.uuid.js" defer="defer"></script>
+        <script src="./js/jquery.js" defer="defer"></script>
+        <script src="./vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
+        <script src="./vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+        <script src="vendor/jquery.form.js" defer="defer"></script>
+        <script src="vendor/store.legacy.min.js" defer="defer"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+        <script src="vendor/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js" defer="defer"></script>
+        <script src="vendor/bootstrap5-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
+        <script src="./js/share.js" defer="defer"></script>
+        <script src="./stock.js" defer="defer"></script>
         <style>
       html,
       body {
@@ -106,41 +122,35 @@
     </div>
     <div id="templateBuySell" style="display:none">
         <div class="flexrow width100p center">
-            <div class="input-group">
-                <div class="form-floating widthauto margin4" style="width:80px;">
-                    <input
-                        type="text"
-                        min="5"
-                        class="form-control operationName h20"
-                        name="operationName"
-                        placeholder=" "
-                    >
-                    <label class="floating-label">券商</label>
-                </div>
+            <div class="form-floating widthauto margin4" style="width:90px;">
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control operationName h20"
+                    name="operationName"
+                    placeholder=" "
+                >
+                <label class="floating-label">券商</label>
             </div>
-            <div class="input-group">
-                <div class="form-floating widthauto margin4" style="width:80px;">
-                    <input
-                        type="text"
-                        min="5"
-                        class="form-control sname h20"
-                        name="sname"
-                        placeholder=" "
-                    >
-                    <label class="floating-label">股票名称</label>
-                </div>
+            <div class="form-floating widthauto margin4" style="width:90px;">
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control sname h20"
+                    name="sname"
+                    placeholder=" "
+                >
+                <label class="floating-label">股票名称</label>
             </div>
-            <div class="input-group">
-                <div class="form-floating widthauto margin4" style="width:80px;">
-                    <input
-                        type="text"
-                        min="5"
-                        class="form-control scode h20"
-                        name="scode"
-                        placeholder=" "
-                    >
-                    <label class="floating-label">股票代码</label>
-                </div>
+            <div class="form-floating widthauto margin4" style="width:90px;">
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control scode h20"
+                    name="scode"
+                    placeholder=" "
+                >
+                <label class="floating-label">股票代码</label>
             </div>
         </div>
         <div class="flexrow width100p">
@@ -249,19 +259,3 @@
         </div>
     </div>
 </html>
-<script src="vendor/math.uuid.js"></script>
-<script src="./js/jquery.js"></script>
-<script src="./vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
-<script src="./vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
-<script src="vendor/jquery.form.js" defer="defer"></script>
-<script src="vendor/store.legacy.min.js"></script>
-<script src="js/jquery.enhsplitter.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-<script src="https://vjs.zencdn.net/8.3.0/video.min.js"></script>
-<script src="js/store.legacy.min.js"></script>
-<script src="vendor/bootstrap-3.3.7-dist/js/bootstrap.js" defer="defer"></script>
-<script src="vendor/bootstrap3-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
-<script src="./js/share.js" defer="defer"></script>
-<script src="./stock.js" defer="defer"></script>

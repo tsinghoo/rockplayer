@@ -457,6 +457,8 @@ window.feed_list = window.feed_list || (function () {
                 let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                 if (res.error) {
                     share.toastError__(res.error);
+                }else{
+                    share.toastSuccess__("上传成功");
                 }
             })
 
