@@ -1140,10 +1140,14 @@ app.get('/stock/rule/create', async (req, res) => {
     info("get /stock/rule/create");
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
-    let sql = `insert into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?,?)`;
-    await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), Date.now()]);
+    let sql = `insert or replace into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?,?)`;
+    let result = await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), Date.now()]);
 
     var resp = JSON.stringify({});
+    if (result.error) {
+        resp = res;
+    }
+
     if (js) {
         resp = `${js}(${resp})`;
     }
@@ -1157,7 +1161,7 @@ app.get('/stock/entrustno', async (req, res) => {
     let no = req.query.no;
 
 
-    db.runSync(`update tStockAction set entrustNo=? where scode=?`, [no, scode]);
+    await db.runSync(`update tStockAction set entrustNo=? where scode=?`, [no, scode]);
 
     res.send(resp);
 });

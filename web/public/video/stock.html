@@ -107,7 +107,26 @@
     <div id="templateBuySell" style="display:none">
         <div class="input-group">
             <div class="form-floating widthauto margintb4">
-                <label class="floating-label comment">说明</label>
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control sname h20"
+                    name="sname"
+                    placeholder=" "
+                >
+                <label class="floating-label">股票名称</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input
+                    type="text"
+                    min="5"
+                    class="form-control scode h20"
+                    name="scode"
+                    placeholder=" "
+                >
+                <label class="floating-label">股票代码</label>
             </div>
         </div>
         <div class="input-group">
@@ -138,6 +157,19 @@
             <div class="form-floating widthauto margintb4">
                 <input
                     type="text"
+                    min="5"
+                    class="form-control buyAmount h20"
+                    name="buyAmount"
+                    value="0"
+                    placeholder=" "
+                >
+                <label class="floating-label">买入数量</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input
+                    type="text"
                     min="2"
                     class="form-control sell h20"
                     placeholder=" "
@@ -162,12 +194,12 @@
                 <input
                     type="text"
                     min="5"
-                    class="form-control amount h20"
+                    class="form-control sellAmount h20"
                     name="amount"
-                    value="100"
+                    value="0"
                     placeholder=" "
                 >
-                <label class="floating-label">数量</label>
+                <label class="floating-label">卖出数量</label>
             </div>
         </div>
         <div class="flexcolumninline left">

@@ -1,5 +1,4 @@
 //mairui.club: free: FF5BCE92-17AE-4A9D-A0E5-B4B0C20248C2
-
 window.feed_list = window.feed_list || (function () {
     var share = window.mhgl_share;
     var page = window.mhgl_page;
@@ -330,8 +329,7 @@ window.feed_list = window.feed_list || (function () {
             $(".buySell").click(function () {
                 let data = $(this).parent("tr").attr("data");
                 data = JSON.parse(data);
-                self.selectedCode = data["代码"];
-                self.selectedName = data["名称"];
+                self.selectedData = data;
                 share.currentTarget = this;
                 self.toBuySell();
             })
@@ -391,20 +389,60 @@ window.feed_list = window.feed_list || (function () {
             self.getCurrentPrices();
         },
 
-        toBuySell: async function () {
+        toBuySell: async function (sell, buy, delta) {
             let c = $("#templateBuySell").html();
             let popup = await share.popup__(null, c);
             c = $(`#${popup.id}`);
-            c.find(".comment").text(`${self.selectedName}.${self.selectedCode}`);
+            c.find(".sname").val(`${self.selectedData["名称"]}`);
+            c.find(".scode").val(`${self.selectedData["代码"]}`);
+            let np = self.selectedData["价格"];
+
+            if (self.selectedData["买卖"].indexOf("买") > -1) {
+                if (sell == null) {
+                    sell = (np * (1 + 0.02)).toFixed(3);
+                }
+                if (buy == null) {
+                    buy = np;
+                }
+                c.find(".sell").val(sell);
+                c.find(".buy").val(buy);
+                c.find(".sellFirst").prop("checked", true);
+                c.find(".buyFirst").prop("checked", false);
+            } else {
+                if (buy == null) {
+                    buy = (np * (1 - 0.02)).toFixed(3);
+                }
+
+                if (sell == null) {
+                    sell = np;
+                }
+                c.find(".buy").val(buy);
+                c.find(".sell").val(sell);
+                c.find(".sellFirst").prop("checked", false);
+                c.find(".buyFirst").prop("checked", true);
+            }
+
+            if (delta == null) {
+                delta = np * 0.01;
+            }
+
+            c.find(".bounce").val(delta);
+            c.find(".dip").val(delta);
+
+            let amount = Math.abs(self.selectedData["数量"]);
+            c.find(".buyAmount").val(amount);
+            c.find(".sellAmount").val(amount);
+
             c.find(".buttonConfirm").click(async function () {
                 let buy = c.find(".buy").val();
                 let bounce = c.find(".bounce").val();
                 let sell = c.find(".sell").val();
                 let dip = c.find(".dip").val();
-                let scode = self.selectedCode;
-                let sname = self.selectedName;
-                let amount = c.find(".amount").val();
-                let json = { scode, sname, buy, bounce, sell, dip, amount };
+                let scode = c.find(".scode").val();
+                let sname = c.find(".sname").val();
+                let sellAmount = c.find(".sellAmount").val();
+                let buyAmount = c.find(".buyAmount").val();
+                let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname };
                 let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                 if (res.error) {
                     share.toastError__(res.error);
@@ -412,9 +450,8 @@ window.feed_list = window.feed_list || (function () {
             })
 
             c.find(".buttonToAll").click(function () {
-                share.open__("./rules.html");
-            })
 
+            })
         },
 
         createFloatingWindow: function (url, width) {
