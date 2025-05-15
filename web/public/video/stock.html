@@ -105,116 +105,138 @@
         </button>
     </div>
     <div id="templateBuySell" style="display:none">
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="5"
-                    class="form-control sname h20"
-                    name="sname"
-                    placeholder=" "
-                >
-                <label class="floating-label">股票名称</label>
+        <div class="flexrow width100p center">
+            <div class="input-group">
+                <div class="form-floating widthauto margin4" style="width:80px;">
+                    <input
+                        type="text"
+                        min="5"
+                        class="form-control operationName h20"
+                        name="operationName"
+                        placeholder=" "
+                    >
+                    <label class="floating-label">券商</label>
+                </div>
+            </div>
+            <div class="input-group">
+                <div class="form-floating widthauto margin4" style="width:80px;">
+                    <input
+                        type="text"
+                        min="5"
+                        class="form-control sname h20"
+                        name="sname"
+                        placeholder=" "
+                    >
+                    <label class="floating-label">股票名称</label>
+                </div>
+            </div>
+            <div class="input-group">
+                <div class="form-floating widthauto margin4" style="width:80px;">
+                    <input
+                        type="text"
+                        min="5"
+                        class="form-control scode h20"
+                        name="scode"
+                        placeholder=" "
+                    >
+                    <label class="floating-label">股票代码</label>
+                </div>
             </div>
         </div>
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="5"
-                    class="form-control scode h20"
-                    name="scode"
-                    placeholder=" "
-                >
-                <label class="floating-label">股票代码</label>
+        <div class="flexrow width100p">
+            <div class="flexcolumn">
+                <div class="input-group">
+                    <div class="form-floating widthauto margin4" style="width:120px;">
+                        <input
+                            type="text"
+                            min="5"
+                            class="form-control buy h20"
+                            name="buy"
+                            placeholder=" "
+                        >
+                        <label class="floating-label">买入价</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="form-floating widthauto margin4" style="width:120px;">
+                        <input
+                            type="text"
+                            min="5"
+                            class="form-control bounce h20"
+                            name="bounce"
+                            placeholder=" "
+                        >
+                        <label class="floating-label">反弹差价</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="form-floating widthauto margin4" style="width:120px;">
+                        <input
+                            type="text"
+                            min="5"
+                            class="form-control buyAmount h20"
+                            name="buyAmount"
+                            value="0"
+                            placeholder=" "
+                        >
+                        <label class="floating-label">买入数量</label>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="5"
-                    class="form-control buy h20"
-                    name="buy"
-                    placeholder=" "
-                >
-                <label class="floating-label">买入价</label>
-            </div>
-        </div>
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="5"
-                    class="form-control bounce h20"
-                    name="bounce"
-                    placeholder=" "
-                >
-                <label class="floating-label">反弹差价</label>
-            </div>
-        </div>
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="5"
-                    class="form-control buyAmount h20"
-                    name="buyAmount"
-                    value="0"
-                    placeholder=" "
-                >
-                <label class="floating-label">买入数量</label>
-            </div>
-        </div>
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="2"
-                    class="form-control sell h20"
-                    placeholder=" "
-                >
-                <label class="floating-label">卖出价</label>
-            </div>
-        </div>
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="5"
-                    class="form-control dip h20"
-                    name="pageIndex"
-                    placeholder=" "
-                >
-                <label class="floating-label">回落差价</label>
-            </div>
-        </div>
-        <div class="input-group">
-            <div class="form-floating widthauto margintb4">
-                <input
-                    type="text"
-                    min="5"
-                    class="form-control sellAmount h20"
-                    name="amount"
-                    value="0"
-                    placeholder=" "
-                >
-                <label class="floating-label">卖出数量</label>
+            <div class="flexcolumn">
+                <div class="input-group">
+                    <div class="form-floating widthauto margin4" style="width:120px;">
+                        <input
+                            type="text"
+                            min="2"
+                            class="form-control sell h20"
+                            placeholder=" "
+                        >
+                        <label class="floating-label">卖出价</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="form-floating widthauto margin4" style="width:120px;">
+                        <input
+                            type="text"
+                            min="5"
+                            class="form-control dip h20"
+                            name="pageIndex"
+                            placeholder=" "
+                        >
+                        <label class="floating-label">回落差价</label>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="form-floating widthauto margin4" style="width:120px;">
+                        <input
+                            type="text"
+                            min="5"
+                            class="form-control sellAmount h20"
+                            name="amount"
+                            value="0"
+                            placeholder=" "
+                        >
+                        <label class="floating-label">卖出数量</label>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="flexcolumninline left">
-            <div class="form-check form-switch">
-                <input
-                    type="checkbox"
-                    class="buyFirst form-check-input"
-                    checked=""
-                    aria-label="..."
-                >
-                <span class="">先买后卖</span>
-            </div>
-            <div class="form-check form-switch">
-                <input type="checkbox" class="sellFirst form-check-input" aria-label="...">
-                <span class="">先卖后买</span>
+            <div class="flexrow width100p center">
+                <div class="form-check form-switch marginlr4">
+                    <input
+                        type="checkbox"
+                        class="buyFirst form-check-input"
+                        checked=""
+                        aria-label="..."
+                    >
+                    <span class="">先买后卖</span>
+                </div>
+                <div class="form-check form-switch marginlr4">
+                    <input type="checkbox" class="sellFirst form-check-input" aria-label="...">
+                    <span class="">先卖后买</span>
+                </div>
             </div>
             <div class="flexrow width100p center">
                 <button type="button" class="btn btn-primary widthAuto margin4 buttonConfirm">

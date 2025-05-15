@@ -395,6 +395,7 @@ window.feed_list = window.feed_list || (function () {
             c = $(`#${popup.id}`);
             c.find(".sname").val(`${self.selectedData["名称"]}`);
             c.find(".scode").val(`${self.selectedData["代码"]}`);
+            c.find(".operationName").val(`${self.selectedData["券商"]}`);
             let np = self.selectedData["价格"];
 
             if (self.selectedData["买卖"].indexOf("买") > -1) {
@@ -434,6 +435,7 @@ window.feed_list = window.feed_list || (function () {
             c.find(".sellAmount").val(amount);
 
             c.find(".buttonConfirm").click(async function () {
+                let operationName = c.find(".operationName").val();
                 let buy = c.find(".buy").val();
                 let bounce = c.find(".bounce").val();
                 let sell = c.find(".sell").val();
@@ -442,7 +444,16 @@ window.feed_list = window.feed_list || (function () {
                 let sname = c.find(".sname").val();
                 let sellAmount = c.find(".sellAmount").val();
                 let buyAmount = c.find(".buyAmount").val();
-                let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname };
+                let order = "";
+                if (c.find(".buyFirst")[0].checked) {
+                    order = "buyFirst";
+                }
+
+                if (c.find(".sellFirst")[0].checked) {
+                    order = "sellFirst";
+                }
+
+                let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, operationName, order };
                 let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                 if (res.error) {
                     share.toastError__(res.error);
