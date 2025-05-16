@@ -353,16 +353,96 @@ async function reloadRules() {
         rule.rule = JSON.parse(rule.rule);
         rules[rule.scode] = rule
         //从 truleaction 里读取响应股票的最近一条执行记录
-        let action = await db.getSync(`select * from tRuleAction where scode = '${rule.scode}' order by createTime desc limit 1`);
-        if (action) {
-            if (action.done == 0) {
+        let ra = await db.getSync(`select * from tRuleAction where scode = '${rule.scode}' order by createTime desc limit 1`);
+        if (ra) {
+            if (ra.done == 0) {
                 rule.status = "ordered";
-            }else{
-                rule.status = "done";
+            } else {
+                if (ra.action == "buy" && rule.order == "buyFirst") {
+                    rule.status = "toSell";
+                } else if (ra.action == "sell" && rule.order == "sellFirst") {
+                    rule.status = "toBuy";
+                } else {
+                    rule.status = "done";
+                    delete rules[rule.scode];
+                }
+            }
+        } else {
+            if (rule.rule.order == "buyFirst") {
+                rule.status = "toBuy";
+            } else if (rule.rule.order == "sellFirst") {
+                rule.status = "toSell";
+            } else {
+                rule.status = "todo";
             }
         }
     }
 }
+
+
+async function tryToSell(r) {
+    let rule = r.rule;
+    let now = Date.now();
+    if (rule.currentPrice > rule.sell) {
+        if (rule.maxPrice > rule.sell) {
+            let delta = rule.maxPrice - rule.currentPrice;
+            if (delta >= rule.dip) {
+                //卖出
+                let action = {
+                    id: `${r.id}-${now}`,
+                    ruleId: r.id,
+                    scode: rule.scode,
+                    sname: rule.sname,
+                    action: "sell",
+                    broker: rule.broker,
+                    price: rule.currentPrice,
+                    amount: rule.amount,
+                    orderNo: "",
+                    done: 0,
+                    createTime: now
+                }
+
+                await insertOrReplace("tRuleAction", action);
+                rule.status = "ordered";
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+async function tryToBuy(r) {
+    let rule = r.rule;
+    let now = Date.now();
+    if (rule.currentPrice < rule.buy) {
+        if (rule.minPrice < rule.buy) {
+            let delta = rule.currentPrice - rule.minPrice;
+            if (delta >= rule.bounce) {
+                //买入
+                let action = {
+                    id: `${r.id}-${now}`,
+                    ruleId: r.id,
+                    scode: rule.scode,
+                    sname: rule.sname,
+                    action: "buy",
+                    broker: rule.broker,
+                    price: rule.currentPrice,
+                    amount: rule.amount,
+                    orderNo: "",
+                    done: 0,
+                    createTime: now
+                }
+
+                await insertOrReplace("tRuleAction", action);
+                rule.status = "ordered";
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 
 let checkingRule = 0;
 async function checkRule(scodes) {
@@ -374,15 +454,26 @@ async function checkRule(scodes) {
 
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
-        let scode = scodes[i];
+        let scode = scodes[i].split(".")[0];
         let r = rules[scode];
         if (r != null) {
-            let rule = r.rule;
-
+            switch (r.status) {
+                case "todo":
+                    //检查是否满足条件
+                    let succ = tryToBuy(r);
+                    if (!succ) {
+                        succ = tryToSell(r);
+                    }
+                    break;
+                case "toBuy":
+                    tryToBuy(r);
+                    break;
+                case "toSell":
+                    tryToSell(r);
+                    break;
+            }
         }
-
     }
-
 
     checkingRule = 0;
 }
@@ -830,6 +921,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='17' where key='dbVersion';",
         `alter table tTradeRule add column closed integer default 0;`,
         "update config set value='19' where key='dbVersion';",
+        `alter table tRuleAction add column broker text default '';`,
+        "update config set value='21' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1211,9 +1304,17 @@ app.get('/stock/fe/user/login', async (req, res) => {
 });
 
 function updatePriceToRule(scode, price) {
-    let rule = rules[scode];
-    if (rule != null) {
+    let r = rules[scode];
+    if (r != null) {
+        let rule = r.rule;
         rule.currentPrice = price;
+        if (rule.maxPrice == null || price > rule.maxPrice) {
+            rule.maxPrice = price;
+        }
+
+        if (rule.minPrice == null || price < rule.minPrice) {
+            rule.minPrice = price;
+        }
     }
 }
 
@@ -1784,6 +1885,7 @@ app.get('/video/doSplit', (req, res) => {
 
 async function init() {
     await upgradeDb();
+    reloadRules();
     app.listen(port, () => {
         info(`Server is running on port ${port}`);
     });
