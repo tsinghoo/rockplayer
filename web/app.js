@@ -343,6 +343,50 @@ function add0(str, length) {
     return str;
 }
 
+let rules = {};
+
+async function reloadRules() {
+    //从 tTradeRule 读取所有未关闭的规则
+    let ruleList = await db.allSync("select * from tTradeRule where closed = 0");
+    for (let i = 0; i < ruleList.rows.length; i++) {
+        let rule = ruleList.rows[i];
+        rule.rule = JSON.parse(rule.rule);
+        rules[rule.scode] = rule
+        //从 truleaction 里读取响应股票的最近一条执行记录
+        let action = await db.getSync(`select * from tRuleAction where scode = '${rule.scode}' order by createTime desc limit 1`);
+        if (action) {
+            if (action.done == 0) {
+                rule.status = "ordered";
+            }else{
+                rule.status = "done";
+            }
+        }
+    }
+}
+
+let checkingRule = 0;
+async function checkRule(scodes) {
+    if (checkingRule == 1) {
+        return;
+    }
+
+    checkingRule = 1;
+
+    //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
+    for (let i = 0; i < scodes.length; i++) {
+        let scode = scodes[i];
+        let r = rules[scode];
+        if (r != null) {
+            let rule = r.rule;
+
+        }
+
+    }
+
+
+    checkingRule = 0;
+}
+
 function getDurationText1__(seconds) {
     seconds = parseInt(seconds);
     var h = parseInt(seconds / 3600);
@@ -733,7 +777,6 @@ app.post('/stock/account', async (req, res) => {
 
 
 async function dbCall(options) {
-
     for (let i = 0; i < options.length; ++i) {
         let stat = options[i];
 
@@ -781,6 +824,12 @@ async function upgradeDb(succ, fail) {
         "update config set value='11' where key='dbVersion';",
         `alter table tsql add column params text;`,
         "update config set value='13' where key='dbVersion';",
+        `drop table tStockAction;`,
+        "update config set value='15' where key='dbVersion';",
+        `create table tRuleAction(id text primary key, ruleId text, scode text,sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer);`,
+        "update config set value='17' where key='dbVersion';",
+        `alter table tTradeRule add column closed integer default 0;`,
+        "update config set value='19' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -995,14 +1044,7 @@ app.post('/stock/prices', async (req, res) => {
         });
     }
 
-    //从tStockAction中读取未执行的行并返回
-
-    let r = await db.getSync("select * from tStockAction where entrustPrice>0 and entrustNo=''");
-    if (r != null) {
-        db.runSync("update tStockAction set entrustNo='fired' and updateTime=? where id=?", [Date.now(), r.id]);
-    }
-
-    let resp = JSON.stringify({ action: r });
+    let resp = JSON.stringify({ action: [] });
     res.send(resp);
 });
 
@@ -1107,12 +1149,14 @@ app.post('/stock/quotes.mini', async (req, res) => {
         }
 
         if (price == 0) {
-
         } else {
+            updatePriceToRule(scode, price);
             let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
             await db.runSync(sql, [price, updateTime, scode]);
         }
     })
+
+    setTimeout(function () { checkRule(Object.keys(data)) }, 100);
 
     res.send("ok");
 });
@@ -1155,17 +1199,6 @@ app.get('/stock/rule/create', async (req, res) => {
     res.send(resp);
 });
 
-app.get('/stock/entrustno', async (req, res) => {
-    info("get /stock/entrustno");
-    let scode = req.query.scode;
-    let no = req.query.no;
-
-
-    await db.runSync(`update tStockAction set entrustNo=? where scode=?`, [no, scode]);
-
-    res.send(resp);
-});
-
 
 app.get('/stock/fe/user/login', async (req, res) => {
     info("/stock/fe/user/login");
@@ -1176,6 +1209,13 @@ app.get('/stock/fe/user/login', async (req, res) => {
     var resp = `${js}(${JSON.stringify({ login: login })})`;
     res.send(resp);
 });
+
+function updatePriceToRule(scode, price) {
+    let rule = rules[scode];
+    if (rule != null) {
+        rule.currentPrice = price;
+    }
+}
 
 function formatScode(stockCode) {
     // 转换为字符串并去除空格
