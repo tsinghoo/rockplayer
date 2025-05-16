@@ -350,35 +350,39 @@ async function reloadRules() {
     let ruleList = await db.allSync("select * from tTradeRule where closed = 0");
     for (let i = 0; i < ruleList.rows.length; i++) {
         let rule = ruleList.rows[i];
-        rule.rule = JSON.parse(rule.rule);
-        rules[rule.scode] = rule
-        //从 truleaction 里读取响应股票的最近一条执行记录
-        let ra = await db.getSync(`select * from tRuleAction where scode = '${rule.scode}' order by createTime desc limit 1`);
-        if (ra) {
-            if (ra.done == 0) {
-                rule.status = "ordered";
-            } else {
-                if (ra.action == "buy" && rule.order == "buyFirst") {
-                    rule.status = "toSell";
-                } else if (ra.action == "sell" && rule.order == "sellFirst") {
-                    rule.status = "toBuy";
-                } else {
-                    rule.status = "done";
-                    delete rules[rule.scode];
-                }
-            }
-        } else {
-            if (rule.rule.order == "buyFirst") {
-                rule.status = "toBuy";
-            } else if (rule.rule.order == "sellFirst") {
-                rule.status = "toSell";
-            } else {
-                rule.status = "todo";
-            }
-        }
+        await reloadRule(rule);
     }
 }
 
+
+async function reloadRule(r) {
+    r.rule = JSON.parse(r.rule);
+    rules[r.scode] = r;
+    //从 truleaction 里读取响应股票的最近一条执行记录
+    let ra = await db.getSync(`select * from tRuleAction where scode = '${r.scode}' order by createTime desc limit 1`);
+    if (ra) {
+        if (ra.done == 0) {
+            r.status = "ordered";
+        } else {
+            if (ra.action == "buy" && r.order == "buyFirst") {
+                r.status = "toSell";
+            } else if (ra.action == "sell" && r.order == "sellFirst") {
+                r.status = "toBuy";
+            } else {
+                r.status = "done";
+                delete rules[r.scode];
+            }
+        }
+    } else {
+        if (r.rule.order == "buyFirst") {
+            r.status = "toBuy";
+        } else if (r.rule.order == "sellFirst") {
+            r.status = "toSell";
+        } else {
+            r.status = "todo";
+        }
+    }
+}
 
 async function tryToSell(r) {
     let rule = r.rule;
@@ -396,7 +400,7 @@ async function tryToSell(r) {
                     action: "sell",
                     broker: rule.broker,
                     price: rule.currentPrice,
-                    amount: rule.amount,
+                    amount: rule.sellAmount,
                     orderNo: "",
                     done: 0,
                     createTime: now
@@ -427,7 +431,7 @@ async function tryToBuy(r) {
                     action: "buy",
                     broker: rule.broker,
                     price: rule.currentPrice,
-                    amount: rule.amount,
+                    amount: rule.buyAmount,
                     orderNo: "",
                     done: 0,
                     createTime: now
@@ -1211,6 +1215,7 @@ app.post('/stock/quotes', async (req, res) => {
             if (price == 0) {
 
             } else {
+                updatePriceToRule(scode, price);
                 let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
                 await db.runSync(sql, [price, updateTime, scode]);
             }
@@ -1279,7 +1284,8 @@ app.get('/stock/rule/create', async (req, res) => {
     let json = JSON.parse(req.query.json);
     let sql = `insert or replace into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?,?)`;
     let result = await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), Date.now()]);
-
+    rules[json.scode] = await db.getSync(`select * from tTradeRule where id=?`, [json.scode]);
+    reloadRule(rules[json.scode]);
     var resp = JSON.stringify({});
     if (result.error) {
         resp = res;

@@ -435,7 +435,7 @@ window.feed_list = window.feed_list || (function () {
             c.find(".sellAmount").val(amount);
 
             c.find(".buttonConfirm").click(async function () {
-                let operationName = c.find(".operationName").val();
+                let broker = c.find(".operationName").val();
                 let buy = c.find(".buy").val();
                 let bounce = c.find(".bounce").val();
                 let sell = c.find(".sell").val();
@@ -453,7 +453,7 @@ window.feed_list = window.feed_list || (function () {
                     order = "sellFirst";
                 }
 
-                let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, operationName, order };
+                let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, broker, order };
                 let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                 if (res.error) {
                     share.toastError__(res.error);
