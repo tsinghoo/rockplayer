@@ -17,18 +17,21 @@ class G():
 
 g = G()
 
-account = "8883949249"  # 国金
-broker = "国金"
 
 account = "620000558442"  # 国信
 broker = "国信"
 
+account = "8883949249"  # 国金
+broker = "国金"
+
 uploadPrice = 0
 
-
+g.actions = {}
 
 stocks = {}
 # 初始化函数 - 策略运行开始时调用一次
+
+
 def init(ContextInfo):
     print(sys.version)
     print(sys.executable)
@@ -57,9 +60,10 @@ def init(ContextInfo):
     ContextInfo.last_print_time = 0       # 上次打印时间
 
     if (uploadPrice == 1):
-        ContextInfo.run_time("uploadStockPrice", "1nSecond", "2025-04-09 13:20:00")
-        
-    ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
+        ContextInfo.run_time("uploadStockPrice",
+                             "1nSecond", "2025-04-09 13:20:00")
+
+    ContextInfo.run_time("getActions", "5nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
     # getTradeDetail(ContextInfo)
 
@@ -114,7 +118,7 @@ def uploadStockPrice(ContextInfo):
 
 def getActions(ContextInfo):
     try:
-        response = requests.post(
+        response = requests.get(
             "http://test1.91taogu.com/stock/rule/actions?broker="+broker, timeout=5)
         if response.status_code != 200:
             print("getActions失败，状态码:", response.status_code)
@@ -123,16 +127,25 @@ def getActions(ContextInfo):
             response.encoding = 'utf-8'
             content = response.text
             print("getActions成功:", response.status_code, content)
-            actions = json.loads(content)
-            for act in actions:
-                if act["action"] == "buy":
-                    passorder(23, 1101, account, act["scode"], 11, act["price"],
-                              act["amount"], ContextInfo)
-                elif act["action"] == "sell":
-                    passorder(24, 1101, account, act["scode"], 11, act["price"],
-                              act["amount"], ContextInfo)
+            jso = json.loads(content)
+            for act in jso.data:
+                if g.actions[act["scode"]] is None:
+                    if act["action"] == "buy":
+                        print("买入", act["sname"], " ",
+                              act["price"], " ", act["amount"])
 
-            print("请求test1成功:", response.status_code, response.text)
+                        # passorder(23, 1101, account, act["scode"], 11, act["price"],
+                        #           act["amount"], ContextInfo)
+
+                    elif act["action"] == "sell":
+                        print("卖出", act["sname"], " ",
+                              act["price"], " ", act["amount"])
+                        # passorder(24, 1101, account, act["scode"], 11, act["price"],
+                        #           act["amount"], ContextInfo)
+
+                    g.actions[act["scode"]] = act
+                else:
+                    print("已存在", act["scode"], "的action")
     except Exception as e:
         print("请求失败:", str(e))
 
@@ -326,6 +339,8 @@ def task_callback(ContextInfo, info):
     printObj(info)
 
 # 账号成交状态变化主推
+
+
 def order_callback(ContextInfo, info):
     print('order_callback')
     printObj(info)
@@ -335,6 +350,7 @@ def order_callback(ContextInfo, info):
 def deal_callback(ContextInfo, info):
     print('deal_callback')
     printObj(info)
+
 
 def position_callback(ContextInfo, info):
     print('position_callback')

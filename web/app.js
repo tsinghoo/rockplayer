@@ -1302,8 +1302,8 @@ app.get('/stock/rule/actions', async (req, res) => {
     info("get /stock/rule/actions");
     let js = req.query.js;
     let broker = req.query.broker;
-    let sql = `select * from tRuleAction where broker=? orderNo="" and done=0`;
-    let r = await db.getSync(sql, [broker]);
+    let sql = `select * from tRuleAction where broker=? and orderNo='' and done=0`;
+    let r = await db.allSync(sql, [broker]);
     var resp = JSON.stringify({ data: r.rows });
     
     if (r.error) {
