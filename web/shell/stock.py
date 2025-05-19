@@ -18,14 +18,17 @@ class G():
 g = G()
 
 account = "8883949249"  # 国金
+broker = "国金"
+
 account = "620000558442"  # 国信
+broker = "国信"
+
+uploadPrice = 0
 
 
-# 初始化函数 - 策略运行开始时调用一次
 
 stocks = {}
-
-
+# 初始化函数 - 策略运行开始时调用一次
 def init(ContextInfo):
     print(sys.version)
     print(sys.executable)
@@ -52,10 +55,14 @@ def init(ContextInfo):
     ContextInfo.account = "620000558442"
     ContextInfo.set_account(ContextInfo.account)              # 交易账户
     ContextInfo.last_print_time = 0       # 上次打印时间
-    
-    ContextInfo.run_time("uploadStockPrice", "1nSecond", "2025-04-09 13:20:00")
+
+    if (uploadPrice == 1):
+        ContextInfo.run_time("uploadStockPrice", "1nSecond", "2025-04-09 13:20:00")
+        
+    ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
-    #getTradeDetail(ContextInfo)
+    # getTradeDetail(ContextInfo)
+
 
 def quote_callback(s):
     def callback(datas):
@@ -82,7 +89,7 @@ def quote_callback(s):
                     except:
                         continue
             '''
-        
+
     return callback
 
 
@@ -100,6 +107,31 @@ def uploadStockPrice(ContextInfo):
             return
         else:
             response.encoding = 'utf-8'
+            print("请求test1成功:", response.status_code, response.text)
+    except Exception as e:
+        print("请求失败:", str(e))
+
+
+def getActions(ContextInfo):
+    try:
+        response = requests.post(
+            "http://test1.91taogu.com/stock/rule/actions?broker="+broker, timeout=5)
+        if response.status_code != 200:
+            print("getActions失败，状态码:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            content = response.text
+            print("getActions成功:", response.status_code, content)
+            actions = json.loads(content)
+            for act in actions:
+                if act["action"] == "buy":
+                    passorder(23, 1101, account, act["scode"], 11, act["price"],
+                              act["amount"], ContextInfo)
+                elif act["action"] == "sell":
+                    passorder(24, 1101, account, act["scode"], 11, act["price"],
+                              act["amount"], ContextInfo)
+
             print("请求test1成功:", response.status_code, response.text)
     except Exception as e:
         print("请求失败:", str(e))
@@ -143,7 +175,7 @@ def getTradeDetail(ContextInfo):
     # 该函数不存在
     obj_list = get_history_trade_detail_data(
         account, 'stock', 'position', startDate, today)
-    print("历史交易信息：") 
+    print("历史交易信息：")
     for time, data in obj_list:
         for obj in data:
             print(obj.m_strInstrumentID)
@@ -155,7 +187,7 @@ def handlebar(ContextInfo):
     print("handlebar ", ContextInfo.barpos)
     # print(ContextInfo.is_suspended_stock("600004.SH"))
     getTradeDetail(ContextInfo)
-    #pass
+    # pass
 
 
 def query_info(C):
@@ -288,25 +320,25 @@ def printObj(data, indent):
                     print(f"{attr}: (无法获取值，错误: {e})")
 
 
-def task_callback(ContextInfo, taskInfo):
-    print('task_callback')
 # 账号委托状态变化主推
-
-
-def order_callback(ContextInfo, orderInfo):
-    print('order_callback')
+def task_callback(ContextInfo, info):
+    print('task_callback')
+    printObj(info)
 
 # 账号成交状态变化主推
+def order_callback(ContextInfo, info):
+    print('order_callback')
+    printObj(info)
 
-
-def deal_callback(ContextInfo, dealInfo):
-    print('deal_callback')
 
 # 账号持仓状态变化主推
+def deal_callback(ContextInfo, info):
+    print('deal_callback')
+    printObj(info)
 
-
-def position_callback(ContextInfo, positonInfo):
+def position_callback(ContextInfo, info):
     print('position_callback')
+    printObj(info)
 
 
 def stop(ContextInfo):
