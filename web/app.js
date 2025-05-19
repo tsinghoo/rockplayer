@@ -1305,11 +1305,32 @@ app.get('/stock/rule/actions', async (req, res) => {
     let sql = `select * from tRuleAction where broker=? and orderNo='' and done=0`;
     let r = await db.allSync(sql, [broker]);
     var resp = JSON.stringify({ data: r.rows });
-    
+
     if (r.error) {
         resp = r;
     }
 
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+app.get('/stock/rule/status', async (req, res) => {
+    info("get /stock/rule/status");
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let sql = `select * from tRuleAction where scode=? order by createTime desc limit 1`;
+    let rule = await db.getSync(sql, [scode]);
+
+    let r = rules[scode];
+    if (r != null) {
+        rule.maxPrice = r.maxPrice;
+        rule.minPrice = r.minPrice;
+    }
+
+    var resp = JSON.stringify({ data: r });
     if (js) {
         resp = `${js}(${resp})`;
     }

@@ -222,12 +222,14 @@ window.feed_list = window.feed_list || (function () {
                 );
             });
         },
-        deleteRule: async function () { 
+        deleteRule: async function () {
         },
         toCancelRule: async function (row) {
-            
+
         },
-        showMenu4RuleContent:function(){
+        showMenu4RuleContent: async function () {
+            let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"] });
+            let guide = `maxPrice:${res.data.maxPrice} minPrice:${res.data.minPrice}`;
             let buttons = [
                 {
                     text: "删除",
@@ -244,7 +246,8 @@ window.feed_list = window.feed_list || (function () {
                     }
                 }
             ];
-            let popup = share.popupAction__("", buttons);
+
+            let popup = share.popupAction__(guide, buttons);
         },
         showRows: function (expanded) {
             let table = $("#stockTable");
@@ -492,7 +495,7 @@ window.feed_list = window.feed_list || (function () {
                 let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                 if (res.error) {
                     share.toastError__(res.error);
-                }else{
+                } else {
                     share.toastSuccess__("上传成功");
                 }
             })
