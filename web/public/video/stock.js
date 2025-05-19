@@ -222,6 +222,30 @@ window.feed_list = window.feed_list || (function () {
                 );
             });
         },
+        deleteRule: async function () { 
+        },
+        toCancelRule: async function (row) {
+            
+        },
+        showMenu4RuleContent:function(){
+            let buttons = [
+                {
+                    text: "删除",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.deleteRule();
+                    }
+                },
+                {
+                    text: "取消",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toCancelRule();
+                    }
+                }
+            ];
+            let popup = share.popupAction__("", buttons);
+        },
         showRows: function (expanded) {
             let table = $("#stockTable");
             let rows = self.rows;
@@ -296,6 +320,9 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "买卖") {
                         td.text(row[key]);
                         td.addClass("buySell");
+                    } else if (key == "规则") {
+                        td.text(row[key]);
+                        td.addClass("ruleContent");
                     } else {
                         td.text(row[key]);
                         if (key == "现价") {
@@ -332,6 +359,14 @@ window.feed_list = window.feed_list || (function () {
                 self.selectedData = data;
                 share.currentTarget = this;
                 self.toBuySell();
+            })
+
+            $(".ruleContent").click(function () {
+                let data = $(this).parent("tr").attr("data");
+                data = JSON.parse(data);
+                self.selectedData = data;
+                share.currentTarget = this;
+                self.showMenu4RuleContent();
             })
 
             //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
