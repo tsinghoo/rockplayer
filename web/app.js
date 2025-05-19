@@ -1330,7 +1330,7 @@ app.get('/stock/rule/status', async (req, res) => {
         rule.minPrice = r.minPrice;
     }
 
-    var resp = JSON.stringify({ data: r });
+    var resp = JSON.stringify({ data: r, rules });
     if (js) {
         resp = `${js}(${resp})`;
     }
