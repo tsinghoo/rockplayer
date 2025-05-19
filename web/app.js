@@ -411,7 +411,7 @@ async function tryToSell(r) {
                 }
 
                 await insertOrReplace("tRuleAction", action);
-                rule.status = "ordered";
+                r.status = "ordered";
                 return true;
             }
         }
@@ -442,7 +442,7 @@ async function tryToBuy(r) {
                 }
 
                 await insertOrReplace("tRuleAction", action);
-                rule.status = "ordered";
+                r.status = "ordered";
                 return true;
             }
         }
