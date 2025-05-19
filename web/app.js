@@ -1288,7 +1288,26 @@ app.get('/stock/rule/create', async (req, res) => {
     reloadRule(rules[json.scode]);
     var resp = JSON.stringify({});
     if (result.error) {
-        resp = res;
+        resp = result;
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+app.get('/stock/rule/actions', async (req, res) => {
+    info("get /stock/rule/actions");
+    let js = req.query.js;
+    let broker = req.query.broker;
+    let sql = `select * from tRuleAction where broker=? orderNo="" and done=0`;
+    let r = await db.getSync(sql, [broker]);
+    var resp = JSON.stringify({ data: r.rows });
+    
+    if (r.error) {
+        resp = r;
     }
 
     if (js) {

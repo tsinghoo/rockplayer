@@ -17,8 +17,8 @@ class G():
 
 g = G()
 
-account = "620000558442"  # 国信
 account = "8883949249"  # 国金
+account = "620000558442"  # 国信
 
 
 # 初始化函数 - 策略运行开始时调用一次
@@ -52,9 +52,10 @@ def init(ContextInfo):
     ContextInfo.account = "620000558442"
     ContextInfo.set_account(ContextInfo.account)              # 交易账户
     ContextInfo.last_print_time = 0       # 上次打印时间
+    
     ContextInfo.run_time("uploadStockPrice", "1nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
-
+    #getTradeDetail(ContextInfo)
 
 def quote_callback(s):
     def callback(datas):
@@ -139,9 +140,10 @@ def getTradeDetail(ContextInfo):
     startDate = (datetime.datetime.now() -
                  datetime.timedelta(days=7)).strftime('%Y%m%d')
     # 获取历史交易信息
+    # 该函数不存在
     obj_list = get_history_trade_detail_data(
         account, 'stock', 'position', startDate, today)
-
+    print("历史交易信息：") 
     for time, data in obj_list:
         for obj in data:
             print(obj.m_strInstrumentID)
@@ -150,10 +152,10 @@ def getTradeDetail(ContextInfo):
 
 def handlebar(ContextInfo):
     # print(ContextInfo.period)
-    # print("handlebar ", ContextInfo.barpos)
+    print("handlebar ", ContextInfo.barpos)
     # print(ContextInfo.is_suspended_stock("600004.SH"))
-
-    pass
+    getTradeDetail(ContextInfo)
+    #pass
 
 
 def query_info(C):
