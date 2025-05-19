@@ -232,7 +232,7 @@ window.feed_list = window.feed_list || (function () {
             let guide = `maxPrice:${res.data.maxPrice}<br>
              currentPrice:${res.data.currentPrice}<br>
              minPrice:${res.data.minPrice}`;
-             
+
             let buttons = [
                 {
                     text: "删除",
@@ -327,7 +327,9 @@ window.feed_list = window.feed_list || (function () {
                         td.text(row[key]);
                         td.addClass("buySell");
                     } else if (key == "规则") {
-                        td.text(row[key]);
+                        let rc = JSON.parse(row[key]);
+                        let html = `<pre>${JSON.stringify(rc, null, 2)}</pre>`;
+                        td.html(html);
                         td.addClass("ruleContent");
                     } else {
                         td.text(row[key]);
