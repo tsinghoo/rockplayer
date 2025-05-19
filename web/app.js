@@ -1321,7 +1321,7 @@ app.get('/stock/rule/status', async (req, res) => {
     info("get /stock/rule/status");
     let js = req.query.js;
     let scode = req.query.scode;
-    let sql = `select * from tRuleAction where scode=? order by createTime desc limit 1`;
+    let sql = `select * from tTradeRule where scode=? order by createTime desc limit 1`;
     let rule = await db.getSync(sql, [scode]);
 
     let r = rules[scode];
