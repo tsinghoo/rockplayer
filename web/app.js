@@ -388,9 +388,9 @@ async function tryToSell(r) {
     debug("tryToSell:" + JSON.stringify(r));
     let rule = r.rule;
     let now = Date.now();
-    if (rule.currentPrice > parseFloat(rule.sell)) {
+    if (rule.currentPrice >= parseFloat(rule.sell)) {
         debug(`currentPrice > sell`);
-        if (rule.maxPrice > parseFloat(rule.sell)) {
+        if (rule.maxPrice >= parseFloat(rule.sell)) {
             debug(`maxPrice > sell`);
             let delta = rule.maxPrice - rule.currentPrice;
             debug(`delta=${delta}`);
@@ -423,8 +423,8 @@ async function tryToSell(r) {
 async function tryToBuy(r) {
     let rule = r.rule;
     let now = Date.now();
-    if (rule.currentPrice < rule.buy) {
-        if (rule.minPrice < rule.buy) {
+    if (rule.currentPrice <= parseFloat(rule.buy)) {
+        if (rule.minPrice <= parseFloat(rule.buy)) {
             let delta = rule.currentPrice - rule.minPrice;
             if (delta >= rule.bounce) {
                 //买入
@@ -472,16 +472,16 @@ async function checkRule(scodes) {
             switch (r.status) {
                 case "todo":
                     //检查是否满足条件
-                    let succ = tryToBuy(r);
+                    let succ = await tryToBuy(r);
                     if (!succ) {
-                        succ = tryToSell(r);
+                        succ = await tryToSell(r);
                     }
                     break;
                 case "toBuy":
-                    tryToBuy(r);
+                    await tryToBuy(r);
                     break;
                 case "toSell":
-                    tryToSell(r);
+                    await tryToSell(r);
                     break;
             }
         }
