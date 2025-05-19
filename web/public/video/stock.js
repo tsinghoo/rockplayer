@@ -229,7 +229,10 @@ window.feed_list = window.feed_list || (function () {
         },
         showMenu4RuleContent: async function () {
             let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"] });
-            let guide = `maxPrice:${res.data.maxPrice} minPrice:${res.data.minPrice}`;
+            let guide = `maxPrice:${res.data.maxPrice}<br>
+             currentPrice:${res.data.currentPrice}<br>
+             minPrice:${res.data.minPrice}`;
+             
             let buttons = [
                 {
                     text: "删除",

@@ -387,8 +387,8 @@ async function reloadRule(r) {
 async function tryToSell(r) {
     let rule = r.rule;
     let now = Date.now();
-    if (rule.currentPrice > rule.sell) {
-        if (rule.maxPrice > rule.sell) {
+    if (rule.currentPrice > parseFloat(rule.sell)) {
+        if (rule.maxPrice > parseFloat(rule.sell)) {
             let delta = rule.maxPrice - rule.currentPrice;
             if (delta >= rule.dip) {
                 //卖出
@@ -1326,8 +1326,9 @@ app.get('/stock/rule/status', async (req, res) => {
 
     let r = rules[scode];
     if (r != null) {
-        rule.maxPrice = r.maxPrice;
-        rule.minPrice = r.minPrice;
+        rule.maxPrice = r.rule.maxPrice;
+        rule.currentPrice = r.rule.currentPrice;
+        rule.minPrice = r.rule.minPrice;
     }
 
     var resp = JSON.stringify({ data: r, rules });
