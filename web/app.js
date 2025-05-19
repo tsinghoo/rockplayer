@@ -385,12 +385,16 @@ async function reloadRule(r) {
 }
 
 async function tryToSell(r) {
+    debug("tryToSell:" + JSON.stringify(r));
     let rule = r.rule;
     let now = Date.now();
     if (rule.currentPrice > parseFloat(rule.sell)) {
+        debug(`currentPrice > sell`);
         if (rule.maxPrice > parseFloat(rule.sell)) {
+            debug(`maxPrice > sell`);
             let delta = rule.maxPrice - rule.currentPrice;
-            if (delta >= rule.dip) {
+            debug(`delta=${delta}`);
+            if (delta >= parseFloat(rule.dip)) {
                 //卖出
                 let action = {
                     id: `${r.id}-${now}`,
@@ -455,12 +459,14 @@ async function checkRule(scodes) {
     }
 
     checkingRule = 1;
-
+    debug("checkRule");
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
         let scode = scodes[i].split(".")[0];
         let r = rules[scode];
+        debug(`scode=${scode}`);
         if (r != null) {
+            debug(`r.status=${r.status}`);
             switch (r.status) {
                 case "todo":
                     //检查是否满足条件
