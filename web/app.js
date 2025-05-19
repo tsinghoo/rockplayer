@@ -101,14 +101,14 @@ function isVideo(file) {
 }
 
 function info(msg) {
-    if (logLevel > INFO) {
+    if (logLevel >= INFO) {
         return;
     }
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
     console.log(time + ":" + msg);
 }
 function debug(msg) {
-    if (logLevel > DEBUG) {
+    if (logLevel >= DEBUG) {
         return;
     }
 
@@ -116,7 +116,7 @@ function debug(msg) {
     console.log(time + ":" + msg);
 }
 function error(msg) {
-    if (logLevel > ERROR) {
+    if (logLevel >= ERROR) {
         return;
     }
 
