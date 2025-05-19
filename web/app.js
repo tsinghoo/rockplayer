@@ -412,6 +412,7 @@ async function tryToSell(r) {
 
                 await insertOrReplace("tRuleAction", action);
                 r.status = "ordered";
+                debug(`rules:${JSON.stringify(rules)}`);
                 return true;
             }
         }
@@ -454,14 +455,13 @@ async function tryToBuy(r) {
 
 let checkingRule = 0;
 async function checkRule(scodes) {
-    console.log("checkRule:" + logLevel);
     if (checkingRule == 1) {
         console.log("checking");
         return;
     }
 
     checkingRule = 1;
-    debug("checkRule");
+    debug("checkRule start");
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
         let scode = scodes[i].split(".")[0];
@@ -487,6 +487,7 @@ async function checkRule(scodes) {
         }
     }
 
+    debug("checkRule end");
     checkingRule = 0;
 }
 
