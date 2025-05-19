@@ -1230,6 +1230,8 @@ app.post('/stock/quotes', async (req, res) => {
         })
     })
 
+    setTimeout(function () { checkRule(Object.keys(data)) }, 100);
+
     res.send("ok");
 });
 
