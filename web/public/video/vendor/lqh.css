@@ -527,7 +527,7 @@ ul.pagination li span input {
 }
 
 .red {
-	color: red;
+	color: red !important;
 }
 
 .green {
