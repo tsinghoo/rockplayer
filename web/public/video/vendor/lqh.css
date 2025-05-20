@@ -531,7 +531,7 @@ ul.pagination li span input {
 }
 
 .green {
-	color: green;
+	color: green !important;
 }
 
 .yellow{

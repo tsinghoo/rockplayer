@@ -139,8 +139,8 @@ def getActions(ContextInfo):
                         print("买入", act["sname"], " ",
                               act["price"], " ", act["amount"])
 
-                        # passorder(23, 1101, account, act["scode"], 11, act["price"],
-                        #           act["amount"], ContextInfo)
+                        passorder(23, 1101, account, act["scode"], 11, act["price"],
+                                  act["amount"], ContextInfo)
 
                     elif act["action"] == "sell":
                         print("卖出", act["sname"], " ",
