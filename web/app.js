@@ -358,6 +358,7 @@ async function reloadRules() {
 async function reloadRule(r) {
     r.rule = JSON.parse(r.rule);
     rules[r.scode] = r;
+    r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where scode = '${r.scode}' order by createTime desc limit 1`);
     if (ra) {
@@ -373,6 +374,7 @@ async function reloadRule(r) {
                 delete rules[r.scode];
             }
         }
+        r.actions.push(ra);
     } else {
         if (r.rule.order == "buyFirst") {
             r.status = "toBuy";
@@ -412,6 +414,8 @@ async function tryToSell(r) {
 
                 await insertOrReplace("tRuleAction", action);
                 r.status = "ordered";
+
+                r.actions.push(action);
                 debug(`rules:${JSON.stringify(rules)}`);
                 return true;
             }
@@ -444,6 +448,8 @@ async function tryToBuy(r) {
 
                 await insertOrReplace("tRuleAction", action);
                 r.status = "ordered";
+
+                r.actions.push(action);
                 return true;
             }
         }
@@ -1342,17 +1348,9 @@ app.get('/stock/rule/status', async (req, res) => {
     info("get /stock/rule/status");
     let js = req.query.js;
     let scode = req.query.scode;
-    let sql = `select * from tTradeRule where scode=? order by createTime desc limit 1`;
-    let rule = await db.getSync(sql, [scode]);
 
-    let r = rules[scode];
-    if (r != null) {
-        rule.maxPrice = r.rule.maxPrice;
-        rule.currentPrice = r.rule.currentPrice;
-        rule.minPrice = r.rule.minPrice;
-    }
 
-    var resp = JSON.stringify({ data: rule, rules });
+    var resp = JSON.stringify({data:rules});
     if (js) {
         resp = `${js}(${resp})`;
     }

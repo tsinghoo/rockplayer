@@ -10,9 +10,6 @@ window.feed_list = window.feed_list || (function () {
         init: async function () {
             await self.getSqls();
             Chart.register(ChartDataLabels);
-            setInterval(async function () {
-                await self.getCurrentPrices();
-            }, 3000);
             self.bindEvents();
         },
         getSqls: async function () {
@@ -103,6 +100,7 @@ window.feed_list = window.feed_list || (function () {
                 table.html(res.error);
             } else {
                 if (show) {
+                    self.sqlRow = row;
                     self.rows = res.data;
                     self.showRows(false);
                 }
@@ -252,6 +250,14 @@ window.feed_list = window.feed_list || (function () {
 
             let popup = share.popupAction__(guide, buttons);
         },
+        updateData: function () {
+            let sqlName = self.sqlRow.name.trim();
+            if (sqlName == "all") {
+                self.getCurrentPrices();
+            } else if (sqlName == "智能单") {
+                self.getRuleStatus();
+            }
+        },
         showRows: function (expanded) {
             let table = $("#stockTable");
             let rows = self.rows;
@@ -332,6 +338,12 @@ window.feed_list = window.feed_list || (function () {
                         let html = `<pre>${JSON.stringify(rc, null, 2)}</pre>`;
                         td.html(html);
                         td.addClass("ruleContent");
+                    } else if (key == "状态") {
+                        let rc = JSON.parse(row[key]);
+                        let html = `<pre>${JSON.stringify(rc, null, 2)}</pre>`;
+                        td.html(html);
+                        td.addClass("ruleStatus");
+                        td.removeClass("nowrap");
                     } else {
                         td.text(row[key]);
                         if (key == "现价") {
@@ -430,7 +442,47 @@ window.feed_list = window.feed_list || (function () {
                 }
             })
 
-            self.getCurrentPrices();
+            if (self.task == null) {
+                self.task = setInterval(async function () {
+                    await self.updateData();
+                }, 1000);
+            }
+        },
+
+        getRuleStatus: async function () {
+            let res = await share.getSync__("/stock/rule/status");
+            $(".ruleStatus").each(function () {
+                let td = $(this);
+                let scode = td.parents("tr").attr("code").trim();
+                let r = res.data[scode];
+                if (r) {
+                    let toShow = {
+                        maxPrice: r.rule.maxPrice,
+                        currentPrice: r.rule.currentPrice,
+                        minPrice: r.rule.minPrice,
+                        status: r.status
+                    }
+
+                    if (r.actions.length > 0) {
+                        toShow.actions = [];
+                        for (let i = 0; i < r.actions.length; i++) {
+                            let a = r.actions[i];
+                            let toShowA = {
+                                action: a.action,
+                                price: a.price,
+                                amount: a.amount,
+                                done: a.done,
+                                createTime: a.createTime
+                            }
+
+                            toShow.actions.push(toShowA);
+                        }
+                    }
+
+                    let json = JSON.stringify(toShow, null, 2);
+                    td.html(`<pre>${json}</pre>`);
+                }
+            })
         },
 
         toBuySell: async function (sell, buy, delta) {
