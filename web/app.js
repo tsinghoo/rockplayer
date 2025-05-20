@@ -1293,10 +1293,20 @@ app.get('/stock/rule/create', async (req, res) => {
     info("get /stock/rule/create");
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
+    let now = Date.now();
     let sql = `insert or replace into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?,?)`;
-    let result = await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), Date.now()]);
+    let result = await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), now]);
     rules[json.scode] = await db.getSync(`select * from tTradeRule where id=?`, [json.scode]);
     reloadRule(rules[json.scode]);
+
+    await insertOrReplace("tStockBasic", {
+        id: json.scode,
+        scode: json.scode,
+        sname: json.sname,
+        buy: 0,
+        updateTime: now
+    });
+
     var resp = JSON.stringify({});
     if (result.error) {
         resp = result;
@@ -1389,7 +1399,7 @@ function formatScode(stockCode) {
     if (code.length == 6) {
         if (/^(600|601|603|605|688|900|51)\d+$/.test(code)) {
             suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
-        } else if (/^(000|001|002|003|30|15)\d+$/.test(code)) {
+        } else if (/^(000|001|002|003|30|15|12|3)\d+$/.test(code)) {
             suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
         } else if (/^(8|43|83|87|88)\d+$/.test(code)) {
             suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
@@ -1413,7 +1423,7 @@ function formatScode(stockCode) {
 app.get('/stock/codes', async (req, res) => {
     info("/stock/codes");
     let js = req.query.js;
-    let sql = `select distinct scode from tstock`;
+    let sql = `select scode from tstockbasic`;
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {
