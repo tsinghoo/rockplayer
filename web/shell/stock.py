@@ -9,6 +9,7 @@ import numpy as np
 import talib
 import requests
 import sys
+import traceback
 
 
 class G():
@@ -18,13 +19,13 @@ class G():
 g = G()
 
 
-account = "620000558442"  # 国信
-broker = "国信"
-
 account = "8883949249"  # 国金
 broker = "国金"
 
-uploadPrice = 0
+account = "620000558442"  # 国信
+broker = "国信"
+
+uploadPrice = 1
 
 g.actions = {}
 
@@ -102,6 +103,8 @@ def uploadStockPrice(ContextInfo):
     # 为data添加passcode属性
     global stocks
     sb, stocks = stocks, {}  # 这行是原子的
+    if len(list(sb)) == 0:
+        return
     print("上传", len(list(sb)), "个股票价格")
     try:
         response = requests.post("http://test1.91taogu.com/stock/quotes", json={
@@ -128,8 +131,10 @@ def getActions(ContextInfo):
             content = response.text
             print("getActions成功:", response.status_code, content)
             jso = json.loads(content)
-            for act in jso.data:
-                if g.actions[act["scode"]] is None:
+            for act in jso["data"]:
+                if act["scode"] in g.actions:
+                    print("已存在", act["scode"], "的action")
+                else:
                     if act["action"] == "buy":
                         print("买入", act["sname"], " ",
                               act["price"], " ", act["amount"])
@@ -144,10 +149,8 @@ def getActions(ContextInfo):
                         #           act["amount"], ContextInfo)
 
                     g.actions[act["scode"]] = act
-                else:
-                    print("已存在", act["scode"], "的action")
     except Exception as e:
-        print("请求失败:", str(e))
+        print("getActions出错:", traceback.format_exc())
 
 
 def after_init(ContextInfo):
@@ -307,16 +310,15 @@ def updateAccount(ContextInfo):
 
 
 def account_callback(ContextInfo, accountInfo):
-    print('account_callback:', accountInfo)  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
-
+    print('account_callback:')  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
     # printObj(accountInfo)
 
     # updateAccount(ContextInfo)
 
-# 账号任务状态变化主推
+    # 账号任务状态变化主推
 
 
-def printObj(data, indent):
+def printObj(data, indent=""):
     if (not indent):
         indent = ""
     dirs = dir(data)
@@ -327,10 +329,10 @@ def printObj(data, indent):
             if not field.startswith("_"):  # 过滤掉Python内置属性
                 try:
                     value = getattr(data, field)
-                    child = printObj(value, indent+"  ")
-                    print(f"{indent}{field}:{type(value)}\n {child}")
+                    # child = printObj(value, indent+"  ")
+                    print(f"{indent}{field}:{value}\n")
                 except Exception as e:
-                    print(f"{attr}: (无法获取值，错误: {e})")
+                    print(f"{field}: (无法获取值: {e})")
 
 
 # 账号委托状态变化主推
@@ -339,8 +341,6 @@ def task_callback(ContextInfo, info):
     printObj(info)
 
 # 账号成交状态变化主推
-
-
 def order_callback(ContextInfo, info):
     print('order_callback')
     printObj(info)

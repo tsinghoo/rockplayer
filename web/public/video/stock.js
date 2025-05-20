@@ -312,6 +312,7 @@ window.feed_list = window.feed_list || (function () {
                             td.html(row[key] + `<span class="vote">V</span>`);
                         } else {
                             td.html(row[key]);
+                            td.addClass("almostwhite");
                         }
                     } else if (key == "tid") {
                         if (firstRow) {

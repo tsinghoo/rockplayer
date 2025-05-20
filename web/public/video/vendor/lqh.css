@@ -555,7 +555,7 @@ ul.pagination li span input {
 }
 
 .almostWhite  {
-	color: #efefef;
+	color: #efefef !important;
 }
 
 .navItemSelected {
