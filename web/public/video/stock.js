@@ -250,12 +250,12 @@ window.feed_list = window.feed_list || (function () {
 
             let popup = share.popupAction__(guide, buttons);
         },
-        updateData: function () {
+        updateData: async function () {
             let sqlName = self.sqlRow.name.trim();
             if (sqlName == "all") {
-                self.getCurrentPrices();
+                await self.getCurrentPrices();
             } else if (sqlName == "智能单") {
-                self.getRuleStatus();
+                await self.getRuleStatus();
             }
         },
         showRows: function (expanded) {
