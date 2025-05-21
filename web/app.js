@@ -1400,7 +1400,6 @@ app.get('/stock/rule/actions', async (req, res) => {
     let r = await db.allSync(sql, [broker]);
     r.rows.forEach(async (row) => {
         row.scode = formatScode(row.scode);
-        row.sname = v.sname;
     });
     var resp = JSON.stringify({ data: r.rows });
 
