@@ -179,16 +179,18 @@ def after_init(ContextInfo):
 
 # 行情处理函数 - 每次行情更新时调用
 
+
 def log(*args, **kwargs):
     """增强版log函数，完全模拟print的参数行为"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     # 将时间作为第一个元素插入到输出中
     time_header = f"[{current_time}]"
     all_args = (time_header,) + args
-    
+
     # 处理print的特殊参数（file/flush等）
     print(*all_args, **kwargs)
+
 
 def getTradeDetail(ContextInfo):
     # 获取一周内历史交易信息
@@ -214,7 +216,7 @@ def handlebar(ContextInfo):
     # print(ContextInfo.period)
     print("handlebar ", ContextInfo.barpos)
     # print(ContextInfo.is_suspended_stock("600004.SH"))
-    
+
     # pass
 
 
@@ -367,6 +369,12 @@ def deal_callback(ContextInfo, info):
 def position_callback(ContextInfo, info):
     log('position_callback')
     printObj(info)
+
+
+def orderError_callback(ContextInfo, orderArgs, errMsg):
+    log('orderError_callback')
+    log(errMsg)
+    printObj(orderArgs)
 
 
 def stop(ContextInfo):
