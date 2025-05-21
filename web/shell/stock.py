@@ -136,15 +136,18 @@ def getActions(ContextInfo):
                     print("已存在", act["scode"], "的action")
                 else:
                     if act["action"] == "buy":
-                        print("买入", act["sname"], " ",
-                              act["price"], " ", act["amount"])
+                        print("买入", act["sname"], act["scode"],
+                              act["price"], act["amount"])
 
                         passorder(23, 1101, account, act["scode"], 11, act["price"],
-                                  act["amount"], ContextInfo)
+                                  act["amount"], 2, ContextInfo)
+
+                        print("已买入", act["sname"], act["scode"],
+                              act["price"], act["amount"])
 
                     elif act["action"] == "sell":
-                        print("卖出", act["sname"], " ",
-                              act["price"], " ", act["amount"])
+                        print("卖出", act["sname"], act["scode"],
+                              act["price"], act["amount"])
                         # passorder(24, 1101, account, act["scode"], 11, act["price"],
                         #           act["amount"], ContextInfo)
 
@@ -311,7 +314,7 @@ def updateAccount(ContextInfo):
 
 def account_callback(ContextInfo, accountInfo):
     print('account_callback:')  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
-    # printObj(accountInfo)
+    printObj(accountInfo)
 
     # updateAccount(ContextInfo)
 
@@ -341,6 +344,8 @@ def task_callback(ContextInfo, info):
     printObj(info)
 
 # 账号成交状态变化主推
+
+
 def order_callback(ContextInfo, info):
     print('order_callback')
     printObj(info)

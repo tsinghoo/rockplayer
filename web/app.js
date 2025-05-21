@@ -432,12 +432,14 @@ async function tryToSell(r) {
     return false;
 }
 async function tryToBuy(r) {
+    debug("tryToBuy:" + JSON.stringify(r));
     let rule = r.rule;
     let now = Date.now();
     if (rule.currentPrice <= parseFloat(rule.buy)) {
+        debug(`currentPrice < buy`);
         if (rule.minPrice <= parseFloat(rule.buy)) {
             let delta = rule.currentPrice - rule.minPrice;
-            if (delta >= rule.bounce) {
+            if (delta >= parseFloat(rule.bounce)) {
                 //买入
                 let action = {
                     id: `${r.id}-${now}`,
@@ -1396,6 +1398,10 @@ app.get('/stock/rule/actions', async (req, res) => {
     let broker = req.query.broker;
     let sql = `select * from tRuleAction where broker=? and orderNo='' and done=0`;
     let r = await db.allSync(sql, [broker]);
+    r.rows.forEach(async (row) => {
+        row.scode = formatScode(row.scode);
+        row.sname = v.sname;
+    });
     var resp = JSON.stringify({ data: r.rows });
 
     if (r.error) {
