@@ -470,8 +470,8 @@ window.feed_list = window.feed_list || (function () {
                 let r = res.data[scode];
                 if (r) {
                     let toShow = {
-                        maxPrice: r.rule.maxPrice,
                         currentPrice: r.rule.currentPrice,
+                        maxPrice: r.rule.maxPrice,
                         minPrice: r.rule.minPrice,
                         status: r.status
                     }
