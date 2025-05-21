@@ -56,8 +56,7 @@ def init(ContextInfo):
         print("获取stockk list失败:", str(e))
 
     ContextInfo.set_universe(stocklist)
-    ContextInfo.account = "620000558442"
-    ContextInfo.set_account(ContextInfo.account)              # 交易账户
+    ContextInfo.set_account(account)              # 交易账户
     ContextInfo.last_print_time = 0       # 上次打印时间
 
     if (uploadPrice == 1):
@@ -180,6 +179,16 @@ def after_init(ContextInfo):
 
 # 行情处理函数 - 每次行情更新时调用
 
+def log(*args, **kwargs):
+    """增强版log函数，完全模拟print的参数行为"""
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # 将时间作为第一个元素插入到输出中
+    time_header = f"[{current_time}]"
+    all_args = (time_header,) + args
+    
+    # 处理print的特殊参数（file/flush等）
+    print(*all_args, **kwargs)
 
 def getTradeDetail(ContextInfo):
     # 获取一周内历史交易信息
@@ -205,7 +214,7 @@ def handlebar(ContextInfo):
     # print(ContextInfo.period)
     print("handlebar ", ContextInfo.barpos)
     # print(ContextInfo.is_suspended_stock("600004.SH"))
-    getTradeDetail(ContextInfo)
+    
     # pass
 
 
@@ -313,7 +322,7 @@ def updateAccount(ContextInfo):
 
 
 def account_callback(ContextInfo, accountInfo):
-    print('account_callback:')  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
+    log('account_callback:')  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
     printObj(accountInfo)
 
     # updateAccount(ContextInfo)
@@ -321,9 +330,7 @@ def account_callback(ContextInfo, accountInfo):
     # 账号任务状态变化主推
 
 
-def printObj(data, indent=""):
-    if (not indent):
-        indent = ""
+def printObj(data, indent="  "):
     dirs = dir(data)
     if not dirs:
         print(data)
@@ -340,27 +347,27 @@ def printObj(data, indent=""):
 
 # 账号委托状态变化主推
 def task_callback(ContextInfo, info):
-    print('task_callback')
+    log('task_callback')
     printObj(info)
 
 # 账号成交状态变化主推
 
 
 def order_callback(ContextInfo, info):
-    print('order_callback')
+    log('order_callback')
     printObj(info)
 
 
 # 账号持仓状态变化主推
 def deal_callback(ContextInfo, info):
-    print('deal_callback')
+    log('deal_callback')
     printObj(info)
 
 
 def position_callback(ContextInfo, info):
-    print('position_callback')
+    log('position_callback')
     printObj(info)
 
 
 def stop(ContextInfo):
-    print('stop')
+    log('stop')
