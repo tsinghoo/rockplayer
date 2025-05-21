@@ -56,17 +56,17 @@ window.feed_list = window.feed_list || (function () {
             let c = $(`#${popup.id}`);
             c.find(".params").val(row.params);
             $(".buttonSave", c).click(function () {
-                let name = $(".name", c).val();
-                let sql = $(".sql", c).val();
+                let name = $(".name", c).val().trim();
+                let sql = $(".sql", c).val().trim();
                 row.name = name;
-                row.params = $(".params", c).val();
+                row.params = $(".params", c).val().trim();
                 row.sql = sql;
                 self.updateSql(row);
             });
             $(".buttonRun", c).click(function () {
-                let name = $(".name", c).val();
-                let sql = $(".sql", c).val();
-                let params = $(".params", c).val();
+                let name = $(".name", c).val().trim();
+                let sql = $(".sql", c).val().trim();
+                let params = $(".params", c).val().trim();
                 let start = $(".sql", c)[0].selectionStart;
                 let end = $(".sql", c)[0].selectionEnd;
                 let selection = null;
@@ -201,7 +201,7 @@ window.feed_list = window.feed_list || (function () {
 
             $(".submitRows", c).click(function () {
                 var url = "/stock/update";
-                let cookies = $(".rows", c).val();
+                let cookies = $(".rows", c).val().trim();
                 var params = {
                     "rows": cookies
                 };
@@ -221,9 +221,22 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         deleteRule: async function () {
+            let res = await share.getSync__("/stock/rule/delete", { scode: self.selectedData["代码"] });
+            if (res.error) {
+                share.toastError__(res.error);
+            } else {
+                share.toastSuccess__("canceled");
+                self.exeSql(self.sqlRow, true);
+            }
         },
-        toCancelRule: async function (row) {
-
+        toCancelRule: async function () {
+            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"] });
+            if (res.error) {
+                share.toastError__(res.error);
+            } else {
+                share.toastSuccess__("canceled");
+                self.exeSql(self.sqlRow, true);
+            }
         },
         showMenu4RuleContent: async function () {
             let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"] });
@@ -531,15 +544,15 @@ window.feed_list = window.feed_list || (function () {
             c.find(".sellAmount").val(amount);
 
             c.find(".buttonConfirm").click(async function () {
-                let broker = c.find(".operationName").val();
-                let buy = c.find(".buy").val();
-                let bounce = c.find(".bounce").val();
-                let sell = c.find(".sell").val();
-                let dip = c.find(".dip").val();
-                let scode = c.find(".scode").val();
-                let sname = c.find(".sname").val();
-                let sellAmount = c.find(".sellAmount").val();
-                let buyAmount = c.find(".buyAmount").val();
+                let broker = c.find(".operationName").val().trim();
+                let buy = c.find(".buy").val().trim();
+                let bounce = c.find(".bounce").val().trim();
+                let sell = c.find(".sell").val().trim();
+                let dip = c.find(".dip").val().trim();
+                let scode = c.find(".scode").val().trim();
+                let sname = c.find(".sname").val().trim();
+                let sellAmount = c.find(".sellAmount").val().trim();
+                let buyAmount = c.find(".buyAmount").val().trim();
                 let order = "";
                 if (c.find(".buyFirst")[0].checked) {
                     order = "buyFirst";
@@ -786,8 +799,8 @@ window.feed_list = window.feed_list || (function () {
             let input = $('#ratio', c);
 
             function calc() {
-                let r = input.val();
-                let l = $('#last', c).val();
+                let r = input.val().trim();
+                let l = $('#last', c).val().trim();
                 $(".recentUp", c).text(`+${r}%: ${(l * (1 + r / 100)).toFixed(2)}`);
                 $(".recentDown", c).text(`-${r}%: ${(l * (1 - r / 100)).toFixed(2)}`);
                 $(".maxUp", c).text(`+${r}%: ${(max * (1 + r / 100)).toFixed(2)}`);

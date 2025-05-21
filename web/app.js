@@ -356,6 +356,11 @@ async function reloadRules() {
 
 
 async function reloadRule(r) {
+    if (r.closed != 0) {
+        delete rules[r.scode];
+        return;
+    }
+
     r.rule = JSON.parse(r.rule);
     rules[r.scode] = r;
     r.actions = [];
@@ -364,6 +369,8 @@ async function reloadRule(r) {
     if (ra) {
         if (ra.done == 0) {
             r.status = "ordered";
+        } else if (ra.done == -1) {
+            r.status = "cancelled";
         } else {
             if (ra.action == "buy" && r.order == "buyFirst") {
                 r.status = "toSell";
@@ -1325,6 +1332,64 @@ app.get('/stock/rule/create', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/rule/cancel', async (req, res) => {
+    info("get /stock/rule/cancel");
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let now = Date.now();
+    rules[scode].closed = 1;
+
+    let sql = `update tTradeRule set closed = 1 where scode=?`;
+    let result = await db.runSync(sql, [scode]);
+
+    if (result.error == null) {
+        sql = `update tRuleAction set done = -1 where scode=?`;
+        result = await db.runSync(sql, [scode]);
+    }
+
+    if (result.error == null) {
+        reloadRule(rules[scode]);
+    }
+
+    var resp = JSON.stringify({});
+    if (result.error) {
+        resp = result;
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+app.get('/stock/rule/delete', async (req, res) => {
+    info("get /stock/rule/delete");
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let now = Date.now();
+    delete rules[scode]
+
+    let sql = `delete from tTradeRule where scode=?`;
+    let result = await db.runSync(sql, [scode]);
+
+    if (result.error == null) {
+        sql = `delete from tRuleAction where scode=?`;
+        result = await db.runSync(sql, [scode]);
+    }
+
+    var resp = JSON.stringify({});
+    if (result.error) {
+        resp = result;
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/rule/actions', async (req, res) => {
     info("get /stock/rule/actions");
     let js = req.query.js;
@@ -1350,7 +1415,7 @@ app.get('/stock/rule/status', async (req, res) => {
     let scode = req.query.scode;
 
 
-    var resp = JSON.stringify({data:rules});
+    var resp = JSON.stringify({ data: rules });
     if (js) {
         resp = `${js}(${resp})`;
     }
