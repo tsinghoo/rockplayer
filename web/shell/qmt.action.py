@@ -53,16 +53,19 @@ def init(ContextInfo):
     if (runGetActionTask == 1):
         info("start getActions task")
         ContextInfo.run_time("getActions", "5nSecond", "2025-04-09 13:20:00")
-def updateActionStatus(scode, type, status, price, amount):
+
+
+def updateActionOrdered(scode, type, status, price, orderId):
     try:
         # 目标 URL
-        url = "http://test1.91taogu.com/stock/rule/action/updateStatus"
+        url = "http://test1.91taogu.com/stock/rule/action/ordered"
 
         # 要发送的 JSON 数据（Python 字典）
         data = {
             "broker": broker,
             "scode": scode,
             "status": status,
+            "orderId": orderId
         }
 
         # 设置请求头（声明内容类型为 JSON）
@@ -223,9 +226,12 @@ def order_callback(ContextInfo, data):
     price = js["m_dLimitPrice"]
     scode = js["m_strInstrumentID"]
     amount = js["m_nVolumeTotalOriginal"]
-    updateActionStatus(scode, type, status, price, amount)
+    orderId = js["m_strOrderSysID"]
+    updateActionOrdered(scode, type, status, price, orderId)
 
 # 账号持仓状态变化主推
+
+
 def deal_callback(ContextInfo, data):
     info('deal_callback')
     debug(obj2JsonString(data))

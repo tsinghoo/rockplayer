@@ -359,6 +359,8 @@ async function reloadRule(r) {
     if (r == null) {
         return;
     }
+
+    info("reloadRule:" + r.scode);
     if (r.closed != 0) {
         delete rules[r.scode];
         return;
@@ -368,12 +370,13 @@ async function reloadRule(r) {
     } catch (e) {
         info(e.message);
     }
-    
+
     rules[r.scode] = r;
     r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where scode = '${r.scode}' order by createTime desc limit 1`);
     if (ra) {
+        info(JSON.stringify(ra));
         if (ra.done == 0) {
             r.status = "ordered";
         } else if (ra.done == -1) {
@@ -384,6 +387,7 @@ async function reloadRule(r) {
             } else if (ra.action == "sell" && r.order == "sellFirst") {
                 r.status = "toBuy";
             } else {
+                info("rule done");
                 r.status = "done";
                 delete rules[r.scode];
             }
@@ -1590,13 +1594,14 @@ app.post('/stock/query', async (req, res) => {
 });
 
 
-app.post('/stock/rule/action/updateStatus', async (req, res) => {
-    info(`rule/action/updateStatus:${JSON.stringify(req.body)}`);
+app.post('/stock/rule/action/ordered', async (req, res) => {
+    info(`rule/action/ordered:${JSON.stringify(req.body)}`);
 
     let scode = req.body.scode;
     let broker = req.body.broker;
     let status = req.body.status;
-    let r = await db.runSync("update tRuleAction set done=1, status=? where scode=? and broker=? and done=0", [status, scode, broker]);
+    let orderNo = req.body.orderNo;
+    let r = await db.runSync("update tRuleAction set status=?, orderNo=? where scode=? and broker=? and done=0", [status, orderNo, scode, broker]);
     let resp = {};
     if (r.error) {
         info(r.error);
