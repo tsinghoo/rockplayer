@@ -1594,6 +1594,8 @@ app.post('/stock/rule/action/updateStatus', async (req, res) => {
     if (r.error) {
         info(r.error);
         resp = { error: r.error };
+    } else {
+        reloadRule(rules[scode]);
     }
 
     res.send(JSON.stringify(resp));
