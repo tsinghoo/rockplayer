@@ -1588,7 +1588,8 @@ app.post('/stock/rule/action/updateStatus', async (req, res) => {
 
     let scode = req.body.scode;
     let broker = req.body.broker;
-    let r = await db.runSync("update tRuleAction set done=1 where scode=? and broker=? and done=0", [scode, broker]);
+    let status = req.body.status;
+    let r = await db.runSync("update tRuleAction set done=1, status=? where scode=? and broker=? and done=0", [status, scode, broker]);
     let resp = {};
     if (r.error) {
         info(r.error);

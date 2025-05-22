@@ -53,7 +53,7 @@ def init(ContextInfo):
     if (runGetActionTask == 1):
         info("start getActions task")
         ContextInfo.run_time("getActions", "5nSecond", "2025-04-09 13:20:00")
-def updateActionStatus(scode, status):
+def updateActionStatus(scode, type, status, price, amount):
     try:
         # 目标 URL
         url = "http://test1.91taogu.com/stock/rule/action/updateStatus"
