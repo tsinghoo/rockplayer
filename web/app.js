@@ -356,12 +356,19 @@ async function reloadRules() {
 
 
 async function reloadRule(r) {
+    if (r == null) {
+        return;
+    }
     if (r.closed != 0) {
         delete rules[r.scode];
         return;
     }
-
-    r.rule = JSON.parse(r.rule);
+    try {
+        r.rule = JSON.parse(r.rule);
+    } catch (e) {
+        info(e.message);
+    }
+    
     rules[r.scode] = r;
     r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
@@ -1584,7 +1591,7 @@ app.post('/stock/query', async (req, res) => {
 
 
 app.post('/stock/rule/action/updateStatus', async (req, res) => {
-    info(`rule/action/updateStatus:${req.body}`);
+    info(`rule/action/updateStatus:${JSON.stringify(req.body)}`);
 
     let scode = req.body.scode;
     let broker = req.body.broker;

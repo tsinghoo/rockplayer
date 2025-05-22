@@ -219,11 +219,11 @@ def order_callback(ContextInfo, data):
     js = obj2Json(data, 1)
     type = js["m_nOpType"]
     status = js["m_nOrderStatus"]
+    submitStatus = js["m_nOrderSubmitStatus"]
     price = js["m_dLimitPrice"]
     scode = js["m_strInstrumentID"]
     amount = js["m_nVolumeTotalOriginal"]
     updateActionStatus(scode, type, status, price, amount)
-
 
 # 账号持仓状态变化主推
 def deal_callback(ContextInfo, data):
