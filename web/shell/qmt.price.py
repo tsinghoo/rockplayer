@@ -35,7 +35,7 @@ account = "620000558442"  # 国信
 broker = "国信"
 
 uploadPrice = 1
-getActions = 0
+runGetActionTask = 0
 
 
 
@@ -76,7 +76,7 @@ def init(ContextInfo):
         ContextInfo.run_time("uploadStockPrice",
                              "1nSecond", "2025-04-09 13:20:00")
 
-    if (getActions == 1):
+    if (runGetActionTask == 1):
         ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
     # getTradeDetail(ContextInfo)
@@ -380,28 +380,28 @@ def printObj(data, indent="  "):
 
 
 # 账号委托状态变化主推
-def task_callback(ContextInfo, info):
+def task_callback(ContextInfo, data):
     info('task_callback')
-    printObj(info)
+    printObj(data)
 
 # 账号成交状态变化主推
 
 
-def order_callback(ContextInfo, info):
+def order_callback(ContextInfo, data):
     info('order_callback')
-    printObj(info)
+    printObj(data)
 
 # 账号持仓状态变化主推
 
 
-def deal_callback(ContextInfo, info):
+def deal_callback(ContextInfo, data):
     info('deal_callback')
-    printObj(info)
+    printObj(data)
 
 
-def position_callback(ContextInfo, info):
+def position_callback(ContextInfo, data):
     info('position_callback')
-    printObj(info)
+    printObj(data)
 
 
 def orderError_callback(ContextInfo, orderArgs, errMsg):

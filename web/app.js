@@ -951,6 +951,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='19' where key='dbVersion';",
         `alter table tRuleAction add column broker text default '';`,
         "update config set value='21' where key='dbVersion';",
+        `alter table tRuleAction add column status text default '';`,
+        "update config set value='23' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1578,6 +1580,22 @@ app.post('/stock/query', async (req, res) => {
 
     var resp = JSON.stringify({ data: r.rows });
     res.send(resp);
+});
+
+
+app.post('/stock/rule/action/updateStatus', async (req, res) => {
+    info(`rule/action/updateStatus:${req.body}`);
+
+    let scode = req.body.scode;
+    let broker = req.body.broker;
+    let r = await db.runSync("update tRuleAction set done=1 where scode=? and broker=? and done=0", [scode, broker]);
+    let resp = {};
+    if (r.error) {
+        info(r.error);
+        resp = { error: r.error };
+    }
+
+    res.send(JSON.stringify(resp));
 });
 
 app.get('/stock/sqls', async (req, res) => {
