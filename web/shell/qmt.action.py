@@ -35,9 +35,13 @@ account = "620000558442"  # 国信
 broker = "国信"
 
 uploadPrice = 1
+getActions = 0
+
+
+
+
 
 g.actions = {}
-
 stocks = {}
 # 初始化函数 - 策略运行开始时调用一次
 
@@ -72,7 +76,8 @@ def init(ContextInfo):
         ContextInfo.run_time("uploadStockPrice",
                              "1nSecond", "2025-04-09 13:20:00")
 
-    ContextInfo.run_time("getActions", "5nSecond", "2025-04-09 13:20:00")
+    if (getActions == 1):
+        ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
     updateAccount(ContextInfo)
     # getTradeDetail(ContextInfo)
 
