@@ -470,6 +470,14 @@ window.feed_list = window.feed_list || (function () {
 
         getRuleStatus: async function () {
             let res = await share.getSync__("/stock/rule/status");
+            let statusMapping = {
+                "49": "待报",
+                "50": "已报",
+                "54": "已撤",
+                "55": "部成",
+                "56": "已成",
+                "57": "废单"
+            };
             $(".ruleStatus").each(function () {
                 let td = $(this);
                 let scode = td.parents("tr").attr("code").trim();
@@ -486,12 +494,16 @@ window.feed_list = window.feed_list || (function () {
                         toShow.actions = [];
                         for (let i = 0; i < r.actions.length; i++) {
                             let a = r.actions[i];
+                            let statusText = statusMapping[a.status];
+                            if (statusText == null) {
+                                statusText = a.status;
+                            }
                             let toShowA = {
                                 action: a.action,
                                 price: a.price,
                                 amount: a.amount,
                                 done: a.done,
-                                status: a.status,
+                                status: statusText,
                                 orderNo: a.orderNo,
                                 createTime: a.createTime
                             }

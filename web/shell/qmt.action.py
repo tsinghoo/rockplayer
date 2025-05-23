@@ -195,29 +195,6 @@ def task_callback(ContextInfo, data):
 
 def order_callback(ContextInfo, data):
     info('order_callback')
-    # m_nTaskId,m_nVolumeTotal,m_nVolumeTotalOriginal,m_nVolumeTraded,m_strAccountID,m_dLimitPrice,m_dOrderPriceRMB,m_strExchangeID,m_strInsertDate,m_strInsertTime,m_strInstrumentID,m_strInstrumentName,m_strOrderRef,m_strOrderSysID
-    # m_dFrozenMargin:5294.24482524
-    # m_dLimitPrice:5.64
-    # m_dOrderPriceRMB:5.29424482524
-    # m_eEntrustType:48
-    # m_nDirection:48
-    # m_nErrorID:2147483647
-    # m_nOpType:23
-    # m_nOrderStatus:49
-    # m_nOrderSubmitStatus:51
-    # m_nTaskId:189
-    # m_nVolumeTotal:1000
-    # m_nVolumeTotalOriginal:1000
-    # m_nVolumeTraded:0
-    # m_strAccountID:620000558442
-    # m_strExchangeID:HGT
-    # m_strExchangeName:沪港通
-    # m_strInsertDate:20250522
-    # m_strInsertTime:141000
-    # m_strInstrumentID:01398
-    # m_strInstrumentName:工商银行
-    # m_strOrderRef:7094081675818172603
-    # m_strOrderSysID:887342397
     debug(obj2JsonString(data, 1))
     js = obj2Json(data, 1)
     type = js["m_nOpType"]
@@ -229,12 +206,54 @@ def order_callback(ContextInfo, data):
     orderId = js["m_strOrderSysID"]
     updateActionOrdered(scode, type, status, price, orderId)
 
+
+def updateDeal(deal):
+    try:
+        # 目标 URL
+        url = "http://test1.91taogu.com/stock/deal/update"
+
+        # 设置请求头（声明内容类型为 JSON）
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        # 发送 POST 请求
+        response = requests.post(url, data=json.dumps(deal), headers=headers)
+
+        # 输出响应
+        debug("updateDeal:", response.status_code)
+        debug("response:", response.text)
+
+    except Exception as e:
+        error("updateDeal 出错:", traceback.format_exc())
+
 # 账号持仓状态变化主推
 
 
 def deal_callback(ContextInfo, data):
     info('deal_callback')
-    debug(obj2JsonString(data))
+    # debug(obj2JsonString(data))
+
+    js = obj2Json(data, 1)
+
+    deal = {
+        "tprice": js["m_dPrice"],
+        "scode": js["m_strInstrumentID"],
+        "sname": js["m_strInstrumentName"],
+        "market": js["m_strExchangeName"],
+        "operationDirection": js["m_strOptName"],
+        "operationName": broker,
+        "tday": js["m_strTradeDate"],
+        "ttime": js["m_strTradeTime"],
+        "tid": js["m_strTradeID"],
+        "tcash": js["m_dTradeAmount"],
+        "tamount": js["m_nVolume"],
+        "tpair": ""
+    }
+
+    info(json.dumps(deal, indent=2))
+
+    updateDeal(deal)
 
 
 def position_callback(ContextInfo, data):

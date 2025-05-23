@@ -929,10 +929,10 @@ async function dbCall(options) {
             let params = stat[1];
             debug("dbCall sql:" + sql);
             debug("params:" + JSON.stringify(params));
-            await db.runSync(sql, params);
+            return await db.runSync(sql, params);
         } else {
             debug("sql:" + stat);
-            await db.runSync(stat);
+            return await db.runSync(stat);
         }
     }
 }
@@ -1051,7 +1051,7 @@ async function insertOrReplace(table, row) {
 
         return val;
     });
-    await dbCall([[sql, vals]]);
+    return await dbCall([[sql, vals]]);
 }
 
 async function insertOrIgnore(table, row) {
@@ -1068,7 +1068,7 @@ async function insertOrIgnore(table, row) {
 
         return val;
     });
-    await dbCall([[sql, vals]]);
+    return await dbCall([[sql, vals]]);
 }
 
 app.post('/stock/screen/nodes', async (req, res) => {
@@ -1607,6 +1607,25 @@ app.post('/stock/query', async (req, res) => {
     res.send(resp);
 });
 
+
+app.post('/stock/deal/update', async (req, res) => {
+    info(`/stock/deal/update:${JSON.stringify(req.body)}`);
+    let deal = req.body;
+    deal.lastOperationTime = deal.tday + " " + deal.ttime;
+    let r = await insertOrIgnore("tStock", deal);
+    if (r.error == null) {
+        r = db.runSync(`update tStock set lastOperationTime=? where scode=?`, [deal.lastOperationTime, deal.scode]);
+    }
+
+    let resp = {};
+    if (r.error) {
+        info(r.error);
+        resp = { error: r.error };
+    } else {
+    }
+
+    res.send(JSON.stringify(resp));
+});
 
 app.post('/stock/rule/action/ordered', async (req, res) => {
     info(`rule/action/ordered:${JSON.stringify(req.body)}`);

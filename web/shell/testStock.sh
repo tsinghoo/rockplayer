@@ -26,6 +26,31 @@ END
   pause
 }
 
+  url=http://test1.91taogu.com/stock/rule/action/ordered
+  url=http://localhost:3001/stock/deal/update
+  data=$(
+    cat <<END
+{
+        "tprice": 41.74,
+        "scode": "603171",
+        "sname": "税友股份",
+        "market": "上证所",
+        "operationDirection": "限价买入",
+        "operationName": "国信",
+        "tday": "20250523",
+        "ttime": "142520",
+        "tid": "0000000033491526",
+        "tcash": 4174,
+        "tamount": 100,
+        "tpair": ""
+    }
+END
+  ) 
+  
+  curl -X POST -H "Content-Type: application/json" -d "$data" $url
+
+exit 0
+
 post 76.5
 post 76.4
 post 77
