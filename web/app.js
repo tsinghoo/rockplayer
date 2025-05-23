@@ -408,9 +408,9 @@ async function tryToSell(r) {
     debug("tryToSell:" + JSON.stringify(r));
     let rule = r.rule;
     let now = Date.now();
-    let sell = 0;
+    let price = 0;
     if (rule.dip < 0) {
-        sell = 1;
+        price = rule.sell;
     } else if (rule.currentPrice >= parseFloat(rule.sell)) {
         debug(`currentPrice > sell`);
         if (rule.maxPrice >= parseFloat(rule.sell)) {
@@ -418,12 +418,12 @@ async function tryToSell(r) {
             let delta = rule.maxPrice - rule.currentPrice;
             debug(`delta=${delta}`);
             if (delta >= parseFloat(rule.dip)) {
-                sell = 1;
+                price = rule.currentPrice;
             }
         }
     }
 
-    if (sell == 1) {
+    if (price > 0) {
         //卖出
         let action = {
             id: `${r.id}-${now}`,
@@ -432,7 +432,7 @@ async function tryToSell(r) {
             sname: rule.sname,
             action: "sell",
             broker: rule.broker,
-            price: rule.currentPrice,
+            price: price,
             amount: rule.sellAmount,
             orderNo: "",
             done: 0,
@@ -455,19 +455,19 @@ async function tryToBuy(r) {
     let now = Date.now();
     let buy = 0;
     if (rule.bounce < 0) {
-        buy = 1;
+        buy = rule.buy;
     } else if (rule.currentPrice <= parseFloat(rule.buy)) {
         debug(`currentPrice < buy`);
         if (rule.minPrice <= parseFloat(rule.buy)) {
             let delta = rule.currentPrice - rule.minPrice;
             if (delta >= parseFloat(rule.bounce)) {
                 //买入
-                buy = 1;
+                buy = rule.currentPrice;
             }
         }
     }
 
-    if (buy == 1) {
+    if (buy > 0) {
         let action = {
             id: `${r.id}-${now}`,
             ruleId: r.id,
@@ -475,7 +475,7 @@ async function tryToBuy(r) {
             sname: rule.sname,
             action: "buy",
             broker: rule.broker,
-            price: rule.currentPrice,
+            price: buy,
             amount: rule.buyAmount,
             orderNo: "",
             done: 0,
