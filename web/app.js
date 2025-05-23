@@ -460,6 +460,7 @@ async function tryToBuy(r) {
         debug(`currentPrice < buy`);
         if (rule.minPrice <= parseFloat(rule.buy)) {
             let delta = rule.currentPrice - rule.minPrice;
+            debug(`delta=${delta}`);
             if (delta >= parseFloat(rule.bounce)) {
                 //买入
                 buy = rule.currentPrice;
