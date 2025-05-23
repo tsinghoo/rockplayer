@@ -408,36 +408,43 @@ async function tryToSell(r) {
     debug("tryToSell:" + JSON.stringify(r));
     let rule = r.rule;
     let now = Date.now();
-    if (rule.currentPrice >= parseFloat(rule.sell)) {
+    let sell = 0;
+    if (rule.dip < 0) {
+        sell = 1;
+    } else if (rule.currentPrice >= parseFloat(rule.sell)) {
         debug(`currentPrice > sell`);
         if (rule.maxPrice >= parseFloat(rule.sell)) {
             debug(`maxPrice > sell`);
             let delta = rule.maxPrice - rule.currentPrice;
             debug(`delta=${delta}`);
             if (delta >= parseFloat(rule.dip)) {
-                //卖出
-                let action = {
-                    id: `${r.id}-${now}`,
-                    ruleId: r.id,
-                    scode: rule.scode,
-                    sname: rule.sname,
-                    action: "sell",
-                    broker: rule.broker,
-                    price: rule.currentPrice,
-                    amount: rule.sellAmount,
-                    orderNo: "",
-                    done: 0,
-                    createTime: now
-                }
-
-                await insertOrReplace("tRuleAction", action);
-                r.status = "ordered";
-
-                r.actions.push(action);
-                debug(`rules:${JSON.stringify(rules)}`);
-                return true;
+                sell = 1;
             }
         }
+    }
+
+    if (sell == 1) {
+        //卖出
+        let action = {
+            id: `${r.id}-${now}`,
+            ruleId: r.id,
+            scode: rule.scode,
+            sname: rule.sname,
+            action: "sell",
+            broker: rule.broker,
+            price: rule.currentPrice,
+            amount: rule.sellAmount,
+            orderNo: "",
+            done: 0,
+            createTime: now
+        }
+
+        await insertOrReplace("tRuleAction", action);
+        r.status = "ordered";
+
+        r.actions.push(action);
+        debug(`rules:${JSON.stringify(rules)}`);
+        return true;
     }
 
     return false;
@@ -446,33 +453,40 @@ async function tryToBuy(r) {
     debug("tryToBuy:" + JSON.stringify(r));
     let rule = r.rule;
     let now = Date.now();
-    if (rule.currentPrice <= parseFloat(rule.buy)) {
+    let buy = 0;
+    if (rule.bounce < 0) {
+        buy = 1;
+    } else if (rule.currentPrice <= parseFloat(rule.buy)) {
         debug(`currentPrice < buy`);
         if (rule.minPrice <= parseFloat(rule.buy)) {
             let delta = rule.currentPrice - rule.minPrice;
             if (delta >= parseFloat(rule.bounce)) {
                 //买入
-                let action = {
-                    id: `${r.id}-${now}`,
-                    ruleId: r.id,
-                    scode: rule.scode,
-                    sname: rule.sname,
-                    action: "buy",
-                    broker: rule.broker,
-                    price: rule.currentPrice,
-                    amount: rule.buyAmount,
-                    orderNo: "",
-                    done: 0,
-                    createTime: now
-                }
-
-                await insertOrReplace("tRuleAction", action);
-                r.status = "ordered";
-
-                r.actions.push(action);
-                return true;
+                buy = 1;
             }
         }
+    }
+
+    if (buy == 1) {
+        let action = {
+            id: `${r.id}-${now}`,
+            ruleId: r.id,
+            scode: rule.scode,
+            sname: rule.sname,
+            action: "buy",
+            broker: rule.broker,
+            price: rule.currentPrice,
+            amount: rule.buyAmount,
+            orderNo: "",
+            done: 0,
+            createTime: now
+        }
+
+        await insertOrReplace("tRuleAction", action);
+        r.status = "ordered";
+
+        r.actions.push(action);
+        return true;
     }
 
     return false;
@@ -492,9 +506,8 @@ async function checkRule(scodes) {
     for (let i = 0; i < scodes.length; i++) {
         let scode = scodes[i].split(".")[0];
         let r = rules[scode];
-        debug(`scode=${scode}`);
         if (r != null) {
-            debug(`r.status=${r.status}`);
+            debug(`checking rule: scode=${scode} status=${r.status}`);
             switch (r.status) {
                 case "todo":
                     //检查是否满足条件
@@ -1228,7 +1241,7 @@ function parseTime(str) {
 
 app.post('/stock/quotes', async (req, res) => {
     info("post /stock/quotes");
-
+    //{"data":{"837092.BJ":{"20250523101631.000":{"amount":10865500,"askPrice":[42.86,42.87,42.88,42.9,42.92],"askVol":[59,4,20,1,30],"bidPrice":[42.66,42.65,42.64,42.63,42.62],"bidVol":[2,2,10,32,26],"high":43.24,"lastClose":42.76,"lastPrice":42.65,"lastSettlementPrice":0,"low":42.41,"open":42.41,"openInt":13,"pvolume":253700,"settlementPrice":0,"stime":"20250523101631.000","stockStatus":1,"time":1747966591000,"transactionNum":0,"volume":2537}}}}
     info(JSON.stringify(req.body));
     let passcode = req.body.passcode;
     if (passcode != "995560") {
