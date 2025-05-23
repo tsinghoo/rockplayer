@@ -591,6 +591,18 @@ window.feed_list = window.feed_list || (function () {
                 }
             })
 
+            c.find(".buyFirst").on('change', function () {
+                if (this.checked) {
+                    c.find(".sellFirst").prop("checked", !this.checked);
+                }
+            });
+
+            c.find(".sellFirst").on('change', function () {
+                if (this.checked) {
+                    c.find(".buyFirst").prop("checked", !this.checked);
+                }
+            });
+
             c.find(".buttonToAll").click(function () {
 
             })

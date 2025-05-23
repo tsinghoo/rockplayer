@@ -27,7 +27,7 @@ END
 }
 
   url=http://test1.91taogu.com/stock/rule/action/ordered
-  url=http://localhost:3001/stock/deal/update
+  url=http://test1.91taogu.com/stock/deal/update
   data=$(
     cat <<END
 {
