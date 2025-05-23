@@ -65,7 +65,7 @@ def updateActionOrdered(scode, type, status, price, orderId):
             "broker": broker,
             "scode": scode,
             "status": status,
-            "orderId": orderId
+            "orderNo": orderId
         }
 
         # 设置请求头（声明内容类型为 JSON）

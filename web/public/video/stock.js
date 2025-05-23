@@ -491,6 +491,8 @@ window.feed_list = window.feed_list || (function () {
                                 price: a.price,
                                 amount: a.amount,
                                 done: a.done,
+                                status: a.status,
+                                orderNo: a.orderNo,
                                 createTime: a.createTime
                             }
 
