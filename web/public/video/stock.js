@@ -352,13 +352,14 @@ window.feed_list = window.feed_list || (function () {
                         td.html(html);
                         td.addClass("ruleContent");
                     } else if (key == "状态") {
-                        let rc = {};
+                        let rc = row[key];
                         try {
-                            rc = JSON.parse(row[key]);
+                            rc = JSON.parse(rc);
+                            rc = JSON.stringify(rc, null, 2)
                         } catch (e) {
 
                         }
-                        let html = `<pre>${JSON.stringify(rc, null, 2)}</pre>`;
+                        let html = `<pre>${rc}</pre>`;
                         td.html(html);
                         td.addClass("ruleStatus");
                         td.removeClass("nowrap");
