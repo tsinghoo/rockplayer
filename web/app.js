@@ -422,7 +422,7 @@ async function tryToSell(r) {
             }
         }
     }
-
+    debug(`price=${price}`);
     if (price > 0) {
         //卖出
         let action = {
@@ -466,7 +466,7 @@ async function tryToBuy(r) {
             }
         }
     }
-
+    debug(`buy=${buy}`);
     if (buy > 0) {
         let action = {
             id: `${r.id}-${now}`,
