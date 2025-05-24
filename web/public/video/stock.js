@@ -769,23 +769,44 @@ window.feed_list = window.feed_list || (function () {
         },
         onRuleStatusClicked: async function () {
             let html = `
+
                 <div class="input-group">
+                </div>
+
+                <div class="flexrow width100p">
+
+                        <div class="form-floating widthauto margin4">
+                            <input
+                                type="text"
+                                min="5"
+                                class="form-control currentPrice h20"
+                                name="currentPrice"
+                                value=""
+                                placeholder=" "
+                            >
+                            <label class="floating-label">当前价格</label>
+                        </div>
+
+
+                    <button type="button" class="btn btn-primary widthAuto margin4 buttonConfirm">
+                        更新价格
+                    </button>
+                </div>
+
+                <div class="flexrow width100p">
                     <div class="form-floating widthauto margin4" style="width:120px;">
                         <input
                             type="text"
                             min="5"
-                            class="form-control currentPrice h20"
-                            name="currentPrice"
-                            value="0"
+                            class="form-control actionStatus h20"
+                            name="actionStatus"
+                            value="56"
                             placeholder=" "
                         >
-                        <label class="floating-label">当前价格</label>
+                        <label class="floating-label">委托状态</label>
                     </div>
-                </div>
-
-                <div class="flexrow width100p center">
-                    <button type="button" class="btn btn-primary widthAuto margin4 buttonConfirm">
-                        确认
+                    <button type="button" class="btn btn-primary widthAuto margin4 buttonOrdered">
+                         已下单
                     </button>
                 </div>
             `;
@@ -799,6 +820,21 @@ window.feed_list = window.feed_list || (function () {
                     share.toastError__(res.error);
                 } else {
                     share.toastSuccess__("已更新", 1000);
+                }
+            });
+            c.find(".buttonOrdered").on("click", async function () {
+                let data = self.selectedData;
+                let body = {
+                    "broker": "国信",
+                    "scode": data["代码"],
+                    "status": 56,
+                    "orderNo": "" + Date.now() + ""
+                };
+                let res = await share.postSync__(`/stock/rule/action/ordered`, body);
+                if (res.error) {
+                    share.toastError__(res.error);
+                } else {
+                    share.toastSuccess__("已下单成功", 1000);
                 }
             });
         },

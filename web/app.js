@@ -900,7 +900,7 @@ app.get('/stock/updatePrice', async (req, res) => {
     let now = Date.now();
     let sql = `update tStockBasic set buy=?, updateTime=? where id=?`;
     await db.runSync(sql, [price, now, scode]);
-
+    checkRule([scode]);
     var resp = `${js}({})`;
     res.send(resp);
 });
