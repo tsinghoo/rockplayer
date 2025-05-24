@@ -10,6 +10,11 @@ window.feed_list = window.feed_list || (function () {
         init: async function () {
             await self.getSqls();
             Chart.register(ChartDataLabels);
+
+            let sql = share.getCache__("sql");
+            if (sql) {
+                self.exeSql(JSON.parse(sql), true);
+            }
             self.bindEvents();
         },
         getSqls: async function () {
@@ -99,6 +104,9 @@ window.feed_list = window.feed_list || (function () {
             if (res.error) {
                 share.toastError__(JSON.stringify(res.error));
             } else {
+                if (["all", "智能单"].includes(row.name)) {
+                    share.setCache__("sql", self.sql);
+                }
                 if (show) {
                     self.sqlRow = row;
                     self.rows = res.data;
