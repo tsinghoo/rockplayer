@@ -240,11 +240,18 @@ window.feed_list = window.feed_list || (function () {
         },
         showMenu4RuleContent: async function () {
             let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"] });
-            let guide = `maxPrice:${res.data.maxPrice}<br>
-             currentPrice:${res.data.currentPrice}<br>
-             minPrice:${res.data.minPrice}`;
+            let guide = ``;
 
             let buttons = [
+                {
+                    text: "修改",
+                    onTap: function () {
+                        share.closePopup__();
+                        let rule = self.selectedData["规则"];
+                        rule = JSON.parse(rule);
+                        self.toBuySell(rule);
+                    }
+                },
                 {
                     text: "删除",
                     onTap: function () {
@@ -524,16 +531,41 @@ window.feed_list = window.feed_list || (function () {
             })
         },
 
-        toBuySell: async function (sell, buy, delta) {
+        toBuySell: async function (opt) {
+            let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce;
+            if (opt) {
+                sell = opt.sell;
+                buy = opt.buy;
+                delta = opt.delta;
+                broker = opt.broker;
+                sellAmount = opt.sellAmount;
+                buyAmount = opt.buyAmount;
+                dip = opt.dip;
+                bounce = opt.bounce;
+            }
+            if (broker == null) {
+                broker = self.selectedData["券商"];
+            }
+            if (sellAmount == null) {
+                sellAmount = Math.abs(self.selectedData["数量"]);
+                buyAmount = sellAmount;
+            }
+            if (delta == null) {
+                delta = 0.02;
+            }
+
             let c = $("#templateBuySell").html();
             let popup = await share.popup__(null, c);
             c = $(`#${popup.id}`);
             c.find(".sname").val(`${self.selectedData["名称"]}`);
             c.find(".scode").val(`${self.selectedData["代码"]}`);
-            c.find(".operationName").val(`${self.selectedData["券商"]}`);
-            let np = self.selectedData["价格"];
-
-            if (self.selectedData["买卖"].indexOf("买") > -1) {
+            c.find(".operationName").val(`${broker}`);
+            let np = buy;
+            if (np == null) {
+                np = self.selectedData["价格"];
+            }
+            let oper = self.selectedData["买卖"];
+            if (oper && oper.indexOf("买") > -1) {
                 if (sell == null) {
                     sell = (np * (1 + 0.02)).toFixed(3);
                 }
@@ -558,16 +590,19 @@ window.feed_list = window.feed_list || (function () {
                 c.find(".buyFirst").prop("checked", true);
             }
 
-            if (delta == null) {
-                delta = np * 0.01;
+            if (dip == null) {
+                dip = delta;
+            }
+            if (bounce == null) {
+                bounce = delta;
             }
 
-            c.find(".bounce").val(delta);
-            c.find(".dip").val(delta);
+            c.find(".bounce").val(bounce);
+            c.find(".dip").val(dip);
 
-            let amount = Math.abs(self.selectedData["数量"]);
-            c.find(".buyAmount").val(amount);
-            c.find(".sellAmount").val(amount);
+
+            c.find(".buyAmount").val(buyAmount);
+            c.find(".sellAmount").val(sellAmount);
 
             c.find(".buttonConfirm").click(async function () {
                 let broker = c.find(".operationName").val().trim();
@@ -824,10 +859,11 @@ window.feed_list = window.feed_list || (function () {
             });
             c.find(".buttonOrdered").on("click", async function () {
                 let data = self.selectedData;
+                let status = c.find(".actionStatus").val().trim();
                 let body = {
                     "broker": "国信",
                     "scode": data["代码"],
-                    "status": 56,
+                    "status": status,
                     "orderNo": "" + Date.now() + ""
                 };
                 let res = await share.postSync__(`/stock/rule/action/ordered`, body);

@@ -389,7 +389,12 @@ async function reloadRule(r) {
             } else {
                 info("rule done");
                 r.status = "done";
-                delete rules[r.scode];
+                await db.runSync(`update tTradeRule set closed=1 where scode = '${r.scode}'`);
+
+                setTimeout(() => {
+                    delete rules[r.scode];
+                }, 1000 * 3);
+
             }
         }
         r.actions.push(ra);
