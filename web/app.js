@@ -891,6 +891,20 @@ app.get('/stock/vote', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/updatePrice', async (req, res) => {
+    info("/stock/updatePrice");
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let price = req.query.price;
+    updatePriceToRule(scode, price);
+    let now = Date.now();
+    let sql = `update tStockBasic set buy=?, updateTime=? where id=?`;
+    await db.runSync(sql, [price, now, scode]);
+
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
 app.get('/stock/deleteRow', async (req, res) => {
     info("/stock/deleteRow");
     let js = req.query.js;

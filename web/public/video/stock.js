@@ -383,6 +383,12 @@ window.feed_list = window.feed_list || (function () {
                 $(".repeatCode").hide();
             }
 
+
+            $(".ruleStatus").click(function () {
+                self.onTdClicked(this);
+                self.onRuleStatusClicked();
+            })
+
             $(".firstCode").click(function () {
                 let code = $(this).attr("code");
                 let trs = $(`.repeatCode${code}`);
@@ -755,6 +761,47 @@ window.feed_list = window.feed_list || (function () {
                 }
             });
         },
+        onTdClicked: function (ele) {
+            let data = $(ele).parent("tr").attr("data");
+            data = JSON.parse(data);
+            self.selectedData = data;
+            share.currentTarget = ele;
+        },
+        onRuleStatusClicked: async function () {
+            let html = `
+                <div class="input-group">
+                    <div class="form-floating widthauto margin4" style="width:120px;">
+                        <input
+                            type="text"
+                            min="5"
+                            class="form-control currentPrice h20"
+                            name="currentPrice"
+                            value="0"
+                            placeholder=" "
+                        >
+                        <label class="floating-label">当前价格</label>
+                    </div>
+                </div>
+
+                <div class="flexrow width100p center">
+                    <button type="button" class="btn btn-primary widthAuto margin4 buttonConfirm">
+                        确认
+                    </button>
+                </div>
+            `;
+            let popup = await share.popup__(null, html);
+            let c = $(`#${popup.id}`);
+            c.find(".buttonConfirm").on("click", async function () {
+                let data = self.selectedData;
+                let price = c.find(".currentPrice").val().trim();
+                let res = await share.getSync__(`/stock/updatePrice?price=${price}&scode=${data["代码"]}`);
+                if (res.error) {
+                    share.toastError__(res.error);
+                } else {
+                    share.toastSuccess__("已更新", 1000);
+                }
+            });
+        },
         showChart: async function (rows) {
             let max = 0;
             let min = 100000;
@@ -775,53 +822,53 @@ window.feed_list = window.feed_list || (function () {
             });
 
             let html = `
-<div class="flexcolumn center">
-    <div class="flexrow width100p">
-        <div class="flexcolumn center width100p">
-            <div class="flexrow width100p">
-                <div class="flexrow col-xs-2">
-                    <input type="text" id="ratio" style="width:25px;" value="${ratio}">%
+                <div class="flexcolumn center">
+                    <div class="flexrow width100p">
+                        <div class="flexcolumn center width100p">
+                            <div class="flexrow width100p">
+                                <div class="flexrow col-xs-2">
+                                    <input type="text" id="ratio" style="width:25px;" value="${ratio}">%
+                                </div>
+                                <div class="marginlr10 col-xs-4 left">最近: <input style="width:60px;" type="text" id="last" value="${recent}"></div>
+                                <div class="marginlr10 col-xs-3 recentUp">+${ratio}%: ${(recent * (1 + ratio / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3 recentDown">-${ratio}%: ${(recent * (1 - ratio / 100)).toFixed(2)}</div>
+                            </div>
+
+                            <div class="flexrow width100p">
+                                <div class="flexrow col-xs-2"></div>
+                                <div class="marginlr10 col-xs-4 left">${recent}</div>
+                                <div class="marginlr10 col-xs-3">+3%: ${(recent * (1 + 3 / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3">-3%: ${(recent * (1 - 3 / 100)).toFixed(2)}</div>
+                            </div>
+                            <div class="flexrow width100p">
+                                <div class="flexrow col-xs-2"></div>
+                                <div class="marginlr10 col-xs-4 left">${recent}</div>
+                                <div class="marginlr10 col-xs-3">+5%: ${(recent * (1 + 5 / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3">-5%: ${(recent * (1 - 5 / 100)).toFixed(2)}</div>
+                            </div>
+                            <div class="flexrow width100p">
+                                <div class="flexrow col-xs-2"></div>
+                                <div class="marginlr10 col-xs-4 left">${recent}</div>
+                                <div class="marginlr10 col-xs-3">+10%: ${(recent * (1 + 10 / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3">-10%: ${(recent * (1 - 10 / 100)).toFixed(2)}</div>
+                            </div>
+
+                            <div class="flexrow width100p">
+                                <div class="flexrow col-xs-2"></div>
+                                <div class="marginlr10 col-xs-4 left">最大: ${max}</div>
+                                <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${(max * (1 + ratio / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${(max * (1 - ratio / 100)).toFixed(2)}</div>
+                            </div>
+                            <div class="flexrow width100p">
+                                <div class="flexrow col-xs-2"></div>
+                                <div class="marginlr10 col-xs-4 left">最小: ${min}</div>
+                                <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${(min * (1 + ratio / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${(min * (1 - ratio / 100)).toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="priceChart" style="width: 500px; height: 300px;"></canvas>
                 </div>
-                <div class="marginlr10 col-xs-4 left">最近: <input style="width:60px;" type="text" id="last" value="${recent}"></div>
-                <div class="marginlr10 col-xs-3 recentUp">+${ratio}%: ${(recent * (1 + ratio / 100)).toFixed(2)}</div>
-                <div class="marginlr10 col-xs-3 recentDown">-${ratio}%: ${(recent * (1 - ratio / 100)).toFixed(2)}</div>
-            </div>
-
-            <div class="flexrow width100p">
-                <div class="flexrow col-xs-2"></div>
-                <div class="marginlr10 col-xs-4 left">${recent}</div>
-                <div class="marginlr10 col-xs-3">+3%: ${(recent * (1 + 3 / 100)).toFixed(2)}</div>
-                <div class="marginlr10 col-xs-3">-3%: ${(recent * (1 - 3 / 100)).toFixed(2)}</div>
-            </div>
-            <div class="flexrow width100p">
-                <div class="flexrow col-xs-2"></div>
-                <div class="marginlr10 col-xs-4 left">${recent}</div>
-                <div class="marginlr10 col-xs-3">+5%: ${(recent * (1 + 5 / 100)).toFixed(2)}</div>
-                <div class="marginlr10 col-xs-3">-5%: ${(recent * (1 - 5 / 100)).toFixed(2)}</div>
-            </div>
-            <div class="flexrow width100p">
-                <div class="flexrow col-xs-2"></div>
-                <div class="marginlr10 col-xs-4 left">${recent}</div>
-                <div class="marginlr10 col-xs-3">+10%: ${(recent * (1 + 10 / 100)).toFixed(2)}</div>
-                <div class="marginlr10 col-xs-3">-10%: ${(recent * (1 - 10 / 100)).toFixed(2)}</div>
-            </div>
-
-            <div class="flexrow width100p">
-                <div class="flexrow col-xs-2"></div>
-                <div class="marginlr10 col-xs-4 left">最大: ${max}</div>
-                <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${(max * (1 + ratio / 100)).toFixed(2)}</div>
-                <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${(max * (1 - ratio / 100)).toFixed(2)}</div>
-            </div>
-            <div class="flexrow width100p">
-                <div class="flexrow col-xs-2"></div>
-                <div class="marginlr10 col-xs-4 left">最小: ${min}</div>
-                <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${(min * (1 + ratio / 100)).toFixed(2)}</div>
-                <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${(min * (1 - ratio / 100)).toFixed(2)}</div>
-            </div>
-        </div>
-    </div>
-    <canvas id="priceChart" style="width: 500px; height: 300px;"></canvas>
-</div>
             `;
             let popup = await share.popup__(null, html);
             let c = $(`#${popup.id}`);
@@ -916,7 +963,7 @@ window.feed_list = window.feed_list || (function () {
                     }
                 }
             });
-        },
+        }
     };
 
     $(function () {
@@ -925,3 +972,4 @@ window.feed_list = window.feed_list || (function () {
 
     return self;
 })();
+
