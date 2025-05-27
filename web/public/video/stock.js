@@ -408,15 +408,6 @@ window.feed_list = window.feed_list || (function () {
 
                         td.addClass("ruleContent");
                     } else if (key == "状态") {
-                        let rc = row[key];
-                        try {
-                            rc = JSON.parse(rc);
-                            rc = JSON.stringify(rc, null, 2)
-                        } catch (e) {
-
-                        }
-                        let html = `<pre>${rc}</pre>`;
-                        td.html(html);
                         td.addClass("ruleStatus");
                         td.removeClass("nowrap");
                     } else {
@@ -545,37 +536,44 @@ window.feed_list = window.feed_list || (function () {
                 let scode = td.parents("tr").attr("code").trim();
                 let r = res.data[scode];
                 if (r) {
-                    let toShow = {
-                        currentPrice: r.rule.currentPrice,
-                        maxPrice: r.rule.maxPrice,
-                        minPrice: r.rule.minPrice,
-                        status: r.status
+                    let rc = r.rule;
+
+                    let mapping = {
+                        "toBuy": "待买",
+                        "toSell": "待卖",
+                        "ordered": "已下单"
                     }
 
-                    if (r.actions.length > 0) {
-                        toShow.actions = [];
-                        for (let i = 0; i < r.actions.length; i++) {
-                            let a = r.actions[i];
+                    let price = `
+                        <tr>
+                            <td colspan="7">
+                            ${mapping[r.status]}: [${rc.minPrice}, ${rc.maxPrice}]: ${rc.currentPrice}
+                            </td>
+                        </tr>
+                    `;
+                    let actions = "";
+                    if (r.actions && r.actions.length > 0) {
+                        actions = r.actions.map(a => {
                             let statusText = statusMapping[a.status];
                             if (statusText == null) {
-                                statusText = a.status;
+                                statusText = a.status ? a.status : "";
                             }
-                            let toShowA = {
-                                action: a.action,
-                                price: a.price,
-                                amount: a.amount,
-                                done: a.done,
-                                status: statusText,
-                                orderNo: a.orderNo,
-                                createTime: a.createTime
-                            }
-
-                            toShow.actions.push(toShowA);
-                        }
+                            return `
+                                <tr>
+                                    <td>${share.timeFormat__(a.createTime,"yyyy-MM-dd hh:mm:ss")}</td>
+                                    <td>${a.action}</td>
+                                    <td>${a.price}</td>
+                                    <td>${a.amount}</td>
+                                    <td>${a.orderNo}</td>
+                                    <td>${a.done}</td>
+                                    <td>${statusText}</td>
+                                </tr>
+                            `;
+                        }).join("");
                     }
 
-                    let json = JSON.stringify(toShow, null, 2);
-                    td.html(`<pre>${json}</pre>`);
+                    let html = `<table>${price}${actions}</table>`;
+                    td.html(html);
                 }
             })
         },
