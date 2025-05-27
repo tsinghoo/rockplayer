@@ -363,7 +363,36 @@ window.feed_list = window.feed_list || (function () {
                         td.addClass("buySell");
                     } else if (key == "规则") {
                         let rc = JSON.parse(row[key]);
-                        let html = `<pre>${JSON.stringify(rc, null, 2)}</pre>`;
+                        let html = `
+                            <div class="flexrow center">
+                                ${rc.order == "buyFirst" ? "先买入" : (rc.order == "sellFirst" ? "先卖出" : "")}
+                            </div>
+                            <div class="flexrow center">
+                                <div class="flexcolumn margin4 border buyInfo">
+                                    <div class="flexrow"> 
+                                    买入:${rc.buy}
+                                    </div>
+                                    <div class="flexrow">
+                                    反弹:${parseFloat(rc.bounce).toFixed(3)}
+                                    </div>
+                                    <div class="flexrow">
+                                    数量:${rc.buyAmount}
+                                    </div>
+                                </div>
+
+                                <div class="flexcolumn margin4 border sellInfo">
+                                    <div class="flexrow"> 
+                                    卖出:${rc.sell}
+                                    </div>
+                                    <div class="flexrow">
+                                    回落:${parseFloat(rc.dip).toFixed(3)}
+                                    </div>
+                                    <div class="flexrow">
+                                    数量:${rc.sellAmount}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
                         td.html(html);
                         td.addClass("ruleContent");
                     } else if (key == "状态") {

@@ -52,7 +52,7 @@ def init(ContextInfo):
     ContextInfo.set_universe(stocklist)
     if (runGetActionTask == 1):
         info("start getActions task")
-        ContextInfo.run_time("getActions", "5nSecond", "2025-04-09 13:20:00")
+        ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
 
 
 def updateActionOrdered(scode, type, status, price, orderId):
@@ -104,9 +104,12 @@ def getActions(ContextInfo):
                     if act["action"] == "buy":
                         info("买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
-
-                        passorder(23, 1101, account, act["scode"], 11, act["price"],
-                                  act["amount"], 2, ContextInfo)
+                        if act["amount"] == -1:
+                            order_lots(act["scode"], 1,
+                                       'fix', act["price"], ContextInfo, account)
+                        else:
+                            passorder(23, 1101, account, act["scode"], 11, act["price"],
+                                      act["amount"], 2, ContextInfo)
 
                         info("已买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
