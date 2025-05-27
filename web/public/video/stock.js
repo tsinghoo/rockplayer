@@ -813,11 +813,7 @@ window.feed_list = window.feed_list || (function () {
                         const price = data["价格"];
                         let delta = ((curPrice - price) / price * 100).toFixed(1);
                         let tp = share.getTimePassed__(row.updateTime);
-                        if (th.hasClass("repeatCode") && data["配对"] != "") {
-
-                        } else {
-                            cpl.text(`${curPrice} (${delta}% ${tp})`);
-                        }
+                        cpl.text(`${curPrice} (${delta}% ${tp})`);
 
                         if (delta > 0 && data["买卖"] == "买入") {
                             if (data["配对"] != "") {
@@ -827,7 +823,7 @@ window.feed_list = window.feed_list || (function () {
                             }
                         }
 
-                        if (delta < -5 && data["买卖"] == "买入") {
+                        if (delta < -2 && data["买卖"] == "买入") {
                             if (data["配对"] != "") {
                                 cpl.addClass("gold");
                             } else {
