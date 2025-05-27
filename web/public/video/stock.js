@@ -363,37 +363,49 @@ window.feed_list = window.feed_list || (function () {
                         td.addClass("buySell");
                     } else if (key == "规则") {
                         let rc = JSON.parse(row[key]);
-                        let html = `
-                            <div class="flexrow center">
-                                ${rc.order == "buyFirst" ? "先买入" : (rc.order == "sellFirst" ? "先卖出" : "")}
-                            </div>
-                            <div class="flexrow center">
-                                <div class="flexcolumn margin4 border buyInfo">
-                                    <div class="flexrow"> 
-                                    买入:${rc.buy}
-                                    </div>
-                                    <div class="flexrow">
-                                    反弹:${parseFloat(rc.bounce).toFixed(3)}
-                                    </div>
-                                    <div class="flexrow">
-                                    数量:${rc.buyAmount}
-                                    </div>
-                                </div>
-
-                                <div class="flexcolumn margin4 border sellInfo">
-                                    <div class="flexrow"> 
-                                    卖出:${rc.sell}
-                                    </div>
-                                    <div class="flexrow">
-                                    回落:${parseFloat(rc.dip).toFixed(3)}
-                                    </div>
-                                    <div class="flexrow">
-                                    数量:${rc.sellAmount}
-                                    </div>
-                                </div>
-                            </div>
+                        let buy = `
+                            <tr> 
+                                <td>买:</td>
+                                <td>${rc.buy}</td> 
+                                <td>&uparrow;${parseFloat(rc.bounce).toFixed(3)}</td>
+                                <td>${rc.buyAmount}</td>
+                            </tr>
                         `;
+                        let sell = `
+                            <tr style="border:none;"> 
+                                <td>卖:</td>
+                                <td>${rc.sell}</td> 
+                                <td>&downarrow;${parseFloat(rc.dip).toFixed(3)}</td>
+                                <td>${rc.sellAmount}</td>
+                            </tr>
+                        `;
+                        let html = `
+                            <table>
+                                ${buy}
+                                ${sell}
+                            </table>
+                        `;
+
+                        if (rc.order == "sellFirst") {
+                            html = `
+                            <table>
+                                ${sell}
+                                ${buy}
+                            </table>
+                            `;
+                        }
+
                         td.html(html);
+                        if (rc.order == "") {
+                            td.find("table").css({
+                                border: "1px solid gray",
+                                "border-collapse": "collapse"
+                            });
+                            td.find("table td, table th").css({
+                                border: "none"
+                            });
+                        }
+
                         td.addClass("ruleContent");
                     } else if (key == "状态") {
                         let rc = row[key];
