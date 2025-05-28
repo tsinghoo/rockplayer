@@ -6,15 +6,12 @@ window.feed_list = window.feed_list || (function () {
     var self = {
         data: {},
         rows: [],
+        sql: { name: "" },
         currentPrices: {},
         init: async function () {
+            self.sql.name = decodeURIComponent(window.location.hash.substring(1));
             await self.getSqls();
             Chart.register(ChartDataLabels);
-
-            let sql = share.getCache__("sql");
-            if (sql) {
-                self.exeSql(JSON.parse(sql), true);
-            }
             self.bindEvents();
         },
         getSqls: async function () {
@@ -29,6 +26,9 @@ window.feed_list = window.feed_list || (function () {
                     let row = rows[i];
                     let div = $("<div class='clickable padding4 nowrap'>");
                     div.text(row.name);
+                    if (row.name == self.sql.name) {
+                        self.sql = row;
+                    }
                     div.click(function () {
                         share.currentTarget = this;
                         self.sqlClicked(row);
@@ -36,6 +36,10 @@ window.feed_list = window.feed_list || (function () {
 
                     $("#sqls").append(div);
                 }
+            }
+
+            if (self.sql.sql) {
+                self.exeSql(self.sql, true);
             }
         },
         sqlClicked: function (row) {
@@ -104,12 +108,13 @@ window.feed_list = window.feed_list || (function () {
             if (res.error) {
                 share.toastError__(JSON.stringify(res.error));
             } else {
-                if (["all", "智能单"].includes(row.name)) {
-                    share.setCache__("sql", self.sql);
-                }
+
                 if (show) {
                     self.sqlRow = row;
                     self.rows = res.data;
+                    if (self.rows && self.rows.length > 0) {
+                        location.hash = `${row.name}`;
+                    }
                     self.showRows(false);
                 }
             }
@@ -560,7 +565,7 @@ window.feed_list = window.feed_list || (function () {
                             }
                             return `
                                 <tr>
-                                    <td>${share.timeFormat__(a.createTime,"yyyy-MM-dd hh:mm:ss")}</td>
+                                    <td>${share.timeFormat__(a.createTime, "yyyy-MM-dd hh:mm:ss")}</td>
                                     <td>${a.action}</td>
                                     <td>${a.price}</td>
                                     <td>${a.amount}</td>

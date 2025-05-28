@@ -117,8 +117,10 @@ def getActions(ContextInfo):
                     elif act["action"] == "sell":
                         info("卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])
-                        # passorder(24, 1101, account, act["scode"], 11, act["price"],
-                        #           act["amount"], ContextInfo)
+                        passorder(24, 1101, account, act["scode"], 11, act["price"],
+                                   act["amount"], ContextInfo)
+                        info("已卖出", act["sname"], act["scode"],
+                             act["price"], act["amount"])
 
                     g.actions[act["scode"]] = act
     except Exception as e:
