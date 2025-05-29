@@ -152,7 +152,7 @@ window.feed_list = window.feed_list || (function () {
                 {
                     text: "现价",
                     onTap: function () {
-                        let tds = $(`.curPrice`);
+                        let tds = $(`.curPrice, .tdRule,.tdStatus`);
                         if (tds.is(":visible")) {
                             tds.hide();
                         } else {
@@ -307,6 +307,10 @@ window.feed_list = window.feed_list || (function () {
                 tr.append(th);
                 if (keys[i] == "现价") {
                     th.addClass("curPrice");
+                } else if (keys[i] == "规则") {
+                    th.addClass("tdRule");
+                } else if (keys[i] == "状态") {
+                    th.addClass("tdStatus");
                 }
             }
 
@@ -368,6 +372,7 @@ window.feed_list = window.feed_list || (function () {
                         td.text(row[key]);
                         td.addClass("buySell");
                     } else if (key == "规则") {
+                        td.addClass("tdRule");
                         let rc = JSON.parse(row[key]);
                         if (firstRow && rc != null) {
                             let buy = `
@@ -416,6 +421,7 @@ window.feed_list = window.feed_list || (function () {
                             td.addClass("ruleContent");
                         }
                     } else if (key == "状态") {
+                        td.addClass("tdStatus");
                         if (firstRow) {
                             td.addClass("ruleStatus");
                             // td.removeClass("nowrap"); 
