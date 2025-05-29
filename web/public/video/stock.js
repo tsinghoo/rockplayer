@@ -554,9 +554,9 @@ window.feed_list = window.feed_list || (function () {
                         "ordered": "已下单"
                     }
                     
-                    // rc.minPrice = rc.minPrice ? rc.minPrice : 0;
-                    // rc.maxPrice = rc.maxPrice ? rc.maxPrice : 0;
-                    // rc.currentPrice = rc.currentPrice ? rc.currentPrice : 0;
+                    rc.minPrice = rc.minPrice ? rc.minPrice : 0;
+                    rc.maxPrice = rc.maxPrice ? rc.maxPrice : 0;
+                    rc.currentPrice = rc.currentPrice ? rc.currentPrice : 0;
 
                     let price = `
                         <tr>
