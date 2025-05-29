@@ -552,7 +552,7 @@ window.feed_list = window.feed_list || (function () {
                     let price = `
                         <tr>
                             <td colspan="7">
-                            ${mapping[r.status]}: [${rc.minPrice}, ${rc.maxPrice}]: ${rc.currentPrice}
+                            ${mapping[r.status]}: [${rc.minPrice.toFixed(3)}, ${rc.maxPrice.toFixed(3)}]: ${rc.currentPrice.toFixed(3)}
                             </td>
                         </tr>
                     `;
@@ -818,7 +818,7 @@ window.feed_list = window.feed_list || (function () {
                         const price = data["价格"];
                         let delta = ((curPrice - price) / price * 100).toFixed(1);
                         let tp = share.getTimePassed__(row.updateTime);
-                        cpl.text(`${curPrice} (${delta}% ${tp})`);
+                        cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
 
                         if (delta > 0 && data["买卖"] == "买入") {
                             if (data["配对"] != "") {

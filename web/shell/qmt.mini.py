@@ -20,7 +20,7 @@ g = G()
 
 g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
-g.session_id = 1000
+g.session_id = 1001
 
 g.tick = {}
 g.uploading = 0
