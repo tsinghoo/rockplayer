@@ -598,6 +598,15 @@ window.feed_list = window.feed_list || (function () {
             if (broker == null) {
                 broker = self.selectedData["券商"];
             }
+
+            if (!["国信", "国金"].includes(broker)){
+                broker = "国信";
+            }
+
+            if (self.formatScode(self.selectedData["代码"]).indexOf("BJ")>=0){
+                broker = "国金";
+            }
+
             if (sellAmount == null) {
                 sellAmount = Math.abs(self.selectedData["数量"]);
                 buyAmount = sellAmount;
