@@ -553,14 +553,14 @@ window.feed_list = window.feed_list || (function () {
                         "toSell": "待卖",
                         "ordered": "已下单"
                     }
-                    
-                    rc.minPrice = rc.minPrice ? rc.minPrice : 0;
-                    rc.maxPrice = rc.maxPrice ? rc.maxPrice : 0;
-                    rc.currentPrice = rc.currentPrice ? rc.currentPrice : 0;
+
+                    rc.minPrice = rc.minPrice ? parseFloat(rc.minPrice) : 0;
+                    rc.maxPrice = rc.maxPrice ? parseFloat(rc.maxPrice) : 0;
+                    rc.currentPrice = rc.currentPrice ? parseFloat(rc.currentPrice) : 0;
 
                     let price = `
                         <tr>
-                            <td colspan="7">
+                            <td colspan="7" class="nowrap">
                             ${mapping[r.status]}: [${rc.minPrice.toFixed(3)}, ${rc.maxPrice.toFixed(3)}]: ${rc.currentPrice.toFixed(3)}
                             </td>
                         </tr>
