@@ -780,7 +780,7 @@ window.feed_list = window.feed_list || (function () {
                     suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
                 } else if (/^(000|001|002|003|30|15)\d+$/.test(code)) {
                     suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
-                } else if (/^(8|43|83|87|88)\d+$/.test(code)) {
+                } else if (/^(8|43|83|87|88|92)\d+$/.test(code)) {
                     suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
                 }
             } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
