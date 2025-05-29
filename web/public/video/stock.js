@@ -287,6 +287,7 @@ window.feed_list = window.feed_list || (function () {
             let sqlName = self.sqlRow.name.trim();
             if (sqlName == "all") {
                 await self.getCurrentPrices();
+                await self.getRuleStatus();
             } else if (sqlName == "智能单") {
                 await self.getRuleStatus();
             }
@@ -368,7 +369,8 @@ window.feed_list = window.feed_list || (function () {
                         td.addClass("buySell");
                     } else if (key == "规则") {
                         let rc = JSON.parse(row[key]);
-                        let buy = `
+                        if (firstRow && rc != null) {
+                            let buy = `
                             <tr> 
                                 <td>买:</td>
                                 <td>${rc.buy}</td> 
@@ -376,7 +378,7 @@ window.feed_list = window.feed_list || (function () {
                                 <td>${rc.buyAmount}</td>
                             </tr>
                         `;
-                        let sell = `
+                            let sell = `
                             <tr style="border:none;"> 
                                 <td>卖:</td>
                                 <td>${rc.sell}</td> 
@@ -384,37 +386,40 @@ window.feed_list = window.feed_list || (function () {
                                 <td>${rc.sellAmount}</td>
                             </tr>
                         `;
-                        let html = `
+                            let html = `
                             <table>
                                 ${buy}
                                 ${sell}
                             </table>
                         `;
 
-                        if (rc.order == "sellFirst") {
-                            html = `
+                            if (rc.order == "sellFirst") {
+                                html = `
                             <table>
                                 ${sell}
                                 ${buy}
                             </table>
                             `;
-                        }
+                            }
 
-                        td.html(html);
-                        if (rc.order == "") {
-                            td.find("table").css({
-                                border: "1px solid gray",
-                                "border-collapse": "collapse"
-                            });
-                            td.find("table td, table th").css({
-                                border: "none"
-                            });
-                        }
+                            td.html(html);
+                            if (rc.order == "") {
+                                td.find("table").css({
+                                    border: "1px solid gray",
+                                    "border-collapse": "collapse"
+                                });
+                                td.find("table td, table th").css({
+                                    border: "none"
+                                });
+                            }
 
-                        td.addClass("ruleContent");
+                            td.addClass("ruleContent");
+                        }
                     } else if (key == "状态") {
-                        td.addClass("ruleStatus");
-                        td.removeClass("nowrap");
+                        if (firstRow) {
+                            td.addClass("ruleStatus");
+                            // td.removeClass("nowrap"); 
+                        }
                     } else {
                         td.text(row[key]);
                         if (key == "现价") {
@@ -548,6 +553,9 @@ window.feed_list = window.feed_list || (function () {
                         "toSell": "待卖",
                         "ordered": "已下单"
                     }
+                    rc.minPrice = rc.minPrice ? rc.minPrice : 0;
+                    rc.maxPrice = rc.maxPrice ? rc.maxPrice : 0;
+                    rc.currentPrice = rc.currentPrice ? rc.currentPrice : 0;
 
                     let price = `
                         <tr>
@@ -599,11 +607,11 @@ window.feed_list = window.feed_list || (function () {
                 broker = self.selectedData["券商"];
             }
 
-            if (!["国信", "国金"].includes(broker)){
+            if (!["国信", "国金"].includes(broker)) {
                 broker = "国信";
             }
 
-            if (self.formatScode(self.selectedData["代码"]).indexOf("BJ")>=0){
+            if (self.formatScode(self.selectedData["代码"]).indexOf("BJ") >= 0) {
                 broker = "国金";
             }
 
@@ -819,34 +827,38 @@ window.feed_list = window.feed_list || (function () {
                 if (self.currentPrices[row.scode]) {
                     let tr = $(`[code="${row.scode}"]`);
                     tr.each(function () {
-                        let th = $(this);
-                        let cpl = th.find(".curPrice");
-                        let data = th.attr("data");
-                        data = JSON.parse(data);
-                        const curPrice = row.buy;
-                        const price = data["价格"];
-                        let delta = ((curPrice - price) / price * 100).toFixed(1);
-                        let tp = share.getTimePassed__(row.updateTime);
-                        cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
+                        try {
+                            let th = $(this);
+                            let cpl = th.find(".curPrice");
+                            let data = th.attr("data");
+                            data = JSON.parse(data);
+                            const curPrice = row.buy;
+                            const price = data["价格"];
+                            let delta = ((curPrice - price) / price * 100).toFixed(1);
+                            let tp = share.getTimePassed__(row.updateTime);
+                            cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
 
-                        if (delta > 0 && data["买卖"] == "买入") {
-                            if (data["配对"] != "") {
-                                cpl.addClass("gold");
-                            } else {
+                            if (delta > 0 && data["买卖"] == "买入") {
+                                if (data["配对"] != "") {
+                                    cpl.addClass("gold");
+                                } else {
+                                    cpl.addClass("red");
+                                }
+                            }
+
+                            if (delta < -2 && data["买卖"] == "买入") {
+                                if (data["配对"] != "") {
+                                    cpl.addClass("gold");
+                                } else {
+                                    cpl.addClass("green");
+                                }
+                            }
+
+                            if (delta < 0 && data["买卖"] == "卖出") {
                                 cpl.addClass("red");
                             }
-                        }
-
-                        if (delta < -2 && data["买卖"] == "买入") {
-                            if (data["配对"] != "") {
-                                cpl.addClass("gold");
-                            } else {
-                                cpl.addClass("green");
-                            }
-                        }
-
-                        if (delta < 0 && data["买卖"] == "卖出") {
-                            cpl.addClass("red");
+                        } catch (e) {
+                            console.log(e);
                         }
 
                     })
