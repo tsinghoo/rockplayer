@@ -426,6 +426,11 @@ window.feed_list = window.feed_list || (function () {
                             td.addClass("ruleStatus");
                             // td.removeClass("nowrap"); 
                         }
+                    } else if (key == "K线") {
+                        if (firstRow) {
+                            td.addClass("tdKLine");
+                            // td.removeClass("nowrap"); 
+                        }
                     } else {
                         td.text(row[key]);
                         if (key == "现价") {
@@ -450,6 +455,10 @@ window.feed_list = window.feed_list || (function () {
             $(".ruleStatus").click(function () {
                 self.onTdClicked(this);
                 self.onRuleStatusClicked();
+            })
+
+            $(".tdKLine").click(function () {
+                self.onTdKLineClicked(this);
             })
 
             $(".firstCode").click(function () {
@@ -872,6 +881,16 @@ window.feed_list = window.feed_list || (function () {
                     })
                 }
             });
+        },
+        onTdKLineClicked: async function (ele) {
+            let data = $(ele).parent("tr").attr("data");
+            data = JSON.parse(data);
+            self.selectedData = data;
+            share.currentTarget = ele;
+
+            let ticks = await share.getSync__(`/stock/tick?scode=${data["代码"]}&day=${Date.now()}`);
+            
+
         },
         onTdClicked: function (ele) {
             let data = $(ele).parent("tr").attr("data");

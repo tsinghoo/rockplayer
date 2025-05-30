@@ -1380,7 +1380,29 @@ app.get('/stock/rule/create', async (req, res) => {
 
     var resp = JSON.stringify({});
     if (result.error) {
-        resp = result;
+        resp = JSON.stringify(result);
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+app.get('/stock/tick', async (req, res) => {
+    info("get /stock/tick");
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let day = req.query.day;
+    day = new Date(day).setHours(0, 0, 0, 0);
+    day = day.getTime();
+    let sql = `select * from tStockTick where scode=? and time>?`;
+    let result = await db.allSync(sql, [scode, day]);
+
+    var resp = JSON.stringify({});
+    if (result.error) {
+        resp = JSON.stringify(result);
     }
 
     if (js) {
@@ -1411,7 +1433,8 @@ app.get('/stock/rule/cancel', async (req, res) => {
 
     var resp = JSON.stringify({});
     if (result.error) {
-        resp = result;
+
+        resp = JSON.stringify(result);
     }
 
     if (js) {
@@ -1438,7 +1461,8 @@ app.get('/stock/rule/delete', async (req, res) => {
 
     var resp = JSON.stringify({});
     if (result.error) {
-        resp = result;
+
+        resp = JSON.stringify(result);
     }
 
     if (js) {
@@ -1615,7 +1639,6 @@ app.get('/stock/pair', async (req, res) => {
 });
 
 app.post('/stock/query', async (req, res) => {
-
     let sql = req.body.sql;
     let name = req.body.name;
     let params = req.body.params;

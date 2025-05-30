@@ -237,7 +237,7 @@ def updateDeal(deal):
 
 def deal_callback(ContextInfo, data):
     info('deal_callback')
-    # debug(obj2JsonString(data))
+    debug(obj2JsonString(data))
 
     js = obj2Json(data, 1)
 
@@ -250,7 +250,8 @@ def deal_callback(ContextInfo, data):
         "operationName": broker,
         "tday": js["m_strTradeDate"],
         "ttime": js["m_strTradeTime"],
-        "tid": js["m_strTradeID"],
+        #"tid": js["m_strTradeID"],
+        "tid": js["m_strOrderSysID"],
         "tcash": js["m_dTradeAmount"],
         "tamount": js["m_nVolume"],
         "tpair": ""
