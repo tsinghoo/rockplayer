@@ -889,9 +889,9 @@ window.feed_list = window.feed_list || (function () {
             share.currentTarget = ele;
             let scode = data["代码"];
             let ticks = await share.getSync__(`/stock/tick?scode=${scode}&day=${Date.now()}`);
-            var timeData = ['9:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
-            var priceData = [32.5, 32.8, 33.2, 33.0, 32.7, 32.9, 33.5, 33.8, 33.6, 33.9];
-            var volumeData = [1200, 1800, 2100, 1900, 1500, 2000, 2300, 2500, 2200, 3000];
+            var timeData = [];
+            var priceData = [];
+            var volumeData = [];
             ticks.forEach(function (tick) {
                 delete tick["id"];
                 tick.data = JSON.parse(tick.data);
@@ -905,12 +905,24 @@ window.feed_list = window.feed_list || (function () {
                 volumeData.push(tick.data.volume);
             });
 
-            let popup = await share.popup__(null, `<div class="kChart" style="width:200px;height:220px;"></div>`);
+            if (timeData.length == 0) {
+                timeData = ['9:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
+                priceData = [32.5, 32.8, 33.2, 33.0, 32.7, 32.9, 33.5, 33.8, 33.6, 33.9];
+                volumeData = [1200, 1800, 2100, 1900, 1500, 2000, 2300, 2500, 2200, 3000];
+            }
+
+            let popup = await share.popup__(null, `<div class="kChart" style="width:200px;height:110px;"></div>`);
             var chartDom = $(".kChart")[0];
             var chart = echarts.init(chartDom);
 
             // 配置项
             var option = {
+                title: {
+                    show: false,
+                },
+                legend: {
+                    show: false,
+                },
                 tooltip: {
                     trigger: 'axis',
                     axisPointer: {
@@ -919,17 +931,16 @@ window.feed_list = window.feed_list || (function () {
                 },
                 grid: [
                     {
+                        top: '6px',
                         left: '35px',
                         right: '10px',
-                        height: '80px',
-                        width:'160px'
+                        height: '74px',
                     },
                     {
                         left: '35px',
                         right: '10px',
-                        width:'160px',
-                        top: '160px',
-                        height: '20px'
+                        bottom: '0px',
+                        height: '30px'
                     }
                 ],
                 xAxis: [
@@ -939,7 +950,9 @@ window.feed_list = window.feed_list || (function () {
                         scale: true,
                         boundaryGap: false,
                         axisLine: { onZero: false },
+                        axisTick: { show: false },
                         splitLine: { show: false },
+                        axisLabel: { show: false },
                         splitNumber: 20,
                         min: 'dataMin',
                         max: 'dataMax'
@@ -1022,7 +1035,7 @@ window.feed_list = window.feed_list || (function () {
                                 });
                                 return colorList[params.dataIndex];
                             },
-                            width:2
+                            width: 2
                         }
                     }
                 ]
