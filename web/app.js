@@ -1395,12 +1395,18 @@ app.get('/stock/tick', async (req, res) => {
     let js = req.query.js;
     let scode = req.query.scode;
     let day = req.query.day;
-    day = new Date(day).setHours(0, 0, 0, 0);
+    if (day == null) {
+        day = Date.now();
+    } else {
+        day = new Date(day);
+    }
+
+    day.setHours(0, 0, 0, 0);
     day = day.getTime();
-    let sql = `select * from tStockTick where scode=? and time>?`;
+    let sql = `select * from tTick where scode=? and time>?`;
     let result = await db.allSync(sql, [scode, day]);
 
-    var resp = JSON.stringify({});
+    var resp = JSON.stringify([]);
     if (result.error) {
         resp = JSON.stringify(result);
     }
