@@ -1399,7 +1399,7 @@ app.get('/stock/tick', async (req, res) => {
     if (day == null) {
         day = new Date();
     } else {
-        day = new Date(day);
+        day = new Date(parseInt(day));
     }
 
     day.setHours(0, 0, 0, 0);

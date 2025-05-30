@@ -897,11 +897,11 @@ window.feed_list = window.feed_list || (function () {
                 time = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
                 rawData.push([
                     time,
-                    data.open,
-                    data.lastPrice,
-                    data.low,
-                    data.high,
-                    data.volume
+                    tick.data.open,
+                    tick.data.lastPrice,
+                    tick.data.low,
+                    tick.data.high,
+                    tick.data.volume
                 ]);
             });
 
