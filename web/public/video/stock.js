@@ -897,17 +897,17 @@ window.feed_list = window.feed_list || (function () {
                 time = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
                 rawData.push([
                     time,
-                    tick.data.open,
                     tick.data.lastPrice,
-                    tick.data.low,
-                    tick.data.high,
+                    tick.data.lastPrice,
+                    tick.data.lastPrice,
+                    tick.data.lastPrice,
                     tick.data.volume
                 ]);
             });
 
             data = self.splitData(rawData);
             
-            let popup=await share.popup__(null,`<div class="kChart" style="width:300px;height:300px;"></div>`);
+            let popup=await share.popup__(null,`<div class="kChart" style="width:640px;height:480px;"></div>`);
             var chartDom = $(".kChart")[0];
             var myChart = echarts.init(chartDom);
             var option;
