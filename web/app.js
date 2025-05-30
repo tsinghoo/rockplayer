@@ -1396,7 +1396,7 @@ app.get('/stock/tick', async (req, res) => {
     let scode = req.query.scode;
     let day = req.query.day;
     if (day == null) {
-        day = Date.now();
+        day = new Date();
     } else {
         day = new Date(day);
     }
