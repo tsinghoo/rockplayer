@@ -997,6 +997,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='21' where key='dbVersion';",
         `alter table tRuleAction add column status text default '';`,
         "update config set value='23' where key='dbVersion';",
+        `create table ttick(id text primary key, scode text, time int, data text);`,
+        "update config set value='25' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1277,17 +1279,24 @@ app.post('/stock/quotes', async (req, res) => {
         Object.keys(v).forEach(async (time) => {
             let v1 = v[time];
             let updateTime = parseTime(time).getTime();
-            let price = v1.bidPrice[0];
-            if (price == 0) {
-                price = v1.askPrice[0];
-            }
-
+            let price = v1.lastPrice;
             if (price == 0) {
 
             } else {
                 updatePriceToRule(scode, price);
                 let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
                 await db.runSync(sql, [price, updateTime, scode]);
+
+                delete v1["stime"];
+                delete v1["pvolume"];
+                delete v1["lastSettlementPrice"];
+                delete v1["settlementPrice"];
+                await insertOrReplace("ttick", {
+                    id: `${scode}_${time}`,
+                    scode: scode,
+                    time: v1.time,
+                    data: JSON.stringify(v1)
+                });
             }
         })
     })
