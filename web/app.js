@@ -1393,6 +1393,7 @@ app.get('/stock/rule/create', async (req, res) => {
 app.get('/stock/tick', async (req, res) => {
     info("get /stock/tick");
     let js = req.query.js;
+    info(JSON.stringify(req.query));
     let scode = req.query.scode;
     let day = req.query.day;
     if (day == null) {
