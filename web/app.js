@@ -1357,6 +1357,7 @@ app.get('/stock/rule/create', async (req, res) => {
     let now = Date.now();
     let sql = `insert or replace into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?,?)`;
     let result = await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), now]);
+    await db.runSync(`delete from tRuleAction where scode=?`, [json.scode]);
     rules[json.scode] = await db.getSync(`select * from tTradeRule where id=?`, [json.scode]);
     reloadRule(rules[json.scode]);
 

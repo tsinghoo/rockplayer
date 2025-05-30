@@ -557,6 +557,7 @@ window.feed_list = window.feed_list || (function () {
                     let mapping = {
                         "toBuy": "待买",
                         "toSell": "待卖",
+                        "todo": "待命",
                         "ordered": "已下单"
                     }
 
