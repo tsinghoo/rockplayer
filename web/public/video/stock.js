@@ -889,242 +889,151 @@ window.feed_list = window.feed_list || (function () {
             share.currentTarget = ele;
             let scode = data["代码"];
             let ticks = await share.getSync__(`/stock/tick?scode=${scode}&day=${Date.now()}`);
-            let rawData = [];
+            var timeData = ['9:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
+            var priceData = [32.5, 32.8, 33.2, 33.0, 32.7, 32.9, 33.5, 33.8, 33.6, 33.9];
+            var volumeData = [1200, 1800, 2100, 1900, 1500, 2000, 2300, 2500, 2200, 3000];
             ticks.forEach(function (tick) {
                 delete tick["id"];
                 tick.data = JSON.parse(tick.data);
                 let time = new Date(tick.time);
-                time = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}`;
-                rawData.push([
-                    time,
-                    tick.data.lastPrice,
-                    tick.data.lastPrice,
-                    tick.data.lastPrice,
-                    tick.data.lastPrice,
-                    tick.data.volume
-                ]);
+                let hour = `0${time.getHours()}`.slice(-2);
+                let minute = `0${time.getMinutes()}`.slice(-2);
+                let seconds = `0${time.getSeconds()}`.slice(-2);
+                time = `${hour}:${minute}:${seconds}`;
+                timeData.push(time);
+                priceData.push(tick.data.lastPrice);
+                volumeData.push(tick.data.volume);
             });
 
-            data = self.splitData(rawData);
-            
-            let popup=await share.popup__(null,`<div class="kChart" style="width:640px;height:480px;"></div>`);
+            let popup = await share.popup__(null, `<div class="kChart" style="width:200px;height:220px;"></div>`);
             var chartDom = $(".kChart")[0];
-            var myChart = echarts.init(chartDom);
-            var option;
+            var chart = echarts.init(chartDom);
 
-            const upColor = '#00da3c';
-            const downColor = '#ec0000';
-
-            myChart.setOption(
-                (option = {
-                    animation: false,
-                    legend: {
-                        bottom: 10,
-                        left: 'center',
-                        data: ['Dow-Jones index', 'MA5', 'MA10', 'MA20', 'MA30']
-                    },
-                    tooltip: {
-                        trigger: 'axis',
-                        axisPointer: {
-                            type: 'cross'
-                        },
-                        borderWidth: 1,
-                        borderColor: '#ccc',
-                        padding: 10,
-                        textStyle: {
-                            color: '#000'
-                        },
-                        position: function (pos, params, el, elRect, size) {
-                            const obj = {
-                                top: 10
-                            };
-                            obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
-                            return obj;
-                        }
-                        // extraCssText: 'width: 170px'
-                    },
+            // 配置项
+            var option = {
+                tooltip: {
+                    trigger: 'axis',
                     axisPointer: {
-                        link: [
-                            {
-                                xAxisIndex: 'all'
-                            }
-                        ],
-                        label: {
-                            backgroundColor: '#777'
-                        }
-                    },
-                    toolbox: {
-                        feature: {
-                            dataZoom: {
-                                yAxisIndex: false
-                            },
-                            brush: {
-                                type: ['lineX', 'clear']
-                            }
-                        }
-                    },
-                    brush: {
-                        xAxisIndex: 'all',
-                        brushLink: 'all',
-                        outOfBrush: {
-                            colorAlpha: 0.1
-                        }
-                    },
-                    visualMap: {
-                        show: false,
-                        seriesIndex: 5,
-                        dimension: 2,
-                        pieces: [
-                            {
-                                value: 1,
-                                color: downColor
-                            },
-                            {
-                                value: -1,
-                                color: upColor
-                            }
-                        ]
-                    },
-                    grid: [
-                        {
-                            left: '10%',
-                            right: '8%',
-                            height: '50%'
-                        },
-                        {
-                            left: '10%',
-                            right: '8%',
-                            top: '63%',
-                            height: '16%'
-                        }
-                    ],
-                    xAxis: [
-                        {
-                            type: 'category',
-                            data: data.categoryData,
-                            boundaryGap: false,
-                            axisLine: { onZero: false },
-                            splitLine: { show: false },
-                            min: 'dataMin',
-                            max: 'dataMax',
-                            axisPointer: {
-                                z: 100
-                            }
-                        },
-                        {
-                            type: 'category',
-                            gridIndex: 1,
-                            data: data.categoryData,
-                            boundaryGap: false,
-                            axisLine: { onZero: false },
-                            axisTick: { show: false },
-                            splitLine: { show: false },
-                            axisLabel: { show: false },
-                            min: 'dataMin',
-                            max: 'dataMax'
-                        }
-                    ],
-                    yAxis: [
-                        {
-                            scale: true,
-                            splitArea: {
-                                show: true
-                            }
-                        },
-                        {
-                            scale: true,
-                            gridIndex: 1,
-                            splitNumber: 2,
-                            axisLabel: { show: false },
-                            axisLine: { show: false },
-                            axisTick: { show: false },
-                            splitLine: { show: false }
-                        }
-                    ],
-                    dataZoom: [
-                        {
-                            type: 'inside',
-                            xAxisIndex: [0, 1],
-                            start: 98,
-                            end: 100
-                        },
-                        {
-                            show: true,
-                            xAxisIndex: [0, 1],
-                            type: 'slider',
-                            top: '85%',
-                            start: 98,
-                            end: 100
-                        }
-                    ],
-                    series: [
-                        {
-                            name: 'Dow-Jones index',
-                            type: 'candlestick',
-                            data: data.values,
-                            itemStyle: {
-                                color: upColor,
-                                color0: downColor,
-                                borderColor: undefined,
-                                borderColor0: undefined
-                            }
-                        },
-                        {
-                            name: 'MA5',
-                            type: 'line',
-                            data: self.calculateMA(5, data),
-                            smooth: true,
-                            lineStyle: {
-                                opacity: 0.5
-                            }
-                        },
-                        {
-                            name: 'MA10',
-                            type: 'line',
-                            data: self.calculateMA(10, data),
-                            smooth: true,
-                            lineStyle: {
-                                opacity: 0.5
-                            }
-                        },
-                        {
-                            name: 'MA20',
-                            type: 'line',
-                            data: self.calculateMA(20, data),
-                            smooth: true,
-                            lineStyle: {
-                                opacity: 0.5
-                            }
-                        },
-                        {
-                            name: 'MA30',
-                            type: 'line',
-                            data: self.calculateMA(30, data),
-                            smooth: true,
-                            lineStyle: {
-                                opacity: 0.5
-                            }
-                        },
-                        {
-                            name: 'Volume',
-                            type: 'bar',
-                            xAxisIndex: 1,
-                            yAxisIndex: 1,
-                            data: data.volumes
-                        }
-                    ]
-                }),
-                true
-            );
-            myChart.dispatchAction({
-                type: 'brush',
-                areas: [
+                        type: 'cross'
+                    }
+                },
+                grid: [
                     {
-                        brushType: 'lineX',
-                        coordRange: ['2016-06-02', '2016-06-20'],
-                        xAxisIndex: 0
+                        left: '35px',
+                        right: '10px',
+                        height: '80px',
+                        width:'160px'
+                    },
+                    {
+                        left: '35px',
+                        right: '10px',
+                        width:'160px',
+                        top: '160px',
+                        height: '20px'
+                    }
+                ],
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: timeData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        splitLine: { show: false },
+                        splitNumber: 20,
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 1,
+                        data: timeData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        splitNumber: 20,
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    }
+                ],
+                yAxis: [
+                    {
+                        scale: true,
+                        splitArea: {
+                            show: true
+                        }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 1,
+                        splitNumber: 2,
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    }
+                ],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: [0, 1],
+                        start: 0,
+                        end: 100
+                    }
+                ],
+                series: [
+                    {
+                        name: '价格',
+                        type: 'line',
+                        data: priceData,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1
+                        },
+                        symbol: 'none',
+                        areaStyle: {
+                            opacity: 0.8,
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                    offset: 0,
+                                    color: 'rgba(58,77,233,0.8)'
+                                },
+                                {
+                                    offset: 1,
+                                    color: 'rgba(58,77,233,0.1)'
+                                }
+                            ])
+                        }
+                    },
+                    {
+                        name: '成交量',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: volumeData,
+                        itemStyle: {
+                            color: function (params) {
+                                var colorList = priceData.map((price, index) => {
+                                    return index === 0 ? '#aaa' :
+                                        price > priceData[index - 1] ? '#f00' : '#0f0';
+                                });
+                                return colorList[params.dataIndex];
+                            },
+                            width:2
+                        }
                     }
                 ]
+            };
+
+            // 使用配置项显示图表
+            chart.setOption(option);
+
+            // 响应式调整
+            window.addEventListener('resize', function () {
+                chart.resize();
             });
 
         },
