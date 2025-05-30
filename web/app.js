@@ -1406,7 +1406,7 @@ app.get('/stock/tick', async (req, res) => {
     let sql = `select * from tTick where scode=? and time>?`;
     let result = await db.allSync(sql, [scode, day]);
 
-    var resp = JSON.stringify(r.rows);
+    var resp = JSON.stringify(result.rows);
     if (result.error) {
         resp = JSON.stringify(result);
     }
