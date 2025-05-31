@@ -1401,14 +1401,15 @@ app.get('/stock/tick', async (req, res) => {
     let day = req.query.day;
     if (day == null) {
         day = new Date();
+        //day.setMonth(4, 30);
     } else {
         day = new Date(parseInt(day));
     }
 
     day.setHours(0, 0, 0, 0);
     day = day.getTime();
-    let sql = `select * from tTick where scode in (?) and time > ? order by scode`;
-    let result = await db.allSync(sql, [`'${scode.split(",").join("','")}'`, day]);
+    let sql = `select * from tTick where scode in ('${scode.split(",").join("','")}') and time > ? and time < ? order by scode`;
+    let result = await db.allSync(sql, [day, day + 24 * 60 * 60 * 1000]);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {

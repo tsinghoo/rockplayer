@@ -302,7 +302,8 @@ window.feed_list = window.feed_list || (function () {
                 return code;
             });
 
-            let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
+            //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
+            let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
             var timeData = [];
