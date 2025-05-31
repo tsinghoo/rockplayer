@@ -292,6 +292,48 @@ window.feed_list = window.feed_list || (function () {
                 await self.getRuleStatus();
             }
         },
+        updateKLine: async function () {
+            let vtr = $('.firstCode').filter(function () {
+                return share.isInViewport($(this));
+            });
+
+            let codes = vtr.toArray().map(function (item) {
+                let code = $(item).attr("code");
+                return code;
+            });
+
+            let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
+            let lastCode = null;
+            let lastVolume = 0;
+            var timeData = [];
+            var priceData = [];
+            var volumeData = [];
+
+            for (let i = 0; i < ticks.length; i++) {
+                let tick = ticks[i];
+                tick.data = JSON.parse(tick.data);
+                delete tick["id"];
+                if (lastCode == null) {
+                    lastCode = tick.scode;
+                } else if (lastCode != tick.scode) {
+                    self.drawTickChart(lastCode, timeData, priceData, volumeData);
+                    lastCode = tick.scode;
+                    timeData = [];
+                    priceData = [];
+                    volumeData = [];
+                    lastVolume = 0;
+                }
+
+                let time = new Date(tick.time);
+                let hour = `0${time.getHours()}`.slice(-2);
+                let minute = `0${time.getMinutes()}`.slice(-2);
+                time = `${hour}:${minute}`;
+                timeData.push(time);
+                priceData.push(tick.data.lastPrice);
+                volumeData.push(tick.data.volume - lastVolume);
+                lastVolume = tick.data.volume;
+            }
+        },
         showRows: function (expanded) {
             let table = $("#stockTable");
             let rows = self.rows;
@@ -312,6 +354,15 @@ window.feed_list = window.feed_list || (function () {
                 } else if (keys[i] == "状态") {
                     th.addClass("tdStatus");
                 }
+            }
+
+            if (keys.includes("K线")) {
+                window.addEventListener('scroll', function () {
+                    clearTimeout(self.scrollTimer);
+                    self.scrollTimer = setTimeout(function () {
+                        self.updateKLine();
+                    }, 250);
+                });
             }
 
             thead.append(tr);
@@ -429,6 +480,7 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "K线") {
                         if (firstRow) {
                             td.addClass("tdKLine");
+                            td.html(`<div class="kTick" style="width:200px;height:110px;"></div>`);
                             // td.removeClass("nowrap"); 
                         }
                     } else {
@@ -898,8 +950,7 @@ window.feed_list = window.feed_list || (function () {
                 let time = new Date(tick.time);
                 let hour = `0${time.getHours()}`.slice(-2);
                 let minute = `0${time.getMinutes()}`.slice(-2);
-                let seconds = `0${time.getSeconds()}`.slice(-2);
-                time = `${hour}:${minute}:${seconds}`;
+                time = `${hour}:${minute}`;
                 timeData.push(time);
                 priceData.push(tick.data.lastPrice);
                 volumeData.push(tick.data.volume);
@@ -911,8 +962,7 @@ window.feed_list = window.feed_list || (function () {
                 volumeData = [1200, 1800, 2100, 1900, 1500, 2000, 2300, 2500, 2200, 3000];
             }
 
-            let popup = await share.popup__(null, `<div class="kChart" style="width:200px;height:110px;"></div>`);
-            var chartDom = $(".kChart")[0];
+            var chartDom = $(".kTick", ele)[0];
             var chart = echarts.init(chartDom);
 
             // 配置项
@@ -1159,6 +1209,145 @@ window.feed_list = window.feed_list || (function () {
                 }
             });
         },
+
+        drawTickChart: function (scode, timeData, priceData, volumeData) {
+            var chartDom = $(`.firstCode[code="${scode}"]`).find(".kTick")[0];
+            var chart = echarts.init(chartDom);
+
+            // 配置项
+            var option = {
+                title: {
+                    show: false,
+                },
+                legend: {
+                    show: false,
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    }
+                },
+                grid: [
+                    {
+                        top: '6px',
+                        left: '35px',
+                        right: '10px',
+                        height: '74px',
+                    },
+                    {
+                        left: '35px',
+                        right: '10px',
+                        bottom: '0px',
+                        height: '30px'
+                    }
+                ],
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: timeData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        splitNumber: 20,
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 1,
+                        data: timeData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        splitNumber: 20,
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    }
+                ],
+                yAxis: [
+                    {
+                        scale: true,
+                        splitArea: {
+                            show: true
+                        }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 1,
+                        splitNumber: 2,
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    }
+                ],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: [0, 1],
+                        start: 0,
+                        end: 100
+                    }
+                ],
+                series: [
+                    {
+                        name: '价格',
+                        type: 'line',
+                        data: priceData,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1
+                        },
+                        symbol: 'none',
+                        areaStyle: {
+                            opacity: 0.8,
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                    offset: 0,
+                                    color: 'rgba(58,77,233,0.8)'
+                                },
+                                {
+                                    offset: 1,
+                                    color: 'rgba(58,77,233,0.1)'
+                                }
+                            ])
+                        }
+                    },
+                    {
+                        name: '成交量',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: volumeData,
+                        itemStyle: {
+                            color: function (params) {
+                                var colorList = priceData.map((price, index) => {
+                                    return index === 0 ? '#aaa' :
+                                        price > priceData[index - 1] ? '#f00' : '#0f0';
+                                });
+                                return colorList[params.dataIndex];
+                            },
+                            width: 2
+                        }
+                    }
+                ]
+            };
+
+            // 使用配置项显示图表
+            chart.setOption(option);
+
+            // 响应式调整
+            window.addEventListener('resize', function () {
+                chart.resize();
+            });
+        },
         showChart: async function (rows) {
             let max = 0;
             let min = 100000;
@@ -1329,4 +1518,5 @@ window.feed_list = window.feed_list || (function () {
 
     return self;
 })();
+
 

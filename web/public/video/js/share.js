@@ -1910,7 +1910,7 @@ window.mhgl_share =
         if (diff < 0) {
           return "00:00";
         }
-        
+
         diff = Math.floor(diff / 1000);
         var mm = Math.floor(diff / 60);
         var ss = diff % 60;
@@ -1922,6 +1922,16 @@ window.mhgl_share =
         }
         return mm + ":" + ss;
 
+      },
+
+      isInViewport: function ($el) {
+        var rect = $el[0].getBoundingClientRect();
+        return (
+          rect.top < window.innerHeight &&
+          rect.bottom > 0 &&
+          rect.left < window.innerWidth &&
+          rect.right > 0
+        );
       },
 
       timeFormat__: function (time, fmt) {

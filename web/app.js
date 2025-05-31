@@ -1291,10 +1291,13 @@ app.post('/stock/quotes', async (req, res) => {
                 delete v1["pvolume"];
                 delete v1["lastSettlementPrice"];
                 delete v1["settlementPrice"];
+                let min = new Date(v1.time);
+                min.setSeconds(0, 0);
+                min = min.getTime();
                 await insertOrReplace("ttick", {
-                    id: `${scode}_${time}`,
+                    id: `${scode}_${min}`,
                     scode: scode,
-                    time: v1.time,
+                    time: min,
                     data: JSON.stringify(v1)
                 });
             }
@@ -1404,8 +1407,8 @@ app.get('/stock/tick', async (req, res) => {
 
     day.setHours(0, 0, 0, 0);
     day = day.getTime();
-    let sql = `select * from tTick where scode=? and time>?`;
-    let result = await db.allSync(sql, [scode, day]);
+    let sql = `select * from tTick where scode in (?) and time > ? order by scode`;
+    let result = await db.allSync(sql, [`'${scode.split(",").join("','")}'`, day]);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
