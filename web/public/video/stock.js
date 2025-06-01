@@ -89,7 +89,7 @@ window.feed_list = window.feed_list || (function () {
                     delete param["name"];
                 }
 
-                self.exeSql(param, selection == null);
+                self.exeSql(param, param.sql.indexOf("select") == 0);
             })
         },
         updateSql: async function (row) {
@@ -112,7 +112,7 @@ window.feed_list = window.feed_list || (function () {
                 if (show) {
                     self.sqlRow = row;
                     self.rows = res.data;
-                    if (self.rows && self.rows.length > 0) {
+                    if (self.rows && self.rows.length > 0 && self.sqlRow.name) {
                         location.hash = `${row.name}`;
                     }
                     self.showRows(false);
