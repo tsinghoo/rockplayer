@@ -948,10 +948,10 @@ async function dbCall(options) {
             let params = stat[1];
             debug("dbCall sql:" + sql);
             debug("params:" + JSON.stringify(params));
-            return await db.runSync(sql, params);
+            await db.runSync(sql, params);
         } else {
             debug("sql:" + stat);
-            return await db.runSync(stat);
+            await db.runSync(stat);
         }
     }
 }
@@ -999,7 +999,6 @@ async function upgradeDb(succ, fail) {
         "update config set value='23' where key='dbVersion';",
         `create table ttick(id text primary key, scode text, time int, data text);`,
         "update config set value='25' where key='dbVersion';",
-        //['Time', 'open', 'close', 'high', 'low', 'volume', 'amount']
         `create table t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
         "update config set value='27' where key='dbVersion';",
         `create table t1m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
@@ -1678,8 +1677,9 @@ app.post('/stock/query', async (req, res) => {
 });
 
 app.post('/stock/data/upload', async (req, res) => {
+    info(`/stock/data/upload`);
     let data = req.body.data;
-    let scode = req.body.scode;
+    let scode = req.body.scode.split(".")[0];
     let period = req.body.period;
     info(`scode:${scode},period:${period}`);
     for (var i = 0; i < data.length; ++i) {
