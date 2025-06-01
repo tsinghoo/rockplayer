@@ -1065,7 +1065,7 @@ async function upgradeDb(succ, fail) {
 }
 
 async function insertOrReplace(table, row) {
-    debug("replace:" + table);
+    debug("insertOrReplace:" + table);
     let keys = Object.keys(row);
     let cols = keys.join(",");
     let vs = keys.map((k, i) => "?").join(",");
@@ -1082,7 +1082,7 @@ async function insertOrReplace(table, row) {
 }
 
 async function insertOrIgnore(table, row) {
-    debug("replace:" + table);
+    debug("insertOrIgnore:" + table);
     let keys = Object.keys(row);
     let cols = keys.join(",");
     let vs = keys.map((k, i) => "?").join(",");

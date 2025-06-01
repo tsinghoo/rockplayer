@@ -73,7 +73,7 @@ def init(ContextInfo):
 def after_init(ContextInfo):
     info('系统会在init函数执行完后和执行handlebar之前调用after_init')
     stocklist = ContextInfo.get_universe()
-    periods = ["tick", "1d", "1m", "5m"]
+    periods = ["1d", "5m", "1m", "tick"]
 
     # stocklist = ['300870.SZ']
     # periods = ["1d"]
@@ -83,6 +83,7 @@ def after_init(ContextInfo):
         for period in periods:
             info('downloading', period, 'for', scode, 'from', dataStartTime)
             download_history_data(scode, period, dataStartTime, dataEndTime)
+
 
 def debug(*args, **kwargs):
     if (g.log["level"] >= g.log["debug"]):

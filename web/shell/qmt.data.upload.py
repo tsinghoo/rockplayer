@@ -28,7 +28,7 @@ baseUrl = "http://localhost:3001"
 baseUrl = "http://test1.91taogu.com"
 
 dataStartTime = "20210101"
-dataEndTime = "20210201"
+dataEndTime = ""
 
 g.log = {
     "level": 4,
@@ -99,12 +99,13 @@ def after_init(ContextInfo):
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
             # 将datas的数据分批上传，每批100条
-            bsize = 10
+            bsize = 100
             for i in range(0, len(datas), bsize):
+                print("上传", scode, period, "[", i, ",", i+bsize, "]")
                 batch = datas.iloc[i:i+bsize]
                 batch_data = [[str(idx)] + row.tolist()
                               for idx, row in batch.iterrows()]
-                print(obj2JsonString(batch_data, indent=None))
+                # print(obj2JsonString(batch_data, indent=None))
                 body = {"data": obj2Json(
                     batch_data), "scode": scode, "period": period, "passcode": "995560"}
                 # 上传数据到test1

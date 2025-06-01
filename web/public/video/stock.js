@@ -481,7 +481,6 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "K线") {
                         if (firstRow) {
                             td.addClass("tdKLine");
-                            td.html(`<div class="kTick" style="width:200px;height:110px;"></div>`);
                             // td.removeClass("nowrap"); 
                         }
                     } else {
@@ -1212,7 +1211,10 @@ window.feed_list = window.feed_list || (function () {
         },
 
         drawTickChart: function (scode, timeData, priceData, volumeData) {
-            var chartDom = $(`.firstCode[code="${scode}"]`).find(".kTick")[0];
+            let tr = $(`.firstCode[code="${scode}"]`);
+            let td = tr.find(".tdKLine");
+            td.html(`<div class="kTick" style="width:200px;height:110px;"></div>`);
+            var chartDom = td.find(".kTick")[0];
             var chart = echarts.init(chartDom);
 
             // 配置项
