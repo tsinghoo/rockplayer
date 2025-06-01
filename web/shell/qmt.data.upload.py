@@ -77,8 +77,9 @@ def after_init(ContextInfo):
     info('系统会在init函数执行完后和执行handlebar之前调用after_init')
     stocklist = ContextInfo.get_universe()
     periods = ["tick", "1d", "1m", "5m"]
+    periods = ["1d"]
 
-    stocklist = ['300870.SZ']
+    # stocklist = ['300870.SZ']
     # periods = ["1d"]
     # 打印subs有多少个股票
     for scode in stocklist:
@@ -96,13 +97,15 @@ def after_init(ContextInfo):
             # print("所有:", df.values())
             columns = ['Time'] + datas.columns.tolist()
             print(columns)
+            print(len(datas), "rows")
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
             # 将datas的数据分批上传，每批100条
             bsize = 100
             for i in range(0, len(datas), bsize):
-                print("上传", scode, period, "[", i, ",", i+bsize, "]")
                 batch = datas.iloc[i:i+bsize]
+                print("上传", scode, period,
+                      "[", i, ",", i+bsize, "]", len(batch))
                 batch_data = [[str(idx)] + row.tolist()
                               for idx, row in batch.iterrows()]
                 # print(obj2JsonString(batch_data, indent=None))
