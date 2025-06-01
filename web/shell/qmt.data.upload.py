@@ -23,9 +23,12 @@ account = "8883949249"  # 国金
 broker = "国金"
 account = "620000558442"  # 国信
 broker = "国信"
+
+baseUrl = "http://localhost:3001"
+baseUrl = "http://test1.91taogu.com"
+
 dataStartTime = "20210101"
 dataEndTime = "20210201"
-
 
 g.log = {
     "level": 4,
@@ -107,7 +110,7 @@ def after_init(ContextInfo):
                 # 上传数据到test1
                 try:
                     response = requests.post(
-                        "http://test1.91taogu.com/stock/data/upload", json=body, timeout=5)
+                        baseUrl+"/stock/data/upload", json=body, timeout=5)
                     if response.status_code != 200:
                         print("上传失败，状态码:", response.status_code,
                               "响应内容:", response.text)
