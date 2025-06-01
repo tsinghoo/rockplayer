@@ -15,8 +15,18 @@ import traceback
 class G():
     pass
 
-
 g = G()
+
+account = "8883949249"  # 国金
+broker = "国金"
+account = "620000558442"  # 国信
+broker = "国信"
+uploadPrice = 1
+runGetActionTask = 0
+dataStartTime = "2023-01-01"
+dataEndTime = "2025-04-09"
+
+
 g.log = {
     "level": 4,
     "none": 0,
@@ -27,19 +37,6 @@ g.log = {
 }
 
 g.log["level"] = g.log["debug"]
-
-account = "8883949249"  # 国金
-broker = "国金"
-
-account = "620000558442"  # 国信
-broker = "国信"
-
-uploadPrice = 1
-runGetActionTask = 0
-
-
-
-
 
 g.actions = {}
 stocks = {}

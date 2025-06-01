@@ -999,6 +999,13 @@ async function upgradeDb(succ, fail) {
         "update config set value='23' where key='dbVersion';",
         `create table ttick(id text primary key, scode text, time int, data text);`,
         "update config set value='25' where key='dbVersion';",
+        //['Time', 'open', 'close', 'high', 'low', 'volume', 'amount']
+        `create table t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
+        "update config set value='27' where key='dbVersion';",
+        `create table t1m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
+        "update config set value='29' where key='dbVersion';",
+        `create table t5m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
+        "update config set value='31' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1667,6 +1674,48 @@ app.post('/stock/query', async (req, res) => {
     }
 
     var resp = JSON.stringify({ data: r.rows });
+    res.send(resp);
+});
+
+app.post('/stock/data/upload', async (req, res) => {
+    let data = req.body.data;
+    let scode = req.body.scode;
+    let period = req.body.period;
+    info(`scode:${scode},period:${period}`);
+    for (var i = 0; i < data.length; ++i) {
+        if (period == "tick") {
+            //['Time', 'volume', 'amount', 'lastPrice']
+            let row = {
+                id: `${scode}-${data[i][0]}`,
+                scode: scode,
+                time: data[i][0],
+                data: JSON.stringify({
+                    volume: data[i][1],
+                    amount: data[i][2],
+                    lastPrice: data[i][3]
+                })
+            }
+
+            await insertOrIgnore("ttick", row);
+        } else {
+            //['Time', 'open', 'close', 'high', 'low', 'volume', 'amount']
+            let row = {
+                id: `${scode}-${data[i][0]}`,
+                scode: scode,
+                time: data[i][0],
+                open: data[i][1],
+                close: data[i][2],
+                high: data[i][3],
+                low: data[i][4],
+                volume: data[i][5],
+                amount: data[i][6]
+            }
+
+            await insertOrIgnore(`t${period}`, row);
+        }
+    }
+
+    var resp = JSON.stringify({});
     res.send(resp);
 });
 
