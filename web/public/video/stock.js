@@ -375,6 +375,9 @@ window.feed_list = window.feed_list || (function () {
                 let tr = $("<tr>");
                 let row = rows[i];
                 let firstRow = true;
+                if (row["代码"] == null) {
+                    row["代码"] = "";
+                }
                 if (row["代码"] == lastCode) {
                     firstRow = false;
                 } else {
@@ -385,6 +388,10 @@ window.feed_list = window.feed_list || (function () {
                     let key = keys[j];
                     let td = $("<td>");
                     td.addClass("nowrap");
+                    if (row[key] == null) {
+                        row[key] = "";
+                    }
+
                     if (key == "代码") {
                         tr.addClass(`code${row[key]}`);
                         if (firstRow) {
