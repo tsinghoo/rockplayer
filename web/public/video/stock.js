@@ -1109,8 +1109,8 @@ window.feed_list = window.feed_list || (function () {
                     {
                         type: 'inside',
                         xAxisIndex: [0, 1],
-                        start: 0,
-                        end: 100
+                        start: 50,
+                        end: 80
                     }
                 ],
                 series: [
@@ -1430,8 +1430,8 @@ window.feed_list = window.feed_list || (function () {
             const upColor = '#00da3c';
             const downColor = '#ec0000';
             k1d.css({
-                width: "200px",
-                height: "110px"
+                width: "480px",
+                height: "300px"
             });
             var chartDom = k1d[0];
             var chart = echarts.init(chartDom);
@@ -1440,9 +1440,9 @@ window.feed_list = window.feed_list || (function () {
             var option = {
                 animation: false,
                 legend: {
-                    bottom: 10,
+                    bottom: 2,
                     left: 'center',
-                    data: ['Dow-Jones index', 'MA5', 'MA10', 'MA20', 'MA30']
+                    data: ['Dow-Jones index', 'MA5', 'MA10', 'MA60']
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -1508,15 +1508,32 @@ window.feed_list = window.feed_list || (function () {
                 },
                 grid: [
                     {
-                        left: '10%',
-                        right: '8%',
-                        height: '50%'
+                        left: '30px',
+                        right: '4px',
+                        height: '160px',
+                        top: '10px'
                     },
                     {
-                        left: '10%',
-                        right: '8%',
-                        top: '63%',
-                        height: '16%'
+                        left: '30px',
+                        right: '4px',
+                        top: '180px',
+                        height: '60px'
+                    }
+                ],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: [0, 1],
+                        start: 90,
+                        end: 100
+                    },
+                    {
+                        show: true,
+                        xAxisIndex: [0, 1],
+                        type: 'slider',
+                        top: '245px',
+                        start: 90,
+                        end: 100
                     }
                 ],
                 xAxis: [
@@ -1525,7 +1542,9 @@ window.feed_list = window.feed_list || (function () {
                         data: categoryData,
                         boundaryGap: false,
                         axisLine: { onZero: false },
+                        axisTick: { show: false },
                         splitLine: { show: false },
+                        axisLabel: { show: false },
                         min: 'dataMin',
                         max: 'dataMax',
                         axisPointer: {
@@ -1562,22 +1581,6 @@ window.feed_list = window.feed_list || (function () {
                         splitLine: { show: false }
                     }
                 ],
-                dataZoom: [
-                    {
-                        type: 'inside',
-                        xAxisIndex: [0, 1],
-                        start: 98,
-                        end: 100
-                    },
-                    {
-                        show: true,
-                        xAxisIndex: [0, 1],
-                        type: 'slider',
-                        top: '85%',
-                        start: 98,
-                        end: 100
-                    }
-                ],
                 series: [
                     {
                         name: 'Dow-Jones index',
@@ -1609,18 +1612,9 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
-                        name: 'MA20',
+                        name: 'MA60',
                         type: 'line',
-                        data: self.calculateMA(20, data),
-                        smooth: true,
-                        lineStyle: {
-                            opacity: 0.5
-                        }
-                    },
-                    {
-                        name: 'MA30',
-                        type: 'line',
-                        data: self.calculateMA(30, data),
+                        data: self.calculateMA(60, data),
                         smooth: true,
                         lineStyle: {
                             opacity: 0.5
