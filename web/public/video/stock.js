@@ -432,7 +432,12 @@ window.feed_list = window.feed_list || (function () {
                         td.addClass("buySell");
                     } else if (key == "规则") {
                         td.addClass("tdRule");
-                        let rc = JSON.parse(row[key]);
+                        let rc = null;
+                        try {
+                            rc = JSON.parse(row[key]);
+                        } catch (e) {
+
+                        }
                         if (firstRow && rc != null) {
                             let buy = `
                             <tr> 
