@@ -345,6 +345,7 @@ window.feed_list = window.feed_list || (function () {
 
                 let k1d = tr.find(".k1d").html().trim();
                 if (k1d == "") {
+                    tr.find(".k1d").html("loading k1d");
                     return true;
                 } else {
                     return false;
@@ -381,6 +382,11 @@ window.feed_list = window.feed_list || (function () {
                 values.push([row.open, row.close, row.low, row.high]);
                 volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
             }
+
+            if ( values.length > 0){
+                 self.drawK1dChart(lastCode, categoryData, values, volumes);
+            }
+
         },
         showRows: function (expanded) {
             let table = $("#stockTable");
@@ -409,6 +415,7 @@ window.feed_list = window.feed_list || (function () {
                     clearTimeout(self.scrollTimer);
                     self.scrollTimer = setTimeout(function () {
                         self.updateKLine();
+                        self.showK1d();
                     }, 250);
                 });
             }
@@ -1442,12 +1449,27 @@ window.feed_list = window.feed_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['Dow-Jones index', 'MA5', 'MA10', 'MA60']
+                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA30', 'Volume']
                 },
                 tooltip: {
                     trigger: 'axis',
                     axisPointer: {
                         type: 'cross'
+                    },
+                    formatter: function (params) {
+                        var result = params[0].axisValue + '<br/>';
+                        params.forEach(function (item) {
+                            if (item.seriesName === '1d') {
+                                result += '开盘: ' + item.value[1] + '<br/>';
+                                result += '收盘: ' + item.value[2] + '<br/>';
+                                result += '最低: ' + item.value[3] + '<br/>';
+                                result += '最高: ' + item.value[4] + '<br/>';
+                                result += '成交量: ' + volumes[params[0].dataIndex][1] + '<br/>';
+                            } else {
+                                result += item.seriesName + ': ' + item.value + '<br/>';
+                            }
+                        });
+                        return result;
                     },
                     borderWidth: 1,
                     borderColor: '#ccc',
@@ -1524,7 +1546,7 @@ window.feed_list = window.feed_list || (function () {
                     {
                         type: 'inside',
                         xAxisIndex: [0, 1],
-                        start: 90,
+                        start: 92,
                         end: 100
                     },
                     {
@@ -1532,7 +1554,7 @@ window.feed_list = window.feed_list || (function () {
                         xAxisIndex: [0, 1],
                         type: 'slider',
                         top: '245px',
-                        start: 90,
+                        start: 92,
                         end: 100
                     }
                 ],
@@ -1583,7 +1605,7 @@ window.feed_list = window.feed_list || (function () {
                 ],
                 series: [
                     {
-                        name: 'Dow-Jones index',
+                        name: '1d',
                         type: 'candlestick',
                         data: values,
                         itemStyle: {
@@ -1612,9 +1634,18 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
-                        name: 'MA60',
+                        name: 'MA20',
                         type: 'line',
-                        data: self.calculateMA(60, data),
+                        data: self.calculateMA(20, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA30',
+                        type: 'line',
+                        data: self.calculateMA(30, data),
                         smooth: true,
                         lineStyle: {
                             opacity: 0.5
@@ -1625,7 +1656,18 @@ window.feed_list = window.feed_list || (function () {
                         type: 'bar',
                         xAxisIndex: 1,
                         yAxisIndex: 1,
-                        data: volumes
+                        data: volumes,
+                        itemStyle: {
+                            color: function (params) {
+                                var kData = option.series[0].data;
+                                if (kData.length > params.dataIndex) {
+                                    return kData[params.dataIndex][1] >= kData[params.dataIndex][0] 
+                                        ? '#ef232a' : '#14b143';
+                                }
+                                
+                                return '#ef232a';
+                            }
+                        }
                     }
                 ]
             };
