@@ -317,7 +317,7 @@ window.feed_list = window.feed_list || (function () {
                 if (lastCode == null) {
                     lastCode = tick.scode;
                 } else if (lastCode != tick.scode) {
-                    self.drawTickChart(lastCode, timeData, priceData, volumeData);
+                    self.drawKTickChart(lastCode, timeData, priceData, volumeData);
                     lastCode = tick.scode;
                     timeData = [];
                     priceData = [];
@@ -333,6 +333,53 @@ window.feed_list = window.feed_list || (function () {
                 priceData.push(tick.data.lastPrice);
                 volumeData.push(tick.data.volume - lastVolume);
                 lastVolume = tick.data.volume;
+            }
+        },
+        showK1d: async function () {
+            let vtr = $('.firstCode').filter(function () {
+                let tr = $(this);
+                let visible = share.isInViewport(tr);
+                if (!visible) {
+                    return false;
+                }
+
+                let k1d = tr.find(".k1d").html().trim();
+                if (k1d == "") {
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            let codes = vtr.toArray().map(function (item) {
+                let code = $(item).attr("code");
+                return code;
+            });
+
+            //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
+            let rows = await share.getSync__(`/stock/k1d?scode=${codes.join(",")}`);
+            let lastCode = null;
+            let lastVolume = 0;
+
+            let categoryData = [];
+            let values = [];
+            let volumes = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                if (lastCode == null) {
+                    lastCode = row.scode;
+                } else if (lastCode != row.scode) {
+                    self.drawK1dChart(lastCode, categoryData, values, volumes);
+                    lastCode = row.scode;
+                    categoryData = [];
+                    values = [];
+                    volumes = [];
+                }
+
+                categoryData.push(row.time);
+                values.push([row.open, row.close, row.low, row.high]);
+                volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
             }
         },
         showRows: function (expanded) {
@@ -493,6 +540,10 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "K线") {
                         if (firstRow) {
                             td.addClass("tdKLine");
+                            let html = `<div class="kTick"></div>
+                                <div class="k1d"></div>
+                            `;
+                            td.html(html);
                             // td.removeClass("nowrap"); 
                         }
                     } else {
@@ -515,6 +566,9 @@ window.feed_list = window.feed_list || (function () {
                 $(".repeatCode").hide();
             }
 
+            if (keys.includes("K线")) {
+                self.showK1d();
+            }
 
             $(".ruleStatus").click(function () {
                 self.onTdClicked(this);
@@ -1222,11 +1276,15 @@ window.feed_list = window.feed_list || (function () {
             });
         },
 
-        drawTickChart: function (scode, timeData, priceData, volumeData) {
+        drawKTickChart: function (scode, timeData, priceData, volumeData) {
             let tr = $(`.firstCode[code="${scode}"]`);
             let td = tr.find(".tdKLine");
-            td.html(`<div class="kTick" style="width:200px;height:110px;"></div>`);
-            var chartDom = td.find(".kTick")[0];
+            let kTick = td.find(".kTick");
+            kTick.css({
+                width: "200px",
+                height: "110px"
+            });
+            var chartDom = kTick[0];
             var chart = echarts.init(chartDom);
 
             // 配置项
@@ -1351,6 +1409,229 @@ window.feed_list = window.feed_list || (function () {
                             },
                             width: 2
                         }
+                    }
+                ]
+            };
+
+            // 使用配置项显示图表
+            chart.setOption(option);
+
+            // 响应式调整
+            window.addEventListener('resize', function () {
+                chart.resize();
+            });
+        },
+
+        drawK1dChart: function (scode, categoryData, values, volumes) {
+            let tr = $(`.firstCode[code="${scode}"]`);
+            let td = tr.find(".tdKLine");
+            let k1d = td.find(".k1d");
+
+            const upColor = '#00da3c';
+            const downColor = '#ec0000';
+            k1d.css({
+                width: "200px",
+                height: "110px"
+            });
+            var chartDom = k1d[0];
+            var chart = echarts.init(chartDom);
+            let data = { categoryData, values, volumes };
+            // 配置项
+            var option = {
+                animation: false,
+                legend: {
+                    bottom: 10,
+                    left: 'center',
+                    data: ['Dow-Jones index', 'MA5', 'MA10', 'MA20', 'MA30']
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    padding: 10,
+                    textStyle: {
+                        color: '#000'
+                    },
+                    position: function (pos, params, el, elRect, size) {
+                        const obj = {
+                            top: 10
+                        };
+                        obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                        return obj;
+                    }
+                    // extraCssText: 'width: 170px'
+                },
+                axisPointer: {
+                    link: [
+                        {
+                            xAxisIndex: 'all'
+                        }
+                    ],
+                    label: {
+                        backgroundColor: '#777'
+                    }
+                },
+                toolbox: {
+                    feature: {
+                        dataZoom: {
+                            yAxisIndex: false
+                        },
+                        brush: {
+                            type: ['lineX', 'clear']
+                        }
+                    }
+                },
+                brush: {
+                    xAxisIndex: 'all',
+                    brushLink: 'all',
+                    outOfBrush: {
+                        colorAlpha: 0.1
+                    }
+                },
+                visualMap: {
+                    show: false,
+                    seriesIndex: 5,
+                    dimension: 2,
+                    pieces: [
+                        {
+                            value: 1,
+                            color: downColor
+                        },
+                        {
+                            value: -1,
+                            color: upColor
+                        }
+                    ]
+                },
+                grid: [
+                    {
+                        left: '10%',
+                        right: '8%',
+                        height: '50%'
+                    },
+                    {
+                        left: '10%',
+                        right: '8%',
+                        top: '63%',
+                        height: '16%'
+                    }
+                ],
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: categoryData,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        splitLine: { show: false },
+                        min: 'dataMin',
+                        max: 'dataMax',
+                        axisPointer: {
+                            z: 100
+                        }
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 1,
+                        data: categoryData,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    }
+                ],
+                yAxis: [
+                    {
+                        scale: true,
+                        splitArea: {
+                            show: true
+                        }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 1,
+                        splitNumber: 2,
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    }
+                ],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: [0, 1],
+                        start: 98,
+                        end: 100
+                    },
+                    {
+                        show: true,
+                        xAxisIndex: [0, 1],
+                        type: 'slider',
+                        top: '85%',
+                        start: 98,
+                        end: 100
+                    }
+                ],
+                series: [
+                    {
+                        name: 'Dow-Jones index',
+                        type: 'candlestick',
+                        data: values,
+                        itemStyle: {
+                            color: upColor,
+                            color0: downColor,
+                            borderColor: undefined,
+                            borderColor0: undefined
+                        }
+                    },
+                    {
+                        name: 'MA5',
+                        type: 'line',
+                        data: self.calculateMA(5, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA10',
+                        type: 'line',
+                        data: self.calculateMA(10, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA20',
+                        type: 'line',
+                        data: self.calculateMA(20, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA30',
+                        type: 'line',
+                        data: self.calculateMA(30, data),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'Volume',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: volumes
                     }
                 ]
             };
