@@ -1456,7 +1456,7 @@ app.get('/stock/k1d', async (req, res) => {
     startDay = timeFormat(startDay, "yyyyMMdd");
     endDay = timeFormat(endDay, "yyyyMMdd");
 
-    let sql = `select * from t1d where scode in ('${scode.split(",").join("','")}') and time > ? and time < ? order by scode,time`;
+    let sql = `select * from t1d where scode in ('${scode.split(",").join("','")}') and time >= ? and time <= ? order by scode,time`;
     let result = await db.allSync(sql, [startDay, endDay]);
 
     var resp = JSON.stringify(result.rows);
@@ -1747,7 +1747,7 @@ app.post('/stock/data/upload', async (req, res) => {
                     })
                 }
 
-                await insertOrIgnore("ttick", row);
+                await insertOrReplace("ttick", row);
             }
         } else {
             //['Time', 'open', 'close', 'high', 'low', 'volume', 'amount']
@@ -1763,7 +1763,7 @@ app.post('/stock/data/upload', async (req, res) => {
                 amount: data[i][6]
             }
 
-            await insertOrIgnore(`t${period}`, row);
+            await insertOrReplace(`t${period}`, row);
         }
     }
 
