@@ -586,12 +586,14 @@ window.feed_list = window.feed_list || (function () {
                 self.showK1d();
             }
 
-            $(".ruleStatus").click(function () {
+            $(".ruleStatus").click(function (e) {
+                e.stopPropagation();
                 self.onTdClicked(this);
                 self.onRuleStatusClicked();
             })
 
-            $(".tdKLine").click(function () {
+            $(".tdKLine").click(function (e) {
+                e.stopPropagation();
                 self.onTdKLineClicked(this);
             })
 
@@ -605,7 +607,8 @@ window.feed_list = window.feed_list || (function () {
                 }
             })
 
-            $(".buySell").click(function () {
+            $(".buySell").click(function (e) {
+                e.stopPropagation();
                 let data = $(this).parent("tr").attr("data");
                 data = JSON.parse(data);
                 self.selectedData = data;
@@ -613,7 +616,8 @@ window.feed_list = window.feed_list || (function () {
                 self.toBuySell();
             })
 
-            $(".ruleContent").click(function () {
+            $(".ruleContent").click(function (e) {
+                e.stopPropagation();
                 let data = $(this).parent("tr").attr("data");
                 data = JSON.parse(data);
                 self.selectedData = data;
