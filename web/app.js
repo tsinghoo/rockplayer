@@ -1413,9 +1413,11 @@ app.get('/stock/tick', async (req, res) => {
     }
 
     day.setHours(0, 0, 0, 0);
-    day = day.getTime();
-    let sql = `select * from tTick where scode in ('${scode.split(",").join("','")}') and time > ? and time < ? order by scode, time`;
-    let result = await db.allSync(sql, [day, day + 24 * 60 * 60 * 1000]);
+    let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
+    day = timeFormat(day,"yyyyMMdd")
+    nextDay = timeFormat(nextDay,"yyyyMMdd")
+    let sql = `select * from t1m where scode in ('${scode.split(",").join("','")}') and time > ? and time < ? order by scode, time`;
+    let result = await db.allSync(sql, [day, nextDay]);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {

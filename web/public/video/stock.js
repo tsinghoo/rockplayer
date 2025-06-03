@@ -312,8 +312,6 @@ window.feed_list = window.feed_list || (function () {
 
             for (let i = 0; i < ticks.length; i++) {
                 let tick = ticks[i];
-                tick.data = JSON.parse(tick.data);
-                delete tick["id"];
                 if (lastCode == null) {
                     lastCode = tick.scode;
                 } else if (lastCode != tick.scode) {
@@ -325,14 +323,17 @@ window.feed_list = window.feed_list || (function () {
                     lastVolume = 0;
                 }
 
-                let time = new Date(tick.time);
-                let hour = `0${time.getHours()}`.slice(-2);
-                let minute = `0${time.getMinutes()}`.slice(-2);
-                time = `${hour}:${minute}`;
-                timeData.push(time);
-                priceData.push(tick.data.lastPrice);
-                volumeData.push(tick.data.volume - lastVolume);
-                lastVolume = tick.data.volume;
+                let dateStr = (tick.time);
+                const year = dateStr.substring(0, 4);
+                const month = dateStr.substring(4, 6);
+                const day = dateStr.substring(6, 8);
+                const hours = dateStr.substring(8, 10);
+                const minutes = dateStr.substring(10, 12);
+                const seconds = dateStr.substring(12, 14);
+
+                timeData.push(`${hours}:${minutes}`);
+                priceData.push(tick.close);
+                volumeData.push(tick.volume);
             }
 
             if (priceData.length > 0){
@@ -1293,7 +1294,7 @@ window.feed_list = window.feed_list || (function () {
             let kTick = td.find(".kTick");
             kTick.css({
                 width: "480px",
-                height: "200px"
+                height: "140px"
             });
             var chartDom = kTick[0];
             var chart = echarts.init(chartDom);
@@ -1317,13 +1318,13 @@ window.feed_list = window.feed_list || (function () {
                         top: '6px',
                         left: '35px',
                         right: '10px',
-                        height: '114px',
+                        height: '84px',
                     },
                     {
                         left: '35px',
                         right: '10px',
                         bottom: '0px',
-                        height: '80px'
+                        height: '50px'
                     }
                 ],
                 xAxis: [
