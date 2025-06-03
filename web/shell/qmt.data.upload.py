@@ -23,11 +23,13 @@ account = "8883949249"  # 国金
 broker = "国金"
 account = "620000558442"  # 国信
 broker = "国信"
+periods = ["tick", "1d", "1m", "5m"]
+periods = ["1d"]
 
 baseUrl = "http://localhost:3001"
 baseUrl = "http://test1.91taogu.com"
 
-dataStartTime = "20210101"
+dataStartTime = "20250101"
 dataEndTime = ""
 
 g.log = {
@@ -76,8 +78,6 @@ def init(ContextInfo):
 def after_init(ContextInfo):
     info('系统会在init函数执行完后和执行handlebar之前调用after_init')
     stocklist = ContextInfo.get_universe()
-    periods = ["tick", "1d", "1m", "5m"]
-    periods = ["1d"]
 
     # stocklist = ['300870.SZ']
     # periods = ["1d"]

@@ -23,6 +23,8 @@ account = "8883949249"  # 国金
 broker = "国金"
 account = "620000558442"  # 国信
 broker = "国信"
+
+periods = ["1d", "5m", "1m", "tick"]
 dataStartTime = "20210101"
 dataEndTime = ""
 
@@ -73,14 +75,14 @@ def init(ContextInfo):
 def after_init(ContextInfo):
     info('系统会在init函数执行完后和执行handlebar之前调用after_init')
     stocklist = ContextInfo.get_universe()
-    periods = ["1d", "5m", "1m", "tick"]
+    
 
     # stocklist = ['300870.SZ']
     # periods = ["1d"]
     # dataStartTime = "20140101"
     # 打印subs有多少个股票
-    for scode in stocklist:
-        for period in periods:
+    for period in periods:
+        for scode in stocklist:
             info('downloading', period, 'for', scode, 'from', dataStartTime)
             download_history_data(scode, period, dataStartTime, dataEndTime)
 
