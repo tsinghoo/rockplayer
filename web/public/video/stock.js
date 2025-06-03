@@ -315,6 +315,7 @@ window.feed_list = window.feed_list || (function () {
                 if (lastCode == null) {
                     lastCode = tick.scode;
                 } else if (lastCode != tick.scode) {
+
                     self.drawKTickChart(lastCode, timeData, priceData, volumeData);
                     lastCode = tick.scode;
                     timeData = [];
@@ -336,7 +337,7 @@ window.feed_list = window.feed_list || (function () {
                 volumeData.push(tick.volume);
             }
 
-            if (priceData.length > 0){
+            if (priceData.length > 0) {
                 self.drawKTickChart(lastCode, timeData, priceData, volumeData);
             }
         },
@@ -376,6 +377,7 @@ window.feed_list = window.feed_list || (function () {
                 if (lastCode == null) {
                     lastCode = row.scode;
                 } else if (lastCode != row.scode) {
+
                     self.drawK1dChart(lastCode, categoryData, values, volumes);
                     lastCode = row.scode;
                     categoryData = [];
@@ -388,8 +390,8 @@ window.feed_list = window.feed_list || (function () {
                 volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
             }
 
-            if ( values.length > 0){
-                 self.drawK1dChart(lastCode, categoryData, values, volumes);
+            if (values.length > 0) {
+                self.drawK1dChart(lastCode, categoryData, values, volumes);
             }
 
         },
@@ -419,8 +421,8 @@ window.feed_list = window.feed_list || (function () {
                 window.addEventListener('scroll', function () {
                     clearTimeout(self.scrollTimer);
                     self.scrollTimer = setTimeout(function () {
-                        self.updateKLine();
-                        self.showK1d();
+                        // self.updateKLine();
+                        // self.showK1d();
                     }, 250);
                 });
             }
@@ -552,10 +554,12 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "K线") {
                         if (firstRow) {
                             td.addClass("tdKLine");
-                            let html = `<div class="kTick"></div>
-                                <div class="k1d"></div>
-                            `;
-                            td.html(html);
+                            // let html = `<div class="kTick"></div>
+                            //     <div class="k1d"></div>
+                            // `;
+                            // td.html(html);
+
+
                             // td.removeClass("nowrap"); 
                         }
                     } else {
@@ -1018,165 +1022,52 @@ window.feed_list = window.feed_list || (function () {
             self.selectedData = data;
             share.currentTarget = ele;
             let scode = data["代码"];
+
+            let html = `<div class="kTick"></div>
+                                <div class="k1d"></div>
+                            `;
+            let popup = await share.popup__(null, html);
+
+            let c = $(`#${popup.id}`);
+            let kTick = c.find(".kTick");
+
             let ticks = await share.getSync__(`/stock/tick?scode=${scode}&day=${Date.now()}`);
             var timeData = [];
             var priceData = [];
             var volumeData = [];
             ticks.forEach(function (tick) {
-                delete tick["id"];
-                tick.data = JSON.parse(tick.data);
-                let time = new Date(tick.time);
-                let hour = `0${time.getHours()}`.slice(-2);
-                let minute = `0${time.getMinutes()}`.slice(-2);
-                time = `${hour}:${minute}`;
-                timeData.push(time);
-                priceData.push(tick.data.lastPrice);
-                volumeData.push(tick.data.volume);
+                let dateStr = (tick.time);
+                const year = dateStr.substring(0, 4);
+                const month = dateStr.substring(4, 6);
+                const day = dateStr.substring(6, 8);
+                const hours = dateStr.substring(8, 10);
+                const minutes = dateStr.substring(10, 12);
+                const seconds = dateStr.substring(12, 14);
+
+                timeData.push(`${hours}:${minutes}`);
+                priceData.push(tick.close);
+                volumeData.push(tick.volume);
             });
 
-            if (timeData.length == 0) {
-                timeData = ['9:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
-                priceData = [32.5, 32.8, 33.2, 33.0, 32.7, 32.9, 33.5, 33.8, 33.6, 33.9];
-                volumeData = [1200, 1800, 2100, 1900, 1500, 2000, 2300, 2500, 2200, 3000];
+            self.drawKTickChart(scode, timeData, priceData, volumeData, kTick);
+
+            let rows = await share.getSync__(`/stock/k1d?scode=${scode}`);
+
+            let categoryData = [];
+            let values = [];
+            let volumes = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                categoryData.push(row.time);
+                values.push([row.open, row.close, row.low, row.high]);
+                volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
             }
 
-            var chartDom = $(".kTick", ele)[0];
-            var chart = echarts.init(chartDom);
-
-            // 配置项
-            var option = {
-                title: {
-                    show: false,
-                },
-                legend: {
-                    show: false,
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        type: 'cross'
-                    }
-                },
-                grid: [
-                    {
-                        top: '6px',
-                        left: '35px',
-                        right: '10px',
-                        height: '74px',
-                    },
-                    {
-                        left: '35px',
-                        right: '10px',
-                        bottom: '0px',
-                        height: '30px'
-                    }
-                ],
-                xAxis: [
-                    {
-                        type: 'category',
-                        data: timeData,
-                        scale: true,
-                        boundaryGap: false,
-                        axisLine: { onZero: false },
-                        axisTick: { show: false },
-                        splitLine: { show: false },
-                        axisLabel: { show: false },
-                        splitNumber: 20,
-                        min: 'dataMin',
-                        max: 'dataMax'
-                    },
-                    {
-                        type: 'category',
-                        gridIndex: 1,
-                        data: timeData,
-                        scale: true,
-                        boundaryGap: false,
-                        axisLine: { onZero: false },
-                        axisTick: { show: false },
-                        splitLine: { show: false },
-                        axisLabel: { show: false },
-                        splitNumber: 20,
-                        min: 'dataMin',
-                        max: 'dataMax'
-                    }
-                ],
-                yAxis: [
-                    {
-                        scale: true,
-                        splitArea: {
-                            show: true
-                        }
-                    },
-                    {
-                        scale: true,
-                        gridIndex: 1,
-                        splitNumber: 2,
-                        axisLabel: { show: false },
-                        axisLine: { show: false },
-                        axisTick: { show: false },
-                        splitLine: { show: false }
-                    }
-                ],
-                dataZoom: [
-                    {
-                        type: 'inside',
-                        xAxisIndex: [0, 1],
-                        start: 50,
-                        end: 80
-                    }
-                ],
-                series: [
-                    {
-                        name: '价格',
-                        type: 'line',
-                        data: priceData,
-                        smooth: true,
-                        lineStyle: {
-                            width: 1
-                        },
-                        symbol: 'none',
-                        areaStyle: {
-                            opacity: 0.8,
-                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                                {
-                                    offset: 0,
-                                    color: 'rgba(58,77,233,0.8)'
-                                },
-                                {
-                                    offset: 1,
-                                    color: 'rgba(58,77,233,0.1)'
-                                }
-                            ])
-                        }
-                    },
-                    {
-                        name: '成交量',
-                        type: 'bar',
-                        xAxisIndex: 1,
-                        yAxisIndex: 1,
-                        data: volumeData,
-                        itemStyle: {
-                            color: function (params) {
-                                var colorList = priceData.map((price, index) => {
-                                    return index === 0 ? '#aaa' :
-                                        price > priceData[index - 1] ? '#f00' : '#0f0';
-                                });
-                                return colorList[params.dataIndex];
-                            },
-                            width: 2
-                        }
-                    }
-                ]
-            };
-
-            // 使用配置项显示图表
-            chart.setOption(option);
-
-            // 响应式调整
-            window.addEventListener('resize', function () {
-                chart.resize();
-            });
-
+            if (values.length > 0) {
+                let k1d = c.find(".k1d");
+                self.drawK1dChart(scode, categoryData, values, volumes, k1d);
+            }
         },
         splitData: function (rawData) {
             let categoryData = [];
@@ -1288,10 +1179,13 @@ window.feed_list = window.feed_list || (function () {
             });
         },
 
-        drawKTickChart: function (scode, timeData, priceData, volumeData) {
-            let tr = $(`.firstCode[code="${scode}"]`);
-            let td = tr.find(".tdKLine");
-            let kTick = td.find(".kTick");
+        drawKTickChart: function (scode, timeData, priceData, volumeData, kTick) {
+            if (kTick == null) {
+                let tr = $(`.firstCode[code="${scode}"]`);
+                let td = tr.find(".tdKLine");
+                kTick = td.find(".kTick");
+            }
+
             kTick.css({
                 width: "480px",
                 height: "140px"
@@ -1434,11 +1328,12 @@ window.feed_list = window.feed_list || (function () {
             });
         },
 
-        drawK1dChart: function (scode, categoryData, values, volumes) {
-            let tr = $(`.firstCode[code="${scode}"]`);
-            let td = tr.find(".tdKLine");
-            let k1d = td.find(".k1d");
-
+        drawK1dChart: function (scode, categoryData, values, volumes, k1d) {
+            if (k1d == null) {
+                let tr = $(`.firstCode[code="${scode}"]`);
+                let td = tr.find(".tdKLine");
+                k1d = td.find(".k1d");
+            }
             const upColor = '#00da3c';
             const downColor = '#ec0000';
             k1d.css({
@@ -1666,10 +1561,10 @@ window.feed_list = window.feed_list || (function () {
                             color: function (params) {
                                 var kData = option.series[0].data;
                                 if (kData.length > params.dataIndex) {
-                                    return kData[params.dataIndex][1] >= kData[params.dataIndex][0] 
+                                    return kData[params.dataIndex][1] >= kData[params.dataIndex][0]
                                         ? '#ef232a' : '#14b143';
                                 }
-                                
+
                                 return '#ef232a';
                             }
                         }
