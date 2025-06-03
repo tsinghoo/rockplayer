@@ -1724,19 +1724,29 @@ app.post('/stock/data/upload', async (req, res) => {
     info(`scode:${scode},period:${period}`);
     for (var i = 0; i < data.length; ++i) {
         if (period == "tick") {
-            //['Time', 'volume', 'amount', 'lastPrice']
-            let row = {
-                id: `${scode}-${data[i][0]}`,
-                scode: scode,
-                time: data[i][0],
-                data: JSON.stringify({
-                    volume: data[i][1],
-                    amount: data[i][2],
-                    lastPrice: data[i][3]
-                })
-            }
+            let dateStr = data[i][0];//"20250603091500";
+            const year = dateStr.substring(0, 4);
+            const month = dateStr.substring(4, 6);
+            const day = dateStr.substring(6, 8);
+            const hours = dateStr.substring(8, 10);
+            const minutes = dateStr.substring(10, 12);
+            const seconds = dateStr.substring(12, 14);
+            const date = new Date(year, month - 1, day, hours, minutes, seconds);
+            if (data[i][3] > 0) {
+                //['Time', 'volume', 'amount', 'lastPrice']
+                let row = {
+                    id: `${scode}-${date.getTime()}`,
+                    scode: scode,
+                    time: date.getTime(),
+                    data: JSON.stringify({
+                        volume: data[i][1],
+                        amount: data[i][2],
+                        lastPrice: data[i][3]
+                    })
+                }
 
-            await insertOrIgnore("ttick", row);
+                await insertOrIgnore("ttick", row);
+            }
         } else {
             //['Time', 'open', 'close', 'high', 'low', 'volume', 'amount']
             let row = {

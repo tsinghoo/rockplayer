@@ -334,6 +334,10 @@ window.feed_list = window.feed_list || (function () {
                 volumeData.push(tick.data.volume - lastVolume);
                 lastVolume = tick.data.volume;
             }
+
+            if (priceData.length > 0){
+                self.drawKTickChart(lastCode, timeData, priceData, volumeData);
+            }
         },
         showK1d: async function () {
             let vtr = $('.firstCode').filter(function () {
@@ -1288,8 +1292,8 @@ window.feed_list = window.feed_list || (function () {
             let td = tr.find(".tdKLine");
             let kTick = td.find(".kTick");
             kTick.css({
-                width: "200px",
-                height: "110px"
+                width: "480px",
+                height: "200px"
             });
             var chartDom = kTick[0];
             var chart = echarts.init(chartDom);
@@ -1313,13 +1317,13 @@ window.feed_list = window.feed_list || (function () {
                         top: '6px',
                         left: '35px',
                         right: '10px',
-                        height: '74px',
+                        height: '114px',
                     },
                     {
                         left: '35px',
                         right: '10px',
                         bottom: '0px',
-                        height: '30px'
+                        height: '80px'
                     }
                 ],
                 xAxis: [

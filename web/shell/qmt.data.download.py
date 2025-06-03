@@ -25,7 +25,8 @@ account = "620000558442"  # 国信
 broker = "国信"
 
 periods = ["1d", "5m", "1m", "tick"]
-dataStartTime = "20210101"
+periods = ["tick"]
+dataStartTime = "20250603"
 dataEndTime = ""
 
 

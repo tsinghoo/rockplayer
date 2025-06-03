@@ -25,11 +25,12 @@ account = "620000558442"  # 国信
 broker = "国信"
 periods = ["tick", "1d", "1m", "5m"]
 periods = ["1d"]
+periods = ["tick"]
 
-baseUrl = "http://localhost:3001"
+baseUrl = "http://192.168.66.205:3001"
 baseUrl = "http://test1.91taogu.com"
 
-dataStartTime = "20250101"
+dataStartTime = "20250603"
 dataEndTime = ""
 
 g.log = {
@@ -101,7 +102,7 @@ def after_init(ContextInfo):
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
             # 将datas的数据分批上传，每批100条
-            bsize = 100
+            bsize = 500
             for i in range(0, len(datas), bsize):
                 batch = datas.iloc[i:i+bsize]
                 print("上传", scode, period,
