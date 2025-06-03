@@ -23,8 +23,8 @@ account = "620000558442"  # 国信
 broker = "国信"
 uploadPrice = 1
 runGetActionTask = 0
-dataStartTime = "2023-01-01"
-dataEndTime = "2025-04-09"
+dataStartTime = "2025-01-01"
+dataEndTime = ""
 
 
 g.log = {
@@ -63,7 +63,7 @@ def init(ContextInfo):
             stocklist = json.loads(content)
 
     except Exception as e:
-        print("获取stockk list失败:", str(e))
+        print("获取stock list失败:", str(e))
 
     ContextInfo.set_universe(stocklist)
     ContextInfo.set_account(account)              # 交易账户
@@ -142,15 +142,19 @@ def getActions(ContextInfo):
             debug("getActions成功:", response.status_code, content)
             jso = json.loads(content)
             for act in jso["data"]:
+                act["scode"] = act["scode"].replace(".HK", ".HGT")
                 if act["scode"] in g.actions:
                     info("已存在", act["scode"], "的action")
                 else:
                     if act["action"] == "buy":
                         info("买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
-
-                        passorder(23, 1101, account, act["scode"], 11, act["price"],
-                                  act["amount"], 2, ContextInfo)
+                        if act["amount"] == -1:
+                            order_lots(act["scode"], 1,
+                                       'fix', act["price"], ContextInfo, account)
+                        else:
+                            passorder(23, 1101, account, act["scode"], 11, act["price"],
+                                      act["amount"], 2, ContextInfo)
 
                         info("已买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
@@ -158,8 +162,10 @@ def getActions(ContextInfo):
                     elif act["action"] == "sell":
                         info("卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])
-                        # passorder(24, 1101, account, act["scode"], 11, act["price"],
-                        #           act["amount"], 2, ContextInfo)
+                        passorder(24, 1101, account, act["scode"], 11, act["price"],
+                                  act["amount"], 2, ContextInfo)
+                        info("已卖出", act["sname"], act["scode"],
+                             act["price"], act["amount"])
 
                     g.actions[act["scode"]] = act
     except Exception as e:
