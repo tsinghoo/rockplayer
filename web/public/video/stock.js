@@ -555,6 +555,7 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "K线") {
                         if (firstRow) {
                             td.addClass("tdKLine");
+                            td.html("K线");
                             // let html = `<div class="kTick"></div>
                             //     <div class="k1d"></div>
                             // `;
