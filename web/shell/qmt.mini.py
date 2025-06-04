@@ -9,6 +9,10 @@ import pandas as pd
 import numpy as np
 import requests
 import sys
+from threading import Thread
+from colorama import Fore, Back, Style
+import colorama
+colorama.init()
 
 
 class G():
@@ -25,6 +29,22 @@ g.session_id = 1001
 g.tick = {}
 g.uploading = 0
 g.stocklist = ['000300.SH', '000004.SZ']
+
+baseUrl = "http://192.168.66.205:3001"
+baseUrl = "http://test1.91taogu.com"
+
+g.log = {
+    "level": 4,
+    "none": 0,
+    "error": 1,
+    "warning": 2,
+    "info": 3,
+    "debug": 4,
+}
+
+g.log["level"] = g.log["debug"]
+
+g.toPrint = []
 
 
 class MyXtQuantTraderCallback(XtQuantTraderCallback):
@@ -148,21 +168,21 @@ def uploadStockPrice():
     # 为data添加passcode属性
     sb, g.tick = g.tick, {}  # 这行是原子的
     if (len(list(sb)) < 1):
-        print("0 stocks, skip upload")
+        info("0 stocks, skip upload")
         return
-    print("上传", len(list(sb)), "个股票价格")
-    print(sb.keys())
+    info(Back.CYAN, "上传", len(list(sb)), "个股票价格", Style.RESET_ALL)
+    # info(sb.keys())
     try:
         response = requests.post("http://test1.91taogu.com/stock/quotes.mini", json={
             "data": sb, "passcode": "995560"}, timeout=5)
         if response.status_code != 200:
-            print("请求失败，状态码:", response.status_code)
+            error("请求失败，状态码:", response.status_code)
             return
         else:
             response.encoding = 'utf-8'
-            print("请求test1成功:", response.status_code, response.text)
+            # info("请求test1成功:", response.status_code, response.text)
     except Exception as e:
-        print("请求失败:", str(e))
+        error("请求失败:", str(e))
 
 
 def uploadPosition(positions):
@@ -196,6 +216,203 @@ def uploadPosition(positions):
             print("上传持仓到test1成功:", response.status_code, response.text)
     except Exception as e:
         print("请求失败:", str(e))
+
+
+def update1dTask():
+    while True:
+        time.sleep(1)
+        update1d()
+
+
+def update1mTask():
+    while True:
+        time.sleep(1)
+        update1m()
+
+
+def update1d():
+    info("update1d")
+    stocklist = g.stocklist
+
+    dataStartTime = (datetime.datetime.now() -
+                     datetime.timedelta(days=0)).strftime("%Y%m%d")
+    dataEndTime = ""
+    pds = ["1d"]
+    for index, scode in enumerate(stocklist):
+        for period in pds:
+            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+            if period == "tick":
+                params = ['volume', 'amount', 'lastPrice']
+
+            info('downloading', period, 'from', dataStartTime)
+            xtdata.download_history_data(
+                scode, period, dataStartTime, dataEndTime)
+            # download_history_data2 批量版本 todo
+            # params = []
+            info(Back.RED, 'get', period, 'for', scode, 'from',
+                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")", Style.RESET_ALL)
+            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
+                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
+            datas = df[scode]
+            # print("所有列名:", df.keys())
+            # print("所有:", df.values())
+            columns = ['Time'] + datas.columns.tolist()
+            # print(columns)
+            info("", len(datas), "rows")
+            # array_data = [datas.columns.tolist()] + datas.values.tolist()
+
+            # 将datas的数据分批上传，每批100条
+            bsize = 500
+            for i in range(0, len(datas), bsize):
+                batch = datas.iloc[i:i+bsize]
+                info("上传", scode, period,
+                     "[", i, ",", i+bsize, "]", len(batch))
+                batch_data = [[str(idx)] + row.tolist()
+                              for idx, row in batch.iterrows()]
+                # print(obj2JsonString(batch_data, indent=None))
+                body = {"data": obj2Json(
+                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                # 上传数据到test1
+                try:
+                    response = requests.post(
+                        baseUrl+"/stock/data/upload", json=body, timeout=20)
+                    if response.status_code != 200:
+                        error("上传失败，状态码:", response.status_code,
+                              "响应内容:", response.text)
+                except Exception as e:
+                    error("上传失败:", str(e))
+
+            # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
+            # print(obj2JsonString(result_dict))
+            # json_result = json.dumps(result_dict, indent=4)
+            # print(json_result)
+
+            # print(obj2JsonString(df[scode]))
+            # print(datas.to_json(orient='index'))
+
+
+def update1m():
+    info("update1m")
+    stocklist = g.stocklist
+    pds = ["1m"]
+    dataStartTime = (datetime.datetime.now() -
+                     datetime.timedelta(minutes=5)).strftime("%Y%m%d%H%M%S")
+
+    dataEndTime = ""
+    for index, scode in enumerate(stocklist):
+        for period in pds:
+            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+            if period == "tick":
+                params = ['volume', 'amount', 'lastPrice']
+            # params = []
+            info('==downloading', period, 'from', dataStartTime)
+            xtdata.download_history_data(
+                scode, period, dataStartTime, dataEndTime)
+            info(Back.GREEN, 'get', period, 'for', scode, 'from',
+                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")", Style.RESET_ALL)
+            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
+                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
+            datas = df[scode]
+            # print("所有列名:", df.keys())
+            # info("所有:", df.values())
+            columns = ['Time'] + datas.columns.tolist()
+            debug(columns)
+            debug(len(datas), "rows")
+            # array_data = [datas.columns.tolist()] + datas.values.tolist()
+
+            # 将datas的数据分批上传，每批100条
+            bsize = 500
+            for i in range(0, len(datas), bsize):
+                batch = datas.iloc[i:i+bsize]
+                info("上传", scode, period,
+                     "[", i, ",", i+bsize, "]", len(batch))
+                batch_data = [[str(idx)] + row.tolist()
+                              for idx, row in batch.iterrows()]
+                # info(obj2JsonString(batch_data, indent=None))
+                body = {"data": obj2Json(
+                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                # 上传数据到test1
+                try:
+                    response = requests.post(
+                        baseUrl+"/stock/data/upload", json=body, timeout=20)
+                    if response.status_code != 200:
+                        error("上传失败，状态码:", response.status_code,
+                              "响应内容:", response.text)
+                except Exception as e:
+                    error("上传失败:", str(e))
+
+            # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
+            # info(obj2JsonString(result_dict))
+            # json_result = json.dumps(result_dict, indent=4)
+            # info(json_result)
+
+            # info(obj2JsonString(df[scode]))
+            # info(datas.to_json(orient='index'))
+
+
+def obj2Json(obj, max_depth=4, current_depth=1):
+    """
+    使用 dir() 和 getattr() 将 Python 对象（包括数组、字典、嵌套对象）转换为 JSON
+
+    参数:
+        obj: 要转换的 Python 对象
+        max_depth: 最大递归深度（防止无限递归）
+        current_depth: 当前递归深度（内部使用）
+
+    返回:
+        JSON 字符串
+    """
+
+    # 基本类型（可直接序列化）
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
+
+    if current_depth > max_depth:
+        return "<超出最大递归深度>"
+
+    # 处理数组（list/tuple/set）
+    if isinstance(obj, (list, tuple, set)):
+        return [obj2Json(item, max_depth, current_depth + 1) for item in obj]
+
+    # 处理字典（dict）
+    if isinstance(obj, dict):
+        return {
+            key: obj2Json(value, max_depth, current_depth + 1)
+            for key, value in obj.items()
+        }
+
+    # 自定义对象（递归获取属性）
+    result = {}
+    for attr_name in dir(obj):
+        # 跳过魔术方法（如 __init__, __str__ 等）
+        if attr_name.startswith('__') and attr_name.endswith('__'):
+            continue
+
+        try:
+            attr_value = getattr(obj, attr_name)
+
+            # 跳过方法（callable 对象）
+            if inspect.ismethod(attr_value) or inspect.isfunction(attr_value):
+                continue
+
+            # 递归处理属性值
+            result[attr_name] = obj2Json(
+                attr_value, max_depth, current_depth + 1)
+
+        except Exception as e:
+            result[attr_name] = f"<无法获取属性值: {str(e)}>"
+
+    return result
+
+
+def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
+    """
+    最终转换为 JSON 字符串
+    """
+    data = obj2Json(obj, max_depth=max_depth)
+    js = json.dumps(data, indent=indent,
+                    ensure_ascii=ensure_ascii)
+    return js
 
 
 def buy(scode, price, volume):
@@ -234,7 +451,7 @@ def getDeals():
     stockAccount = StockAccount(g.account)
     result = xt_trader.export_data(
         stockAccount, "d:\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
-    print(result)
+    info(result)
 
     deals = xt_trader.query_data(
         stockAccount, "d:\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
@@ -317,17 +534,53 @@ def printObj(data, indent):
         indent = ""
     dirs = dir(data)
     if not dirs:
-        print(data)
+        info(data)
     else:
         for field in dirs:
             if not field.startswith("_"):  # 过滤掉Python内置属性
                 try:
                     value = getattr(data, field)
                     # child = printObj(value, indent+"  ")
-                    print(f"{indent}{field}:{value}\n")
+                    info(f"{indent}{field}:{value}\n")
                 except Exception as e:
-                    print(f"{field}: (无法获取值):{e}")
+                    info(f"{field}: (无法获取值):{e}")
 
+
+def debug(*args, **kwargs):
+    if (g.log["level"] >= g.log["debug"]):
+        all_args = (f"D",) + args
+        log(*all_args, **kwargs)
+
+
+def info(*args, **kwargs):
+    if (g.log["level"] >= g.log["info"]):
+        all_args = (f"I",) + args
+        log(*all_args, **kwargs)
+
+
+def error(*args, **kwargs):
+    if (g.log["level"] >= g.log["error"]):
+        all_args = (f"E",) + args
+        log(*all_args, **kwargs)
+
+
+def log(*args, **kwargs):
+    """增强版log函数，完全模拟print的参数行为"""
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # 将时间作为第一个元素插入到输出中
+    time_header = f"[{current_time}]"
+    all_args = (time_header,) + args
+
+    g.toPrint.append([all_args, kwargs])
+
+
+def printTask():
+    while True:
+        while len(g.toPrint) > 0:
+            item = g.toPrint.pop(0)
+            print(*item[0], **item[1])
+        time.sleep(0.1)
 
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
@@ -392,6 +645,12 @@ if __name__ == '__main__':
     # while True:
     #     g.tick = xtdata.get_full_tick(g.stocklist)
     #     uploadStockPrice()
+    t1 = Thread(target=update1dTask)
+    t1.start()
+    t2 = Thread(target=update1mTask)
+    t2.start()
+    t3 = Thread(target=printTask)
+    t3.start()
 
     while True:
         uploadStockPrice()
