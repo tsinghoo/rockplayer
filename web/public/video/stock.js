@@ -285,10 +285,11 @@ window.feed_list = window.feed_list || (function () {
         },
         updateData: async function () {
             let sqlName = self.sqlRow.name.trim();
-            if (sqlName == "all") {
+            if (self.sql.params.includes("现价")){
                 await self.getCurrentPrices();
-                await self.getRuleStatus();
-            } else if (sqlName == "智能单") {
+            }
+            
+            if (self.sql.params.includes("规则")){
                 await self.getRuleStatus();
             }
         },
