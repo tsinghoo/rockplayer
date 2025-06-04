@@ -1414,8 +1414,8 @@ app.get('/stock/tick', async (req, res) => {
 
     day.setHours(0, 0, 0, 0);
     let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
-    day = timeFormat(day,"yyyyMMdd")
-    nextDay = timeFormat(nextDay,"yyyyMMdd")
+    day = timeFormat(day, "yyyyMMdd")
+    nextDay = timeFormat(nextDay, "yyyyMMdd")
     let sql = `select * from t1m where scode in ('${scode.split(",").join("','")}') and time > ? and time < ? order by scode, time`;
     let result = await db.allSync(sql, [day, nextDay]);
 
@@ -1761,6 +1761,14 @@ app.post('/stock/data/upload', async (req, res) => {
                 low: data[i][4],
                 volume: data[i][5],
                 amount: data[i][6]
+            }
+
+            if (row.volume < 0) {
+                if (period == "1m") {
+                    row.volume = 0;
+                } else {
+                    row.volume = Math.abs(row.volume);
+                }
             }
 
             await insertOrReplace(`t${period}`, row);

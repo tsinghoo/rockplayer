@@ -171,6 +171,61 @@ def getActions(ContextInfo):
     except Exception as e:
         error("getActions出错:", traceback.format_exc())
 
+def downloadAndUpload(ContextInfo):
+    stocklist = ContextInfo.get_universe()
+    for index, scode in enumerate(stocklist):
+        for period in periods:
+            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+            if period == "tick":
+                params = ['volume', 'amount', 'lastPrice']
+            # params = []
+
+            info('downloading', period, 'for', scode, 'from', dataStartTime)
+            download_history_data(scode, period, dataStartTime, dataEndTime)
+            info('get', period, 'for', scode, 'from',
+                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
+            df = ContextInfo.get_market_data_ex(params, stock_code=[scode], period=period,
+                                                start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True, subscribe=True)
+            datas = df[scode]
+            # print("所有列名:", df.keys())
+            # print("所有:", df.values())
+            columns = ['Time'] + datas.columns.tolist()
+            print(columns)
+            print(len(datas), "rows")
+            # array_data = [datas.columns.tolist()] + datas.values.tolist()
+
+            # 将datas的数据分批上传，每批100条
+            bsize = 500
+            for i in range(0, len(datas), bsize):
+                batch = datas.iloc[i:i+bsize]
+                print("上传", scode, period,
+                      "[", i, ",", i+bsize, "]", len(batch))
+                batch_data = [[str(idx)] + row.tolist()
+                              for idx, row in batch.iterrows()]
+                # print(obj2JsonString(batch_data, indent=None))
+                body = {"data": obj2Json(
+                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                # 上传数据到test1
+                try:
+                    response = requests.post(
+                        baseUrl+"/stock/data/upload", json=body, timeout=20)
+                    if response.status_code != 200:
+                        print("上传失败，状态码:", response.status_code,
+                              "响应内容:", response.text)
+                    else:
+                        print("上传成功:", response.status_code,
+                              "响应内容:", response.text)
+                except Exception as e:
+                    print("上传失败:", str(e))
+
+            # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
+            # print(obj2JsonString(result_dict))
+            # json_result = json.dumps(result_dict, indent=4)
+            # print(json_result)
+
+            # print(obj2JsonString(df[scode]))
+            # print(datas.to_json(orient='index'))
+
 
 def after_init(ContextInfo):
     info('系统会在init函数执行完后和执行handlebar之前调用after_init')
