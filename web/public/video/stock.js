@@ -285,11 +285,11 @@ window.feed_list = window.feed_list || (function () {
         },
         updateData: async function () {
             let sqlName = self.sqlRow.name.trim();
-            if (self.sql.params.includes("现价")){
+            if (self.sql.params.includes("现价")) {
                 await self.getCurrentPrices();
             }
-            
-            if (self.sql.params.includes("规则")){
+
+            if (self.sql.params.includes("规则")) {
                 await self.getRuleStatus();
             }
         },
@@ -994,7 +994,7 @@ window.feed_list = window.feed_list || (function () {
                             let tp = share.getTimePassed__(row.updateTime);
                             cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
 
-                            if (delta > 0 && data["买卖"] == "买入") {
+                            if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
                                 if (data["配对"] != "") {
                                     cpl.addClass("gold");
                                 } else {
