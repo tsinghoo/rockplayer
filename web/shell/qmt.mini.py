@@ -168,7 +168,7 @@ def uploadStockPrice():
     # 为data添加passcode属性
     sb, g.tick = g.tick, {}  # 这行是原子的
     if (len(list(sb)) < 1):
-        info("0 stocks, skip upload")
+        info(Back.CYAN, "0 stocks, skip upload", Style.RESET_ALL)
         return
     info(Back.CYAN, "上传", len(list(sb)), "个股票价格", Style.RESET_ALL)
     # info(sb.keys())
@@ -642,9 +642,6 @@ if __name__ == '__main__':
     xtdata.subscribe_whole_quote(
         g.stocklist, callback=subscribe_whole_callback)
 
-    # while True:
-    #     g.tick = xtdata.get_full_tick(g.stocklist)
-    #     uploadStockPrice()
     t1 = Thread(target=update1dTask)
     t1.start()
     t2 = Thread(target=update1mTask)
