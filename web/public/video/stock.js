@@ -152,7 +152,7 @@ window.feed_list = window.feed_list || (function () {
                 {
                     text: "现价",
                     onTap: function () {
-                        let tds = $(`.curPrice, .tdRule,.tdStatus`);
+                        let tds = $(`.curPrice, .tdRule,.tdStatus, .tdKLine`);
                         if (tds.is(":visible")) {
                             tds.hide();
                         } else {
@@ -415,6 +415,8 @@ window.feed_list = window.feed_list || (function () {
                     th.addClass("tdRule");
                 } else if (keys[i] == "状态") {
                     th.addClass("tdStatus");
+                } else if (keys[i] == "K线") {
+                    th.addClass("tdKLine");
                 }
             }
 
