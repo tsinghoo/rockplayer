@@ -1288,7 +1288,7 @@ window.feed_list = window.feed_list || (function () {
                 let html = `
                     <tr> 
                         <td>${row.broker}</td> 
-                        <td>${row.volume}</td>
+                        <td>${row.can_use_volume}/${row.volume}</td>
                         <td>${row.avg_price}</td>
                         <td>${row.market_value}</td>
                     </tr>
