@@ -6,6 +6,20 @@ window.feed_list = window.feed_list || (function () {
     var self = {
         data: {},
         rows: [],
+        statusMapping: {
+            "49": "待报",
+            "50": "已报",
+            "54": "已撤",
+            "55": "部成",
+            "56": "已成",
+            "57": "废单"
+        },
+        mapping: {
+            "toBuy": "待买",
+            "toSell": "待卖",
+            "todo": "待命",
+            "ordered": "已下单"
+        },
         sql: { name: "" },
         currentPrices: {},
         init: async function () {
@@ -503,39 +517,7 @@ window.feed_list = window.feed_list || (function () {
 
                         }
                         if (firstRow && rc != null) {
-                            let buy = `
-                            <tr> 
-                                <td>买:</td>
-                                <td>${rc.buy}</td> 
-                                <td>&uparrow;${parseFloat(rc.bounce).toFixed(3)}</td>
-                                <td>${rc.buyAmount}</td>
-                            </tr>
-                        `;
-                            let sell = `
-                            <tr style="border:none;"> 
-                                <td>卖:</td>
-                                <td>${rc.sell}</td> 
-                                <td>&downarrow;${parseFloat(rc.dip).toFixed(3)}</td>
-                                <td>${rc.sellAmount}</td>
-                            </tr>
-                        `;
-                            let html = `
-                            <table>
-                                ${buy}
-                                ${sell}
-                            </table>
-                        `;
-
-                            if (rc.order == "sellFirst") {
-                                html = `
-                            <table>
-                                ${sell}
-                                ${buy}
-                            </table>
-                            `;
-                            }
-
-                            td.html(html);
+                            self.showRule(rc, td);
                             if (rc.order == "") {
                                 td.find("table").css({
                                     border: "1px solid gray",
@@ -591,13 +573,11 @@ window.feed_list = window.feed_list || (function () {
             }
 
             $(".ruleStatus").click(function (e) {
-                e.stopPropagation();
                 self.onTdClicked(this);
                 self.onRuleStatusClicked();
             })
 
             $(".tdKLine").click(function (e) {
-                e.stopPropagation();
                 self.onTdKLineClicked(this);
             })
 
@@ -612,12 +592,7 @@ window.feed_list = window.feed_list || (function () {
             })
 
             $(".buySell").click(function (e) {
-                e.stopPropagation();
-                let data = $(this).parent("tr").attr("data");
-                data = JSON.parse(data);
-                self.selectedData = data;
-                share.currentTarget = this;
-                self.toBuySell();
+                self.onTdKLineClicked(this);
             })
 
             $(".ruleContent").click(function (e) {
@@ -690,62 +665,12 @@ window.feed_list = window.feed_list || (function () {
 
         getRuleStatus: async function () {
             let res = await share.getSync__("/stock/rule/status");
-            let statusMapping = {
-                "49": "待报",
-                "50": "已报",
-                "54": "已撤",
-                "55": "部成",
-                "56": "已成",
-                "57": "废单"
-            };
             $(".ruleStatus").each(function () {
                 let td = $(this);
                 let scode = td.parents("tr").attr("code").trim();
                 let r = res.data[scode];
                 if (r) {
-                    let rc = r.rule;
-
-                    let mapping = {
-                        "toBuy": "待买",
-                        "toSell": "待卖",
-                        "todo": "待命",
-                        "ordered": "已下单"
-                    }
-
-                    rc.minPrice = rc.minPrice ? parseFloat(rc.minPrice) : 0;
-                    rc.maxPrice = rc.maxPrice ? parseFloat(rc.maxPrice) : 0;
-                    rc.currentPrice = rc.currentPrice ? parseFloat(rc.currentPrice) : 0;
-
-                    let price = `
-                        <tr>
-                            <td colspan="7" class="nowrap">
-                            ${mapping[r.status]}: [${rc.minPrice.toFixed(3)}, ${rc.maxPrice.toFixed(3)}]: ${rc.currentPrice.toFixed(3)}
-                            </td>
-                        </tr>
-                    `;
-                    let actions = "";
-                    if (r.actions && r.actions.length > 0) {
-                        actions = r.actions.map(a => {
-                            let statusText = statusMapping[a.status];
-                            if (statusText == null) {
-                                statusText = a.status ? a.status : "";
-                            }
-                            return `
-                                <tr>
-                                    <td>${share.timeFormat__(a.createTime, "yyyy-MM-dd hh:mm:ss")}</td>
-                                    <td>${a.action}</td>
-                                    <td>${a.price}</td>
-                                    <td>${a.amount}</td>
-                                    <td>${a.orderNo}</td>
-                                    <td>${a.done}</td>
-                                    <td>${statusText}</td>
-                                </tr>
-                            `;
-                        }).join("");
-                    }
-
-                    let html = `<table>${price}${actions}</table>`;
-                    td.html(html);
+                    self.showRuleStatus(r, td);
                 }
             })
         },
@@ -787,11 +712,11 @@ window.feed_list = window.feed_list || (function () {
                 let popup = await share.popup__(null, c);
                 c = $(`#${popup.id}`);
             }
-            
+
             c.find(".sname").val(`${self.selectedData["名称"]}`);
             c.find(".scode").val(`${self.selectedData["代码"]}`);
             c.find(".operationName").val(`${broker}`);
-            let np = buy;
+            let np = self.selectedData.curPrice;
             if (np == null) {
                 np = self.selectedData["价格"];
             }
@@ -874,10 +799,6 @@ window.feed_list = window.feed_list || (function () {
                     c.find(".buyFirst").prop("checked", !this.checked);
                 }
             });
-
-            c.find(".buttonToAll").click(function () {
-
-            })
         },
 
         createFloatingWindow: function (url, width) {
@@ -996,6 +917,8 @@ window.feed_list = window.feed_list || (function () {
                             data = JSON.parse(data);
                             const curPrice = row.buy;
                             const price = data["价格"];
+                            data.curPrice = curPrice;
+                            th.attr("data", JSON.stringify(data));
                             let delta = ((curPrice - price) / price * 100).toFixed(1);
                             let tp = share.getTimePassed__(row.updateTime);
                             cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
@@ -1028,18 +951,20 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         onTdKLineClicked: async function (ele) {
-
-
             let data = $(ele).parent("tr").attr("data");
             data = JSON.parse(data);
             self.selectedData = data;
             share.currentTarget = ele;
             let scode = data["代码"];
-            let tbs=$("#templateBuySell").html();
+            let tbs = $("#templateBuySell").html();
             let html = `
                     <div class="flexrow">
                        <div class="flexcolumn border padding4 margin4">
-                       ${tbs}
+                            ${tbs}
+                            <div class="rule flexrow center margin4">
+                            </div>
+                            <div class="ruleStatus flexrow center margin4">
+                            </div>
                        </div>
                        <div class="flexcolumn">
                             <div class="kTick border margin4"></div>
@@ -1047,11 +972,11 @@ window.feed_list = window.feed_list || (function () {
                        </div>
                     </div>
                             `;
-            let popup = await share.popup__(null, html);
+            let popup = await share.popup__(null, html, "bottom");
 
             let c = $(`#${popup.id}`);
             self.toBuySell(null, c);
-
+            self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
             let kTick = c.find(".kTick");
 
             let ticks = await share.getSync__(`/stock/tick?scode=${scode}&day=${Date.now()}`);
@@ -1351,6 +1276,51 @@ window.feed_list = window.feed_list || (function () {
                 chart.resize();
             });
         },
+        showRule: async function (rc, c, scode, statusContainer) {
+            let r = null;
+            if (rc == null) {
+                let res = await share.getSync__(`/stock/rule/status?scode=${scode}`);
+                r = res.data;
+                rc = r.rule;
+            }
+            let buy = `
+                                   <tr> 
+                                       <td>买:</td>
+                                       <td>${rc.buy}</td> 
+                                       <td>&uparrow;${parseFloat(rc.bounce).toFixed(3)}</td>
+                                       <td>${rc.buyAmount}</td>
+                                   </tr>
+                               `;
+            let sell = `
+                                   <tr style="border:none;"> 
+                                       <td>卖:</td>
+                                       <td>${rc.sell}</td> 
+                                       <td>&downarrow;${parseFloat(rc.dip).toFixed(3)}</td>
+                                       <td>${rc.sellAmount}</td>
+                                   </tr>
+                               `;
+            let html = `
+                                   <table class="width100p">
+                                       ${buy}
+                                       ${sell}
+                                   </table>
+                               `;
+
+            if (rc.order == "sellFirst") {
+                html = `
+                                   <table class="width100p">
+                                       ${sell}
+                                       ${buy}
+                                   </table>
+                                   `;
+            }
+
+            c.html(html);
+
+            if (statusContainer) {
+                self.showRuleStatus(r, statusContainer);
+            }
+        },
 
         drawK1dChart: function (scode, categoryData, values, volumes, k1d) {
             if (k1d == null) {
@@ -1604,6 +1574,47 @@ window.feed_list = window.feed_list || (function () {
                 chart.resize();
             });
         },
+        showRuleStatus: function (r, c) {
+            let rc = r.rule;
+
+            let statusMapping = self.statusMapping;
+            let mapping = self.mapping;
+
+            rc.minPrice = rc.minPrice ? parseFloat(rc.minPrice) : 0;
+            rc.maxPrice = rc.maxPrice ? parseFloat(rc.maxPrice) : 0;
+            rc.currentPrice = rc.currentPrice ? parseFloat(rc.currentPrice) : 0;
+
+            let price = `
+                                <tr>
+                                    <td colspan="7" class="nowrap">
+                                    ${mapping[r.status]}: [${rc.minPrice.toFixed(3)}, ${rc.maxPrice.toFixed(3)}]: ${rc.currentPrice.toFixed(3)}
+                                    </td>
+                                </tr>
+                            `;
+            let actions = "";
+            if (r.actions && r.actions.length > 0) {
+                actions = r.actions.map(a => {
+                    let statusText = statusMapping[a.status];
+                    if (statusText == null) {
+                        statusText = a.status ? a.status : "";
+                    }
+                    return `
+                                        <tr>
+                                            <td>${share.timeFormat__(a.createTime, "yyyy-MM-dd hh:mm:ss")}</td>
+                                            <td>${a.action}</td>
+                                            <td>${a.price}</td>
+                                            <td>${a.amount}</td>
+                                            <td>${a.orderNo}</td>
+                                            <td>${a.done}</td>
+                                            <td>${statusText}</td>
+                                        </tr>
+                                    `;
+                }).join("");
+            }
+
+            let html = `<table>${price}${actions}</table>`;
+            c.html(html);
+        },
         showChart: async function (rows) {
             let max = 0;
             let min = 100000;
@@ -1774,5 +1785,8 @@ window.feed_list = window.feed_list || (function () {
 
     return self;
 })();
+
+
+
 
 

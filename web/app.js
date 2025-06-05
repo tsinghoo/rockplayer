@@ -1562,9 +1562,12 @@ app.get('/stock/rule/status', async (req, res) => {
     info("get /stock/rule/status");
     let js = req.query.js;
     let scode = req.query.scode;
-
-
-    var resp = JSON.stringify({ data: rules });
+    var resp = null;
+    if (scode == null) {
+        resp = JSON.stringify({ data: rules });
+    } else {
+        resp = JSON.stringify({ data: rules[scode] });
+    }
     if (js) {
         resp = `${js}(${resp})`;
     }
