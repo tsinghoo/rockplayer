@@ -1038,12 +1038,12 @@ window.feed_list = window.feed_list || (function () {
             let tbs=$("#templateBuySell").html();
             let html = `
                     <div class="flexrow">
-                       <div class="flexcolumn">
-                            <div class="kTick"></div>
-                            <div class="k1d"></div>
+                       <div class="flexcolumn border padding4 margin4">
+                       ${tbs}
                        </div>
                        <div class="flexcolumn">
-                       ${tbs}
+                            <div class="kTick border margin4"></div>
+                            <div class="k1d border margin4"></div>
                        </div>
                     </div>
                             `;
