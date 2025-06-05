@@ -372,6 +372,11 @@ async function reloadRule(r) {
     }
 
     rules[r.scode] = r;
+    let sb = await db.getSync(`select * from tStockBasic where scode = '${r.scode}'`);
+    if (sb != null) {
+        r.rule.currentPrice = r.rule.minPrice = r.rule.maxPrice = sb.buy;
+    }
+
     r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where scode = '${r.scode}' order by createTime desc limit 1`);
