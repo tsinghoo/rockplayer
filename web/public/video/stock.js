@@ -750,7 +750,7 @@ window.feed_list = window.feed_list || (function () {
             })
         },
 
-        toBuySell: async function (opt) {
+        toBuySell: async function (opt, c) {
             let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce;
             if (opt) {
                 sell = opt.sell;
@@ -782,9 +782,12 @@ window.feed_list = window.feed_list || (function () {
                 delta = 0.02;
             }
 
-            let c = $("#templateBuySell").html();
-            let popup = await share.popup__(null, c);
-            c = $(`#${popup.id}`);
+            if (c == null) {
+                c = $("#templateBuySell").html();
+                let popup = await share.popup__(null, c);
+                c = $(`#${popup.id}`);
+            }
+            
             c.find(".sname").val(`${self.selectedData["名称"]}`);
             c.find(".scode").val(`${self.selectedData["代码"]}`);
             c.find(".operationName").val(`${broker}`);
@@ -1025,18 +1028,30 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         onTdKLineClicked: async function (ele) {
+
+
             let data = $(ele).parent("tr").attr("data");
             data = JSON.parse(data);
             self.selectedData = data;
             share.currentTarget = ele;
             let scode = data["代码"];
-
-            let html = `<div class="kTick"></div>
-                                <div class="k1d"></div>
+            let tbs=$("#templateBuySell").html();
+            let html = `
+                    <div class="flexrow">
+                       <div class="flexcolumn">
+                            <div class="kTick"></div>
+                            <div class="k1d"></div>
+                       </div>
+                       <div class="flexcolumn">
+                       ${tbs}
+                       </div>
+                    </div>
                             `;
             let popup = await share.popup__(null, html);
 
             let c = $(`#${popup.id}`);
+            self.toBuySell(null, c);
+
             let kTick = c.find(".kTick");
 
             let ticks = await share.getSync__(`/stock/tick?scode=${scode}&day=${Date.now()}`);
@@ -1076,6 +1091,7 @@ window.feed_list = window.feed_list || (function () {
                 let k1d = c.find(".k1d");
                 self.drawK1dChart(scode, categoryData, values, volumes, k1d);
             }
+
         },
         splitData: function (rawData) {
             let categoryData = [];
