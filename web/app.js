@@ -948,10 +948,10 @@ async function dbCall(options) {
             let params = stat[1];
             debug("dbCall sql:" + sql);
             debug("params:" + JSON.stringify(params));
-            await db.runSync(sql, params);
+            return await db.runSync(sql, params);
         } else {
             debug("sql:" + stat);
-            await db.runSync(stat);
+            return await db.runSync(stat);
         }
     }
 }
