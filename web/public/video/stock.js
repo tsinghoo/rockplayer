@@ -960,6 +960,8 @@ window.feed_list = window.feed_list || (function () {
             let html = `
                     <div class="flexrow">
                        <div class="flexcolumn border padding4 margin4">
+                            <div class="position flexrow center margin4">
+                            </div>
                             ${tbs}
                             <div class="rule flexrow center margin4">
                             </div>
@@ -975,6 +977,7 @@ window.feed_list = window.feed_list || (function () {
             let popup = await share.popup__(null, html, "bottom");
 
             let c = $(`#${popup.id}`);
+            self.showPosition(null, c.find(".position"), scode);
             self.toBuySell(null, c);
             self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
             let kTick = c.find(".kTick");
@@ -1275,6 +1278,32 @@ window.feed_list = window.feed_list || (function () {
             window.addEventListener('resize', function () {
                 chart.resize();
             });
+        },
+        showPosition: async function (positions, $c, scode) {
+            if (positions == null) {
+                let res = await share.getSync__(`/stock/positions?scode=${scode}`);
+                positions = res.data;
+            }
+            let tr = positions.map(row => {
+                let html = `
+                    <tr> 
+                        <td>${row.broker}</td> 
+                        <td>${row.volume}</td>
+                        <td>${row.avg_price}</td>
+                        <td>${row.market_value}</td>
+                    </tr>
+                 `;
+                return html;
+            });
+
+            let html = `
+                                   <table class="width100p">
+                                       ${tr.join("")}
+                                   </table>
+                               `;
+
+
+            $c.html(html);
         },
         showRule: async function (rc, c, scode, statusContainer) {
             let r = null;

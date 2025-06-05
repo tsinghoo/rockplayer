@@ -1257,6 +1257,27 @@ app.post('/stock/positions', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/positions', async (req, res) => {
+    info("get /stock/position");
+
+    let js = req.query.js;
+    let scode = req.query.scode;
+    var resp = null;
+    if (scode == null) {
+        resp = await db.allSync(`select * from tPositions`);
+        resp= JSON.stringify({ data: resp.rows });
+    } else {
+        resp = await db.allSync(`select * from tPositions where stock_code=?`, [scode]);
+        resp= JSON.stringify({ data: resp.rows });
+    }
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+    
+});
+
 function parseTime(str) {
     //"20250411150002.585"
     // 提取各个部分
