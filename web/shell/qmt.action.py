@@ -242,6 +242,10 @@ def order_callback(ContextInfo, data):
     orderId = js["m_strOrderSysID"]
     updateActionOrdered(scode, type, status, price, orderId)
 
+def orderError_callback(ContextInfo, orderArgs, errMsg):
+    error('orderError_callback')
+    error(errMsg)
+    printObj(orderArgs)
 
 def updateDeal(deal):
     try:

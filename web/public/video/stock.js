@@ -1128,19 +1128,43 @@ window.feed_list = window.feed_list || (function () {
             });
         },
 
-        drawKTickChart: function (scode, timeData, priceData, volumeData, kTick) {
-            if (kTick == null) {
+        drawKTickChart: function (scode, timeData, priceData, volumeData, $c) {
+            if ($c == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
-                kTick = td.find(".kTick");
+                $c = td.find(".kTick");
             }
 
-            kTick.css({
+            $c.css({
                 width: "480px",
                 height: "140px"
             });
-            var chartDom = kTick[0];
+            var chartDom = $c[0];
             var chart = echarts.init(chartDom);
+            let finalTime = 15 * 60;
+            if (self.formatScode(scode).indexOf("HK") >= 0) {
+                finalTime = 16 * 60 + 10;
+            }
+
+            let lastTime = timeData[timeData.length - 1].split(":");
+            lastTime = parseInt(lastTime[0]) * 60 + parseInt(lastTime[1]);
+            for (let i = lastTime + 1; i <= finalTime; i++) {
+                //将i转换成 01:01 这种"时:分"格式，不足两位的前面补0
+                let h = Math.floor(i / 60);
+                let m = i % 60;
+                if (h < 10) {
+                    h = "0" + h;
+                }
+
+                if (m < 10) {
+                    m = "0" + m;
+                }
+
+                timeData.push(h + ":" + m);
+                priceData.push(null);
+                volumeData.push(null);
+            }
+
 
             // 配置项
             var option = {
@@ -1380,10 +1404,10 @@ window.feed_list = window.feed_list || (function () {
                         var result = params[0].axisValue + '<br/>';
                         params.forEach(function (item) {
                             if (item.seriesName === '1d') {
-                                result += '开盘: ' + parseFloat(item.value[1]).toFixed(3) + '<br/>';
                                 result += '最高: ' + parseFloat(item.value[2]).toFixed(3) + '<br/>';
-                                result += '收盘: ' + parseFloat(item.value[3]).toFixed(3) + '<br/>';
                                 result += '最低: ' + parseFloat(item.value[4]).toFixed(3) + '<br/>';
+                                result += '开盘: ' + parseFloat(item.value[1]).toFixed(3) + '<br/>';
+                                result += '收盘: ' + parseFloat(item.value[3]).toFixed(3) + '<br/>';
                                 result += '成交量: ' + volumes[params[0].dataIndex][1] + '<br/>';
                             } else {
                                 result += item.seriesName + ': ' + item.value + '<br/>';
