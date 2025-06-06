@@ -250,12 +250,15 @@ def deal_callback(ContextInfo, data):
         "operationName": broker,
         "tday": js["m_strTradeDate"],
         "ttime": js["m_strTradeTime"],
-        #"tid": js["m_strTradeID"],
+        # "tid": js["m_strTradeID"],
         "tid": js["m_strOrderSysID"],
         "tcash": js["m_dTradeAmount"],
         "tamount": js["m_nVolume"],
         "tpair": ""
     }
+
+    if deal["operationDirection"].find("卖") != -1:
+        deal["tamount"] = -deal["tamount"]
 
     info(json.dumps(deal, indent=2))
 
@@ -264,6 +267,27 @@ def deal_callback(ContextInfo, data):
 
 def position_callback(ContextInfo, data):
     info('position_callback')
+    debug(obj2JsonString(data))
+
+    js = obj2Json(data, 1)
+
+    # broker text, account_id text, avg_price real, can_use_volume real, frozen_volume real, market_value real, on_road_volume real, open_price real, stock_code text, volume real
+
+    position = {
+        "broker": broker,
+        "account_id": account,
+        "avg_price": js["m_dOpenPrice"],
+        "can_use_volume": js["m_nCanUseVolume"],
+        "frozen_volume": js["m_nFrozenVolume"],
+        "market_value": js["m_dMarketValue"],
+        "on_road_volume": js["m_nOnRoadVolume"],
+        "m_dFloatProfit": js["m_dFloatProfit"],
+        "open_price": js["m_dLastPrice"],
+        "stock_code": js["m_strInstrumentID"],
+        "volume": js["m_nVolume"]
+    }
+
+    info(json.dumps(position, indent=2))
 
 
 def orderError_callback(ContextInfo, orderArgs, errMsg):

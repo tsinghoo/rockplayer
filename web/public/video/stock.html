@@ -35,7 +35,7 @@
       
 /* 表格样式 */
 #stockTable {
-    width: 100%;    
+    width: 100%;
     border-collapse: collapse;
 }
 
@@ -52,6 +52,19 @@
     top:0;
 }
 
+#stockTable tr:nth-child(even),
+#stockTable tr:nth-child(odd) {
+  background-color: #f0f0f0; /* 统一颜色 */
+}
+
+.table > :not(caption) > * > * {
+    padding: 0.5rem 0.5rem;
+    color: var(--bs-table-color-state, var(--bs-table-color-type, var(--bs-table-color)));
+    background-color: var(--bs-table-bg);
+    border-bottom-width: var(--bs-border-width);
+    box-shadow: none;
+
+
 /* 调整列宽的样式 */
 .resizable {
     position: relative;
@@ -66,12 +79,12 @@
     width: 6px;
     cursor: col-resize;
 }
-      .modal-backdrop.in {
-        filter: alpha(opacity=50);
-        opacity: .05;
-      }
+.modal-backdrop.in {
+    filter: alpha(opacity=50);
+    opacity: .05;
+}
 
-      #leftPanel {
+#leftPanel {
     position: sticky;
     top: 0;
     z-index: 1; /* 确保 leftPanel 在内容之上 */

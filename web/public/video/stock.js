@@ -447,7 +447,6 @@ window.feed_list = window.feed_list || (function () {
             thead.append(tr);
             table.append(thead);
 
-            let tbody = $("<tbody>");
             let lastCode;
             for (let i = 0; i < rows.length; i++) {
                 let tr = $("<tr>");
@@ -557,10 +556,8 @@ window.feed_list = window.feed_list || (function () {
 
                     tr.append(td);
                 }
-                tbody.append(tr);
+                table.append(tr);
             }
-
-            table.append(tbody);
 
             if (expanded) {
                 $(".repeatCode").show();
