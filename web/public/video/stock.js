@@ -1609,17 +1609,29 @@ window.feed_list = window.feed_list || (function () {
             rc.minPrice = rc.minPrice ? parseFloat(rc.minPrice) : 0;
             rc.maxPrice = rc.maxPrice ? parseFloat(rc.maxPrice) : 0;
             rc.currentPrice = rc.currentPrice ? parseFloat(rc.currentPrice) : 0;
-            let prices=`[${rc.minPrice.toFixed(3)}:${rc.currentPrice.toFixed(3)}:${rc.maxPrice.toFixed(3)}]`
-            if (r.status=="toBuy"){
-                prices=`${rc.buy}:${prices}`;
-            }else if (r.status=="toSell"){
-                prices=`${prices}:${rc.sell}`;
+            let prices = `<div class="flexcolumn margin4">
+                    <div>${rc.minPrice.toFixed(3)}</div> 
+                    <div> ${rc.currentPrice.toFixed(3)}</div>
+                    <div> ${rc.maxPrice.toFixed(3)}</div>
+                </div>
+            `
+            if (r.status == "toBuy") {
+                prices = `<div class="flexrow center">
+                            <div class="margin4">${mapping[r.status]}:${rc.buy}:</div>
+                            ${prices}
+                          </div>`;
+            } else if (r.status == "toSell") {
+                prices = `<div class="flexrow center">
+                            <div class="margin4">${mapping[r.status]}:</div>
+                            ${prices}
+                            <div>:${rc.sell}</div>
+                          </div>`;
             }
 
             let price = `
                                 <tr>
                                     <td colspan="7" class="nowrap">
-                                    ${mapping[r.status]}: ${prices}
+                                    ${prices}
                                     </td>
                                 </tr>
                             `;
