@@ -209,11 +209,11 @@ def uploadPosition(positions):
         response = requests.post("http://test1.91taogu.com/stock/positions", json={
             "data": data, "passcode": "995560"}, timeout=5)
         if response.status_code != 200:
-            print("上传持仓失败，状态码:", response.status_code)
+            error("上传持仓失败，状态码:", response.status_code)
             return
         else:
             response.encoding = 'utf-8'
-            print("上传持仓到test1成功:", response.status_code, response.text)
+            info("上传持仓到test1成功:", response.status_code, response.text)
     except Exception as e:
         print("请求失败:", str(e))
 

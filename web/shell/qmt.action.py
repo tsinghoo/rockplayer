@@ -129,9 +129,40 @@ def getActions(ContextInfo):
 
 def after_init(ContextInfo):
     info('after_init')
-
+    syncPosition(ContextInfo)
 
 # 行情处理函数 - 每次行情更新时调用
+def syncPosition(ContextInfo):
+    data = get_trade_detail_data(account, 'stock', 'position')
+    print('查询持仓结果：')
+    positions=[]
+    for dt in data:
+        position = {
+                "broker": broker,
+                "account_id": account,
+                "avg_price": dt.m_dOpenPrice,
+                "can_use_volume": dt.m_nCanUseVolume,
+                "frozen_volume": dt.m_nFrozenVolume,
+                "market_value": dt.m_dMarketValue,
+                "on_road_volume": dt.m_nOnRoadVolume,
+                "floatProfit": dt.m_dFloatProfit,
+                "open_price": dt.m_dOpenPrice,
+                "stock_code": dt.m_strInstrumentID,
+                "volume": dt.m_nVolume
+            }
+        
+        positions.append(position)
+
+    info(json.dumps(positions, indent=None))
+
+    response = requests.post("http://test1.91taogu.com/stock/positions", json={
+        "data": positions, "passcode": "995560"}, timeout=5)
+    if response.status_code != 200:
+        error("上传持仓失败，状态码:", response.status_code)
+        return
+    else:
+        response.encoding = 'utf-8'
+        info("上传持仓到test1成功:", response.status_code, response.text)
 
 
 def debug(*args, **kwargs):

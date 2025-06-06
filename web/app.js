@@ -1010,6 +1010,9 @@ async function upgradeDb(succ, fail) {
         "update config set value='29' where key='dbVersion';",
         `create table t5m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
         "update config set value='31' where key='dbVersion';",
+        `alter table tposition add column floatProfit real default 0;`,
+        "update config set value='33' where key='dbVersion';",
+        
     ];
 
     if (res == null || res.error) {
