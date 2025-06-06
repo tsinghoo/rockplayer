@@ -1609,11 +1609,17 @@ window.feed_list = window.feed_list || (function () {
             rc.minPrice = rc.minPrice ? parseFloat(rc.minPrice) : 0;
             rc.maxPrice = rc.maxPrice ? parseFloat(rc.maxPrice) : 0;
             rc.currentPrice = rc.currentPrice ? parseFloat(rc.currentPrice) : 0;
+            let prices=`[${rc.minPrice.toFixed(3)}:${rc.currentPrice.toFixed(3)}:${rc.maxPrice.toFixed(3)}]`
+            if (r.status=="toBuy"){
+                prices=`${rc.buy}:${prices}`;
+            }else if (r.status=="toSell"){
+                prices=`${prices}:${rc.sell}`;
+            }
 
             let price = `
                                 <tr>
                                     <td colspan="7" class="nowrap">
-                                    ${mapping[r.status]}: [${rc.minPrice.toFixed(3)}, ${rc.maxPrice.toFixed(3)}]: ${rc.currentPrice.toFixed(3)}
+                                    ${mapping[r.status]}: ${prices}
                                     </td>
                                 </tr>
                             `;
