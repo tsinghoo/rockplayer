@@ -566,7 +566,7 @@ window.feed_list = window.feed_list || (function () {
             }
 
             if (keys.includes("K线")) {
-                self.showK1d();
+                // self.showK1d();
             }
 
             $(".ruleStatus").click(function (e) {
