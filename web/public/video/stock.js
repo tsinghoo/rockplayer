@@ -1145,26 +1145,29 @@ window.feed_list = window.feed_list || (function () {
             if (self.formatScode(scode).indexOf("HK") >= 0) {
                 finalTime = 16 * 60 + 10;
             }
+
+            let lastTime = 9 * 60 + 9;
             if (timeData.length > 0) {
-                let lastTime = timeData[timeData.length - 1].split(":");
+                lastTime = timeData[timeData.length - 1].split(":");
                 lastTime = parseInt(lastTime[0]) * 60 + parseInt(lastTime[1]);
-                for (let i = lastTime + 1; i <= finalTime; i++) {
-                    //将i转换成 01:01 这种"时:分"格式，不足两位的前面补0
-                    let h = Math.floor(i / 60);
-                    let m = i % 60;
-                    if (h < 10) {
-                        h = "0" + h;
-                    }
-
-                    if (m < 10) {
-                        m = "0" + m;
-                    }
-
-                    timeData.push(h + ":" + m);
-                    priceData.push(null);
-                    volumeData.push(null);
-                }
             }
+            for (let i = lastTime + 1; i <= finalTime; i++) {
+                //将i转换成 01:01 这种"时:分"格式，不足两位的前面补0
+                let h = Math.floor(i / 60);
+                let m = i % 60;
+                if (h < 10) {
+                    h = "0" + h;
+                }
+
+                if (m < 10) {
+                    m = "0" + m;
+                }
+
+                timeData.push(h + ":" + m);
+                priceData.push(null);
+                volumeData.push(null);
+            }
+
 
             // 配置项
             var option = {
