@@ -1686,6 +1686,12 @@ window.feed_list = window.feed_list || (function () {
                             ${prices}
                             <div> : ${rc.sell}</div>
                           </div>`;
+            }else {
+                prices = `<div class="flexrow center">
+                            <div class="margin4">${mapping[r.status]} : ${rc.buy} : </div>
+                            ${prices}
+                            <div> : ${rc.sell}</div>
+                          </div>`;
             }
 
             let price = `
