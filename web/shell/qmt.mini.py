@@ -2,6 +2,8 @@ import time
 from xtquant import xtdata
 from xtquant.xttrader import XtQuantTrader, XtQuantTraderCallback
 from xtquant.xttype import StockAccount
+from xtquant import xtconstant
+
 import datetime
 import json
 import inspect
@@ -9,6 +11,7 @@ import pandas as pd
 import numpy as np
 import requests
 import sys
+import traceback
 from threading import Thread
 from colorama import Fore, Back, Style
 import colorama
@@ -29,6 +32,7 @@ g.broker = "国金"
 g.session_id = 1001
 
 g.tick = {}
+g.actions = {}
 g.reloadK1d = []
 g.uploading = 0
 g.stocklist = ['000300.SH', '000004.SZ']
@@ -85,7 +89,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         """
         print("on order callback:")
         print(object_to_json(order))
-        print(order.stock_code, order.order_status, order.order_sysid)
+        updateActionOrdered(order.stock_code, order.order_type, order.order_status, order.traded_price, order.order_sysid)
+        # print(order.stock_code, order.order_status, order.order_sysid)
 
     def on_stock_trade(self, trade):
         """
@@ -96,7 +101,19 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
 
         print("on_stock_trade:")
         print(object_to_json(trade))
+
+
+        updateActionOrdered(trade.stock_code, trade.order_type, "56", trade.traded_price, trade.order_id)
         # print(trade.account_id, trade.stock_code, trade.order_id)
+
+    def on_order_error(self, order_error):
+        """
+        下单失败信息推送
+        :param order_error:XtOrderError 对象
+        :return:
+        """
+        print("on order_error callback")
+        print(order_error.order_id, order_error.error_id, order_error.error_msg)
 
     def on_stock_position(self, position):
         """
@@ -107,14 +124,6 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         print("on position callback")
         print(position.stock_code, position.volume)
 
-    def on_order_error(self, order_error):
-        """
-        下单失败信息推送
-        :param order_error:XtOrderError 对象
-        :return:
-        """
-        print("on order_error callback")
-        print(order_error.order_id, order_error.error_id, order_error.error_msg)
 
     def on_cancel_error(self, cancel_error):
         """
@@ -228,7 +237,8 @@ def update1dTask():
         if len(reloadK1d) > 0:
             info("reloading  1d data")
             for scode in reloadK1d:
-                update1d(scode, "20210101", "")
+                updateActionOrdered(scode, "56", "", 0, "")
+                update1d([scode], "20210101", "")
 
         update1d()
 
@@ -239,7 +249,7 @@ def update1mTask():
         update1m()
 
 
-def getActions(ContextInfo):
+def getActions():
     try:
         response = requests.get(
             "http://test1.91taogu.com/stock/rule/actions?broker="+g.broker, timeout=5)
@@ -263,8 +273,9 @@ def getActions(ContextInfo):
                             order_lots(act["scode"], 1,
                                        'fix', act["price"], ContextInfo, account)
                         else:
-                            passorder(23, 1101, account, act["scode"], 11, act["price"],
-                                      act["amount"], 2, ContextInfo)
+                            order_id = xt_trader.order_stock(
+                                g.account, act["scode"], xtconstant.STOCK_BUY, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
+                            print(order_id)
 
                         info("已买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
@@ -272,8 +283,9 @@ def getActions(ContextInfo):
                     elif act["action"] == "sell":
                         info("卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])
-                        passorder(24, 1101, account, act["scode"], 11, act["price"],
-                                  act["amount"], 2, ContextInfo)
+                        order_id = xt_trader.order_stock(
+                            g.account, act["scode"], xtconstant.STOCK_SELL, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
+                        print(order_id)
                         info("已卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])
                     elif act["action"] == "reloadK1d":
@@ -282,6 +294,35 @@ def getActions(ContextInfo):
                     g.actions[act["scode"]] = act
     except Exception as e:
         error("getActions出错:", traceback.format_exc())
+
+
+def updateActionOrdered(scode, type, status, price, orderId):
+    try:
+        # 目标 URL
+        url = "http://test1.91taogu.com/stock/rule/action/ordered"
+
+        # 要发送的 JSON 数据（Python 字典）
+        data = {
+            "broker": g.broker,
+            "scode": scode,
+            "status": status,
+            "orderNo": orderId
+        }
+
+        # 设置请求头（声明内容类型为 JSON）
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        # 发送 POST 请求
+        response = requests.post(url, data=json.dumps(data), headers=headers)
+
+        # 输出响应
+        debug("updateActionStatus:", response.status_code)
+        debug("response:", response.text)
+
+    except Exception as e:
+        error("updateActionStatus 出错:", traceback.format_exc())
 
 
 def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
@@ -701,12 +742,12 @@ if __name__ == '__main__':
         g.stocklist, callback=subscribe_whole_callback)
 
     t1 = Thread(target=update1dTask)
-    t1.start()
     t2 = Thread(target=update1mTask)
-    t2.start()
     t3 = Thread(target=printTask)
-    t3.start()
     t4 = Thread(target=getActions)
+    t1.start()
+    t2.start()
+    t3.start()
     t4.start()
 
     while True:
