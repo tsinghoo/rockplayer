@@ -1460,6 +1460,42 @@ app.get('/stock/tick', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/reload/k1d', async (req, res) => {
+    info("get /stock/reload");
+    let js = req.query.js;
+    info(JSON.stringify(req.query));
+    let scode = req.query.scode;
+    let broker = req.query.broker;
+    
+    let action = {
+        id: `${scode}-reloadK1d`,
+        ruleId: scode,
+        scode: scode,
+        sname: scode,
+        action: "reloadK1d",
+        broker: broker,
+        price: 0,
+        amount: 0,
+        orderNo: "",
+        done: 0,
+        createTime: now
+    }
+
+    await insertOrReplace("tRuleAction", action);
+
+
+    var resp = JSON.stringify(result.rows);
+    if (result.error) {
+        resp = JSON.stringify(result);
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/k1d', async (req, res) => {
     info("get /stock/k1d");
     let js = req.query.js;

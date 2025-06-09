@@ -1408,6 +1408,15 @@ window.feed_list = window.feed_list || (function () {
             }
         },
 
+        toReloadK1d: async function (scode) {
+            let res = await share.getSync__("/stock/reload/k1d", { scode, broker: "国金" });
+            if (res.error) {
+                share.toastError__(res.error);
+            } else {
+                share.toastSuccess__("reloading", 1000);
+            }
+        },
+
         drawK1dChart: function (scode, categoryData, values, volumes, k1d) {
             if (k1d == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
@@ -1478,6 +1487,14 @@ window.feed_list = window.feed_list || (function () {
                 },
                 toolbox: {
                     feature: {
+                        myCustomTool: {
+                            show: true,
+                            title: '重载',
+                            icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
+                            onclick: function () {
+                                self.toReloadK1d(scode);
+                            }
+                        },
                         dataZoom: {
                             yAxisIndex: false
                         },
@@ -1583,6 +1600,23 @@ window.feed_list = window.feed_list || (function () {
                         splitLine: { show: false }
                     }
                 ],
+                graphic: [
+                    {
+                        type: 'text',
+                        left: 'right',
+                        top: 20,
+                        z: 100,
+                        style: {
+                            text: '更新',
+                            fill: '#333',
+                            fontSize: 12
+                        },
+                        onclick: function () {
+                            // 按钮点击事件
+                            alert('按钮被点击了');
+                        }
+                    }
+                ],
                 series: [
                     {
                         name: '1d',
@@ -1686,7 +1720,7 @@ window.feed_list = window.feed_list || (function () {
                             ${prices}
                             <div> : ${rc.sell}</div>
                           </div>`;
-            }else {
+            } else {
                 prices = `<div class="flexrow center">
                             <div class="margin4">${mapping[r.status]} : ${rc.buy} : </div>
                             ${prices}

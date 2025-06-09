@@ -24,9 +24,12 @@ g = G()
 
 g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
+g.broker = "国金"
+
 g.session_id = 1001
 
 g.tick = {}
+g.reloadK1d = []
 g.uploading = 0
 g.stocklist = ['000300.SH', '000004.SZ']
 
@@ -221,6 +224,12 @@ def uploadPosition(positions):
 def update1dTask():
     while True:
         time.sleep(1)
+        reloadK1d, g.reloadK1d = g.reloadK1d, []
+        if len(reloadK1d) > 0:
+            info("reloading  1d data")
+            for scode in reloadK1d:
+                update1d(scode, "20210101", "")
+
         update1d()
 
 
@@ -230,13 +239,61 @@ def update1mTask():
         update1m()
 
 
-def update1d():
-    info("update1d")
-    stocklist = g.stocklist
+def getActions(ContextInfo):
+    try:
+        response = requests.get(
+            "http://test1.91taogu.com/stock/rule/actions?broker="+g.broker, timeout=5)
+        if response.status_code != 200:
+            error("getActions失败，状态码:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            content = response.text
+            debug("getActions成功:", response.status_code, content)
+            jso = json.loads(content)
+            for act in jso["data"]:
+                act["scode"] = act["scode"].replace(".HK", ".HGT")
+                if act["scode"] in g.actions:
+                    info("已存在", act["scode"], "的action")
+                else:
+                    if act["action"] == "buy":
+                        info("买入", act["sname"], act["scode"],
+                             act["price"], act["amount"])
+                        if act["amount"] == -1:
+                            order_lots(act["scode"], 1,
+                                       'fix', act["price"], ContextInfo, account)
+                        else:
+                            passorder(23, 1101, account, act["scode"], 11, act["price"],
+                                      act["amount"], 2, ContextInfo)
 
-    dataStartTime = (datetime.datetime.now() -
-                     datetime.timedelta(days=0)).strftime("%Y%m%d")
-    dataEndTime = ""
+                        info("已买入", act["sname"], act["scode"],
+                             act["price"], act["amount"])
+
+                    elif act["action"] == "sell":
+                        info("卖出", act["sname"], act["scode"],
+                             act["price"], act["amount"])
+                        passorder(24, 1101, account, act["scode"], 11, act["price"],
+                                  act["amount"], 2, ContextInfo)
+                        info("已卖出", act["sname"], act["scode"],
+                             act["price"], act["amount"])
+                    elif act["action"] == "reloadK1d":
+                        info("reloadK1d action for", act["scode"])
+                        g.reloadK1d.append(act["scode"])
+                    g.actions[act["scode"]] = act
+    except Exception as e:
+        error("getActions出错:", traceback.format_exc())
+
+
+def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
+    info("update1d")
+    if (stocklist is None):
+        stocklist = g.stocklist
+    if (dataStartTime is None):
+        dataStartTime = (datetime.datetime.now() -
+                         datetime.timedelta(days=0)).strftime("%Y%m%d")
+    if (dataEndTime is None):
+        dataEndTime = ""
+
     pds = ["1d"]
     for index, scode in enumerate(stocklist):
         for period in pds:
@@ -582,6 +639,7 @@ def printTask():
             print(*item[0], **item[1])
         time.sleep(0.1)
 
+
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
     path = r'D:\国金证券QMT交易端\userdata_mini'
@@ -648,6 +706,8 @@ if __name__ == '__main__':
     t2.start()
     t3 = Thread(target=printTask)
     t3.start()
+    t4 = Thread(target=getActions)
+    t4.start()
 
     while True:
         uploadStockPrice()
