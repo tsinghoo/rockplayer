@@ -1012,7 +1012,7 @@ async function upgradeDb(succ, fail) {
         "update config set value='31' where key='dbVersion';",
         `alter table tpositions add column floatProfit real default 0;`,
         "update config set value='33' where key='dbVersion';",
-        
+
     ];
 
     if (res == null || res.error) {
@@ -1268,17 +1268,17 @@ app.get('/stock/positions', async (req, res) => {
     var resp = null;
     if (scode == null) {
         resp = await db.allSync(`select * from tPositions`);
-        resp= JSON.stringify({ data: resp.rows });
+        resp = JSON.stringify({ data: resp.rows });
     } else {
         resp = await db.allSync(`select * from tPositions where stock_code=?`, [scode]);
-        resp= JSON.stringify({ data: resp.rows });
+        resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {
         resp = `${js}(${resp})`;
     }
 
     res.send(resp);
-    
+
 });
 
 function parseTime(str) {
@@ -1461,12 +1461,12 @@ app.get('/stock/tick', async (req, res) => {
 });
 
 app.get('/stock/reload/k1d', async (req, res) => {
-    info("get /stock/reload");
+    info("get /stock/reload/k1d");
     let js = req.query.js;
     info(JSON.stringify(req.query));
     let scode = req.query.scode;
     let broker = req.query.broker;
-    
+    let now = Date.now();
     let action = {
         id: `${scode}-reloadK1d`,
         ruleId: scode,
@@ -1481,10 +1481,10 @@ app.get('/stock/reload/k1d', async (req, res) => {
         createTime: now
     }
 
-    await insertOrReplace("tRuleAction", action);
+    let result = await insertOrReplace("tRuleAction", action);
 
 
-    var resp = JSON.stringify(result.rows);
+    var resp = JSON.stringify({});
     if (result.error) {
         resp = JSON.stringify(result);
     }
