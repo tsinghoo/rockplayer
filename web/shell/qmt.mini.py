@@ -1,3 +1,6 @@
+import os
+import random
+import threading
 import time
 from xtquant import xtdata
 from xtquant.xttrader import XtQuantTrader, XtQuantTraderCallback
@@ -53,6 +56,8 @@ g.log["level"] = g.log["debug"]
 
 g.toPrint = []
 
+threadLocal = threading.local()
+
 
 class MyXtQuantTraderCallback(XtQuantTraderCallback):
     def on_disconnected(self):
@@ -89,7 +94,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         """
         print("on order callback:")
         print(object_to_json(order))
-        updateActionOrdered(order.stock_code, order.order_type, order.order_status, order.traded_price, order.order_sysid)
+        updateActionOrdered(order.stock_code, order.order_type,
+                            order.order_status, order.traded_price, order.order_sysid)
         # print(order.stock_code, order.order_status, order.order_sysid)
 
     def on_stock_trade(self, trade):
@@ -102,8 +108,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         print("on_stock_trade:")
         print(object_to_json(trade))
 
-
-        updateActionOrdered(trade.stock_code, trade.order_type, "56", trade.traded_price, trade.order_id)
+        updateActionOrdered(trade.stock_code, trade.order_type,
+                            "56", trade.traded_price, trade.order_id)
         # print(trade.account_id, trade.stock_code, trade.order_id)
 
     def on_order_error(self, order_error):
@@ -123,7 +129,6 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         """
         print("on position callback")
         print(position.stock_code, position.volume)
-
 
     def on_cancel_error(self, cancel_error):
         """
@@ -230,14 +235,19 @@ def uploadPosition(positions):
         print("请求失败:", str(e))
 
 
+def resetThreadId(label=""):
+    threadLocal.id = label + datetime.datetime.now().strftime("%H%M%S") + \
+        str(random.randint(0, 1000))
+
 def update1dTask():
     while True:
         time.sleep(1)
+        resetThreadId("u1d")
         reloadK1d, g.reloadK1d = g.reloadK1d, []
         if len(reloadK1d) > 0:
             info("reloading  1d data")
             for scode in reloadK1d:
-                updateActionOrdered(scode, "56", "", 0, "")
+                updateActionOrdered(scode, "", "56", 0, "")
                 update1d([scode], "20210101", "")
 
         update1d()
@@ -246,7 +256,15 @@ def update1dTask():
 def update1mTask():
     while True:
         time.sleep(1)
+        resetThreadId("u1m")
         update1m()
+
+
+def getActionsTask():
+    while True:
+        time.sleep(1)
+        resetThreadId("act")
+        getActions()
 
 
 def getActions():
@@ -665,19 +683,51 @@ def error(*args, **kwargs):
 def log(*args, **kwargs):
     """增强版log函数，完全模拟print的参数行为"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     # 将时间作为第一个元素插入到输出中
-    time_header = f"[{current_time}]"
+    if (hasattr(threadLocal, "id")):
+        time_header = f"[{current_time}][{threadLocal.id}]"
+    else:
+        time_header = f"[{current_time}]"
+
     all_args = (time_header,) + args
 
     g.toPrint.append([all_args, kwargs])
 
 
+def log2File(toPrint, file="d:\\qmt.mini", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+    """
+    将打印内容输出到文件，参数与print()函数保持一致
+
+    参数:
+        *args: 要打印的内容，多个参数会自动用sep分隔
+        file: 输出文件名(默认'output.txt')
+        sep: 分隔符(默认空格)
+        end: 结束符(默认换行)
+        flush: 是否立即刷新缓冲区(默认False)
+        mode: 文件打开模式('a'追加或'w'写入，默认'a')
+        encoding: 文件编码(默认'utf-8')
+    """
+    # 在file文件名后边加上当天日期
+    file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
+
+    with open(file, mode=mode, encoding=encoding) as f:
+        for item in toPrint:
+            args = item[0]
+            # 将多个参数用分隔符连接
+            output = sep.join(str(arg) for arg in args)
+            f.write(output + end)
+            if flush:
+                f.flush()
+
+
 def printTask():
     while True:
-        while len(g.toPrint) > 0:
-            item = g.toPrint.pop(0)
+        toPrint, g.toPrint = g.toPrint, []
+        log2File(toPrint)
+        while len(toPrint) > 0:
+            item = toPrint.pop(0)
             print(*item[0], **item[1])
+
         time.sleep(0.1)
 
 
@@ -744,7 +794,7 @@ if __name__ == '__main__':
     t1 = Thread(target=update1dTask)
     t2 = Thread(target=update1mTask)
     t3 = Thread(target=printTask)
-    t4 = Thread(target=getActions)
+    t4 = Thread(target=getActionsTask)
     t1.start()
     t2.start()
     t3.start()
