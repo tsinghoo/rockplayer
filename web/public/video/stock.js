@@ -439,8 +439,8 @@ window.feed_list = window.feed_list || (function () {
                 window.addEventListener('scroll', function () {
                     clearTimeout(self.scrollTimer);
                     self.scrollTimer = setTimeout(function () {
-                        // self.updateKLine();
-                        // self.showK1d();
+                         self.updateKLine();
+                         self.showK1d();
                     }, 250);
                 });
             }
@@ -539,11 +539,10 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "K线") {
                         if (firstRow) {
                             td.addClass("tdKLine");
-                            td.html("K线");
-                            // let html = `<div class="kTick"></div>
-                            //     <div class="k1d"></div>
-                            // `;
-                            // td.html(html);
+                            let html = `<div class="kTick"></div>
+                                <div class="k1d"></div>
+                            `;
+                            td.html(html);
 
 
                             // td.removeClass("nowrap"); 
@@ -580,10 +579,6 @@ window.feed_list = window.feed_list || (function () {
                 self.onRuleStatusClicked();
             })
 
-            $(".tdKLine").click(function (e) {
-                self.onTdKLineClicked(this);
-            })
-
             $(".firstCode").click(function () {
                 let code = $(this).attr("code");
                 let trs = $(`.repeatCode${code}`);
@@ -595,7 +590,7 @@ window.feed_list = window.feed_list || (function () {
             })
 
             $(".buySell").click(function (e) {
-                self.onTdKLineClicked(this);
+                self.onBuySellClicked(this);
             })
 
             $(".ruleContent").click(function (e) {
@@ -992,7 +987,7 @@ window.feed_list = window.feed_list || (function () {
                 }
             });
         },
-        onTdKLineClicked: async function (ele) {
+        onBuySellClicked: async function (ele) {
             let data = $(ele).parent("tr").attr("data");
             data = JSON.parse(data);
             self.selectedData = data;
@@ -1011,8 +1006,8 @@ window.feed_list = window.feed_list || (function () {
                             </div>
                        </div>
                        <div class="flexcolumn">
-                            <div class="kTick border margin4"></div>
-                            <div class="k1d border margin4"></div>
+                            <div class="kTick border margin4">loading 1m</div>
+                            <div class="k1d border margin4">loading 1d</div>
                        </div>
                     </div>
                             `;
