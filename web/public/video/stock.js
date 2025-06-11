@@ -326,7 +326,7 @@ window.feed_list = window.feed_list || (function () {
             }
 
             //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let ticks = await share.getSync__(`/stock/tick?scode=${codes.slice(0, 2).join(",")}`);
+            let ticks = await share.getSync__(`/stock/tick?scode=${codes.slice(0, 3).join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
             var timeData = [];
@@ -385,7 +385,7 @@ window.feed_list = window.feed_list || (function () {
             }
 
             //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let rows = await share.getSync__(`/stock/k1d?scode=${codes.slice(0, 2).join(",")}`);
+            let rows = await share.getSync__(`/stock/k1d?scode=${codes.slice(0, 3).join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
 
@@ -547,10 +547,10 @@ window.feed_list = window.feed_list || (function () {
                             td.addClass("tdKLine");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-plus kLineCollapse clickable"/>
+                                <span class = "glyphicon glyphicon-minus kLineCollapse clickable"/>
                                 <div class="flexcolumn">
-                                    <div class="kTick hide"></div>
-                                    <div class="k1d hide"></div>
+                                    <div class="kTick"></div>
+                                    <div class="k1d"></div>
                                 </div>
                             </div>
                             `;
@@ -1210,6 +1210,10 @@ window.feed_list = window.feed_list || (function () {
                 width: "480px",
                 height: "140px"
             });
+
+            $c.removeAttr("_echarts_instance_");
+            $c.html("loading kTick");
+
             var chartDom = $c[0];
             var chart = echarts.init(chartDom);
             let finalTime = 15 * 60;
@@ -1467,6 +1471,8 @@ window.feed_list = window.feed_list || (function () {
                 width: "480px",
                 height: "300px"
             });
+            k1d.removeAttr("_echarts_instance_");
+            k1d.html("loading k1d");
             var chartDom = k1d[0];
             var chart = echarts.init(chartDom);
             let data = { categoryData, values, volumes };
