@@ -307,18 +307,26 @@ window.feed_list = window.feed_list || (function () {
                 await self.getRuleStatus();
             }
         },
-        updateKLine: async function () {
-            let vtr = $('.firstCode').filter(function () {
-                return share.isInViewport($(this));
-            });
+        updateKLine: async function (codes) {
+            if (codes == null) {
+                let vtr = $('.firstCode').filter(function () {
+                    let res = share.isInViewport($(this));
+                    if (res) {
+                        let hide = $(this).find(".k1d").hasClass("hide");
+                        return !hide
+                    }
 
-            let codes = vtr.toArray().map(function (item) {
-                let code = $(item).attr("code");
-                return code;
-            });
+                    return res;
+                });
+
+                codes = vtr.toArray().map(function (item) {
+                    let code = $(item).attr("code");
+                    return code;
+                });
+            }
 
             //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}`);
+            let ticks = await share.getSync__(`/stock/tick?scode=${codes.slice(0, 2).join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
             var timeData = [];
@@ -356,30 +364,28 @@ window.feed_list = window.feed_list || (function () {
                 self.drawKTickChart(lastCode, timeData, priceData, volumeData);
             }
         },
-        showK1d: async function () {
-            let vtr = $('.firstCode').filter(function () {
-                let tr = $(this);
-                let visible = share.isInViewport(tr);
-                if (!visible) {
-                    return false;
-                }
+        showK1d: async function (codes) {
+            if (codes == null) {
+                let vtr = $('.firstCode').filter(function () {
+                    let tr = $(this);
 
-                let k1d = tr.find(".k1d").html().trim();
-                if (k1d == "") {
-                    tr.find(".k1d").html("loading k1d");
-                    return true;
-                } else {
-                    return false;
-                }
-            });
+                    let res = share.isInViewport($(this));
+                    if (res) {
+                        let hide = $(this).find(".k1d").hasClass("hide");
+                        return !hide
+                    }
 
-            let codes = vtr.toArray().map(function (item) {
-                let code = $(item).attr("code");
-                return code;
-            });
+                    return res;
+                });
+
+                codes = vtr.toArray().map(function (item) {
+                    let code = $(item).attr("code");
+                    return code;
+                });
+            }
 
             //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let rows = await share.getSync__(`/stock/k1d?scode=${codes.join(",")}`);
+            let rows = await share.getSync__(`/stock/k1d?scode=${codes.slice(0, 2).join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
 
@@ -439,8 +445,8 @@ window.feed_list = window.feed_list || (function () {
                 window.addEventListener('scroll', function () {
                     clearTimeout(self.scrollTimer);
                     self.scrollTimer = setTimeout(function () {
-                         self.updateKLine();
-                         self.showK1d();
+                        self.updateKLine();
+                        self.showK1d();
                     }, 250);
                 });
             }
@@ -539,8 +545,14 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "K线") {
                         if (firstRow) {
                             td.addClass("tdKLine");
-                            let html = `<div class="kTick"></div>
-                                <div class="k1d"></div>
+                            let html = `
+                            <div class="flexrow">
+                                <span class = "glyphicon glyphicon-plus kLineCollapse clickable"/>
+                                <div class="flexcolumn">
+                                    <div class="kTick hide"></div>
+                                    <div class="k1d hide"></div>
+                                </div>
+                            </div>
                             `;
                             td.html(html);
 
@@ -601,6 +613,25 @@ window.feed_list = window.feed_list || (function () {
                 share.currentTarget = this;
                 self.showMenu4RuleContent();
             })
+
+            $(".kLineCollapse").click(function (e) {
+                e.stopPropagation();
+                let k1d = $(this).parents("tr").find(".k1d");
+                let kTick = $(this).parents("tr").find(".kTick");
+                if (k1d.hasClass("hide")) {
+                    let scode = $(this).parents("tr").attr("code");
+
+                    k1d.removeClass("hide");
+                    kTick.removeClass("hide");
+
+                    self.showK1d([scode]);
+                    self.updateKLine([scode]);
+                } else {
+                    k1d.addClass("hide");
+                    kTick.addClass("hide");
+                }
+            })
+
 
             //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
             $(".code").click(async function (e) {
