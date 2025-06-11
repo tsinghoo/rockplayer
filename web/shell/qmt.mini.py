@@ -384,20 +384,23 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                 batch = datas.iloc[i:i+bsize]
                 info("上传", scode, period,
                      "[", i, ",", i+bsize, "]", len(batch))
-                batch_data = [[str(idx)] + row.tolist()
-                              for idx, row in batch.iterrows()]
+                for idx, row in batch.iterrows():
+                    info(row)
+                    batch_data = [[str(idx)] + [row["open"], row["close"],
+                                                row["high"], row["low"], row["volume"], row["amount"]]]
                 # print(obj2JsonString(batch_data, indent=None))
-                body = {"data": obj2Json(
-                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                # 上传数据到test1
-                try:
-                    response = requests.post(
-                        baseUrl+"/stock/data/upload", json=body, timeout=20)
-                    if response.status_code != 200:
-                        error("上传失败，状态码:", response.status_code,
-                              "响应内容:", response.text)
-                except Exception as e:
-                    error("上传失败:", str(e))
+                    debug(batch_data)
+                    body = {"data": obj2Json(
+                        batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                    # 上传数据到test1
+                    try:
+                        response = requests.post(
+                            baseUrl+"/stock/data/upload", json=body, timeout=20)
+                        if response.status_code != 200:
+                            error("上传失败，状态码:", response.status_code,
+                                "响应内容:", response.text)
+                    except Exception as e:
+                        error("上传失败:", str(e))
 
             # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
             # print(obj2JsonString(result_dict))
@@ -443,20 +446,23 @@ def update1m():
                 batch = datas.iloc[i:i+bsize]
                 info("上传", scode, period,
                      "[", i, ",", i+bsize, "]", len(batch))
-                batch_data = [[str(idx)] + row.tolist()
-                              for idx, row in batch.iterrows()]
+                for idx, row in batch.iterrows():
+                    info(row)
+                    batch_data = [[str(idx)] + [row["open"], row["close"],
+                                                row["high"], row["low"], row["volume"], row["amount"]]]
+                    debug(batch_data)
                 # info(obj2JsonString(batch_data, indent=None))
-                body = {"data": obj2Json(
-                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                # 上传数据到test1
-                try:
-                    response = requests.post(
-                        baseUrl+"/stock/data/upload", json=body, timeout=20)
-                    if response.status_code != 200:
-                        error("上传失败，状态码:", response.status_code,
-                              "响应内容:", response.text)
-                except Exception as e:
-                    error("上传失败:", str(e))
+                    body = {"data": obj2Json(
+                        batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                    # 上传数据到test1
+                    try:
+                        response = requests.post(
+                            baseUrl+"/stock/data/upload", json=body, timeout=20)
+                        if response.status_code != 200:
+                            error("上传失败，状态码:", response.status_code,
+                                "响应内容:", response.text)
+                    except Exception as e:
+                        error("上传失败:", str(e))
 
             # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
             # info(obj2JsonString(result_dict))

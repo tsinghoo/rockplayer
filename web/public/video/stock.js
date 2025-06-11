@@ -676,6 +676,18 @@ window.feed_list = window.feed_list || (function () {
                     self.showRuleStatus(r, td);
                 }
             })
+            $(".tdRule").each(function () {
+                let td = $(this);
+                let ac = td.parents("tr").attr("code");
+                if (ac == null) {
+                    return;
+                }
+                let scode = ac.trim();
+                let r = res.data[scode];
+                if (r) {
+                    self.showRule(r.rule, td);
+                }
+            })
         },
 
         toBuySell: async function (opt, c) {
@@ -1449,10 +1461,10 @@ window.feed_list = window.feed_list || (function () {
                         var result = params[0].axisValue + '<br/>';
                         params.forEach(function (item) {
                             if (item.seriesName === '1d') {
-                                result += '最高: ' + parseFloat(item.value[4]).toFixed(3) + '<br/>';
-                                result += '最低: ' + parseFloat(item.value[3]).toFixed(3) + '<br/>';
-                                result += '开盘: ' + parseFloat(item.value[2]).toFixed(3) + '<br/>';
-                                result += '收盘: ' + parseFloat(item.value[1]).toFixed(3) + '<br/>';
+                                result += '开盘: ' + parseFloat(item.value[1]).toFixed(3) + '<br/>';
+                                result += '收盘: ' + parseFloat(item.value[2]).toFixed(3) + '<br/>';
+                                result += '最高: ' + parseFloat(item.value[3]).toFixed(3) + '<br/>';
+                                result += '最低: ' + parseFloat(item.value[4]).toFixed(3) + '<br/>';
                                 result += '成交量: ' + volumes[params[0].dataIndex][1] + '<br/>';
                             } else {
                                 result += item.seriesName + ': ' + item.value + '<br/>';
