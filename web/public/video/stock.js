@@ -324,9 +324,16 @@ window.feed_list = window.feed_list || (function () {
                     return code;
                 });
             }
+            codes = codes.slice(0, 3);
+            codes.forEach(function (scode) {
+                let tr = $(`.firstCode[code="${scode}"]`);
+                let td = tr.find(".tdKLine");
+                kTick = td.find(".kTick");
+                kTick.html("loading kTick");
+            });
 
             //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let ticks = await share.getSync__(`/stock/tick?scode=${codes.slice(0, 3).join(",")}`);
+            let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
             var timeData = [];
@@ -384,8 +391,19 @@ window.feed_list = window.feed_list || (function () {
                 });
             }
 
+            codes = codes.slice(0, 3);
+
+            codes.forEach(function (scode) {
+                let tr = $(`.firstCode[code="${scode}"]`);
+                let td = tr.find(".tdKLine");
+                k1d = td.find(".k1d");
+                k1d.html("loading k1d");
+            });
+
+
+
             //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let rows = await share.getSync__(`/stock/k1d?scode=${codes.slice(0, 3).join(",")}`);
+            let rows = await share.getSync__(`/stock/k1d?scode=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
 
@@ -438,6 +456,8 @@ window.feed_list = window.feed_list || (function () {
                     th.addClass("tdStatus");
                 } else if (keys[i] == "K线") {
                     th.addClass("tdKLine");
+                    th.addClass("thKLine");
+                    th.addClass("clickable");
                 }
             }
 
@@ -549,8 +569,8 @@ window.feed_list = window.feed_list || (function () {
                             <div class="flexrow">
                                 <span class = "glyphicon glyphicon-minus kLineCollapse clickable"/>
                                 <div class="flexcolumn">
-                                    <div class="kTick"></div>
-                                    <div class="k1d"></div>
+                                    <div class="kTick hide"></div>
+                                    <div class="k1d hide"></div>
                                 </div>
                             </div>
                             `;
@@ -589,6 +609,18 @@ window.feed_list = window.feed_list || (function () {
             $(".ruleStatus").click(function (e) {
                 self.onTdClicked(this);
                 self.onRuleStatusClicked();
+            })
+
+            $(".thKLine").click(function (e) {
+                if ($($(".k1d")[0]).hasClass("hide")) {
+                    $(".k1d").removeClass("hide");
+                    $(".kTick").removeClass("hide");
+                    self.showK1d();
+                    self.updateKLine();
+                } else {
+                    $(".k1d").addClass("hide");
+                    $(".kTick").addClass("hide");
+                }
             })
 
             $(".firstCode").click(function () {
