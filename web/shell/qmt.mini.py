@@ -65,7 +65,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         连接状态回调
         :return:
         """
-        print("connection lost")
+        info("connection lost")
 
     def on_account_status(self, status):
         """
@@ -73,8 +73,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param response: XtAccountStatus 对象
         :return:
         """
-        print("on_account_status")
-        print(status.account_id, status.account_type, status.status)
+        info("on_account_status")
+        info(status.account_id, status.account_type, status.status)
 
     def on_stock_asset(self, asset):
         """
@@ -82,9 +82,9 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param asset: XtAsset对象
         :return:
         """
-        print("on asset callback")
-        print(object_to_json(asset))
-        print(asset.account_id, asset.cash, asset.total_asset)
+        info("on asset callback")
+        info(object_to_json(asset))
+        info(asset.account_id, asset.cash, asset.total_asset)
 
     def on_stock_order(self, order):
         """
@@ -92,8 +92,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param order: XtOrder对象
         :return:
         """
-        print("on order callback:")
-        print(object_to_json(order))
+        info("on order callback:")
+        info(object_to_json(order))
         updateActionOrdered(order.stock_code, order.order_type,
                             order.order_status, order.traded_price, order.order_sysid)
         # print(order.stock_code, order.order_status, order.order_sysid)
@@ -105,8 +105,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :return:
         """
 
-        print("on_stock_trade:")
-        print(object_to_json(trade))
+        info("on_stock_trade:")
+        info(object_to_json(trade))
 
         updateActionOrdered(trade.stock_code, trade.order_type,
                             "56", trade.traded_price, trade.order_id)
@@ -118,8 +118,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param order_error:XtOrderError 对象
         :return:
         """
-        print("on order_error callback")
-        print(order_error.order_id, order_error.error_id, order_error.error_msg)
+        info("on order_error callback")
+        info(order_error.order_id, order_error.error_id, order_error.error_msg)
 
     def on_stock_position(self, position):
         """
@@ -145,16 +145,16 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param response: XtOrderResponse 对象
         :return:
         """
-        print("on_order_stock_async_response")
-        print(response.account_id, response.order_id, response.seq)
+        info("on_order_stock_async_response")
+        info(response.account_id, response.order_id, response.seq)
 
     def on_smt_appointment_async_response(self, response):
         """
         :param response: XtAppointmentResponse 对象
         :return:
         """
-        print("on_smt_appointment_async_response")
-        print(response.account_id, response.order_sysid,
+        info("on_smt_appointment_async_response")
+        info(response.account_id, response.order_sysid,
               response.error_id, response.error_msg, response.seq)
 
 
@@ -270,6 +270,7 @@ def getActionsTask():
 
 def getActions():
     try:
+        stockAccount = StockAccount(g.account)
         response = requests.get(
             "http://test1.91taogu.com/stock/rule/actions?broker="+g.broker, timeout=5)
         if response.status_code != 200:
@@ -281,20 +282,22 @@ def getActions():
             debug("getActions成功:", response.status_code, content)
             jso = json.loads(content)
             for act in jso["data"]:
-                act["scode"] = act["scode"].replace(".HK", ".HGT")
+                # act["scode"] = act["scode"].replace(".HK", ".HGT")
                 if act["scode"] in g.actions:
                     info("已存在", act["scode"], "的action")
                 else:
                     if act["action"] == "buy":
                         info("买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
-                        if act["amount"] == -1:
-                            order_lots(act["scode"], 1,
-                                       'fix', act["price"], ContextInfo, account)
-                        else:
-                            order_id = xt_trader.order_stock(
-                                g.account, act["scode"], xtconstant.STOCK_BUY, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
-                            print(order_id)
+                        
+                        oper=xtconstant.STOCK_BUY
+                        if act["scode"][:3] in {"028", "030", "031"}:
+                            oper=xtconstant.ETF_PURCHASE
+                            info("ETF", act["scode"])
+                        info(xtconstant.FIX_PRICE)
+                        order_id = xt_trader.order_stock(
+                            stockAccount, act["scode"], oper, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
+                        info("order_id:", order_id)
 
                         info("已买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
@@ -303,7 +306,7 @@ def getActions():
                         info("卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])
                         order_id = xt_trader.order_stock(
-                            g.account, act["scode"], xtconstant.STOCK_SELL, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
+                            stockAccount, act["scode"], xtconstant.STOCK_SELL, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
                         print(order_id)
                         info("已卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])

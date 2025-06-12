@@ -29,11 +29,11 @@ g.log = {
 
 g.log["level"] = g.log["debug"]
 
-account = "8883949249"  # 国金
-broker = "国金"
 
 account = "620000558442"  # 国信
 broker = "国信"
+account = "8883949249"  # 国金
+broker = "国金"
 
 runGetActionTask = 1
 
@@ -45,8 +45,8 @@ stocks = {}
 
 
 def init(ContextInfo):
-    print(sys.version)
-    print(sys.executable)
+    info(sys.version)
+    info(sys.executable)
     ContextInfo.set_account(account)
     stocklist = ['000300.SH', '000004.SZ']
     ContextInfo.set_universe(stocklist)
@@ -129,11 +129,13 @@ def getActions(ContextInfo):
 
 def after_init(ContextInfo):
     info('after_init')
-    syncPosition(ContextInfo)
+    syncPosition("stock")
+    syncPosition("HUGANGTONG")
+    syncPosition("SHENGANGTONG")
 
 # 行情处理函数 - 每次行情更新时调用
-def syncPosition(ContextInfo):
-    data = get_trade_detail_data(account, 'stock', 'position')
+def syncPosition(accountType):
+    data = get_trade_detail_data(account, accountType, 'position')
     print('查询持仓结果：')
     positions=[]
     for dt in data:
