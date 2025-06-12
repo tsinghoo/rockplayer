@@ -389,16 +389,16 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                     batch_data = [[str(idx)] + [row["open"], row["close"],
                                                 row["high"], row["low"], row["volume"], row["amount"]]]
                 # print(obj2JsonString(batch_data, indent=None))
-                    debug(batch_data)
                     body = {"data": obj2Json(
                         batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                    debug("body:", body)
                     # 上传数据到test1
                     try:
                         response = requests.post(
                             baseUrl+"/stock/data/upload", json=body, timeout=20)
                         if response.status_code != 200:
                             error("上传失败，状态码:", response.status_code,
-                                "响应内容:", response.text)
+                                  "响应内容:", response.text)
                     except Exception as e:
                         error("上传失败:", str(e))
 
@@ -447,20 +447,19 @@ def update1m():
                 info("上传", scode, period,
                      "[", i, ",", i+bsize, "]", len(batch))
                 for idx, row in batch.iterrows():
-                    info(row)
                     batch_data = [[str(idx)] + [row["open"], row["close"],
                                                 row["high"], row["low"], row["volume"], row["amount"]]]
-                    debug(batch_data)
                 # info(obj2JsonString(batch_data, indent=None))
                     body = {"data": obj2Json(
                         batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                    debug("body:", body)
                     # 上传数据到test1
                     try:
                         response = requests.post(
                             baseUrl+"/stock/data/upload", json=body, timeout=20)
                         if response.status_code != 200:
                             error("上传失败，状态码:", response.status_code,
-                                "响应内容:", response.text)
+                                  "响应内容:", response.text)
                     except Exception as e:
                         error("上传失败:", str(e))
 

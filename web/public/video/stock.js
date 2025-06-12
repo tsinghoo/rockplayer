@@ -407,7 +407,7 @@ window.feed_list = window.feed_list || (function () {
                 }
 
                 categoryData.push(row.time);
-                values.push([row.open, row.close, row.low, row.high]);
+                values.push([row.open, row.close, row.high, row.low]);
                 volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
             }
 
@@ -1079,7 +1079,7 @@ window.feed_list = window.feed_list || (function () {
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
                 categoryData.push(row.time);
-                values.push([row.open, row.close, row.low, row.high]);
+                values.push([row.open, row.close, row.high, row.low]);
                 volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
             }
 
