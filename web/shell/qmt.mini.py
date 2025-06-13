@@ -52,7 +52,7 @@ g.log = {
     "debug": 4,
 }
 
-g.configFile="d:\\qmt.config.json"
+g.configFile = "d:\\qmt.config.json"
 
 g.log["level"] = g.log["debug"]
 
@@ -67,7 +67,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         连接状态回调
         :return:
         """
-        info("connection lost")
+        info("connection lost callback")
 
     def on_account_status(self, status):
         """
@@ -75,7 +75,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param response: XtAccountStatus 对象
         :return:
         """
-        info("on_account_status")
+        info("on_account_status callback")
         info(status.account_id, status.account_type, status.status)
 
     def on_stock_asset(self, asset):
@@ -107,7 +107,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :return:
         """
 
-        info("on_stock_trade:")
+        info("on_stock_trade callback:")
         info(object_to_json(trade))
 
         updateActionOrdered(trade.stock_code, trade.order_type,
@@ -147,7 +147,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param response: XtOrderResponse 对象
         :return:
         """
-        info("on_order_stock_async_response")
+        info("on_order_stock_async_response callback")
         info(response.account_id, response.order_id, response.seq)
 
     def on_smt_appointment_async_response(self, response):
@@ -155,9 +155,10 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param response: XtAppointmentResponse 对象
         :return:
         """
-        info("on_smt_appointment_async_response")
+        info("on_smt_appointment_async_response callback")
         info(response.account_id, response.order_sysid,
-              response.error_id, response.error_msg, response.seq)
+             response.error_id, response.error_msg, response.seq)
+
 
 def loadConfig():
     if not os.path.exists(g.configFile):
@@ -169,10 +170,12 @@ def loadConfig():
             g.config = json.load(f)
     info("config:", g.config)
 
+
 def saveConfig():
     with open(g.configFile, 'w') as f:
         json.dump(g.config, f)
-    
+
+
 def init():
     print(sys.version)
     print(sys.executable)
@@ -286,7 +289,6 @@ def getActionsTask():
 
 def getActions():
     try:
-        stockAccount = StockAccount(g.account)
         response = requests.get(
             "http://test1.91taogu.com/stock/rule/actions?broker="+g.broker, timeout=5)
         if response.status_code != 200:
@@ -298,19 +300,24 @@ def getActions():
             debug("getActions成功:", response.status_code, content)
             jso = json.loads(content)
             for act in jso["data"]:
-                # act["scode"] = act["scode"].replace(".HK", ".HGT")
+                act["scode"] = act["scode"].replace(".HK", ".HGT")
+                # 如果act["scode"]里包含".HK",则用新的stockAccount
                 if act["scode"] in g.actions:
                     info("已存在", act["scode"], "的action")
                 else:
+
+                    if ".HGT" in act["scode"]:
+                        stockAccount = StockAccount(g.account, "HUGANGTONG")
+                    else:
+                        stockAccount = StockAccount(g.account)
                     if act["action"] == "buy":
                         info("买入", act["sname"], act["scode"],
                              act["price"], act["amount"])
-                        
-                        oper=xtconstant.STOCK_BUY
+
+                        oper = xtconstant.STOCK_BUY
                         if act["scode"][:3] in {"028", "030", "031"}:
-                            oper=xtconstant.ETF_PURCHASE
+                            oper = xtconstant.ETF_PURCHASE
                             info("ETF", act["scode"])
-                        info(xtconstant.FIX_PRICE)
                         order_id = xt_trader.order_stock(
                             stockAccount, act["scode"], oper, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
                         info("order_id:", order_id)
@@ -368,13 +375,15 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
     if (stocklist is None):
         stocklist = g.stocklist
     if (dataStartTime is None):
-        #判断g.config里是否有lastStartTime1d这个key
+        # 判断g.config里是否有lastStartTime1d这个key
         if "lastStartTime1d" not in g.config:
-            g.config["lastStartTime1d"] = datetime.datetime.now().strftime("%Y%m%d")
+            g.config["lastStartTime1d"] = datetime.datetime.now().strftime(
+                "%Y%m%d")
             info("lastStartTime1d:", g.config["lastStartTime1d"])
             saveConfig()
 
-        dataStartTime = (datetime.datetime.strptime(g.config["lastStartTime1d"], "%Y%m%d") - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
+        dataStartTime = (datetime.datetime.strptime(
+            g.config["lastStartTime1d"], "%Y%m%d") - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
     if (dataEndTime is None):
         dataEndTime = ""
 
@@ -409,7 +418,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                 info("上传", scode, period,
                      "[", i, ",", i+bsize, "]", len(batch))
                 for idx, row in batch.iterrows():
-                    info(row)
+                    # info(row)
                     batch_data = [[str(idx)] + [row["open"], row["close"],
                                                 row["high"], row["low"], row["volume"], row["amount"]]]
                 # print(obj2JsonString(batch_data, indent=None))
@@ -442,11 +451,14 @@ def update1m():
 
     if "lastStartTime1m" not in g.config:
         today = datetime.datetime.now().date()
-        g.config["lastStartTime1m"] = datetime.datetime.combine(today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
+        g.config["lastStartTime1m"] = datetime.datetime.combine(
+            today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
         info("lastStartTime1m:", g.config["lastStartTime1m"])
-    dataStartTime = (datetime.datetime.strptime(g.config["lastStartTime1m"], "%Y%m%d%H%M%S") - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
+    dataStartTime = (datetime.datetime.strptime(
+        g.config["lastStartTime1m"], "%Y%m%d%H%M%S") - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
     info("dataStartTime:", dataStartTime)
-    g.config["lastStartTime1m"] = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    g.config["lastStartTime1m"] = datetime.datetime.now().strftime(
+        "%Y%m%d%H%M%S")
     saveConfig()
     dataEndTime = ""
     for index, scode in enumerate(stocklist):
@@ -772,6 +784,7 @@ if __name__ == '__main__':
     path = r'D:\国金证券QMT交易端\userdata_mini'
     # 生成session id 整数类型 同时运行的策略不能重复
     stockAccount = StockAccount(g.account)
+    stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
     xt_trader = XtQuantTrader(path, g.session_id)
     callback = MyXtQuantTraderCallback()
     xt_trader.register_callback(callback)
@@ -781,34 +794,44 @@ if __name__ == '__main__':
     # 建立交易连接，返回0表示连接成功
     connect_result = xt_trader.connect()
     if connect_result != 0:
-        print("连接失败")
+        info("连接失败")
         xt_trader.stop()
         sys.exit(1)
     else:
-        print("连接成功")
+        info("连接成功")
 
     subscribe_result = xt_trader.subscribe(stockAccount)
     if subscribe_result == 0:
-        print("订阅成功")
+        info("订阅成功")
     else:
-        print("订阅失败")
+        info("订阅失败")
+        xt_trader.stop()
+        sys.exit(1)
+    subscribe_result = xt_trader.subscribe(stockAccountHgt)
+    if subscribe_result == 0:
+        info("订阅成功")
+    else:
+        info("订阅失败")
         xt_trader.stop()
         sys.exit(1)
 
     sector_list = xtdata.get_sector_list()
-    print(sector_list)
+    info("sector_list:",sector_list)
+
+    orders = xt_trader.query_stock_orders(stockAccountHgt, False)
+    info("orders:", obj2JsonString(orders))
 
     # stock_list = xtdata.get_stock_list_in_sector('上证A股')
     # print(stock_list)
 
     xt_asset = xt_trader.query_stock_asset(stockAccount)
 
-    print('账号类型', xt_asset.account_type)
-    print('资金账号', xt_asset.account_id)
-    print('可用金额', xt_asset.cash)
-    print('冻结金额', xt_asset.frozen_cash)
-    print('持仓市值', xt_asset.market_value)
-    print('总资产', xt_asset.total_asset)
+    info('账号类型', xt_asset.account_type)
+    info('资金账号', xt_asset.account_id)
+    info('可用金额', xt_asset.cash)
+    info('冻结金额', xt_asset.frozen_cash)
+    info('持仓市值', xt_asset.market_value)
+    info('总资产', xt_asset.total_asset)
 
     init()
 
