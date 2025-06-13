@@ -368,11 +368,13 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
     if (stocklist is None):
         stocklist = g.stocklist
     if (dataStartTime is None):
-        if g.config.lastStartTime1d is None:
-            g.config.lastStartTime1d = datetime.datetime.now().date()
-            info("lastStartTime1d:", g.config.lastStartTime1d)
+        #判断g.config里是否有lastStartTime1d这个key
+        if "lastStartTime1d" not in g.config:
+            g.config["lastStartTime1d"] = datetime.datetime.now().strftime("%Y%m%d")
+            info("lastStartTime1d:", g.config["lastStartTime1d"])
             saveConfig()
-        dataStartTime = (g.config.lastStartTime1d - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
+
+        dataStartTime = (datetime.datetime.strptime(g.config["lastStartTime1d"], "%Y%m%d") - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
     if (dataEndTime is None):
         dataEndTime = ""
 
@@ -438,13 +440,13 @@ def update1m():
     stocklist = g.stocklist
     pds = ["1m"]
 
-    if g.config.lastStartTime1m is None:
+    if "lastStartTime1m" not in g.config:
         today = datetime.datetime.now().date()
-        g.config.lastStartTime1m = datetime.datetime.combine(today, datetime.time(9, 0))
-        info("lastStartTime1m:", g.config.lastStartTime1m)
-    dataStartTime = (g.config.lastStartTime1m - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
+        g.config["lastStartTime1m"] = datetime.datetime.combine(today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
+        info("lastStartTime1m:", g.config["lastStartTime1m"])
+    dataStartTime = (datetime.datetime.strptime(g.config["lastStartTime1m"], "%Y%m%d%H%M%S") - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
     info("dataStartTime:", dataStartTime)
-    g.config.lastStartTime1m = datetime.datetime.now()
+    g.config["lastStartTime1m"] = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     saveConfig()
     dataEndTime = ""
     for index, scode in enumerate(stocklist):
