@@ -329,7 +329,7 @@ window.feed_list = window.feed_list || (function () {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
                 kTick = td.find(".kTick");
-                kTick.html("loading kTick");
+                // kTick.html("loading kTick");
             });
 
             //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
@@ -397,7 +397,7 @@ window.feed_list = window.feed_list || (function () {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
                 k1d = td.find(".k1d");
-                k1d.html("loading k1d");
+                // k1d.html("loading k1d");
             });
 
 
@@ -1244,7 +1244,7 @@ window.feed_list = window.feed_list || (function () {
             });
 
             $c.removeAttr("_echarts_instance_");
-            $c.html("loading kTick");
+            // $c.html("loading kTick");
 
             var chartDom = $c[0];
             var chart = echarts.init(chartDom);
@@ -1504,7 +1504,7 @@ window.feed_list = window.feed_list || (function () {
                 height: "300px"
             });
             k1d.removeAttr("_echarts_instance_");
-            k1d.html("loading k1d");
+            // k1d.html("loading k1d");
             var chartDom = k1d[0];
             var chart = echarts.init(chartDom);
             let data = { categoryData, values, volumes };

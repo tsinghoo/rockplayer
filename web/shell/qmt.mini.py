@@ -52,10 +52,12 @@ g.log = {
     "debug": 4,
 }
 
+g.configFile="d:\\qmt.config.json"
+
 g.log["level"] = g.log["debug"]
 
 g.toPrint = []
-
+today = datetime.datetime.now().date()
 threadLocal = threading.local()
 
 
@@ -157,10 +159,24 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         info(response.account_id, response.order_sysid,
               response.error_id, response.error_msg, response.seq)
 
+def loadConfig():
+    if not os.path.exists(g.configFile):
+        g.config = {}
+        with open(g.configFile, 'w') as f:
+            json.dump(g.config, f)
+    else:
+        with open(g.configFile) as f:
+            g.config = json.load(f)
+    info("config:", g.config)
 
+def saveConfig():
+    with open(g.configFile, 'w') as f:
+        json.dump(g.config, f)
+    
 def init():
     print(sys.version)
     print(sys.executable)
+    loadConfig()
     # 设置全局变量
     # 从test1获取股票列表
     try:
@@ -352,8 +368,11 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
     if (stocklist is None):
         stocklist = g.stocklist
     if (dataStartTime is None):
-        dataStartTime = (datetime.datetime.now() -
-                         datetime.timedelta(days=0)).strftime("%Y%m%d")
+        if g.config.lastStartTime1d is None:
+            g.config.lastStartTime1d = datetime.datetime.now().date()
+            info("lastStartTime1d:", g.config.lastStartTime1d)
+            saveConfig()
+        dataStartTime = (g.config.lastStartTime1d - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
     if (dataEndTime is None):
         dataEndTime = ""
 
@@ -418,9 +437,15 @@ def update1m():
     info("update1m")
     stocklist = g.stocklist
     pds = ["1m"]
-    dataStartTime = (datetime.datetime.now() -
-                     datetime.timedelta(minutes=5)).strftime("%Y%m%d%H%M%S")
 
+    if g.config.lastStartTime1m is None:
+        today = datetime.datetime.now().date()
+        g.config.lastStartTime1m = datetime.datetime.combine(today, datetime.time(9, 0))
+        info("lastStartTime1m:", g.config.lastStartTime1m)
+    dataStartTime = (g.config.lastStartTime1m - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
+    info("dataStartTime:", dataStartTime)
+    g.config.lastStartTime1m = datetime.datetime.now()
+    saveConfig()
     dataEndTime = ""
     for index, scode in enumerate(stocklist):
         for period in pds:

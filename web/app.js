@@ -896,7 +896,7 @@ app.get('/stock/vote', async (req, res) => {
     let sql = `update tstock set lastOperationTime=? where scode=? `;
     let now = timeFormat(new Date(), "yyyyMMdd hhmmss");
     await db.runSync(sql, [now, code]);
-
+    await db.runSync(`update tStockBasic set priority=? where scode=?`, [new Date().getTime(), code]);
     var resp = `${js}({})`;
     res.send(resp);
 });
@@ -1012,11 +1012,13 @@ async function upgradeDb(succ, fail) {
         "update config set value='31' where key='dbVersion';",
         `alter table tpositions add column floatProfit real default 0;`,
         "update config set value='33' where key='dbVersion';",
+        `alter table tstockbasic add column priority int default 0;`,
+        "update config set value='35' where key='dbVersion';",
 
     ];
 
     if (res == null || res.error) {
-        res = await db.runSync(`CREATE TABLE IF NOT EXISTS tstock (
+        res = await db.runSync(`CREATE TABLE tstock (
         tid text PRIMARY KEY,
         scode text,
         sname TEXT,
@@ -1033,13 +1035,13 @@ async function upgradeDb(succ, fail) {
 
         await db.runSync("create table config(key varchar(50) primary key, value text);");
 
-        await db.runSync(`CREATE TABLE IF NOT EXISTS tsql (
+        await db.runSync(`CREATE TABLE tsql (
         id text primary key,
         name text,
         sql text,
         lastUseTime integer);`);
 
-        await db.runSync(`CREATE TABLE IF NOT EXISTS tStockBasic (
+        await db.runSync(`CREATE TABLE tStockBasic (
         id text primary key,
         scode text,
         sname text,
@@ -1698,7 +1700,7 @@ function formatScode(stockCode) {
 app.get('/stock/codes', async (req, res) => {
     info("/stock/codes");
     let js = req.query.js;
-    let sql = `select scode from tstockbasic`;
+    let sql = `select scode from tstockbasic order by priority desc`;
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {
