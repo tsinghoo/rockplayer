@@ -1415,6 +1415,7 @@ app.get('/stock/rule/create', async (req, res) => {
         scode: json.scode,
         sname: json.sname,
         buy: 0,
+        priority: now,
         updateTime: now
     });
 
