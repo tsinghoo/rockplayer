@@ -1849,10 +1849,22 @@ app.post('/stock/data/upload', async (req, res) => {
     res.send(resp);
 });
 
+async function getDealName(scode) {
+    let name = scode;
+    let r = await db.allSync(`select * from tstockbasic where scode=?`, [scode]);
+    if (r.rows.length > 0) {
+        name = r.rows[0].sname;
+    }
+
+    return name;
+}
 
 app.post('/stock/deal/update', async (req, res) => {
     info(`/stock/deal/update:${JSON.stringify(req.body)}`);
     let deal = req.body;
+    if (deal.scode == deal.sname) {
+        deal.sname = await getDealName(deal.scode);
+    }
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
     let r = await insertOrIgnore("tStock", deal);
     if (r.error == null) {
@@ -1868,6 +1880,7 @@ app.post('/stock/deal/update', async (req, res) => {
 
     res.send(JSON.stringify(resp));
 });
+
 
 app.post('/stock/rule/action/ordered', async (req, res) => {
     info(`rule/action/ordered:${JSON.stringify(req.body)}`);
