@@ -1020,7 +1020,7 @@ window.feed_list = window.feed_list || (function () {
                             th.attr("data", JSON.stringify(data));
                             const price = data["价格"];
                             if (price == null) {
-                                cpl.text(`${curPrice.toFixed(3)}`);
+                                cpl.text(`${curPrice.toFixed(3)} (${tp})`);
                             } else {
                                 let delta = ((curPrice - price) / price * 100).toFixed(1);
                                 let tp = share.getTimePassed__(row.updateTime);
