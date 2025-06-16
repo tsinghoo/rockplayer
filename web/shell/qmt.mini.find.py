@@ -51,7 +51,7 @@ g.log = {
     "info": 3,
     "debug": 4,
 }
-
+g.candidates = []
 g.configFile = "d:\\qmt.config.json"
 
 g.log["level"] = g.log["debug"]
@@ -66,8 +66,8 @@ g.hold_period = 5         # 持有周期(天)
 # 设置回测参数
 g.position_ratio = 0.2    # 单只股票仓位比例
 g.low_percentile = 0.3    # 定义低位的百分位(30%分位数以下)
-g.min_price = 5           # 最低股价限制(元)
-g.max_price = 500         # 最高股价限制(元)
+g.min_price = 0           # 最低股价限制(元)
+g.max_price = 3000         # 最高股价限制(元)
 
 
 today = datetime.datetime.now().date()
@@ -235,26 +235,9 @@ def saveConfig():
 
 
 def init():
-    print(sys.version)
-    print(sys.executable)
+    info(sys.version)
+    info(sys.executable)
     loadConfig()
-    # 设置全局变量
-    # 从test1获取股票列表
-    try:
-        response = requests.get(
-            "http://test1.91taogu.com/stock/codes", timeout=5)
-        if response.status_code != 200:
-            print("请求失败，状态码:", response.status_code)
-            return
-        else:
-            print("从test1获取stock codes成功:", response.status_code)
-            response.encoding = 'utf-8'
-            content = response.text
-            print(content)
-            g.stocklist = json.loads(content)
-
-    except Exception as e:
-        print("获取stockk list失败:", str(e))
 
 
 def resetThreadId(label=""):
@@ -790,6 +773,7 @@ def findStock(sector):
     # 过滤ST/*ST/退市股票等
     g.stocklist = [
         stock for stock in all_stocks if not stock.startswith(('ST', '*ST', '退'))]
+    info("stocklist:", g.stocklist)
     period = '1d'
     # 订阅行情数据
     xtdata.subscribe_whole_quote(g.stocklist)
@@ -801,36 +785,41 @@ def findStock(sector):
     # dataStartTime设置为70天前
     days = 60
     dataStartTime = (datetime.datetime.now() -
-                     datetime.timedelta(days=days)).strftime("%Y%m%d")
+                     datetime.timedelta(days=(days*3))).strftime("%Y%m%d")
     dataEndTime = current_date
-
+    params = ['open', 'close', 'high', 'low', 'volume', 'amount']
     for index, scode in enumerate(g.stocklist):
         try:
             info('downloading', period, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
-            params = []
+
             info(Back.RED, 'get', days, period, 'for', scode, 'from',
                  '', 'to', current_date, "(", index, "/", len(g.stocklist), ")", Style.RESET_ALL)
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time="", end_time=current_date, count=days, dividend_type='none', fill_data=True)
             prices = df[scode]
-
+            # debug("prices:", prices)
             if prices is None or len(prices['close']) < 5:
                 continue
 
-            close_prices = prices['close'][scode]
+            close_prices = prices['close']
             current_price = close_prices[-1]
 
             # 检查股价是否在合理范围内
             if current_price < g.min_price or current_price > g.max_price:
+                info("bad price:", current_price)
                 continue
 
+            info()
             # 计算历史分位数判断是否低位
             hist_percentile = sum(
                 1 for price in close_prices if price < current_price) / len(close_prices)
+
+            info(hist_percentile, "in", len(close_prices), "close_prices")
             if hist_percentile > g.low_percentile:
+                info("bad")
                 continue
 
             # 检查最近三天是否连续上涨
@@ -840,12 +829,14 @@ def findStock(sector):
                 day2 = close_prices[-3]
                 day3 = close_prices[-4]
 
-                if day0 > day1 > day2 > day3:
+                if day0 > day1 > day2:
                     # 满足条件，加入候选列表
-                    candidate.append(scode)
+                    info(Back.GREEN, "OK", Style.RESET_ALL)
+                    candidate.append([scode, current_price, hist_percentile])
 
         except Exception as e:
-            error(f"处理股票{scode}时出错: {str(e)}")
+            error_msg = traceback.format_exc()
+            error(f"处理股票{scode}时出错: {error_msg}")
             continue
 
     return candidate
@@ -862,6 +853,9 @@ if __name__ == '__main__':
     xt_trader.register_callback(callback)
     # 启动本地客户端
     xt_trader.start()
+
+    t3 = Thread(target=printTask)
+    t3.start()
 
     # 建立交易连接，返回0表示连接成功
     connect_result = xt_trader.connect()
@@ -888,12 +882,23 @@ if __name__ == '__main__':
         sys.exit(1)
 
     init()
-
+    info("下载sector_data")
+    xtdata.download_sector_data()
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
+
+    sector_list = ['上期所', '上证A股', '上证B股', '上证期权', '上证转债', '中金所', '创业板', '大商所', '沪市ETF', '沪市债券', '沪市基金', '沪市指数', '沪深A股', '沪深B股', '沪深ETF', '沪深债券', '沪深基金',
+                   '沪深指数', '沪深转债', '深市ETF', '深市债券', '深市基金', '深市指数', '深证A股', '深证B股', '深证期权', '深证转债', '科创板', '科创板CDR', '能源中心', '连续合约', '郑商所', '香港联交所指数', '香港联交所股票']
+    sector_list = ['上证A股', '上证B股', '创业板', '沪深A股', '沪深B股',
+                   '沪深ETF', '深市ETF', '深证A股', '深证B股', '科创板', '香港联交所股票']
+    sector_list = ['创业板', '沪深A股', '沪深B股', '沪深ETF', '深市ETF', '科创板', '香港联交所股票']
+
     # 对于每个sector,调用findStock
     for sector in sector_list:
-        findStock(sector)
+        candidates = findStock(sector)
+        info("candidates:", candidates, "in", sector)
+        g.candidates.append(candidates)
 
+    info("all candidates:", g.candidates)
     # 阻塞主线程退出
     # xt_trader.run_forever()
