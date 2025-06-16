@@ -108,11 +108,35 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         """
 
         info("on_stock_trade callback:")
-        info(object_to_json(trade))
 
-        updateActionOrdered(trade.stock_code, trade.order_type,
-                            "56", trade.traded_price, trade.order_id)
-        # print(trade.account_id, trade.stock_code, trade.order_id)
+        js = obj2Json(trade, 1)
+        # js["traded_time"]是时间戳，将它转换成时间字符串
+        tradeTime = datetime.datetime.fromtimestamp(js["traded_time"])
+
+        deal = {
+            "tprice": js["traded_price"],
+            "scode": js["m_strStockCode"],
+            "sname": js["m_strStockCode"],
+            "market": js["m_strExchangeName"],
+            "operationDirection": "买入" if js["direction"] == 48 else "卖出",
+            "operationName": g.broker,
+            "tday": tradeTime.strftime("%Y-%m-%d"),
+            "ttime": tradeTime.strftime("%H:%M:%S"),
+            # "tid": js["m_strTradeID"],
+            "tid": js["m_strTradedID"],
+            "tcash": js["traded_amount"],
+            "tamount": js["traded_volume"],
+            "tpair": ""
+        }
+
+        if deal["operationDirection"].find("卖") != -1:
+            deal["tamount"] = -deal["tamount"]
+
+        info(json.dumps(deal, indent=2))
+
+        updateDeal(deal)
+
+    # print(trade.account_id, trade.stock_code, trade.order_id)
 
     def on_order_error(self, order_error):
         """
@@ -158,6 +182,27 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         info("on_smt_appointment_async_response callback")
         info(response.account_id, response.order_sysid,
              response.error_id, response.error_msg, response.seq)
+
+
+def updateDeal(deal):
+    try:
+        # 目标 URL
+        url = "http://test1.91taogu.com/stock/deal/update"
+
+        # 设置请求头（声明内容类型为 JSON）
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        # 发送 POST 请求
+        response = requests.post(url, data=json.dumps(deal), headers=headers)
+
+        # 输出响应
+        debug("updateDeal:", response.status_code)
+        debug("response:", response.text)
+
+    except Exception as e:
+        error("updateDeal 出错:", traceback.format_exc())
 
 
 def loadConfig():
@@ -816,7 +861,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     sector_list = xtdata.get_sector_list()
-    info("sector_list:",sector_list)
+    info("sector_list:", sector_list)
 
     orders = xt_trader.query_stock_orders(stockAccountHgt, False)
     info("orders:", obj2JsonString(orders))
