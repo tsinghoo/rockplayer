@@ -1670,7 +1670,7 @@ function formatScode(stockCode) {
 
     // 检查代码是否有效
     if (!code) {
-        throw new Error("股票代码不能为空");
+        return null;
     }
 
     let suffix = "";

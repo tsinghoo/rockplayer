@@ -364,7 +364,7 @@ def getActions():
 
                         oper = xtconstant.STOCK_BUY
                         if "ETF" in act["sname"] or act["scode"].startswith(("51","15")):
-                            oper = xtconstant.ETF_PURCHASE
+                            # oper = xtconstant.ETF_PURCHASE
                             info("ETF", act["scode"])
                         order_id = xt_trader.order_stock(
                             stockAccount, act["scode"], oper, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
