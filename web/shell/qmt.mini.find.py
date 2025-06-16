@@ -792,7 +792,7 @@ def findStock(sector):
         stock for stock in all_stocks if not stock.startswith(('ST', '*ST', '退'))]
     period = '1d'
     # 订阅行情数据
-    xtdata.subscribe_whole_quote(g.stocklist, period='1d')
+    xtdata.subscribe_whole_quote(g.stocklist)
 
     current_date = datetime.datetime.now().strftime("%Y%m%d")
 

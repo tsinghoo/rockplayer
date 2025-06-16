@@ -971,7 +971,7 @@ window.feed_list = window.feed_list || (function () {
 
             // 检查代码是否有效
             if (!code) {
-                throw new Error("股票代码不能为空");
+                return "";
             }
 
             let suffix = "未知";

@@ -106,35 +106,38 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param trade: XtTrade对象
         :return:
         """
-
+        # resetThreadId("st")
         info("on_stock_trade callback:")
+        try:
+            js = obj2Json(trade, 1)
+            # js["traded_time"]是时间戳，将它转换成时间字符串
+            tradeTime = datetime.datetime.fromtimestamp(js["traded_time"])
 
-        js = obj2Json(trade, 1)
-        # js["traded_time"]是时间戳，将它转换成时间字符串
-        tradeTime = datetime.datetime.fromtimestamp(js["traded_time"])
+            deal = {
+                "tprice": js["traded_price"],
+                "scode": js["m_strStockCode"],
+                "sname": js["m_strStockCode"],
+                "market": js["m_strExchangeName"],
+                "operationDirection": "买入" if js["direction"] == 48 else "卖出",
+                "operationName": g.broker,
+                "tday": tradeTime.strftime("%Y-%m-%d"),
+                "ttime": tradeTime.strftime("%H:%M:%S"),
+                # "tid": js["m_strTradeID"],
+                "tid": js["m_strTradedID"],
+                "tcash": js["traded_amount"],
+                "tamount": js["traded_volume"],
+                "tpair": ""
+            }
 
-        deal = {
-            "tprice": js["traded_price"],
-            "scode": js["m_strStockCode"],
-            "sname": js["m_strStockCode"],
-            "market": js["m_strExchangeName"],
-            "operationDirection": "买入" if js["direction"] == 48 else "卖出",
-            "operationName": g.broker,
-            "tday": tradeTime.strftime("%Y-%m-%d"),
-            "ttime": tradeTime.strftime("%H:%M:%S"),
-            # "tid": js["m_strTradeID"],
-            "tid": js["m_strTradedID"],
-            "tcash": js["traded_amount"],
-            "tamount": js["traded_volume"],
-            "tpair": ""
-        }
+            if deal["operationDirection"].find("卖") != -1:
+                deal["tamount"] = -deal["tamount"]
 
-        if deal["operationDirection"].find("卖") != -1:
-            deal["tamount"] = -deal["tamount"]
+            info(json.dumps(deal, indent=2))
 
-        info(json.dumps(deal, indent=2))
+            updateDeal(deal)
 
-        updateDeal(deal)
+        except Exception as e:
+            error("on_stock_trade 出错:", traceback.format_exc())
 
     # print(trade.account_id, trade.stock_code, trade.order_id)
 
@@ -360,7 +363,7 @@ def getActions():
                              act["price"], act["amount"])
 
                         oper = xtconstant.STOCK_BUY
-                        if act["scode"][:3] in {"028", "030", "031"}:
+                        if "ETF" in act["sname"] or act["scode"].startswith(("51","15")):
                             oper = xtconstant.ETF_PURCHASE
                             info("ETF", act["scode"])
                         order_id = xt_trader.order_stock(
