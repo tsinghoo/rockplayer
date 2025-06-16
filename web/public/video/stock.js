@@ -1019,11 +1019,11 @@ window.feed_list = window.feed_list || (function () {
                             data.curPrice = curPrice;
                             th.attr("data", JSON.stringify(data));
                             const price = data["价格"];
+                            let tp = share.getTimePassed__(row.updateTime);
                             if (price == null) {
                                 cpl.text(`${curPrice.toFixed(3)} (${tp})`);
                             } else {
                                 let delta = ((curPrice - price) / price * 100).toFixed(1);
-                                let tp = share.getTimePassed__(row.updateTime);
                                 cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
 
                                 if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
