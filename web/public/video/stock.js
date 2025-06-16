@@ -1016,31 +1016,35 @@ window.feed_list = window.feed_list || (function () {
                             let data = th.attr("data");
                             data = JSON.parse(data);
                             const curPrice = row.buy;
-                            const price = data["价格"];
                             data.curPrice = curPrice;
                             th.attr("data", JSON.stringify(data));
-                            let delta = ((curPrice - price) / price * 100).toFixed(1);
-                            let tp = share.getTimePassed__(row.updateTime);
-                            cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
+                            const price = data["价格"];
+                            if (price == null) {
+                                cpl.text(`${curPrice.toFixed(3)}`);
+                            } else {
+                                let delta = ((curPrice - price) / price * 100).toFixed(1);
+                                let tp = share.getTimePassed__(row.updateTime);
+                                cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
 
-                            if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
-                                if (data["配对"] != "") {
-                                    cpl.addClass("gold");
-                                } else {
+                                if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
+                                    if (data["配对"] != "") {
+                                        cpl.addClass("gold");
+                                    } else {
+                                        cpl.addClass("red");
+                                    }
+                                }
+
+                                if (delta < -2 && data["买卖"] == "买入") {
+                                    if (data["配对"] != "") {
+                                        cpl.addClass("gold");
+                                    } else {
+                                        cpl.addClass("green");
+                                    }
+                                }
+
+                                if (delta < 0 && data["买卖"] == "卖出") {
                                     cpl.addClass("red");
                                 }
-                            }
-
-                            if (delta < -2 && data["买卖"] == "买入") {
-                                if (data["配对"] != "") {
-                                    cpl.addClass("gold");
-                                } else {
-                                    cpl.addClass("green");
-                                }
-                            }
-
-                            if (delta < 0 && data["买卖"] == "卖出") {
-                                cpl.addClass("red");
                             }
                         } catch (e) {
                             console.log(e);
