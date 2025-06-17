@@ -27,23 +27,23 @@ END
 }
 
   url=http://test1.91taogu.com/stock/rule/action/ordered
-  url=http://test1.91taogu.com/stock/deal/update
+  url=http://localhost:3001/stock/deal/update
   data=$(
     cat <<END
 {
-        "tprice": 41.74,
-        "scode": "603171",
-        "sname": "税友股份",
-        "market": "上证所",
-        "operationDirection": "限价买入",
-        "operationName": "国信",
-        "tday": "20250523",
-        "ttime": "142520",
-        "tid": "0000000033491526",
-        "tcash": 4174,
-        "tamount": 100,
-        "tpair": ""
-    }
+  "tprice": 174.06,
+  "scode": "688012",
+  "sname": "\u4e2d\u5fae\u516c\u53f8",
+  "market": "\u4e0a\u8bc1\u6240",
+  "operationDirection": "\u9650\u4ef7\u5356\u51fa",
+  "operationName": "\u56fd\u4fe1",
+  "tday": "20250617",
+  "ttime": "101514",
+  "tid": "891704867",
+  "tcash": 21061.26,
+  "tamount": -79,
+  "tpair": ""
+}
 END
   ) 
   

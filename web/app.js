@@ -1863,7 +1863,7 @@ async function getDealName(scode) {
 app.post('/stock/deal/update', async (req, res) => {
     info(`/stock/deal/update:${JSON.stringify(req.body)}`);
     let deal = req.body;
-    let ocode = deal.scode.split(".")[0];
+    let ocode = deal.scode.split(".");
     deal.scode = ocode[0];
     if ("" == deal.sname) {
         deal.sname = await getDealName(deal.scode);
@@ -1873,7 +1873,15 @@ app.post('/stock/deal/update', async (req, res) => {
     }
     deal.tday = deal.tday.replace("-", "");
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
-    let r = await insertOrIgnore("tStock", deal);
+    let old = await db.getSync("select * from tStock where tid=?", [deal.tid]);
+    let r;
+    if (old == null) {
+        r = await insertOrIgnore("tStock", deal);
+    } else {
+        old.tamount += deal.tamount;
+        r = await insertOrReplace("tStock", old);
+    }
+
     if (r.error == null) {
         r = db.runSync(`update tStock set lastOperationTime=? where scode=?`, [deal.lastOperationTime, deal.scode]);
     }
