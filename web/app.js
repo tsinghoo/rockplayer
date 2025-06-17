@@ -1871,7 +1871,7 @@ app.post('/stock/deal/update', async (req, res) => {
     if ("" == deal.market) {
         deal.market = ocode.length > 1 ? ocode[1] : "";
     }
-    deal.tday = deal.tday.replace("-", "");
+    deal.tday = deal.tday.replace(/\-/g, "");
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
     let old = await db.getSync("select * from tStock where tid=?", [deal.tid]);
     let r;
