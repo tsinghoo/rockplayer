@@ -228,9 +228,11 @@ window.feed_list = window.feed_list || (function () {
 
             $(".submitRows", c).click(function () {
                 var url = "/stock/update";
-                let cookies = $(".rows", c).val().trim();
+                let rows = $(".rows", c).val().trim();
+                let broker = $(".broker", c).val().trim();
                 var params = {
-                    "rows": cookies
+                    "rows": rows,
+                    "broker": broker
                 };
                 let success = function () {
                     share.toastSuccess__("submitted");
@@ -1015,7 +1017,7 @@ window.feed_list = window.feed_list || (function () {
                             let cpl = th.find(".curPrice");
                             let data = th.attr("data");
                             data = JSON.parse(data);
-                            const curPrice = row.buy;
+                            const curPrice = share.toFixed(row.buy);
                             data.curPrice = curPrice;
                             th.attr("data", JSON.stringify(data));
                             const price = data["价格"];
