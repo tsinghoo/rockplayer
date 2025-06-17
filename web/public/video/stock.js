@@ -1450,7 +1450,7 @@ window.feed_list = window.feed_list || (function () {
             let buy = `
                                    <tr> 
                                        <td>买:</td>
-                                       <td>${rc.buy}</td> 
+                                       <td>${share.toFixed(rc.buy, 3)}</td> 
                                        <td>&uparrow;${share.toFixed(parseFloat(rc.bounce), 3)}</td>
                                        <td>${rc.buyAmount}</td>
                                    </tr>
@@ -1458,7 +1458,7 @@ window.feed_list = window.feed_list || (function () {
             let sell = `
                                    <tr style="border:none;"> 
                                        <td>卖:</td>
-                                       <td>${rc.sell}</td> 
+                                       <td>${share.toFixed(rc.sell, 3)}</td> 
                                        <td>&downarrow;${share.toFixed(parseFloat(rc.dip), 3)}</td>
                                        <td>${rc.sellAmount}</td>
                                    </tr>

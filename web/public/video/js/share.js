@@ -2501,6 +2501,9 @@ window.mhgl_share =
         return share;
       },
       toFixed: function (num, n) {
+        if (n == null) {
+          n = 3;
+        }
         let res = num.toFixed(n);
         res = res.replace(/\.?0+$/, '');
         return res;

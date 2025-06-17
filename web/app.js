@@ -1871,6 +1871,7 @@ app.post('/stock/deal/update', async (req, res) => {
     if ("" == deal.market) {
         deal.market = ocode.length > 1 ? ocode[1] : "";
     }
+    deal.tday = deal.tday.replace("-", "");
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
     let r = await insertOrIgnore("tStock", deal);
     if (r.error == null) {
