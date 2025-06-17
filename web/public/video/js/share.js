@@ -2504,6 +2504,9 @@ window.mhgl_share =
         if (n == null) {
           n = 3;
         }
+
+        //如果num是string则转换成数字
+        num = parseFloat(num);
         let res = num.toFixed(n);
         res = res.replace(/\.?0+$/, '');
         return res;
