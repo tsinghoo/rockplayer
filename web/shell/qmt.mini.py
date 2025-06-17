@@ -116,8 +116,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
             deal = {
                 "tprice": js["traded_price"],
                 "scode": js["m_strStockCode"],
-                "sname": js["m_strStockCode"],
-                "market": js["m_strExchangeName"],
+                "sname": "",
+                "market": "",
                 "operationDirection": "买入" if js["direction"] == 48 else "卖出",
                 "operationName": g.broker,
                 "tday": tradeTime.strftime("%Y-%m-%d"),

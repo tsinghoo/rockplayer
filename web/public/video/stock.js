@@ -1021,10 +1021,10 @@ window.feed_list = window.feed_list || (function () {
                             const price = data["价格"];
                             let tp = share.getTimePassed__(row.updateTime);
                             if (price == null) {
-                                cpl.text(`${curPrice.toFixed(3)} (${tp})`);
+                                cpl.text(`${share.toFixed(curPrice, 3)} (${tp})`);
                             } else {
                                 let delta = ((curPrice - price) / price * 100).toFixed(1);
-                                cpl.text(`${curPrice.toFixed(3)} (${delta}% ${tp})`);
+                                cpl.text(`${share.toFixed(curPrice, 3)} (${delta}% ${tp})`);
 
                                 if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
                                     if (data["配对"] != "") {
@@ -1451,7 +1451,7 @@ window.feed_list = window.feed_list || (function () {
                                    <tr> 
                                        <td>买:</td>
                                        <td>${rc.buy}</td> 
-                                       <td>&uparrow;${parseFloat(rc.bounce).toFixed(3)}</td>
+                                       <td>&uparrow;${share.toFixed(parseFloat(rc.bounce), 3)}</td>
                                        <td>${rc.buyAmount}</td>
                                    </tr>
                                `;
@@ -1459,7 +1459,7 @@ window.feed_list = window.feed_list || (function () {
                                    <tr style="border:none;"> 
                                        <td>卖:</td>
                                        <td>${rc.sell}</td> 
-                                       <td>&downarrow;${parseFloat(rc.dip).toFixed(3)}</td>
+                                       <td>&downarrow;${share.toFixed(parseFloat(rc.dip), 3)}</td>
                                        <td>${rc.sellAmount}</td>
                                    </tr>
                                `;
@@ -1784,9 +1784,9 @@ window.feed_list = window.feed_list || (function () {
             rc.maxPrice = rc.maxPrice ? parseFloat(rc.maxPrice) : 0;
             rc.currentPrice = rc.currentPrice ? parseFloat(rc.currentPrice) : 0;
             let prices = `<div class="flexcolumn margin4">
-                    <div>${rc.minPrice.toFixed(3)}</div> 
-                    <div> ${rc.currentPrice.toFixed(3)}</div>
-                    <div> ${rc.maxPrice.toFixed(3)}</div>
+                    <div>${share.toFixed(rc.minPrice, 3)}</div> 
+                    <div> ${share.toFixed(rc.currentPrice, 3)}</div>
+                    <div> ${share.toFixed(rc.maxPrice, 3)}</div>
                 </div>
             `
             if (r.status == "toBuy") {
@@ -1867,40 +1867,40 @@ window.feed_list = window.feed_list || (function () {
                                     <input type="text" id="ratio" style="width:25px;" value="${ratio}">%
                                 </div>
                                 <div class="marginlr10 col-xs-4 left">最近: <input style="width:60px;" type="text" id="last" value="${recent}"></div>
-                                <div class="marginlr10 col-xs-3 recentUp">+${ratio}%: ${(recent * (1 + ratio / 100)).toFixed(2)}</div>
-                                <div class="marginlr10 col-xs-3 recentDown">-${ratio}%: ${(recent * (1 - ratio / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3 recentUp">+${ratio}%: ${share.toFixed((recent * (1 + ratio / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3 recentDown">-${ratio}%: ${share.toFixed((recent * (1 - ratio / 100)), 4)}</div>
                             </div>
 
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">${recent}</div>
-                                <div class="marginlr10 col-xs-3">+3%: ${(recent * (1 + 3 / 100)).toFixed(2)}</div>
-                                <div class="marginlr10 col-xs-3">-3%: ${(recent * (1 - 3 / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3">+3%: ${share.toFixed((recent * (1 + 3 / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3">-3%: ${share.toFixed((recent * (1 - 3 / 100)), 4)}</div>
                             </div>
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">${recent}</div>
-                                <div class="marginlr10 col-xs-3">+5%: ${(recent * (1 + 5 / 100)).toFixed(2)}</div>
-                                <div class="marginlr10 col-xs-3">-5%: ${(recent * (1 - 5 / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3">+5%: ${share.toFixed((recent * (1 + 5 / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3">-5%: ${share.toFixed((recent * (1 - 5 / 100)), 4)}</div>
                             </div>
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">${recent}</div>
-                                <div class="marginlr10 col-xs-3">+10%: ${(recent * (1 + 10 / 100)).toFixed(2)}</div>
-                                <div class="marginlr10 col-xs-3">-10%: ${(recent * (1 - 10 / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-3">+10%: ${share.toFixed((recent * (1 + 10 / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3">-10%: ${share.toFixed((recent * (1 - 10 / 100)), 4)}</div>
                             </div>
 
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">最大: ${max}</div>
-                                <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${(max * (1 + ratio / 100)).toFixed(2)}</div>
-                                <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${(max * (1 - ratio / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${share.toFixed((max * (1 + ratio / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${share.toFixed((max * (1 - ratio / 100)), 4)}</div>
                             </div>
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">最小: ${min}</div>
-                                <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${(min * (1 + ratio / 100)).toFixed(2)}</div>
-                                <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${(min * (1 - ratio / 100)).toFixed(2)}</div>
+                                <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${share.toFixed((min * (1 + ratio / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${share.toFixed((min * (1 - ratio / 100)), 4)}</div>
                             </div>
                         </div>
                     </div>
@@ -1917,12 +1917,12 @@ window.feed_list = window.feed_list || (function () {
             function calc() {
                 let r = input.val().trim();
                 let l = $('#last', c).val().trim();
-                $(".recentUp", c).text(`+${r}%: ${(l * (1 + r / 100)).toFixed(2)}`);
-                $(".recentDown", c).text(`-${r}%: ${(l * (1 - r / 100)).toFixed(2)}`);
-                $(".maxUp", c).text(`+${r}%: ${(max * (1 + r / 100)).toFixed(2)}`);
-                $(".maxDown", c).text(`-${r}%: ${(max * (1 - r / 100)).toFixed(2)}`);
-                $(".minUp", c).text(`+${r}%: ${(min * (1 + r / 100)).toFixed(2)}`);
-                $(".minDown", c).text(`-${r}%: ${(min * (1 - r / 100)).toFixed(2)}`);
+                $(".recentUp", c).text(`+${r}%: ${share.toFixed((l * (1 + r / 100)), 4)}`);
+                $(".recentDown", c).text(`-${r}%: ${share.toFixed((l * (1 - r / 100)), 4)}`);
+                $(".maxUp", c).text(`+${r}%: ${share.toFixed((max * (1 + r / 100)), 4)}`);
+                $(".maxDown", c).text(`-${r}%: ${share.toFixed((max * (1 - r / 100)), 4)}`);
+                $(".minUp", c).text(`+${r}%: ${share.toFixed((min * (1 + r / 100)), 4)}`);
+                $(".minDown", c).text(`-${r}%: ${share.toFixed((min * (1 - r / 100)), 4)}`);
             }
             input.change(function () {
                 calc();

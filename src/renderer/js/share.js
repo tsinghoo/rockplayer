@@ -1843,6 +1843,11 @@ window.mhgl_share =
         }
         return items;
       },
+      toFixed: function (num, n) {
+        let res = num.toFixed(n);
+        res = res.replace(/\.?0+$/, '');
+        return res;
+      },
       getStackTrace__: function () {
         var callstack = [];
         var isCallstackPopulated = false;
@@ -2430,7 +2435,7 @@ window.mhgl_share =
           if (onShown) onShown();
         };
         var dialog = share.toast__(
-          title ? title:"更多选择",
+          title ? title : "更多选择",
           template,
           0,
           BootstrapDialog.TYPE_PRIMARY,

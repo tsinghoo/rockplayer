@@ -1863,8 +1863,13 @@ async function getDealName(scode) {
 app.post('/stock/deal/update', async (req, res) => {
     info(`/stock/deal/update:${JSON.stringify(req.body)}`);
     let deal = req.body;
-    if (deal.scode == deal.sname) {
+    let ocode = deal.scode.split(".")[0];
+    deal.scode = ocode[0];
+    if ("" == deal.sname) {
         deal.sname = await getDealName(deal.scode);
+    }
+    if ("" == deal.market) {
+        deal.market = ocode.length > 1 ? ocode[1] : "";
     }
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
     let r = await insertOrIgnore("tStock", deal);

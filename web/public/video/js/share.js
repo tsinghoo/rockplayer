@@ -2500,6 +2500,11 @@ window.mhgl_share =
 
         return share;
       },
+      toFixed: function (num, n) {
+        let res = num.toFixed(n);
+        res = res.replace(/\.?0+$/, '');
+        return res;
+      },
       debug__: function (info) {
         share.log__(info);
       },
