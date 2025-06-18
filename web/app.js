@@ -758,16 +758,16 @@ app.post('/video/cookies', (req, res) => {
 
 app.post('/stock/update', async (req, res) => {
     info("/stock/update");
-    let broker=req.body.broker;
-    if (broker==null){
+    let broker = req.body.broker;
+    if (broker == null) {
         if (fields.length == 12) {
-            broker="广发历史"
+            broker = "广发历史"
         } else if (fields.length == 22) {
-            broker="国信历史"
+            broker = "国信历史"
         } else if (fields.length == 13) {
-            broker="国金历史"
+            broker = "国金历史"
         } else if (fields.length == 15) {
-            broker="国信港股通历史"
+            broker = "国信港股通历史"
         }
     }
     info(broker)
@@ -782,7 +782,7 @@ app.post('/stock/update', async (req, res) => {
         var fields = data[i].split("\t");
         let tday = fields[0];
         let ttime = fields[1];
-        if (broker=="广发历史") {
+        if (broker == "广发历史") {
             //广发证券
             fields = fields.concat([""]);
             fields[5] = "广发";
@@ -803,7 +803,7 @@ app.post('/stock/update', async (req, res) => {
                 buy: 0,
                 updateTime: now
             });
-        } else if (broker=="国信历史") {
+        } else if (broker == "国信历史") {
             //tdx 国信证券
             fields = fields.concat([""]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
@@ -826,7 +826,7 @@ app.post('/stock/update', async (req, res) => {
                 buy: fields[6],
                 updateTime: now
             });
-        } else if (broker=="国金历史") {
+        } else if (broker == "国金历史") {
             //tdx 国金证券
             fields = fields.concat([""]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
@@ -849,7 +849,7 @@ app.post('/stock/update', async (req, res) => {
                 buy: fields[6],
                 updateTime: now
             });
-        } else if (broker=="国金港股通当日") {
+        } else if (broker == "国金港股通当日") {
             //tdx 国金证券
             fields = fields.concat([""]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
@@ -872,7 +872,7 @@ app.post('/stock/update', async (req, res) => {
                 buy: fields[6],
                 updateTime: now
             });
-        } else if (broker=="国信港股通历史") {
+        } else if (broker == "国信港股通历史") {
             //tdx 国信证券 港股通
             fields = fields.concat([""]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
@@ -1278,15 +1278,21 @@ app.post('/stock/positions', async (req, res) => {
         res.send("bad request");
         return;
     }
+    let broker = req.body.broker;
+    let clean = req.body.clean;
+    if (broker && clean) {
+        await dbCall([`delete from tPositions where id like '${broker}%'`]);
+    }
+    
 
     let positions = req.body.data;
-
+    if (positions == null) {
+        positions = [];
+    }
     for (let i = 0; i < positions.length; i++) {
         let pos = positions[i];
         let now = Date.now();
-        if (i == 0) {
-            await dbCall([`delete from tPositions where id like '${pos.broker}%'`]);
-        }
+        
         pos.stock_code = pos.stock_code.split(".")[0]
         pos.id = `${pos.broker}_${pos.account_id}_${pos.stock_code}`;
         pos.updateTime = now;

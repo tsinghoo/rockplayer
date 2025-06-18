@@ -136,6 +136,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
 
             updateDeal(deal)
 
+            updatePositions()
         except Exception as e:
             error("on_stock_trade 出错:", traceback.format_exc())
 
@@ -271,14 +272,17 @@ def uploadStockPrice():
 
 def uploadPosition(positions):
     # 组装成json对象post到test1.91taogu.com
+    body = {"broker": g.broker, "clean": 1, "passcode": "995560"}
+    if (positions is None):
+        info("clean股票持仓")
+    else:
+        info("上传", len(positions), "个股票持仓")
 
-    print("上传", len(positions), "个股票持仓")
-    try:
-        # positions 里的没个元素只保留 broker 属性
+            # positions 里的没个元素只保留 broker 属性
         data = []
         for position in positions:
             data.append({
-                "broker": "国金",
+                "broker": g.broker,
                 "account_id": position["account_id"],
                 "avg_price": position["avg_price"],
                 "can_use_volume": position["can_use_volume"],
@@ -289,9 +293,10 @@ def uploadPosition(positions):
                 "stock_code": position["stock_code"],
                 "volume": position["volume"]
             })
-
-        response = requests.post("http://test1.91taogu.com/stock/positions", json={
-            "data": data, "passcode": "995560"}, timeout=5)
+        body = {"data": data, "passcode": "995560"}
+    try:
+        response = requests.post(
+            "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
         if response.status_code != 200:
             error("上传持仓失败，状态码:", response.status_code)
             return
@@ -299,7 +304,7 @@ def uploadPosition(positions):
             response.encoding = 'utf-8'
             info("上传持仓到test1成功:", response.status_code, response.text)
     except Exception as e:
-        print("请求失败:", str(e))
+        info("请求失败:", str(e))
 
 
 def resetThreadId(label=""):
@@ -363,7 +368,7 @@ def getActions():
                              act["price"], act["amount"])
 
                         oper = xtconstant.STOCK_BUY
-                        if "ETF" in act["sname"] or act["scode"].startswith(("51","15")):
+                        if "ETF" in act["sname"] or act["scode"].startswith(("51", "15")):
                             # oper = xtconstant.ETF_PURCHASE
                             info("ETF", act["scode"])
                         order_id = xt_trader.order_stock(
@@ -827,6 +832,17 @@ def printTask():
         time.sleep(0.1)
 
 
+def updatePositions():
+    uploadPosition()
+    
+    positions = getPositions()
+
+    print("positions:", len(positions))
+    js = object_to_json(positions)
+
+    uploadPosition(js)
+
+
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
     path = r'D:\国金证券QMT交易端\userdata_mini'
@@ -883,12 +899,7 @@ if __name__ == '__main__':
 
     init()
 
-    positions = getPositions()
-
-    print("positions:", len(positions))
-    js = object_to_json(positions)
-
-    uploadPosition(js)
+    updatePositions()
 
     # deals = getDeals()
     # print("deals:", len(deals))

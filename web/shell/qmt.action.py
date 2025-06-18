@@ -134,12 +134,20 @@ def after_init(ContextInfo):
     syncPosition("SHENGANGTONG")
 
 # 行情处理函数 - 每次行情更新时调用
+
+
 def syncPosition(accountType):
-    data = get_trade_detail_data(account, accountType, 'position')
-    print('查询持仓结果：')
-    positions=[]
-    for dt in data:
-        position = {
+    body = {
+        "broker": broker,
+        "clean": 1
+    }
+
+    if (accountType != "clean"):
+        data = get_trade_detail_data(account, accountType, 'position')
+        print('查询持仓结果：')
+        positions = []
+        for dt in data:
+            position = {
                 "broker": broker,
                 "account_id": account,
                 "avg_price": dt.m_dOpenPrice,
@@ -152,19 +160,19 @@ def syncPosition(accountType):
                 "stock_code": dt.m_strInstrumentID,
                 "volume": dt.m_nVolume
             }
-        
-        positions.append(position)
 
-    info(json.dumps(positions, indent=None))
+            positions.append(position)
 
-    response = requests.post("http://test1.91taogu.com/stock/positions", json={
-        "data": positions, "passcode": "995560"}, timeout=5)
+        info(json.dumps(positions, indent=None))
+        body = {"data": positions, "passcode": "995560"}
+    response = requests.post(
+        "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
     if response.status_code != 200:
         error("上传持仓失败，状态码:", response.status_code)
         return
     else:
         response.encoding = 'utf-8'
-        info("上传持仓到test1成功:", response.status_code, response.text)
+        info("上传持仓到test1成功:",accountType)
 
 
 def debug(*args, **kwargs):
@@ -244,10 +252,12 @@ def order_callback(ContextInfo, data):
     orderId = js["m_strOrderSysID"]
     updateActionOrdered(scode, type, status, price, orderId)
 
+
 def orderError_callback(ContextInfo, orderArgs, errMsg):
     error('orderError_callback')
     error(errMsg)
     printObj(orderArgs)
+
 
 def updateDeal(deal):
     try:
