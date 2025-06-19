@@ -28,21 +28,11 @@ END
 
   url=http://test1.91taogu.com/stock/rule/action/ordered
   url=http://localhost:3001/stock/deal/update
+  url=http://test1.91taogu.com/stock/candidates
   data=$(
     cat <<END
 {
-  "tprice": 174.06,
-  "scode": "688012",
-  "sname": "\u4e2d\u5fae\u516c\u53f8",
-  "market": "\u4e0a\u8bc1\u6240",
-  "operationDirection": "\u9650\u4ef7\u5356\u51fa",
-  "operationName": "\u56fd\u4fe1",
-  "tday": "20250617",
-  "ttime": "101514",
-  "tid": "891704867",
-  "tcash": 21061.26,
-  "tamount": -79,
-  "tpair": ""
+  "data": ["688012.SZ","呵呵股票"]
 }
 END
   ) 

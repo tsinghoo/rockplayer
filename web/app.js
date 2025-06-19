@@ -1294,10 +1294,14 @@ app.post('/stock/candidates', async (req, res) => {
     for (let i = 0; i < stocks.length; i++) {
         let stock = stocks[i];
         let now = Date.now();
-        stock.id = `${stock.scode}`;
-        stock.priority = 0;
-        stock.updateTime = now;
-        await insertOrReplace("tCandidate", stock);
+        let row = {
+            id: `${stock[0]}`,
+            scode: stock[0],
+            sname: stock[1],
+            priority: 0,
+            updateTime: now
+        }
+        await insertOrReplace("tCandidate", row);
     }
 
     let resp = JSON.stringify({});
