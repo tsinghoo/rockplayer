@@ -1878,7 +1878,7 @@ app.post('/stock/data/upload', async (req, res) => {
     let data = req.body.data;
     let scode = req.body.scode.split(".")[0];
     let period = req.body.period;
-    info(`scode:${scode},period:${period}`);
+    info(`scode:${scode},period:${period},len:${data.length}`);
     for (var i = 0; i < data.length; ++i) {
         if (period == "tick") {
             let dateStr = data[i][0];//"20250603091500";
