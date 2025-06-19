@@ -498,11 +498,13 @@ window.feed_list = window.feed_list || (function () {
                         row[key] = "";
                     }
 
+                    let code = self.getMarket(lastCode);
+
                     if (key == "代码") {
                         tr.addClass(`code${row[key]}`);
                         if (firstRow) {
                             self.data[row[key]] = [row];
-                            td.html(row[key] + `<span class="kLine">K</span>`);
+                            td.html(row[key] + `<span class="kLine">${code}</span>`);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
                             td.addClass("code");
@@ -587,7 +589,6 @@ window.feed_list = window.feed_list || (function () {
                             td.addClass("curPrice");
                         } else if (key == "市场") {
                             if (firstRow) {
-                                let code = self.getMarket(lastCode);
                                 td.text(code);
                             }
                         }
