@@ -11,6 +11,7 @@ import inspect
 import requests
 import sys
 import traceback
+import math
 
 
 class G():
@@ -30,10 +31,10 @@ g.log = {
 g.log["level"] = g.log["debug"]
 
 
-account = "620000558442"  # 国信
-broker = "国信"
 account = "8883949249"  # 国金
 broker = "国金"
+account = "620000558442"  # 国信
+broker = "国信"
 
 runGetActionTask = 1
 
@@ -129,17 +130,21 @@ def getActions(ContextInfo):
 
 def after_init(ContextInfo):
     info('after_init')
+    syncPosition("clean")
     syncPosition("stock")
     syncPosition("HUGANGTONG")
     syncPosition("SHENGANGTONG")
 
 # 行情处理函数 - 每次行情更新时调用
-
+def getFloat(a):
+    return None if isinstance(a, float) and math.isnan(a) else a
 
 def syncPosition(accountType):
+    info("syncPosition", accountType)
     body = {
         "broker": broker,
-        "clean": 1
+        "clean": 1,
+        "passcode": "995560"
     }
 
     if (accountType != "clean"):
@@ -155,7 +160,7 @@ def syncPosition(accountType):
                 "frozen_volume": dt.m_nFrozenVolume,
                 "market_value": dt.m_dMarketValue,
                 "on_road_volume": dt.m_nOnRoadVolume,
-                "floatProfit": dt.m_dFloatProfit,
+                "floatProfit": getFloat(dt.m_dFloatProfit),
                 "open_price": dt.m_dOpenPrice,
                 "stock_code": dt.m_strInstrumentID,
                 "volume": dt.m_nVolume
@@ -163,8 +168,8 @@ def syncPosition(accountType):
 
             positions.append(position)
 
-        info(json.dumps(positions, indent=None))
         body = {"data": positions, "passcode": "995560"}
+    info("body:",json.dumps(body, indent=None))
     response = requests.post(
         "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
     if response.status_code != 200:

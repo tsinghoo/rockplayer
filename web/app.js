@@ -1049,6 +1049,10 @@ async function upgradeDb(succ, fail) {
         "update config set value='33' where key='dbVersion';",
         `alter table tstockbasic add column priority int default 0;`,
         "update config set value='35' where key='dbVersion';",
+        `create table tallstock(id text primary key, scode text, sname text, sector text, priority int default 0, updateTime integer);`,
+        "update config set value='37' where key='dbVersion';",
+        `create table tcandidate(id text primary key, scode text, sname text, priority int default 0, updateTime integer);`,
+        "update config set value='39' where key='dbVersion';",
 
     ];
 
@@ -1268,6 +1272,38 @@ app.post('/stock/prices', async (req, res) => {
     res.send(resp);
 });
 
+app.post('/stock/basic/update', async (req, res) => {
+    info("post /stock/basic/update");
+    let sector = req.sector;
+    let stocks = req.data;
+    for (let i = 0; i < stocks.length; i++) {
+        let stock = stocks[i];
+        let now = Date.now();
+        stock.id = `${stock.scode}`;
+        stock.updateTime = now;
+        await insertOrReplace("tAllStock", stock);
+    }
+
+    let resp = JSON.stringify({ action: [] });
+    res.send(resp);
+});
+
+app.post('/stock/candidates', async (req, res) => {
+    info("post /stock/candidates");
+    let stocks = req.data;
+    for (let i = 0; i < stocks.length; i++) {
+        let stock = stocks[i];
+        let now = Date.now();
+        stock.id = `${stock.scode}`;
+        stock.priority = 0;
+        stock.updateTime = now;
+        await insertOrReplace("tCandidate", stock);
+    }
+
+    let resp = JSON.stringify({});
+    res.send(resp);
+});
+
 app.post('/stock/positions', async (req, res) => {
     info("post /stock/positions");
 
@@ -1283,7 +1319,7 @@ app.post('/stock/positions', async (req, res) => {
     if (broker && clean) {
         await dbCall([`delete from tPositions where id like '${broker}%'`]);
     }
-    
+
 
     let positions = req.body.data;
     if (positions == null) {
@@ -1292,7 +1328,7 @@ app.post('/stock/positions', async (req, res) => {
     for (let i = 0; i < positions.length; i++) {
         let pos = positions[i];
         let now = Date.now();
-        
+
         pos.stock_code = pos.stock_code.split(".")[0]
         pos.id = `${pos.broker}_${pos.account_id}_${pos.stock_code}`;
         pos.updateTime = now;

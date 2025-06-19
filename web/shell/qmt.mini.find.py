@@ -765,6 +765,38 @@ def printTask():
         time.sleep(0.1)
 
 
+def listStock(sector):
+    stocks = xtdata.get_stock_list_in_sector(sector)
+    sname = getStockName(stocks[0])
+    info("stock: ", stocks[0], sname)
+    return stocks
+    # 将datas的数据分批上传，每批100条
+    bsize = 200
+    for i in range(0, len(stocks), bsize):
+        batch = stocks.iloc[i:i+bsize]
+        info("uploading stocks in", sector,
+             "[", i, ",", i+bsize, "]", len(batch))
+        info(obj2JsonString(batch[0], indent=None))
+
+        break
+
+        body = {"sector": sector, "data": batch}
+        try:
+            response = requests.post(
+                baseUrl+"/stock/basic/update", json=body, timeout=20)
+            if response.status_code != 200:
+                error("上传失败，状态码:", response.status_code,
+                      "响应内容:", response.text)
+        except Exception as e:
+            error("上传失败:", str(e))
+
+
+def getStockName(scode):
+    si = xtdata.get_instrument_detail(scode)
+    sname = si["InstrumentName"]
+    return sname
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
@@ -832,7 +864,8 @@ def findStock(sector):
                 if day0 > day1 > day2:
                     # 满足条件，加入候选列表
                     info(Back.GREEN, "OK", Style.RESET_ALL)
-                    candidate.append([scode, current_price, hist_percentile])
+                    sname = getStockName(scode)
+                    candidate.append([scode, sname])
 
         except Exception as e:
             error_msg = traceback.format_exc()
@@ -840,6 +873,24 @@ def findStock(sector):
             continue
 
     return candidate
+
+
+def uploadCandidates(stocks):
+    bsize = 200
+    for i in range(0, len(stocks), bsize):
+        batch = stocks.iloc[i:i+bsize]
+        info("uploading candidates",
+             "[", i, ",", i+bsize, "]", len(batch))
+
+        body = {"data": batch}
+        try:
+            response = requests.post(
+                baseUrl+"/stock/candidates", json=body, timeout=20)
+            if response.status_code != 200:
+                error("上传失败，状态码:", response.status_code,
+                      "响应内容:", response.text)
+        except Exception as e:
+            error("上传失败:", str(e))
 
 
 if __name__ == '__main__':
@@ -882,10 +933,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     init()
-    info("下载sector_data")
-    xtdata.download_sector_data()
-    sector_list = xtdata.get_sector_list()
-    info("sector_list:", sector_list)
 
     sector_list = ['上期所', '上证A股', '上证B股', '上证期权', '上证转债', '中金所', '创业板', '大商所', '沪市ETF', '沪市债券', '沪市基金', '沪市指数', '沪深A股', '沪深B股', '沪深ETF', '沪深债券', '沪深基金',
                    '沪深指数', '沪深转债', '深市ETF', '深市债券', '深市基金', '深市指数', '深证A股', '深证B股', '深证期权', '深证转债', '科创板', '科创板CDR', '能源中心', '连续合约', '郑商所', '香港联交所指数', '香港联交所股票']
@@ -893,12 +940,36 @@ if __name__ == '__main__':
                    '沪深ETF', '深市ETF', '深证A股', '深证B股', '科创板', '香港联交所股票']
     sector_list = ['创业板', '沪深A股', '沪深B股', '沪深ETF', '深市ETF', '科创板', '香港联交所股票']
 
-    # 对于每个sector,调用findStock
-    for sector in sector_list:
-        candidates = findStock(sector)
-        info("candidates:", candidates, "in", sector)
-        g.candidates.append(candidates)
+    # 等待用户输入，如果用户输入q，则退出,否则继续
+    while True:
+        print("1.搜索股票")
+        print("2.更新所有股票代码")
+        print("3.获取所有板块信息")
+        print("q.退出")
+        ui = input("请选择:")
+        if ui == "2":
+            # 对于每个sector,查询成分股
+            g.stocks = []
+            for sector in sector_list:
+                stocks = listStock(sector)
+                # info("stocks in:", sector, ":\n", stocks)
+                # 将stocks加入全局变量g.stocks
+                g.stocks = g.stocks + stocks
+        if ui == "1":
+            # 对于每个sector,调用findStock
+            for sector in sector_list:
+                candidates = findStock(sector)
+                # 将candidates分批上传到test1
+                uploadCandidates(candidates)
 
-    info("all candidates:", g.candidates)
+            info("all candidates\n", g.candidates)
+        if ui == "3":
+            info("下载sector_data")
+            xtdata.download_sector_data()
+            sector_list = xtdata.get_sector_list()
+            info("sector_list:", sector_list)
+        if ui == "q":
+            break
+
     # 阻塞主线程退出
     # xt_trader.run_forever()

@@ -118,7 +118,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
                 "scode": js["m_strStockCode"],
                 "sname": "",
                 "market": "",
-                "operationDirection": "买入" if js["direction"] == 48 else "卖出",
+                "operationDirection": "卖出" if js["direction"] == 48 else "买入",
                 "operationName": g.broker,
                 "tday": tradeTime.strftime("%Y-%m-%d"),
                 "ttime": tradeTime.strftime("%H:%M:%S"),
@@ -270,7 +270,7 @@ def uploadStockPrice():
         error("请求失败:", str(e))
 
 
-def uploadPosition(positions):
+def uploadPosition(positions=None):
     # 组装成json对象post到test1.91taogu.com
     body = {"broker": g.broker, "clean": 1, "passcode": "995560"}
     if (positions is None):
@@ -834,7 +834,7 @@ def printTask():
 
 def updatePositions():
     uploadPosition()
-    
+
     positions = getPositions()
 
     print("positions:", len(positions))
