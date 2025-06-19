@@ -28,11 +28,11 @@ END
 
   url=http://test1.91taogu.com/stock/rule/action/ordered
   url=http://localhost:3001/stock/deal/update
-  url=http://test1.91taogu.com/stock/candidates
+  url=http://localhost:3001/stock/candidates
   data=$(
     cat <<END
 {
-  "data": ["688012.SZ","呵呵股票"]
+  "data": [["688012.SZ","呵呵股票"]]
 }
 END
   ) 

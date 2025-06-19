@@ -982,16 +982,15 @@ app.post('/stock/account', async (req, res) => {
 async function dbCall(options) {
     for (let i = 0; i < options.length; ++i) {
         let stat = options[i];
-
         if (isArray(stat)) {
             let sql = stat[0];
             let params = stat[1];
             debug("dbCall sql:" + sql);
             debug("params:" + JSON.stringify(params));
-            return await db.runSync(sql, params);
+            await db.runSync(sql, params);
         } else {
             debug("sql:" + stat);
-            return await db.runSync(stat);
+            await db.runSync(stat);
         }
     }
 }
@@ -1290,18 +1289,19 @@ app.post('/stock/basic/update', async (req, res) => {
 
 app.post('/stock/candidates', async (req, res) => {
     info("post /stock/candidates");
-    let stocks = req.data;
+    let stocks = req.body.data;
     for (let i = 0; i < stocks.length; i++) {
         let stock = stocks[i];
         let now = Date.now();
+        let scode = stock[0].split(".")[0];
         let row = {
-            id: `${stock[0]}`,
-            scode: stock[0],
+            id: scode,
+            scode: scode,
             sname: stock[1],
             priority: 0,
             updateTime: now
         }
-        await insertOrReplace("tCandidate", row);
+        await insertOrReplace("tcandidate", row);
     }
 
     let resp = JSON.stringify({});
