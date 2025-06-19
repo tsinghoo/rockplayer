@@ -800,11 +800,9 @@ def getStockName(scode):
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
-    all_stocks = xtdata.get_stock_list_in_sector(sector)
+    g.stocklist = xtdata.get_stock_list_in_sector(sector)
 
-    # 过滤ST/*ST/退市股票等
-    g.stocklist = [
-        stock for stock in all_stocks if not stock.startswith(('ST', '*ST', '退'))]
+
     info("stocklist:", g.stocklist)
     period = '1d'
     # 订阅行情数据
@@ -822,6 +820,11 @@ def findStock(sector):
     params = ['open', 'close', 'high', 'low', 'volume', 'amount']
     for index, scode in enumerate(g.stocklist):
         try:
+
+            sname = getStockName(scode)
+            if sname.startswith(('ST', '*ST', '退')):
+                continue
+            
             info('downloading', period, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
@@ -864,7 +867,6 @@ def findStock(sector):
                 if day0 > day1 > day2:
                     # 满足条件，加入候选列表
                     info(Back.GREEN, "OK", Style.RESET_ALL)
-                    sname = getStockName(scode)
                     candidate.append([scode, sname])
 
         except Exception as e:
@@ -882,15 +884,18 @@ def uploadCandidates(stocks):
         info("uploading candidates",
              "[", i, ",", i+bsize, "]", len(batch))
 
-        body = {"data": batch}
-        try:
-            response = requests.post(
+        doUploadCandidates(batch)
+
+def doUploadCandidates(batch):
+    body = {"data": batch}
+    try:
+        response = requests.post(
                 baseUrl+"/stock/candidates", json=body, timeout=20)
-            if response.status_code != 200:
-                error("上传失败，状态码:", response.status_code,
+        if response.status_code != 200:
+            error("上传失败，状态码:", response.status_code,
                       "响应内容:", response.text)
-        except Exception as e:
-            error("上传失败:", str(e))
+    except Exception as e:
+        error("上传失败:", str(e))
 
 
 if __name__ == '__main__':
@@ -956,11 +961,14 @@ if __name__ == '__main__':
                 # 将stocks加入全局变量g.stocks
                 g.stocks = g.stocks + stocks
         if ui == "1":
+            # 先清空所有候选
+            doUploadCandidates([])
             # 对于每个sector,调用findStock
             for sector in sector_list:
                 candidates = findStock(sector)
                 # 将candidates分批上传到test1
                 uploadCandidates(candidates)
+                update1d([c[0] for c in candidates], "20210101")
 
             info("all candidates\n", g.candidates)
         if ui == "3":
