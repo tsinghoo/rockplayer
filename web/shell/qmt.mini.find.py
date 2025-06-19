@@ -878,7 +878,7 @@ def findStock(sector):
 def uploadCandidates(stocks):
     bsize = 200
     for i in range(0, len(stocks), bsize):
-        batch = stocks.iloc[i:i+bsize]
+        batch = stocks[i:i + bsize]
         info("uploading candidates",
              "[", i, ",", i+bsize, "]", len(batch))
 
