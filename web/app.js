@@ -1017,6 +1017,8 @@ async function dbCall(options) {
             await db.runSync(stat);
         }
     }
+
+    return {};
 }
 
 function isArray(o) {
@@ -1596,7 +1598,7 @@ app.get('/stock/reload/k1d', async (req, res) => {
 
 
     var resp = JSON.stringify({});
-    if (result.error) {
+    if (result && result.error) {
         resp = JSON.stringify(result);
     }
 

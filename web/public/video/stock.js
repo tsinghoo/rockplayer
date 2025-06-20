@@ -538,6 +538,8 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "买卖") {
                         td.text(row[key]);
                         td.addClass("buySell");
+                    } else if (key == "总额") {
+                        td.text(share.toFixed(row[key]));
                     } else if (key == "规则") {
                         td.addClass("tdRule");
                         let rc = null;
