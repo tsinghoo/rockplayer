@@ -126,11 +126,6 @@ def getActions(ContextInfo):
                     g.actions[act["scode"]] = act
     except Exception as e:
         error("getActions出错:", traceback.format_exc())
-    
-    syncPosition("clean")
-    syncPosition("stock")
-    syncPosition("HUGANGTONG")
-    syncPosition("SHENGANGTONG")
 
 
 def after_init(ContextInfo):
@@ -320,7 +315,11 @@ def deal_callback(ContextInfo, data):
     info(json.dumps(deal, indent=2))
 
     updateDeal(deal)
-
+    
+    syncPosition("clean")
+    syncPosition("stock")
+    syncPosition("HUGANGTONG")
+    syncPosition("SHENGANGTONG")
 
 def position_callback(ContextInfo, data):
     info('position_callback')

@@ -278,7 +278,7 @@ def uploadPosition(positions=None):
     else:
         info("上传", len(positions), "个股票持仓")
 
-            # positions 里的没个元素只保留 broker 属性
+        # positions 里的没个元素只保留 broker 属性
         data = []
         for position in positions:
             data.append({
@@ -294,9 +294,10 @@ def uploadPosition(positions=None):
                 "volume": position["volume"]
             })
         body = {"data": data, "passcode": "995560"}
+        url = "http://test1.91taogu.com/stock/positions"
+        info(url, "\n", body)
     try:
-        response = requests.post(
-            "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
+        response = requests.post(url, json=body, timeout=5)
         if response.status_code != 200:
             error("上传持仓失败，状态码:", response.status_code)
             return
@@ -338,7 +339,6 @@ def getActionsTask():
         time.sleep(1)
         resetThreadId("act")
         getActions()
-        updatePositions()
 
 
 def getActions():
@@ -660,9 +660,17 @@ def getOrders(cancelable_only):
 
 
 def getPositions():
-    stockAccount = StockAccount(g.account)
-    positions = xt_trader.query_stock_positions(stockAccount)
-    return positions
+    all = xt_trader.query_stock_positions(StockAccount(g.account))
+
+    positions = xt_trader.query_stock_positions(
+        StockAccount(g.account, "HUGANGTONG"))
+    all = all + positions
+    
+    positions = xt_trader.query_stock_positions(
+        StockAccount(g.account, "SHENGANGTONG"))
+    all = all + positions
+
+    return all
 
 
 def getDeals():
@@ -834,11 +842,12 @@ def printTask():
 
 
 def updatePositions():
+    info("updatePositions")
     uploadPosition()
 
     positions = getPositions()
 
-    print("positions:", len(positions))
+    info("positions:", len(positions))
     js = object_to_json(positions)
 
     uploadPosition(js)
