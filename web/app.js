@@ -849,6 +849,30 @@ app.post('/stock/update', async (req, res) => {
                 buy: fields[6],
                 updateTime: now
             });
+        } else if (broker == "国金当日") {
+            //tdx 国金证券
+            fields = fields.concat([""]);
+            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            let tday = timeFormat(new Date(), "yyyyMMdd");
+            let ttime = fields[0];
+            let res = await db.runSync(sql, [tday, ttime, fields[2], fields[1], fields[4], "国金", getMarket(fields[1]), fields[6], fields[5],
+                fields[7], fields[8], fields[10], '', tday + " " + ttime]);
+            if (res.error) {
+                info(res.error);
+                res.send(res);
+                return;
+            } else {
+            }
+
+            await insertOrIgnore("tStockBasic", {
+                id: fields[1],
+                scode: fields[1],
+                sname: fields[2],
+                buy: fields[5],
+                updateTime: now
+            });
         } else if (broker == "国金港股通当日") {
             //tdx 国金证券
             fields = fields.concat([""]);
@@ -1290,7 +1314,7 @@ app.post('/stock/basic/update', async (req, res) => {
 app.post('/stock/candidates', async (req, res) => {
     info("post /stock/candidates");
     let stocks = req.body.data;
-    if (stocks.length==0){
+    if (stocks.length == 0) {
         await dbCall([`delete from tcandidate`]);
     }
     for (let i = 0; i < stocks.length; i++) {
@@ -1747,6 +1771,33 @@ function updatePriceToRule(scode, price) {
         }
     }
 }
+function getMarket(stockCode) {
+    // 转换为字符串并去除空格
+    const code = String(stockCode).trim();
+
+    // 检查代码是否有效
+    if (!code) {
+        return "";
+    }
+
+    let suffix = "未知";
+    if (code.length == 6) {
+        if (/^(600|601|603|605|688|900|51|58|56)\d+$/.test(code)) {
+            suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
+        } else if (/^(000|001|002|003|30|15)\d+$/.test(code)) {
+            suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
+        } else if (/^(8|43|83|87|88|92)\d+$/.test(code)) {
+            suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
+        }
+    } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
+        suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
+    } else {
+        share.debug__(`未知：${code}`);
+    }
+
+    // 返回格式化结果（如 600023.SH）
+    return `${suffix}`;
+}
 
 function formatScode(stockCode) {
     // 转换为字符串并去除空格
@@ -1966,7 +2017,7 @@ app.post('/stock/deal/update', async (req, res) => {
         r = await insertOrReplace("tStock", old);
     }
 
-    if (r==null || r.error == null) {
+    if (r == null || r.error == null) {
         r = db.runSync(`update tStock set lastOperationTime=? where scode=?`, [deal.lastOperationTime, deal.scode]);
     }
 
