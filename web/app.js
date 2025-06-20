@@ -873,6 +873,54 @@ app.post('/stock/update', async (req, res) => {
                 buy: fields[5],
                 updateTime: now
             });
+        } else if (broker == "广发当日") {
+            //tdx 国金证券
+            fields = fields.concat([""]);
+            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            let tday = timeFormat(new Date(), "yyyyMMdd");
+            let ttime = fields[0];
+
+            // let res = await db.runSync(sql, [tday, ttime, fields[1], fields[2], fields[3], "广发", getMarket(fields[2]), fields[4], fields[5],
+            // fields[6], tday + " " + ttime, fields[7], '', tday + " " + ttime]);
+
+            //将上面代码改成先组装对象再调用insertOrReplace的模式
+            let obj = {
+                tday: tday,
+                ttime: ttime,
+                sname: fields[1],
+                scode: fields[2],
+                operationDirection: fields[3],
+                operationName: "广发",
+                market: getMarket(fields[2]),
+                tamount: fields[4],
+                tprice: fields[5],
+                tcash: fields[6],
+                tid: tday + " " + ttime,
+                taccount: fields[7],
+                tpair: "",
+                lastOperationTime: tday + " " + ttime
+            }
+
+            let res = await insertOrReplace("tstock", obj);
+
+
+
+            if (res.error) {
+                info(res.error);
+                res.send(res);
+                return;
+            } else {
+            }
+
+            await insertOrIgnore("tStockBasic", {
+                id: fields[2],
+                scode: fields[2],
+                sname: fields[1],
+                buy: fields[5],
+                updateTime: now
+            });
         } else if (broker == "国金港股通当日") {
             //tdx 国金证券
             fields = fields.concat([""]);
@@ -890,9 +938,9 @@ app.post('/stock/update', async (req, res) => {
             }
 
             await insertOrIgnore("tStockBasic", {
-                id: fields[2],
-                scode: fields[2],
-                sname: fields[3],
+                id: fields[5],
+                scode: fields[5],
+                sname: fields[6],
                 buy: fields[6],
                 updateTime: now
             });

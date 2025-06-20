@@ -338,6 +338,7 @@ def getActionsTask():
         time.sleep(1)
         resetThreadId("act")
         getActions()
+        updatePositions()
 
 
 def getActions():
