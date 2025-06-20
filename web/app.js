@@ -1966,7 +1966,7 @@ app.post('/stock/deal/update', async (req, res) => {
         r = await insertOrReplace("tStock", old);
     }
 
-    if (r.error == null) {
+    if (r==null || r.error == null) {
         r = db.runSync(`update tStock set lastOperationTime=? where scode=?`, [deal.lastOperationTime, deal.scode]);
     }
 
