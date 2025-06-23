@@ -272,6 +272,7 @@ def uploadStockPrice():
 
 def uploadPosition(positions=None):
     # 组装成json对象post到test1.91taogu.com
+    url = "http://test1.91taogu.com/stock/positions"
     body = {"broker": g.broker, "clean": 1, "passcode": "995560"}
     if (positions is None):
         info("clean股票持仓")
@@ -294,7 +295,6 @@ def uploadPosition(positions=None):
                 "volume": position["volume"]
             })
         body = {"data": data, "passcode": "995560"}
-        url = "http://test1.91taogu.com/stock/positions"
         info(url, "\n", body)
     try:
         response = requests.post(url, json=body, timeout=5)

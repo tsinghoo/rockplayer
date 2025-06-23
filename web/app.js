@@ -100,28 +100,28 @@ function isVideo(file) {
     return false;
 }
 
-function info(msg) {
+function info(msg, req) {
     if (logLevel > INFO) {
         return;
     }
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    console.log(time + ":" + msg);
+    console.log(`${time}[${req ? req.threadId : ""}]:${msg}`);
 }
-function debug(msg) {
+function debug(msg, req) {
     if (logLevel > DEBUG) {
         return;
     }
 
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    console.log(time + ":" + msg);
+    console.log(`${time}[${req ? req.threadId : ""}]:${msg}`);
 }
-function error(msg) {
+function error(msg, req) {
     if (logLevel > ERROR) {
         return;
     }
 
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    console.log(time + ":" + msg);
+    console.log(`${time}[${req ? req.threadId : ""}]:${msg}`);
 }
 
 // 列出目录下的所有文件
@@ -672,6 +672,12 @@ async function doSplit() {
     splitting = 0;
 }
 
+// 对所有请求进行预处理
+app.use((req, res, next) => {
+    req.threadId = Date.now() + "" + Math.floor(Math.random() * 10000);
+    next();
+});
+
 // 设置模板引擎
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -695,9 +701,9 @@ app.get('/video/i', (req, res) => {
     res.render('fileList', { files: files, tags: tags, remove: remove });
 });
 app.post('/video/tag', (req, res) => {
-    info("video/tag");
-    info("files=" + req.body.files);
-    info("tags=" + req.body.tags);
+    info("video/tag", req)
+    info("files=" + req.body.files, req)
+    info("tags=" + req.body.tags, req)
     const files = JSON.parse(req.body.files);
     const tags = JSON.parse(req.body.tags);
 
@@ -705,7 +711,7 @@ app.post('/video/tag', (req, res) => {
 
     if (files.length == 1) {
         for (var j = 0; j < files.length; ++j) {
-            info("file:" + files[j]);
+            info("file:" + files[j], req)
             Object.keys(otags).map(
                 (tag) => {
                     var f = otags[tag];
@@ -714,7 +720,7 @@ app.post('/video/tag', (req, res) => {
             );
         }
 
-        info("otags=" + JSON.stringify(otags));
+        info("otags=" + JSON.stringify(otags), req)
 
         for (var i = 0; i < tags.length; ++i) {
             var f = otags[tags[i]];
@@ -747,9 +753,9 @@ app.post('/video/tag', (req, res) => {
     res.send(resp);
 });
 app.post('/video/cookies', (req, res) => {
-    info("video/cookies");
+    info("video/cookies", req)
     let cookies = req.body.cookies;
-    info(req.body.cookies);
+    info(req.body.cookies, req)
 
     fs.writeFileSync(path.join(directoryPath, "cookies.txt"), cookies);
     var resp = JSON.stringify({ data: "success" });
@@ -757,7 +763,7 @@ app.post('/video/cookies', (req, res) => {
 });
 
 app.post('/stock/update', async (req, res) => {
-    info("/stock/update");
+    info("/stock/update", req)
     let broker = req.body.broker;
     if (broker == null) {
         if (fields.length == 12) {
@@ -772,7 +778,7 @@ app.post('/stock/update', async (req, res) => {
     }
     info(broker)
     let data = req.body.rows.split("\n");
-    info(data.join("\n"));
+    info(data.join("\n"), req)
     let now = new Date().getTime();
     for (var i = 0; i < data.length; ++i) {
         if (data[i].trim() == "") {
@@ -790,7 +796,7 @@ app.post('/stock/update', async (req, res) => {
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
             let res = await db.runSync(sql, fields.concat([tday + " " + ttime]));
             if (res.error) {
-                info(res.error);
+                info(res.error, req)
                 res.send(res);
                 return;
             } else {
@@ -813,7 +819,7 @@ app.post('/stock/update', async (req, res) => {
             let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], "国信", fields[21], fields[5], fields[6],
                 fields[7], fields[19], fields[20], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error);
+                info(res.error, req)
                 res.send(res);
                 return;
             } else {
@@ -836,7 +842,7 @@ app.post('/stock/update', async (req, res) => {
             let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[5], "国金", fields[11], fields[7], fields[6],
                 fields[8], fields[9], fields[11], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error);
+                info(res.error, req)
                 res.send(res);
                 return;
             } else {
@@ -860,7 +866,7 @@ app.post('/stock/update', async (req, res) => {
             let res = await db.runSync(sql, [tday, ttime, fields[2], fields[1], fields[4], "国金", getMarket(fields[1]), fields[6], fields[5],
                 fields[7], fields[8], fields[10], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error);
+                info(res.error, req)
                 res.send(res);
                 return;
             } else {
@@ -908,7 +914,7 @@ app.post('/stock/update', async (req, res) => {
 
 
             if (res.error) {
-                info(res.error);
+                info(res.error, req)
                 res.send(res);
                 return;
             } else {
@@ -931,7 +937,7 @@ app.post('/stock/update', async (req, res) => {
             let res = await db.runSync(sql, [tday, ttime, fields[6], fields[5], fields[8], "国金", "HGT", fields[10], fields[9],
                 fields[11], fields[12], fields[3], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error);
+                info(res.error, req)
                 res.send(res);
                 return;
             } else {
@@ -954,7 +960,7 @@ app.post('/stock/update', async (req, res) => {
             let res = await db.runSync(sql, [fields[1], fields[2], fields[5], fields[4], fields[6], "国信", fields[0], fields[10], fields[9],
             fields[11], fields[13], fields[14], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error);
+                info(res.error, req)
                 res.send(res);
                 return;
             } else {
@@ -971,12 +977,12 @@ app.post('/stock/update', async (req, res) => {
     };
 
     let r = await db.allSync("select max(lastOperationTime) as maxOperationTime, scode from tstock group by scode");
-    info(`${r.rows.length} stocks`);
+    info(`${r.rows.length} stocks`, req)
     for (var i = 0; i < r.rows.length; ++i) {
         let row = r.rows[i];
         let scode = row.scode;
         let maxOperationTime = row.maxOperationTime;
-        info(`updating ${scode} to ${maxOperationTime}`);
+        info(`updating ${scode} to ${maxOperationTime}`, req)
         let sql = `update tstock set lastOperationTime=? where scode=?`;
         await db.runSync(sql, [maxOperationTime, scode]);
     }
@@ -986,7 +992,7 @@ app.post('/stock/update', async (req, res) => {
 });
 
 app.get('/stock/account', async (req, res) => {
-    info("/stock/account");
+    info("/stock/account", req)
     let js = req.query.js;
 
     let sql = `select * from config where key='stockAccount' `;
@@ -997,7 +1003,7 @@ app.get('/stock/account', async (req, res) => {
 });
 
 app.get('/stock/vote', async (req, res) => {
-    info("/stock/vote");
+    info("/stock/vote", req)
     let js = req.query.js;
     let code = req.query.code;
     let sql = `update tstock set lastOperationTime=? where scode=? `;
@@ -1009,7 +1015,7 @@ app.get('/stock/vote', async (req, res) => {
 });
 
 app.get('/stock/updatePrice', async (req, res) => {
-    info("/stock/updatePrice");
+    info("/stock/updatePrice", req)
     let js = req.query.js;
     let scode = req.query.scode;
     let price = req.query.price;
@@ -1023,7 +1029,7 @@ app.get('/stock/updatePrice', async (req, res) => {
 });
 
 app.get('/stock/deleteRow', async (req, res) => {
-    info("/stock/deleteRow");
+    info("/stock/deleteRow", req)
     let js = req.query.js;
     let tid = req.query.tid;
     let sql = `delete from tstock where tid=? `;
@@ -1034,16 +1040,16 @@ app.get('/stock/deleteRow', async (req, res) => {
 });
 
 app.post('/stock/account', async (req, res) => {
-    info("/stock/account");
-    info(JSON.stringify(req.body));
+    info("/stock/account", req)
+    info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request");
+        info("bad request", req)
         res.send("bad request");
         return;
     }
     let data = req.body.data;
-    info(data);
+    info(data, req)
     let sql = `insert or replace into config (key, value) values (?,?)`;
     let result = await db.runSync(sql, ["stockAccount", JSON.stringify(data)]);
     var resp = JSON.stringify({ data: "success" });
@@ -1221,12 +1227,12 @@ async function insertOrIgnore(table, row) {
 }
 
 app.post('/stock/screen/nodes', async (req, res) => {
-    info("post /stock/screen/nodes");
+    info("post /stock/screen/nodes", req)
 
     let root = req.body;
     let children = root.children;
     delete root["children"];
-    info(JSON.stringify(root));
+    info(JSON.stringify(root), req)
     root.children = children;
 
     //将nodes写入文件
@@ -1267,7 +1273,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
     }
 
     function getChildProperty(root, path, key) {
-        debug(`getChildProperty:${path}.${key}`);
+        debug(`getChildProperty:${path}.${key}`, req);
         let node = findChild(root, path.split("."));
         if (node) {
             return node[key];
@@ -1285,10 +1291,10 @@ app.post('/stock/screen/nodes', async (req, res) => {
     //0.0.0.0.0.0.0.1.0.1.3.0.1.1.0.0.0.0
     //0.0.0.0.0.0.0.1.0.1.3.0.1.2.1.2.0.0
     if (root.isGfStatus == 1) {
-        debug("isGfStatus");
+        debug("isGfStatus", req);
         var node = findNodeById(root, "com.gf.client:id/refresh_child");
         if (node) {
-            debug("refresh_child found");
+            debug("refresh_child found", req);
             for (let i = 0; ; i++) {
                 let sname = getChildProperty(node, `1.${i}.0.0.0`, "text");
                 let scode = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
@@ -1297,7 +1303,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
                 let ratio = getChildProperty(node, `2.1.2.${i * 4 + 2}.0.0`, "text");
                 let ratio1 = getChildProperty(node, `2.1.2.${i * 4 + 3}.0`, "text");
                 scodes.push(scode);
-                debug(`${i}:${sname}(${scode}),${price},${delta},${ratio},${ratio1}`);
+                debug(`${i}:${sname}(${scode}),${price},${delta},${ratio},${ratio1}`, req);
                 if (sname == null || scode == null || price == null || delta == null || ratio == null || ratio1 == null) {
                     break;
                 }
@@ -1322,7 +1328,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
 });
 
 app.post('/stock/prices', async (req, res) => {
-    info("post /stock/prices");
+    info("post /stock/prices", req)
 
     let prices = req.body;
     for (let i = 0; i < prices.length; i++) {
@@ -1346,7 +1352,7 @@ app.post('/stock/prices', async (req, res) => {
 });
 
 app.post('/stock/basic/update', async (req, res) => {
-    info("post /stock/basic/update");
+    info("post /stock/basic/update", req)
     let sector = req.sector;
     let stocks = req.data;
     for (let i = 0; i < stocks.length; i++) {
@@ -1362,7 +1368,7 @@ app.post('/stock/basic/update', async (req, res) => {
 });
 
 app.post('/stock/candidates', async (req, res) => {
-    info("post /stock/candidates");
+    info("post /stock/candidates", req)
     let stocks = req.body.data;
     if (stocks.length == 0) {
         await dbCall([`delete from tcandidate`]);
@@ -1386,12 +1392,12 @@ app.post('/stock/candidates', async (req, res) => {
 });
 
 app.post('/stock/positions', async (req, res) => {
-    info("post /stock/positions");
+    info("post /stock/positions", req)
 
-    info(JSON.stringify(req.body));
+    info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request");
+        info("bad request", req)
         res.send("bad request");
         return;
     }
@@ -1421,7 +1427,7 @@ app.post('/stock/positions', async (req, res) => {
 });
 
 app.get('/stock/positions', async (req, res) => {
-    info("get /stock/position");
+    info("get /stock/position", req)
 
     let js = req.query.js;
     let scode = req.query.scode;
@@ -1457,12 +1463,12 @@ function parseTime(str) {
 }
 
 app.post('/stock/quotes', async (req, res) => {
-    info("post /stock/quotes");
+    info("post /stock/quotes", req)
     //{"data":{"837092.BJ":{"20250523101631.000":{"amount":10865500,"askPrice":[42.86,42.87,42.88,42.9,42.92],"askVol":[59,4,20,1,30],"bidPrice":[42.66,42.65,42.64,42.63,42.62],"bidVol":[2,2,10,32,26],"high":43.24,"lastClose":42.76,"lastPrice":42.65,"lastSettlementPrice":0,"low":42.41,"open":42.41,"openInt":13,"pvolume":253700,"settlementPrice":0,"stime":"20250523101631.000","stockStatus":1,"time":1747966591000,"transactionNum":0,"volume":2537}}}}
-    info(JSON.stringify(req.body));
+    info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request");
+        info("bad request", req)
         res.send("bad request");
         return;
     }
@@ -1505,12 +1511,12 @@ app.post('/stock/quotes', async (req, res) => {
 });
 
 app.post('/stock/quotes.mini', async (req, res) => {
-    info("post /stock/quotes.mini");
+    info("post /stock/quotes.mini", req)
 
-    info(JSON.stringify(req.body));
+    info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request");
+        info("bad request", req)
         res.send("bad request");
         return;
     }
@@ -1539,11 +1545,11 @@ app.post('/stock/quotes.mini', async (req, res) => {
 });
 
 app.get('/stock/screen/nodes', async (req, res) => {
-    info("get /stock/screen/nodes");
+    info("get /stock/screen/nodes", req)
     let js = req.query.js;
     let log = req.query.log;
     if (log) {
-        info("logLevel to " + log);
+        info("logLevel to " + log, req)
         logLevel = log;
     }
 
@@ -1558,7 +1564,7 @@ app.get('/stock/screen/nodes', async (req, res) => {
 });
 
 app.get('/stock/rule/create', async (req, res) => {
-    info("get /stock/rule/create");
+    info("get /stock/rule/create", req)
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
     let now = Date.now();
@@ -1590,9 +1596,9 @@ app.get('/stock/rule/create', async (req, res) => {
 });
 
 app.get('/stock/tick', async (req, res) => {
-    info("get /stock/tick");
+    info("get /stock/tick", req)
     let js = req.query.js;
-    info(JSON.stringify(req.query));
+    info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
     let day = req.query.day;
     if (day == null) {
@@ -1622,9 +1628,9 @@ app.get('/stock/tick', async (req, res) => {
 });
 
 app.get('/stock/reload/k1d', async (req, res) => {
-    info("get /stock/reload/k1d");
+    info("get /stock/reload/k1d", req)
     let js = req.query.js;
-    info(JSON.stringify(req.query));
+    info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
     let broker = req.query.broker;
     let now = Date.now();
@@ -1658,9 +1664,9 @@ app.get('/stock/reload/k1d', async (req, res) => {
 });
 
 app.get('/stock/k1d', async (req, res) => {
-    info("get /stock/k1d");
+    info("get /stock/k1d", req)
     let js = req.query.js;
-    info(JSON.stringify(req.query));
+    info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
     let startDay = req.query.startDay;
     let endDay = req.query.endDay;
@@ -1698,7 +1704,7 @@ app.get('/stock/k1d', async (req, res) => {
 });
 
 app.get('/stock/rule/cancel', async (req, res) => {
-    info("get /stock/rule/cancel");
+    info("get /stock/rule/cancel", req)
     let js = req.query.js;
     let scode = req.query.scode;
     let now = Date.now();
@@ -1730,7 +1736,7 @@ app.get('/stock/rule/cancel', async (req, res) => {
 });
 
 app.get('/stock/rule/delete', async (req, res) => {
-    info("get /stock/rule/delete");
+    info("get /stock/rule/delete", req)
     let js = req.query.js;
     let scode = req.query.scode;
     let now = Date.now();
@@ -1758,7 +1764,7 @@ app.get('/stock/rule/delete', async (req, res) => {
 });
 
 app.get('/stock/rule/actions', async (req, res) => {
-    info("get /stock/rule/actions");
+    info("get /stock/rule/actions", req)
     let js = req.query.js;
     let broker = req.query.broker;
     let sql = `select * from tRuleAction where broker=? and orderNo='' and done=0`;
@@ -1780,7 +1786,7 @@ app.get('/stock/rule/actions', async (req, res) => {
 });
 
 app.get('/stock/rule/status', async (req, res) => {
-    info("get /stock/rule/status");
+    info("get /stock/rule/status", req)
     let js = req.query.js;
     let scode = req.query.scode;
     var resp = null;
@@ -1798,7 +1804,7 @@ app.get('/stock/rule/status', async (req, res) => {
 
 
 app.get('/stock/fe/user/login', async (req, res) => {
-    info("/stock/fe/user/login");
+    info("/stock/fe/user/login", req)
     let js = req.query.js;
     let login = req.query.login;
     let password = req.query.password;
@@ -1884,7 +1890,7 @@ function formatScode(stockCode) {
 
 
 app.get('/stock/codes', async (req, res) => {
-    info("/stock/codes");
+    info("/stock/codes", req)
     let js = req.query.js;
     let sql = `select scode from tstockbasic order by priority desc`;
     let r = await db.allSync(sql);
@@ -1907,7 +1913,7 @@ app.get('/stock/codes', async (req, res) => {
 });
 
 app.get('/stock/price/current', async (req, res) => {
-    info("/stock/trade/all");
+    info("/stock/trade/all", req)
     let js = req.query.js;
 
     let sql = `select * from tstockbasic `;
@@ -1922,28 +1928,28 @@ app.get('/stock/price/current', async (req, res) => {
 });
 
 app.get('/stock/pair', async (req, res) => {
-    info("/stock/pair");
+    info("/stock/pair", req)
     let js = req.query.js;
     let reset = req.query.reset;
 
     let sql = `select * from tstock where tamount<0 and tpair is null or tpair=''`;
     if (reset) {
-        info("reset before pair");
+        info("reset before pair", req)
         await db.runSync(`update tstock set tpair=''`);
         sql = "select * from tstock where tamount<0";
     }
     let r = await db.allSync(sql);
     let sells = r.rows;
-    info(`${sells.length} sells`);
+    info(`${sells.length} sells`, req)
     for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
-        info(`${sell.sname}(${sell.scode}):${sell.tid}`);
+        info(`${sell.sname}(${sell.scode}):${sell.tid}`, req)
         let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tprice desc",
             [sell.tamount * -1, sell.scode, sell.tprice]);
         let buys = r.rows;
         if (buys.length > 0) {
             let buy = buys[0];
-            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`);
+            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req)
             await db.runSync(`update tstock set tpair=? where tid=?`, [buy.tid, sell.tid]);
             await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
         }
@@ -1957,10 +1963,10 @@ app.post('/stock/query', async (req, res) => {
     let sql = req.body.sql;
     let name = req.body.name;
     let params = req.body.params;
-    info(`sql:${sql}`);
+    info(`sql:${sql}`, req)
     let r = await db.allSync(sql);
     if (r.error) {
-        info(r.error);
+        info(r.error, req)
         res.send(JSON.stringify({ error: r.error }));
         return;
     }
@@ -1975,11 +1981,11 @@ app.post('/stock/query', async (req, res) => {
 });
 
 app.post('/stock/data/upload', async (req, res) => {
-    info(`/stock/data/upload`);
+    info(`/stock/data/upload`, req)
     let data = req.body.data;
     let scode = req.body.scode.split(".")[0];
     let period = req.body.period;
-    info(`scode:${scode},period:${period},len:${data.length}`);
+    info(`scode:${scode},period:${period},len:${data.length}`, req)
     for (var i = 0; i < data.length; ++i) {
         if (period == "tick") {
             let dateStr = data[i][0];//"20250603091500";
@@ -2046,7 +2052,7 @@ async function getDealName(scode) {
 }
 
 app.post('/stock/deal/update', async (req, res) => {
-    info(`/stock/deal/update:${JSON.stringify(req.body)}`);
+    info(`/stock/deal/update:${JSON.stringify(req.body)}`, req)
     let deal = req.body;
     let ocode = deal.scode.split(".");
     deal.scode = ocode[0];
@@ -2073,7 +2079,7 @@ app.post('/stock/deal/update', async (req, res) => {
 
     let resp = {};
     if (r.error) {
-        info(r.error);
+        info(r.error, req)
         resp = { error: r.error };
     } else {
     }
@@ -2083,7 +2089,7 @@ app.post('/stock/deal/update', async (req, res) => {
 
 
 app.post('/stock/rule/action/ordered', async (req, res) => {
-    info(`rule/action/ordered:${JSON.stringify(req.body)}`);
+    info(`rule/action/ordered:${JSON.stringify(req.body)}`, req)
 
     let scode = req.body.scode;
     let broker = req.body.broker;
@@ -2097,7 +2103,7 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
     }
     let resp = {};
     if (r.error) {
-        info(r.error);
+        info(r.error, req)
         resp = { error: r.error };
     } else {
         reloadRule(rules[scode]);
@@ -2112,7 +2118,7 @@ app.get('/stock/sqls', async (req, res) => {
     let sql = "select * from tsql order by lastUseTime desc";
     let r = await db.allSync(sql);
     if (r.error) {
-        info(r.error);
+        info(r.error, req)
         res.send(r);
         return;
     }
@@ -2134,13 +2140,13 @@ app.post('/stock/sql/update', async (req, res) => {
 });
 
 app.get('/video/replacers', (req, res) => {
-    info("video/replacers");
+    info("video/replacers", req)
     var rPath = path.join(directoryPath, "replacers");
     var replacers = {};
     try {
         replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message, req)
     }
 
     var resp = req.query.js + "(" + JSON.stringify({ data: replacers }) + ");";
@@ -2148,14 +2154,14 @@ app.get('/video/replacers', (req, res) => {
 });
 
 app.get('/video/metadata', (req, res) => {
-    info("video/metadata");
+    info("video/metadata", req)
     var fileName = req.query.fileName;
     var rPath = path.join(directoryPath, "metadata");
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message, req)
     }
 
     var m = data[fileName];
@@ -2192,7 +2198,7 @@ const storage = multer.diskStorage({
 });
 // 定义上传文件的路由
 app.post('/video/upload', (req, res) => {
-    info("file uploading");
+    info("file uploading", req)
     if (!req.files || !req.files.file) {
         return res.status(400).send('No file uploaded.');
     }
@@ -2204,7 +2210,7 @@ app.post('/video/upload', (req, res) => {
     // 将文件保存到服务器上指定目录
     file.mv(filePath, err => {
         if (err) {
-            console.error(err);
+            error(err, req);
             return res.status(500).send(err);
         }
         toStt(fileName);
@@ -2212,7 +2218,7 @@ app.post('/video/upload', (req, res) => {
     });
 });
 app.get('/video/addSegment', (req, res) => {
-    info("video/addSegment");
+    info("video/addSegment", req)
     var fileName = req.query.fileName;
     var start = req.query.start;
     var end = req.query.end;
@@ -2222,7 +2228,7 @@ app.get('/video/addSegment', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing metadata:" + e.message);
+        info("error parsing metadata:" + e.message, req)
     }
 
     var m = data[fileName];
@@ -2243,11 +2249,11 @@ app.get('/video/addSegment', (req, res) => {
     res.send(resp);
 });
 app.post('/video/updateScript', (req, res) => {
-    info("video/updateScript");
-    info("params:" + JSON.stringify(req.body));
+    info("video/updateScript", req)
+    info("params:" + JSON.stringify(req.body), req)
     const params = JSON.parse(req.body.params);
     var filePath = path.join(directoryPath, params.file);
-    info("filePath:" + filePath);
+    info("filePath:" + filePath, req)
     var replaceAll = params.replaceAll;
     var rPath = path.join(directoryPath, "replacers");
     var scripts = fs.readFileSync(filePath, "utf-8");
@@ -2255,7 +2261,7 @@ app.post('/video/updateScript', (req, res) => {
     try {
         replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message, req)
     }
 
     if (params.oldWords != "") {
@@ -2282,7 +2288,7 @@ app.post('/video/updateScript', (req, res) => {
     res.send(resp);
 });
 app.get('/video/updatePosition', (req, res) => {
-    info("video/updatePosition");
+    info("video/updatePosition", req)
     var fileName = req.query.fileName;
     var position = req.query.position;
     var rPath = path.join(directoryPath, "metadata");
@@ -2290,7 +2296,7 @@ app.get('/video/updatePosition', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message, req)
     }
 
     m = data[fileName];
@@ -2306,7 +2312,7 @@ app.get('/video/updatePosition', (req, res) => {
     res.send(resp);
 });
 app.get('/video/updatePosition', (req, res) => {
-    info("video/updatePosition");
+    info("video/updatePosition", req)
     var fileName = req.query.fileName;
     var position = req.query.position;
     var rPath = path.join(directoryPath, "metadata");
@@ -2314,7 +2320,7 @@ app.get('/video/updatePosition', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message, req)
     }
 
     m = data[fileName];
@@ -2345,7 +2351,7 @@ app.post('/video/ping', (req, res) => {
     var text = fs.readFileSync(fp, "utf-8");
     var config = JSON.parse(text);
     var bd = req.body
-    info("body:" + JSON.stringify(bd));
+    info("body:" + JSON.stringify(bd), req)
     Object.keys(bd).forEach((item) => {
         if (config[item] == null) {
             config[item] = {};
@@ -2360,7 +2366,7 @@ app.post('/video/ping', (req, res) => {
 app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const videoPath = path.join(directoryPath, fileName);
-    info("videoPath:" + videoPath);
+    info("videoPath:" + videoPath, req)
     const stat = fs.statSync(videoPath);
     const fileSize = stat.size;
 
@@ -2400,7 +2406,7 @@ app.get('/video/download/:filename', (req, res) => {
 app.post('/video/delete', (req, res) => {
     const files = JSON.parse(req.body.files);
     const remove = req.body.remove;
-    info("remove:" + remove);
+    info("remove:" + remove, req)
     if (remove != pwd) {
         var resp = JSON.stringify({ ok: 0 });
         //resp = JSON.stringify(otags);
@@ -2421,13 +2427,13 @@ app.get('/video/rename', (req, res) => {
     const fileName = path.join(directoryPath, req.query.fileName);
     const newName = path.join(directoryPath, req.query.newName);
 
-    info("rename:'" + fileName + "' to '" + newName + "'");
+    info("rename:'" + fileName + "' to '" + newName + "'", req)
 
     var resp = { ok: 1 };
     try {
         fs.renameSync(fileName, newName);
     } catch (err) {
-        console.error(`failed:${err.message}`);
+        error(`failed:${err.message}`, req);
         resp = { error: err.message };
     }
 
@@ -2442,14 +2448,14 @@ app.get('/video/setScriptPos', (req, res) => {
     const right = req.query.right;
     const fileName = req.query.fileName;
 
-    info(`setScript:${top},${bottom},${left},${right},${fileName}`);
+    info(`setScript:${top},${bottom},${left},${right},${fileName}`, req)
 
     var rPath = path.join(directoryPath, "scripts");
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message, req)
     }
 
     data[fileName] = { top: top, bottom: bottom, left: left, right: right };
@@ -2461,14 +2467,14 @@ app.get('/video/setScriptPos', (req, res) => {
             if (err) {
                 console.error('Error deleting file:', err);
             } else {
-                info('File deleted:', fileName);
+                info('File deleted:', fileName, req)
             }
         });
         fs.unlink(path.join(directoryPath, `${fileName}.srt`), err => {
             if (err) {
                 console.error('Error deleting file:', err);
             } else {
-                info('File deleted:', fileName);
+                info('File deleted:', fileName, req)
             }
         });
     } catch (err) {
@@ -2483,7 +2489,7 @@ app.get('/video/setScriptPos', (req, res) => {
 app.get('/video/removeScriptPos', (req, res) => {
     const fileName = req.query.fileName;
 
-    info(`removeScript:${fileName}`);
+    info(`removeScript:${fileName}`, req)
 
     var rPath = path.join(directoryPath, "scripts");
     var data = {};
@@ -2499,7 +2505,7 @@ app.get('/video/removeScriptPos', (req, res) => {
         });
 
     } catch (e) {
-        info("error parsing replacers:" + e.message);
+        info("error parsing replacers:" + e.message, req)
     }
 
     delete data[fileName];
@@ -2528,7 +2534,7 @@ app.post('/video/toSplit', (req, res) => {
 });
 
 app.get('/video/doSplit', (req, res) => {
-    info("splitting=" + splitting);
+    info("splitting=" + splitting, req)
     if (response.length > 0) {
         res.send("<pre>" + response.join("\n") + "</pre>");
         if (splitting == 0) {
