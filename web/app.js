@@ -348,27 +348,33 @@ let rules = {};
 async function reloadRules() {
     //从 tTradeRule 读取所有未关闭的规则
     let ruleList = await db.allSync("select * from tTradeRule where closed = 0");
+    let req = {
+        threadId:
+            Date.now() + "" + Math.floor(Math.random() * 10000)
+    }
+
     for (let i = 0; i < ruleList.rows.length; i++) {
         let rule = ruleList.rows[i];
-        await reloadRule(rule);
+        await reloadRule(rule, req);
     }
 }
 
 
-async function reloadRule(r) {
+async function reloadRule(r, req) {
     if (r == null) {
         return;
     }
 
-    info("reloadRule:" + r.scode);
+    info("reloadRule:" + r.scode, req);
     if (r.closed != 0) {
         delete rules[r.scode];
         return;
     }
     try {
+        info("r.rule:" + r.rule, req);
         r.rule = JSON.parse(r.rule);
     } catch (e) {
-        info(e.message);
+        info(e.message, req);
     }
 
     rules[r.scode] = r;
@@ -381,7 +387,7 @@ async function reloadRule(r) {
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where scode = '${r.scode}' order by createTime desc limit 1`);
     if (ra) {
-        info(JSON.stringify(ra));
+        info(JSON.stringify(ra), req);
         if (ra.done == 0) {
             r.status = "ordered";
         } else if (ra.done == -1) {
@@ -392,7 +398,7 @@ async function reloadRule(r) {
             } else if (ra.action == "sell" && r.rule.order == "sellFirst") {
                 r.status = "toBuy";
             } else {
-                info("rule done");
+                info("rule done", req);
                 r.status = "done";
                 await db.runSync(`update tTradeRule set closed=1 where scode = '${r.scode}'`);
 
@@ -1572,7 +1578,7 @@ app.get('/stock/rule/create', async (req, res) => {
     let result = await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), now]);
     await db.runSync(`delete from tRuleAction where scode=?`, [json.scode]);
     rules[json.scode] = await db.getSync(`select * from tTradeRule where id=?`, [json.scode]);
-    reloadRule(rules[json.scode]);
+    reloadRule(rules[json.scode], req);
 
     await insertOrReplace("tStockBasic", {
         id: json.scode,
@@ -1719,7 +1725,7 @@ app.get('/stock/rule/cancel', async (req, res) => {
     }
 
     if (result.error == null) {
-        reloadRule(rules[scode]);
+        reloadRule(rules[scode], req);
     }
 
     var resp = JSON.stringify({});
@@ -2106,7 +2112,7 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
         info(r.error, req)
         resp = { error: r.error };
     } else {
-        reloadRule(rules[scode]);
+        reloadRule(rules[scode], req);
     }
 
     res.send(JSON.stringify(resp));
