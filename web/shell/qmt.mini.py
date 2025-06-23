@@ -110,6 +110,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         info("on_stock_trade callback:")
         try:
             js = obj2Json(trade, 1)
+            info(object_to_json(trade))
             # js["traded_time"]是时间戳，将它转换成时间字符串
             tradeTime = datetime.datetime.fromtimestamp(js["traded_time"])
 
@@ -135,6 +136,9 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
             info(json.dumps(deal, indent=2))
 
             updateDeal(deal)
+
+            updateActionOrdered(deal.scode, js["m_nOrderType"],
+                            56, deal.tprice, js["m_strOrderSysID"])
 
             updatePositions()
         except Exception as e:

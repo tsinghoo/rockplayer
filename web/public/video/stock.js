@@ -1225,8 +1225,9 @@ window.feed_list = window.feed_list || (function () {
             c.find(".buttonOrdered").on("click", async function () {
                 let data = self.selectedData;
                 let status = c.find(".actionStatus").val().trim();
+                let rule = JSON.parse(data["规则"]);
                 let body = {
-                    "broker": "国信",
+                    "broker": rule.broker,
                     "scode": data["代码"],
                     "status": status,
                     "orderNo": "" + Date.now() + ""
