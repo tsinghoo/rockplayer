@@ -823,12 +823,18 @@ window.feed_list = window.feed_list || (function () {
                 if (buy == null) {
                     buy = (np * (1 - 0.02)).toFixed(3);
                 }
+                if (buy == null || isNaN(buy)) {
+                    buy = np;
+                }
+                if (buy == null || isNaN(buy)) {
+                    buy = 0.01;
+                }
 
                 if (sell == null) {
                     sell = np;
                 }
 
-                if (sell == null) {
+                if (sell == null|| isNaN(sell)) {
                     sell = 10000;
                 }
                 c.find(".buy").val(buy);
