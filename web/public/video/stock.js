@@ -834,7 +834,7 @@ window.feed_list = window.feed_list || (function () {
                     sell = np;
                 }
 
-                if (sell == null|| isNaN(sell)) {
+                if (sell == null || isNaN(sell)) {
                     sell = 10000;
                 }
                 c.find(".buy").val(buy);
