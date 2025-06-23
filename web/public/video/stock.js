@@ -770,7 +770,7 @@ window.feed_list = window.feed_list || (function () {
             }
 
             if (!["国信", "国金"].includes(broker)) {
-                broker = "国信";
+                broker = "国金";
             }
 
             if (self.formatScode(self.selectedData["代码"]).indexOf("BJ") >= 0) {
@@ -781,6 +781,12 @@ window.feed_list = window.feed_list || (function () {
                 sellAmount = Math.abs(self.selectedData["数量"]);
                 buyAmount = sellAmount;
             }
+
+            if (sellAmount == null) {
+                sellAmount = 100;
+                buyAmount = sellAmount;
+            }
+            
             if (delta == null) {
                 delta = 0.02;
             }
@@ -806,6 +812,9 @@ window.feed_list = window.feed_list || (function () {
                 if (buy == null) {
                     buy = np;
                 }
+                if (buy == null) {
+                    buy = 0.01;
+                }
                 c.find(".sell").val(sell);
                 c.find(".buy").val(buy);
                 c.find(".sellFirst").prop("checked", true);
@@ -817,6 +826,10 @@ window.feed_list = window.feed_list || (function () {
 
                 if (sell == null) {
                     sell = np;
+                }
+
+                if (sell == null) {
+                    sell = 10000;
                 }
                 c.find(".buy").val(buy);
                 c.find(".sell").val(sell);
