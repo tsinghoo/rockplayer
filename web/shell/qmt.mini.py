@@ -233,11 +233,13 @@ def init():
     print(sys.version)
     print(sys.executable)
     loadConfig()
+    g.stocklist = getStockList()
     # 设置全局变量
+def getStockList():
     # 从test1获取股票列表
     try:
         response = requests.get(
-            "http://test1.91taogu.com/stock/codes", timeout=5)
+            baseUrl + "/stock/codes", timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
             return
@@ -246,10 +248,27 @@ def init():
             response.encoding = 'utf-8'
             content = response.text
             print(content)
-            g.stocklist = json.loads(content)
+            return json.loads(content)
 
     except Exception as e:
         print("获取stockk list失败:", str(e))
+def getCandidates():
+    # 从test1获取股票列表
+    try:
+        response = requests.get(
+            baseUrl + "/stock/candidates", timeout=5)
+        if response.status_code != 200:
+            print("请求失败，状态码:", response.status_code)
+            return
+        else:
+            print("从test1获取candidates成功:", response.status_code)
+            response.encoding = 'utf-8'
+            content = response.text
+            print(content)
+            return json.loads(content)
+
+    except Exception as e:
+        print("获取candidates失败:", str(e))
 
 
 def uploadStockPrice():
@@ -328,14 +347,19 @@ def update1dTask():
                 updateActionOrdered(scode, "", "56", 0, "")
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
 
-        update1d()
+        update1d(g.stocklist)
+
+        g.candidates = getCandidates()
+        update1d(g.candidates)
+        
 
 
 def update1mTask():
     while True:
         time.sleep(1)
         resetThreadId("u1m")
-        update1m()
+        update1m(g.stocklist)
+        update1m(g.candidates)
 
 
 def getActionsTask():
@@ -428,6 +452,7 @@ def updateActionOrdered(scode, type, status, price, orderId):
         error("updateActionStatus 出错:", traceback.format_exc())
 
 
+
 def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
     info("update1d")
     if (stocklist is None):
@@ -502,9 +527,8 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
             # print(datas.to_json(orient='index'))
 
 
-def update1m():
+def update1m(stocklist):
     info("update1m")
-    stocklist = g.stocklist
     pds = ["1m"]
 
     if "lastStartTime1m" not in g.config:

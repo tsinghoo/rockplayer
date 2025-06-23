@@ -1918,6 +1918,30 @@ app.get('/stock/codes', async (req, res) => {
     res.send(resp);
 });
 
+
+app.get('/stock/candidates', async (req, res) => {
+    info("/stock/candidates", req)
+    let js = req.query.js;
+    let sql = `select scode from tcandidate order by priority desc`;
+    let r = await db.allSync(sql);
+    let scodes = [];
+    r.rows.forEach((row) => {
+        let code = row.scode;
+        code = formatScode(code);
+        if (code == null) {
+        } else {
+            scodes.push(code);
+        }
+    })
+
+    var resp = JSON.stringify(scodes);
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/price/current', async (req, res) => {
     info("/stock/trade/all", req)
     let js = req.query.js;
