@@ -777,12 +777,12 @@ window.feed_list = window.feed_list || (function () {
                 broker = "国金";
             }
 
-            if (sellAmount == null ||isNaN(sellAmount)) {
+            if (sellAmount == null || isNaN(sellAmount)) {
                 sellAmount = Math.abs(self.selectedData["数量"]);
                 buyAmount = sellAmount;
             }
 
-            if (sellAmount == null ||isNaN(sellAmount)) {
+            if (sellAmount == null || isNaN(sellAmount)) {
                 sellAmount = 100;
                 buyAmount = sellAmount;
             }
@@ -809,10 +809,10 @@ window.feed_list = window.feed_list || (function () {
                 if (sell == null) {
                     sell = (np * (1 + 0.02)).toFixed(3);
                 }
-                if (buy == null ||isNaN(buy)) {
+                if (buy == null || isNaN(buy)) {
                     buy = np;
                 }
-                if (buy == null ||isNaN(buy)) {
+                if (buy == null || isNaN(buy)) {
                     buy = 0.01;
                 }
                 c.find(".sell").val(sell);
