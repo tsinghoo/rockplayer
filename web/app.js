@@ -1804,6 +1804,13 @@ app.get('/stock/rule/status', async (req, res) => {
     var resp = null;
     if (scode == null) {
         resp = JSON.stringify({ data: rules });
+    } else if (rules[scode] == null) {
+        let res = db.allSync(`select * from tTradeRule where scode=?`, [scode]);
+        if (res.rows.length > 0) {
+            resp = JSON.stringify({ data: res.rows[0] });
+        } else {
+            resp = JSON.stringify({ data: null });
+        }
     } else {
         resp = JSON.stringify({ data: rules[scode] });
     }
