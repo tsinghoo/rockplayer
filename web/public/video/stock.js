@@ -1478,6 +1478,11 @@ window.feed_list = window.feed_list || (function () {
                 let res = await share.getSync__(`/stock/rule/status?scode=${scode}`);
                 r = res.data;
                 rc = r.rule;
+                //如果rc是string，则转换为对象
+                if (typeof rc == 'string') {
+                    rc = JSON.parse(rc);
+                    r.rule = rc;
+                }
             }
             let buy = `
                                    <tr> 
@@ -1834,7 +1839,7 @@ window.feed_list = window.feed_list || (function () {
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${mapping[r.status]} : ${rc.buy} : </div>
+                            <div class="margin4">${rc.broker}<br>${rc.buy} : </div>
                             ${prices}
                             <div> : ${rc.sell}</div>
                           </div>`;
