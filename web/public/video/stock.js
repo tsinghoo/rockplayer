@@ -1518,7 +1518,7 @@ window.feed_list = window.feed_list || (function () {
 
             c.html(html);
 
-            if (statusContainer) {
+            if (statusContainer && r.closed == 0) {
                 self.showRuleStatus(r, statusContainer);
             }
         },
