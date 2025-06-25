@@ -1713,11 +1713,17 @@ app.get('/stock/rule/cancel', async (req, res) => {
     info("get /stock/rule/cancel", req)
     let js = req.query.js;
     let scode = req.query.scode;
+    let all = req.query.all;
     let now = Date.now();
     rules[scode].closed = 1;
 
     let sql = `update tTradeRule set closed = 1 where scode=?`;
-    let result = await db.runSync(sql, [scode]);
+    let params = [scode];
+    if (all) {
+        sql = `update tTradeRule set closed = 1`;
+        params = [];
+    }
+    let result = await db.runSync(sql, params);
 
     if (result.error == null) {
         sql = `update tRuleAction set done = -1 where scode=?`;

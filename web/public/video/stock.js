@@ -258,8 +258,8 @@ window.feed_list = window.feed_list || (function () {
                 self.exeSql(self.sqlRow, true);
             }
         },
-        toCancelRule: async function () {
-            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"] });
+        toCancelRule: async function (all) {
+            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], all });
             if (res.error) {
                 share.toastError__(res.error);
             } else {
@@ -293,6 +293,13 @@ window.feed_list = window.feed_list || (function () {
                     onTap: function () {
                         share.closePopup__();
                         self.toCancelRule();
+                    }
+                },
+                {
+                    text: "取消所有",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toCancelRule(1);
                     }
                 }
             ];

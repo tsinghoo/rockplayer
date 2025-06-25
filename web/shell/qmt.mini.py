@@ -104,7 +104,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         """
         成交信息推送
         :param trade: XtTrade对象
-        :return:
+        :return: 17571235 01009714 0102000023061100
         """
         # resetThreadId("st")
         info("on_stock_trade callback:")
@@ -119,7 +119,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
                 "scode": js["m_strStockCode"],
                 "sname": "",
                 "market": "",
-                "operationDirection": "卖出" if js["direction"] == 48 else "买入",
+                "operationDirection": "买入" if js["order_type"] == 23 else "卖出",
                 "operationName": g.broker,
                 "tday": tradeTime.strftime("%Y-%m-%d"),
                 "ttime": tradeTime.strftime("%H:%M:%S"),
@@ -137,8 +137,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
 
             updateDeal(deal)
 
-            updateActionOrdered(deal.scode, js["m_nOrderType"],
-                            56, deal.tprice, js["m_strOrderSysID"])
+            updateActionOrdered(deal.scode, js["order_type"],
+                            56, deal.tprice, js["order_sysid"])
 
             updatePositions()
         except Exception as e:
@@ -359,7 +359,7 @@ def update1mTask():
         time.sleep(1)
         resetThreadId("u1m")
         update1m(g.stocklist)
-        update1m(g.candidates)
+        # update1m(g.candidates)
 
 
 def getActionsTask():
