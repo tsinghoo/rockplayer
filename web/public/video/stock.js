@@ -794,10 +794,6 @@ window.feed_list = window.feed_list || (function () {
                 buyAmount = sellAmount;
             }
 
-            if (delta == null) {
-                delta = 0.02;
-            }
-
             if (c == null) {
                 c = $("#templateBuySell").html();
                 let popup = await share.popup__(null, c);
@@ -812,6 +808,10 @@ window.feed_list = window.feed_list || (function () {
                 np = self.selectedData["价格"];
             }
             let oper = self.selectedData["买卖"];
+
+            if (delta == null) {
+                delta = 0.02;
+            }
             if (oper && oper.indexOf("买") > -1) {
                 if (sell == null) {
                     sell = (np * (1 + 0.02)).toFixed(3);
@@ -1114,7 +1114,29 @@ window.feed_list = window.feed_list || (function () {
             let c = $(`#${popup.id}`);
             self.showPosition(null, c.find(".position"), scode);
             self.toBuySell(null, c);
-            self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
+            let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
+            c.find(".rule").click(function (e) {
+                let rc = r.rule;
+                let buy = share.toFixed(rc.buy, 3);
+                let sell = share.toFixed(rc.sell, 3);
+                c.find(".sell").val(sell);
+                c.find(".buy").val(buy);
+                c.find(".buyAmount").val(rc.buyAmount);
+                c.find(".sellAmount").val(rc.sellAmount);
+                c.find(".dip").val(share.toFixed(rc.dip, 3));
+                c.find(".bounce").val(share.toFixed(rc.bounce, 3));
+                if (rc.order == "sellFirst") {
+                    c.find(".sellFirst").prop("checked", true);
+                    c.find(".buyFirst").prop("checked", false);
+                } else if (rc.order == "buyFirst") {
+                    c.find(".sellFirst").prop("checked", false);
+                    c.find(".buyFirst").prop("checked", true);
+                } else {
+                    c.find(".sellFirst").prop("checked", false);
+                    c.find(".buyFirst").prop("checked", false);
+                }
+            })
+
             let kTick = c.find(".kTick");
 
             let ticks = await share.getSync__(`/stock/tick?scode=${scode}&day=${Date.now()}`);
@@ -1521,6 +1543,8 @@ window.feed_list = window.feed_list || (function () {
             if (statusContainer && r.closed == 0) {
                 self.showRuleStatus(r, statusContainer);
             }
+
+            return r;
         },
 
         toReloadK1d: async function (scode) {
