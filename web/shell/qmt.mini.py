@@ -84,6 +84,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param asset: XtAsset对象
         :return:
         """
+        resetThreadId("osa")
         info("on asset callback")
         info(object_to_json(asset))
         info(asset.account_id, asset.cash, asset.total_asset)
@@ -94,6 +95,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param order: XtOrder对象
         :return:
         """
+        resetThreadId("oto")
         info("on order callback:")
         info(object_to_json(order))
         updateActionOrdered(order.stock_code, order.order_type,
@@ -107,6 +109,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :return: 17571235 01009714 0102000023061100
         """
         # resetThreadId("st")
+        resetThreadId("ost")
         info("on_stock_trade callback:")
         try:
             js = obj2Json(trade, 1)
@@ -161,8 +164,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :param position: XtPosition对象
         :return:
         """
-        print("on position callback")
-        print(position.stock_code, position.volume)
+        info("on position callback")
+        info(position.stock_code, position.volume)
 
     def on_cancel_error(self, cancel_error):
         """
