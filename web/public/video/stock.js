@@ -1855,18 +1855,18 @@ window.feed_list = window.feed_list || (function () {
             `
             if (r.status == "toBuy") {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${mapping[r.status]} : ${rc.buy} : </div>
+                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br>${mapping[r.status]}</div>
                             ${prices}
                           </div>`;
             } else if (r.status == "toSell") {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${mapping[r.status]} : </div>
+                            <div class="margin4">${rc.broker}<br><br>${mapping[r.status]}</div>
                             ${prices}
                             <div> : ${rc.sell}</div>
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${rc.buy} : </div>
+                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br> </div>
                             ${prices}
                             <div> : ${rc.sell}</div>
                           </div>`;
