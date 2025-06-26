@@ -1860,9 +1860,8 @@ window.feed_list = window.feed_list || (function () {
                           </div>`;
             } else if (r.status == "toSell") {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br><br>${mapping[r.status]}</div>
                             ${prices}
-                            <div> : ${rc.sell}</div>
+                            <div>${rc.broker}<br>${rc.sell} : <br>${mapping[r.status]}</div>
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
