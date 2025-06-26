@@ -1861,7 +1861,7 @@ window.feed_list = window.feed_list || (function () {
             } else if (r.status == "toSell") {
                 prices = `<div class="flexrow center">
                             ${prices}
-                            <div>${rc.broker}<br>${rc.sell} : <br>${mapping[r.status]}</div>
+                            <div>${rc.broker}<br> : ${rc.sell}<br>${mapping[r.status]}</div>
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
