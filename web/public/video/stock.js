@@ -1827,43 +1827,43 @@ window.feed_list = window.feed_list || (function () {
                     <div> ${share.toFixed(rc.currentPrice, 3)}</div>
                     <div> ${share.toFixed(rc.maxPrice, 3)}</div>
                 </div>
-            `
+            `;
 
-            if (r.status == "toBuy") {
-                prices = `<div class="flexrow center">
-                            <div class="margin4">${mapping[r.status]}<br>${rc.buy} : <br>${rc.buyAmount}</div>
+    if (r.status == "toBuy") {
+        prices = `<div class="flexrow center">
+                            <div class="margin4">${mapping[r.status]}<br><span class="font10">${share.toFixed(parseFloat(rc.bounce), 3)}&uparrow;</span>${rc.buy} : <br>${rc.buyAmount}</div>
                                 ${prices}
-                            <div class="margin4">${rc.broker}<br> : ${rc.sell}<br>${rc.sellAmount}</div>
+                            <div class="margin4">${rc.broker}<br> : ${rc.sell}<span class="font10">&downarrow;${share.toFixed(parseFloat(rc.dip), 3)}</span><br>${rc.sellAmount}</div>
                           </div>`;
-            } else if (r.status == "toSell") {
-                prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br>${rc.buyAmount}</div>
+    } else if (r.status == "toSell") {
+        prices = `<div class="flexrow center">
+                            <div class="margin4">${rc.broker}<br><span class="font10">${share.toFixed(parseFloat(rc.bounce), 3)}&uparrow;</span>${rc.buy} : <br>${rc.buyAmount}</div>
                             ${prices}
-                            <div class="margin4">${mapping[r.status]}<br>: ${rc.sell}<br> ${rc.buyAmount}</div>
+                            <div class="margin4">${mapping[r.status]}<br>: ${rc.sell}<span class="font10">&downarrow;${share.toFixed(parseFloat(rc.dip), 3)}</span><br> ${rc.sellAmount}</div>
                           </div>`;
-            } else {
-                prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br> ${rc.buyAmount} </div>
+    } else {
+        prices = `<div class="flexrow center">
+                            <div class="margin4">${rc.broker}<br><span class="font10">${share.toFixed(parseFloat(rc.bounce), 3)}&uparrow;</span>${rc.buy} : <br> ${rc.buyAmount} </div>
                             ${prices}
-                            <div class="margin4">${rc.broker}<br> : ${rc.sell}<br>${rc.sellAmount}</div>
+                            <div class="margin4">${rc.broker}<br> : ${rc.sell}<span class="font10">&downarrow;${share.toFixed(parseFloat(rc.dip), 3)}</span><br>${rc.sellAmount}</div>
                           </div>`;
-            }
+    }
 
-            let price = `
+    let price = `
                                 <tr>
                                     <td colspan="7" class="nowrap">
                                     ${prices}
                                     </td>
                                 </tr>
                             `;
-            let actions = "";
-            if (r.actions && r.actions.length > 0) {
-                actions = r.actions.map(a => {
-                    let statusText = statusMapping[a.status];
-                    if (statusText == null) {
-                        statusText = a.status ? a.status : "";
-                    }
-                    return `
+    let actions = "";
+    if (r.actions && r.actions.length > 0) {
+        actions = r.actions.map(a => {
+            let statusText = statusMapping[a.status];
+            if (statusText == null) {
+                statusText = a.status ? a.status : "";
+            }
+            return `
                                         <tr>
                                             <td>${share.timeFormat__(a.createTime, "yyyy-MM-dd hh:mm:ss")}</td>
                                             <td>${a.action}</td>
@@ -1874,32 +1874,32 @@ window.feed_list = window.feed_list || (function () {
                                             <td>${statusText}</td>
                                         </tr>
                                     `;
-                }).join("");
+        }).join("");
+    }
+
+    let html = `<table>${price}${actions}</table>`;
+    c.html(html);
+},
+    showChart: async function (rows) {
+        let max = 0;
+        let min = 100000;
+        let recent = 0;
+        let ratio = 2;
+        let dates = rows.map(row => `${row.日期} ${row.时间}`);
+        let prices = rows.map(row => {
+            if (row.价格 > max) {
+                max = row.价格;
             }
+            if (row.价格 < min) {
+                min = row.价格;
+            }
+            if (recent == 0) {
+                recent = row.价格;
+            }
+            return row.价格
+        });
 
-            let html = `<table>${price}${actions}</table>`;
-            c.html(html);
-        },
-        showChart: async function (rows) {
-            let max = 0;
-            let min = 100000;
-            let recent = 0;
-            let ratio = 2;
-            let dates = rows.map(row => `${row.日期} ${row.时间}`);
-            let prices = rows.map(row => {
-                if (row.价格 > max) {
-                    max = row.价格;
-                }
-                if (row.价格 < min) {
-                    min = row.价格;
-                }
-                if (recent == 0) {
-                    recent = row.价格;
-                }
-                return row.价格
-            });
-
-            let html = `
+        let html = `
                 <div class="flexcolumn center">
                     <div class="flexrow width100p">
                         <div class="flexcolumn center width100p">
@@ -1948,108 +1948,108 @@ window.feed_list = window.feed_list || (function () {
                     <canvas id="priceChart" style="width: 500px; height: 300px;"></canvas>
                 </div>
             `;
-            let popup = await share.popup__(null, html);
-            let c = $(`#${popup.id}`);
+        let popup = await share.popup__(null, html);
+        let c = $(`#${popup.id}`);
 
-            // 获取 canvas 元素
-            let ctx = $('#priceChart', c)[0].getContext('2d');
-            let input = $('#ratio', c);
+        // 获取 canvas 元素
+        let ctx = $('#priceChart', c)[0].getContext('2d');
+        let input = $('#ratio', c);
 
-            function calc() {
-                let r = input.val().trim();
-                let l = $('#last', c).val().trim();
-                $(".recentUp", c).text(`+${r}%: ${share.toFixed((l * (1 + r / 100)), 4)}`);
-                $(".recentDown", c).text(`-${r}%: ${share.toFixed((l * (1 - r / 100)), 4)}`);
-                $(".maxUp", c).text(`+${r}%: ${share.toFixed((max * (1 + r / 100)), 4)}`);
-                $(".maxDown", c).text(`-${r}%: ${share.toFixed((max * (1 - r / 100)), 4)}`);
-                $(".minUp", c).text(`+${r}%: ${share.toFixed((min * (1 + r / 100)), 4)}`);
-                $(".minDown", c).text(`-${r}%: ${share.toFixed((min * (1 - r / 100)), 4)}`);
-            }
-            input.change(function () {
-                calc();
-            });
-            $('#last', c).change(function () {
-                calc();
-            });
+        function calc() {
+            let r = input.val().trim();
+            let l = $('#last', c).val().trim();
+            $(".recentUp", c).text(`+${r}%: ${share.toFixed((l * (1 + r / 100)), 4)}`);
+            $(".recentDown", c).text(`-${r}%: ${share.toFixed((l * (1 - r / 100)), 4)}`);
+            $(".maxUp", c).text(`+${r}%: ${share.toFixed((max * (1 + r / 100)), 4)}`);
+            $(".maxDown", c).text(`-${r}%: ${share.toFixed((max * (1 - r / 100)), 4)}`);
+            $(".minUp", c).text(`+${r}%: ${share.toFixed((min * (1 + r / 100)), 4)}`);
+            $(".minDown", c).text(`-${r}%: ${share.toFixed((min * (1 - r / 100)), 4)}`);
+        }
+        input.change(function () {
+            calc();
+        });
+        $('#last', c).change(function () {
+            calc();
+        });
 
-            $('.ratio', c).click(function () {
-                let ratio = $(this).attr("ratio");
-                input.val(ratio);
-                calc();
-            });
+        $('.ratio', c).click(function () {
+            let ratio = $(this).attr("ratio");
+            input.val(ratio);
+            calc();
+        });
 
-            // 创建折线图
-            let chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        label: '价格',
-                        data: prices,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 2,
-                        pointStyle: (context) => {
-                            const i = context.dataIndex;
-                            if (rows[i]["数量"] > 0) {
-                                return "circle";
-                            }
-                            return "triangle";
-                        },
-                        pointBackgroundColor: (context) => {
-                            const i = context.dataIndex;
-                            if (rows[i]["数量"] > 0) {
-                                return "green";
-                            }
-                            return "red";
-                        },
-                        borderColor: "lightgray",
-                        pointBorderColor: (context) => {
-                            const i = context.dataIndex;
-                            if (rows[i]["数量"] > 0) {
-                                return "green";
-                            }
-                            return "red";
-                        },
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,  // 自适应
-                    plugins: {
-                        datalabels: {
-                            color: 'black', // 设置标签颜色
-                            align: 'top', // 标签的位置，可以是 'top', 'bottom', 'left', 'right'
-                            //anchor: 'start', // 'start' means the label will be aligned with the point
-                            formatter: function (value, context) {
-                                return value; // 返回 y 值
-                            }
+        // 创建折线图
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: '价格',
+                    data: prices,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    pointStyle: (context) => {
+                        const i = context.dataIndex;
+                        if (rows[i]["数量"] > 0) {
+                            return "circle";
                         }
+                        return "triangle";
                     },
-                    scales: {
-                        x: {
-                            type: 'time', // 设置 X 轴为时间类型
-                            time: {
-                                unit: 'day',  // 按天显示
-                                displayFormats: {
-                                    day: 'yyyyMMdd hh:mm:ss', // 显示日期的格式
-                                },
-                            },
-                        },
-                        y: {
-                            beginAtZero: false  // Y轴从零开始
+                    pointBackgroundColor: (context) => {
+                        const i = context.dataIndex;
+                        if (rows[i]["数量"] > 0) {
+                            return "green";
+                        }
+                        return "red";
+                    },
+                    borderColor: "lightgray",
+                    pointBorderColor: (context) => {
+                        const i = context.dataIndex;
+                        if (rows[i]["数量"] > 0) {
+                            return "green";
+                        }
+                        return "red";
+                    },
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,  // 自适应
+                plugins: {
+                    datalabels: {
+                        color: 'black', // 设置标签颜色
+                        align: 'top', // 标签的位置，可以是 'top', 'bottom', 'left', 'right'
+                        //anchor: 'start', // 'start' means the label will be aligned with the point
+                        formatter: function (value, context) {
+                            return value; // 返回 y 值
                         }
                     }
+                },
+                scales: {
+                    x: {
+                        type: 'time', // 设置 X 轴为时间类型
+                        time: {
+                            unit: 'day',  // 按天显示
+                            displayFormats: {
+                                day: 'yyyyMMdd hh:mm:ss', // 显示日期的格式
+                            },
+                        },
+                    },
+                    y: {
+                        beginAtZero: false  // Y轴从零开始
+                    }
                 }
-            });
-        }
+            }
+        });
+    }
     };
 
-    $(function () {
-        self.init();
-    });
+$(function () {
+    self.init();
+});
 
-    return self;
-})();
+return self;
+}) ();
 
 
 
