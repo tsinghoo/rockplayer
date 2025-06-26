@@ -289,6 +289,13 @@ window.feed_list = window.feed_list || (function () {
                     }
                 },
                 {
+                    text: "更新价格状态",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toUpdateRuleStatus();
+                    }
+                },
+                {
                     text: "取消",
                     onTap: function () {
                         share.closePopup__();
@@ -556,7 +563,7 @@ window.feed_list = window.feed_list || (function () {
 
                         }
                         if (firstRow && rc != null) {
-                            self.showRule(rc, td);
+                            self.showRule({ rule: rc }, td);
                             if (rc.order == "") {
                                 td.find("table").css({
                                     border: "1px solid gray",
@@ -620,7 +627,7 @@ window.feed_list = window.feed_list || (function () {
 
             $(".ruleStatus").click(function (e) {
                 self.onTdClicked(this);
-                self.onRuleStatusClicked();
+                self.toUpdateRuleStatus();
             })
 
             $(".thKLine").click(function (e) {
@@ -755,7 +762,7 @@ window.feed_list = window.feed_list || (function () {
                 let scode = ac.trim();
                 let r = res.data[scode];
                 if (r) {
-                    self.showRule(r.rule, td);
+                    self.showRuleStatus(r, td);
                 }
             })
         },
@@ -1215,7 +1222,7 @@ window.feed_list = window.feed_list || (function () {
             self.selectedData = data;
             share.currentTarget = ele;
         },
-        onRuleStatusClicked: async function () {
+        toUpdateRuleStatus: async function () {
             let html = `
 
                 <div class="input-group">
@@ -1494,58 +1501,23 @@ window.feed_list = window.feed_list || (function () {
 
             $c.html(html);
         },
-        showRule: async function (rc, c, scode, statusContainer) {
-            let r = null;
-            if (rc == null) {
+        showRule: async function (r, c, scode, statusContainer) {
+            if (r == null) {
                 let res = await share.getSync__(`/stock/rule/status?scode=${scode}`);
                 r = res.data;
                 if (r == null) {
                     return;
                 }
-                rc = r.rule;
-                //如果rc是string，则转换为对象
-                if (typeof rc == 'string') {
-                    rc = JSON.parse(rc);
-                    r.rule = rc;
-                }
-            }
-            let buy = `
-                                   <tr> 
-                                       <td>买:</td>
-                                       <td>${share.toFixed(rc.buy, 3)}</td> 
-                                       <td>&uparrow;${share.toFixed(parseFloat(rc.bounce), 3)}</td>
-                                       <td>${rc.buyAmount}</td>
-                                   </tr>
-                               `;
-            let sell = `
-                                   <tr style="border:none;"> 
-                                       <td>卖:</td>
-                                       <td>${share.toFixed(rc.sell, 3)}</td> 
-                                       <td>&downarrow;${share.toFixed(parseFloat(rc.dip), 3)}</td>
-                                       <td>${rc.sellAmount}</td>
-                                   </tr>
-                               `;
-            let html = `
-                                   <table class="width100p">
-                                       ${buy}
-                                       ${sell}
-                                   </table>
-                               `;
-
-            if (rc.order == "sellFirst") {
-                html = `
-                                   <table class="width100p">
-                                       ${sell}
-                                       ${buy}
-                                   </table>
-                                   `;
             }
 
-            c.html(html);
-
-            if (statusContainer && r.closed == 0) {
-                self.showRuleStatus(r, statusContainer);
+            let rc = r.rule;
+            //如果rc是string，则转换为对象
+            if (typeof rc == 'string') {
+                rc = JSON.parse(rc);
+                r.rule = rc;
             }
+
+            self.showRuleStatus(r, c);
 
             return r;
         },
@@ -1839,6 +1811,9 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         showRuleStatus: function (r, c) {
+            if (r == null) {
+                return;
+            }
             let rc = r.rule;
 
             let statusMapping = self.statusMapping;
