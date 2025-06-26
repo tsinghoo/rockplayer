@@ -1866,7 +1866,7 @@ window.feed_list = window.feed_list || (function () {
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br> </div>
+                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br> &nbsp; </div>
                             ${prices}
                             <div> : ${rc.sell}</div>
                           </div>`;
