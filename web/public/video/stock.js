@@ -1853,21 +1853,24 @@ window.feed_list = window.feed_list || (function () {
                     <div> ${share.toFixed(rc.maxPrice, 3)}</div>
                 </div>
             `
+
             if (r.status == "toBuy") {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br>${mapping[r.status]}</div>
-                            ${prices}
+                            <div class="margin4">${mapping[r.status]}<br>${rc.buy} : <br>${rc.buyAmount}</div>
+                                ${prices}
+                            <div class="margin4">${rc.broker}<br> : ${rc.sell}<br>${rc.sellAmount}</div>
                           </div>`;
             } else if (r.status == "toSell") {
                 prices = `<div class="flexrow center">
+                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br>${rc.buyAmount}</div>
                             ${prices}
-                            <div>${rc.broker}<br> : ${rc.sell}<br>${mapping[r.status]}</div>
+                            <div class="margin4">${mapping[r.status]}<br>: ${rc.sell}<br> ${rc.buyAmount}</div>
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br> &nbsp; </div>
+                            <div class="margin4">${rc.broker}<br>${rc.buy} : <br> ${rc.buyAmount} </div>
                             ${prices}
-                            <div> : ${rc.sell}</div>
+                            <div class="margin4">${rc.broker}<br> : ${rc.sell}<br>${rc.sellAmount}</div>
                           </div>`;
             }
 

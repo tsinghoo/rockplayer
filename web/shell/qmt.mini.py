@@ -137,8 +137,8 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
 
             updateDeal(deal)
 
-            updateActionOrdered(deal.scode, js["order_type"],
-                            56, deal.tprice, js["order_sysid"])
+            updateActionOrdered(deal["scode"], js["order_type"],
+                            56, deal["tprice"], js["order_sysid"])
 
             updatePositions()
         except Exception as e:
