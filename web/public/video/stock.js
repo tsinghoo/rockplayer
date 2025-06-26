@@ -1499,6 +1499,9 @@ window.feed_list = window.feed_list || (function () {
             if (rc == null) {
                 let res = await share.getSync__(`/stock/rule/status?scode=${scode}`);
                 r = res.data;
+                if (r == null) {
+                    return;
+                }
                 rc = r.rule;
                 //如果rc是string，则转换为对象
                 if (typeof rc == 'string') {
