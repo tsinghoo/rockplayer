@@ -143,7 +143,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
             updateActionOrdered(deal["scode"], js["order_type"],
                             56, deal["tprice"], js["order_sysid"])
 
-            updatePositions()
+            startUpdatePositions()
         except Exception as e:
             error("on_stock_trade 出错:", traceback.format_exc())
 
@@ -870,9 +870,12 @@ def printTask():
             print(*item[0], **item[1])
 
         time.sleep(0.1)
-
+def startUpdatePositions():
+    t1 = Thread(target=updatePositions)
+    t1.start()
 
 def updatePositions():
+    resetThreadId("utp")
     info("updatePositions")
     uploadPosition()
 
@@ -940,7 +943,7 @@ if __name__ == '__main__':
 
     init()
 
-    updatePositions()
+    startUpdatePositions()
 
     # deals = getDeals()
     # print("deals:", len(deals))
