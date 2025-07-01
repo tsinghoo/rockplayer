@@ -1746,7 +1746,6 @@ app.get('/stock/rule/cancel', async (req, res) => {
         scode: cancelled,
         sname: cancelled,
         action: "cancelAction",
-        broker: "",
         price: 0,
         amount: 0,
         orderNo: "",
@@ -1754,7 +1753,11 @@ app.get('/stock/rule/cancel', async (req, res) => {
         createTime: now
     }
 
-    result = await insertOrReplace("tRuleAction", action);
+    ["国信", "国金"].forEach(async (broker) => {
+        action.broker = broker;
+        action.id = `${action.scode}-cancelAction-${action.broker}`;
+        result = await insertOrReplace("tRuleAction", action);
+    });
 
     var resp = JSON.stringify({});
     if (result.error) {
@@ -1801,15 +1804,43 @@ app.get('/stock/rule/actions', async (req, res) => {
     info("get /stock/rule/actions", req)
     let js = req.query.js;
     let broker = req.query.broker;
-    let sql = `select * from tRuleAction where (broker=? or broker='') and orderNo='' and done=0`;
+    let sql = `select * from tRuleAction where (broker=?) and orderNo='' and done=0`;
     let r = await db.allSync(sql, [broker]);
     r.rows.forEach(async (row) => {
-        row.scode = formatScode(row.scode);
+        let nc = formatScode(row.scode);
+        if (nc == null) {
+
+        } else {
+            row.scode = nc;
+        }
     });
+
     var resp = JSON.stringify({ data: r.rows });
 
     if (r.error) {
         resp = r;
+    } else {
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+app.get('/stock/action/done', async (req, res) => {
+    info("get /stock/action/done", req)
+    let js = req.query.js;
+    let id = req.query.id;
+    let sql = `update tRuleAction set done=1 where id=?`;
+    let r = await db.runSync(sql, [id]);
+
+    var resp = JSON.stringify({});
+
+    if (r.error) {
+        resp = r;
+    } else {
     }
 
     if (js) {

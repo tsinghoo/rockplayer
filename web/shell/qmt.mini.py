@@ -427,7 +427,8 @@ def getActions():
                     elif act["action"] == "cancelAction":
                         info("cancel action for", act["scode"])
                         cancelAction(act["scode"])
-                    g.actions[act["scode"]] = act
+                    actionDone(act["id"])
+
     except Exception as e:
         error("getActions出错:", traceback.format_exc())
 
@@ -450,6 +451,18 @@ def cancelAction(scode):
         del g.actions[scode]
     elif scode == "":
         g.actions = {}
+    
+
+def actionDone(id):
+    try:
+        response = requests.get(
+            baseUrl+"/stock/action/done?id="+id, timeout=20)
+        if response.status_code != 200:
+            error("action done error:", response.status_code,
+                  "响应内容:", response.text)
+    except Exception as e:
+        error("action done error:", str(e))
+
 
 def updateActionOrdered(scode, type, status, price, orderId):
     try:
