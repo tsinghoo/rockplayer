@@ -340,6 +340,9 @@ def resetThreadId(label=""):
 
 
 def update1dTask():
+    g.candidates = getCandidates()
+    update1d(g.candidates)
+    
     while True:
         time.sleep(1)
         resetThreadId("u1d")
@@ -351,9 +354,6 @@ def update1dTask():
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
 
         update1d(g.stocklist)
-
-        g.candidates = getCandidates()
-        update1d(g.candidates)
         
 
 
