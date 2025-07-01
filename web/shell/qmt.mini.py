@@ -440,6 +440,7 @@ def cancelAction(scode):
     for account in accounts:
         orders = xt_trader.query_stock_orders(account, cancelable_only=False)
         info("query_stock_orders", obj2JsonString(orders))
+        orders = obj2Json(orders)
         for order in orders:
             # 如果order["stock_code"]以 scode开始
             if order["stock_code"].startswith(scode) or scode == "":
@@ -451,7 +452,7 @@ def cancelAction(scode):
         del g.actions[scode]
     elif scode == "":
         g.actions = {}
-    
+
 
 def actionDone(id):
     try:

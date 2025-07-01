@@ -1715,8 +1715,9 @@ app.get('/stock/rule/cancel', async (req, res) => {
     let scode = req.query.scode;
     let all = req.query.all;
     let now = Date.now();
-    rules[scode].closed = 1;
-
+    if (rules[scode]) {
+        rules[scode].closed = 1;
+    }
     let sql = `update tTradeRule set closed = 1 where scode=?`;
     let params = [scode];
 
@@ -1753,7 +1754,8 @@ app.get('/stock/rule/cancel', async (req, res) => {
         createTime: now
     }
 
-    ["国信", "国金"].forEach(async (broker) => {
+    let brokers = ["国信", "国金"];
+    brokers.forEach(async (broker) => {
         action.broker = broker;
         action.id = `${action.scode}-cancelAction-${action.broker}`;
         result = await insertOrReplace("tRuleAction", action);
