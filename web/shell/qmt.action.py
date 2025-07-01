@@ -38,6 +38,9 @@ broker = "国信"
 
 runGetActionTask = 1
 
+baseUrl = "http://192.168.66.205:3001"
+baseUrl = "http://test1.91taogu.com"
+
 #####################################################
 
 g.actions = {}
@@ -122,10 +125,44 @@ def getActions(ContextInfo):
                                   act["amount"], 2, ContextInfo)
                         info("已卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])
-
-                    g.actions[act["scode"]] = act
+                    elif act["action"] == "cancelAction":
+                        info("cancel action for", act["scode"])
+                        cancelAction(act["sname"], ContextInfo)
+                    actionDone(act["id"])
     except Exception as e:
         error("getActions出错:", traceback.format_exc())
+
+
+def cancelAction(scode, ContextInfo):
+    accountTypes = ["stock", "HUGANGTONG", "SHENGANGTONG"]
+
+    for type in accountTypes:
+        orders = get_trade_detail_data(account, type, 'order')
+        info("query_stock_orders", type, obj2JsonString(orders, 2))
+        orders = obj2Json(orders)
+        for order in orders:
+            # 如果order["stock_code"]以 scode开始
+            if order["m_strInstrumentID"].startswith(scode) or scode == "":
+                orderId = order["m_strOrderSysID"]
+                info("cancel order for", scode, orderId)
+                res = cancel(orderId, account, type, ContextInfo)
+                info("cancelled:", res)
+
+    if scode in g.actions:
+        del g.actions[scode]
+    elif scode == "":
+        g.actions = {}
+
+
+def actionDone(id):
+    try:
+        response = requests.get(
+            baseUrl+"/stock/action/done?id="+id, timeout=20)
+        if response.status_code != 200:
+            error("action done error:", response.status_code,
+                  "响应内容:", response.text)
+    except Exception as e:
+        error("action done error:", str(e))
 
 
 def after_init(ContextInfo):
@@ -136,8 +173,11 @@ def after_init(ContextInfo):
     syncPosition("SHENGANGTONG")
 
 # 行情处理函数 - 每次行情更新时调用
+
+
 def getFloat(a):
     return None if isinstance(a, float) and math.isnan(a) else a
+
 
 def syncPosition(accountType):
     info("syncPosition", accountType)
@@ -169,7 +209,7 @@ def syncPosition(accountType):
             positions.append(position)
 
         body = {"data": positions, "passcode": "995560"}
-    info("body:",json.dumps(body, indent=None))
+    info("body:", json.dumps(body, indent=None))
     response = requests.post(
         "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
     if response.status_code != 200:
@@ -177,7 +217,7 @@ def syncPosition(accountType):
         return
     else:
         response.encoding = 'utf-8'
-        info("上传持仓到test1成功:",accountType)
+        info("上传持仓到test1成功:", accountType)
 
 
 def debug(*args, **kwargs):
@@ -208,6 +248,34 @@ def log(*args, **kwargs):
 
     # 处理print的特殊参数（file/flush等）
     print(*all_args, **kwargs)
+
+
+def log2File(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+    """
+    将打印内容输出到文件，参数与print()函数保持一致
+
+    参数:
+        *args: 要打印的内容，多个参数会自动用sep分隔
+        file: 输出文件名(默认'output.txt')
+        sep: 分隔符(默认空格)
+        end: 结束符(默认换行)
+        flush: 是否立即刷新缓冲区(默认False)
+        mode: 文件打开模式('a'追加或'w'写入，默认'a')
+        encoding: 文件编码(默认'utf-8')
+    """
+    # 在file文件名后边加上当天日期
+    file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
+
+    with open(file, mode=mode, encoding=encoding) as f:
+        for item in toPrint:
+            args = item[0]
+            # 将多个参数用分隔符连接
+            output = sep.join(str(arg) for arg in args)
+            f.write(output + end)
+            if flush:
+                f.flush()
+
+
 
 
 def handlebar(ContextInfo):
@@ -315,11 +383,12 @@ def deal_callback(ContextInfo, data):
     info(json.dumps(deal, indent=2))
 
     updateDeal(deal)
-    
+
     syncPosition("clean")
     syncPosition("stock")
     syncPosition("HUGANGTONG")
     syncPosition("SHENGANGTONG")
+
 
 def position_callback(ContextInfo, data):
     info('position_callback')
