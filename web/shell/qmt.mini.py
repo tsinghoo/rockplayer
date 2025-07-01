@@ -141,7 +141,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
             updateDeal(deal)
 
             updateActionOrdered(deal["scode"], js["order_type"],
-                            56, deal["tprice"], js["order_sysid"])
+                                56, deal["tprice"], js["order_sysid"])
 
             startUpdatePositions()
         except Exception as e:
@@ -238,6 +238,8 @@ def init():
     loadConfig()
     g.stocklist = getStockList()
     # 设置全局变量
+
+
 def getStockList():
     # 从test1获取股票列表
     try:
@@ -255,6 +257,8 @@ def getStockList():
 
     except Exception as e:
         print("获取stockk list失败:", str(e))
+
+
 def getCandidates():
     # 从test1获取股票列表
     try:
@@ -342,7 +346,7 @@ def resetThreadId(label=""):
 def update1dTask():
     g.candidates = getCandidates()
     update1d(g.candidates)
-    
+
     while True:
         time.sleep(1)
         resetThreadId("u1d")
@@ -354,7 +358,6 @@ def update1dTask():
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
 
         update1d(g.stocklist)
-        
 
 
 def update1mTask():
@@ -421,10 +424,32 @@ def getActions():
                     elif act["action"] == "reloadK1d":
                         info("reloadK1d action for", act["scode"])
                         g.reloadK1d.append(act["scode"])
+                    elif act["action"] == "cancelAction":
+                        info("cancel action for", act["scode"])
+                        cancelAction(act["scode"])
                     g.actions[act["scode"]] = act
     except Exception as e:
         error("getActions出错:", traceback.format_exc())
 
+
+def cancelAction(scode):
+    accounts = [StockAccount(g.account), StockAccount(
+        g.account, "HUGANGTONG"), StockAccount(g.account, "SHENGANGTONG")]
+
+    for account in accounts:
+        orders = xt_trader.query_stock_orders(account, cancelable_only=False)
+        info("query_stock_orders", obj2JsonString(orders))
+        for order in orders:
+            # 如果order["stock_code"]以 scode开始
+            if order["stock_code"].startswith(scode) or scode == "":
+                info("cancel order for", scode, order["order_id"])
+                res = xt_trader.cancel_order_stock(account, order["order_id"])
+                info("cancelled:", res)
+
+    if scode in g.actions:
+        del g.actions[scode]
+    elif scode == "":
+        g.actions = {}
 
 def updateActionOrdered(scode, type, status, price, orderId):
     try:
@@ -453,7 +478,6 @@ def updateActionOrdered(scode, type, status, price, orderId):
 
     except Exception as e:
         error("updateActionStatus 出错:", traceback.format_exc())
-
 
 
 def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
@@ -696,7 +720,7 @@ def getPositions():
     positions = xt_trader.query_stock_positions(
         StockAccount(g.account, "HUGANGTONG"))
     all = all + positions
-    
+
     positions = xt_trader.query_stock_positions(
         StockAccount(g.account, "SHENGANGTONG"))
     all = all + positions
@@ -870,9 +894,12 @@ def printTask():
             print(*item[0], **item[1])
 
         time.sleep(0.1)
+
+
 def startUpdatePositions():
     t1 = Thread(target=updatePositions)
     t1.start()
+
 
 def updatePositions():
     resetThreadId("utp")

@@ -1719,8 +1719,13 @@ app.get('/stock/rule/cancel', async (req, res) => {
 
     let sql = `update tTradeRule set closed = 1 where scode=?`;
     let params = [scode];
+
+    let cancelled = scode;
+
+
     if (all) {
         sql = `update tTradeRule set closed = 1`;
+        cancelled = "";
         params = [];
     }
     let result = await db.runSync(sql, params);
@@ -1733,6 +1738,23 @@ app.get('/stock/rule/cancel', async (req, res) => {
     if (result.error == null) {
         reloadRule(rules[scode], req);
     }
+
+
+    let action = {
+        id: `${cancelled}-cancelAction`,
+        ruleId: scode,
+        scode: cancelled,
+        sname: cancelled,
+        action: "cancelAction",
+        broker: "",
+        price: 0,
+        amount: 0,
+        orderNo: "",
+        done: 0,
+        createTime: now
+    }
+
+    result = await insertOrReplace("tRuleAction", action);
 
     var resp = JSON.stringify({});
     if (result.error) {
@@ -1779,7 +1801,7 @@ app.get('/stock/rule/actions', async (req, res) => {
     info("get /stock/rule/actions", req)
     let js = req.query.js;
     let broker = req.query.broker;
-    let sql = `select * from tRuleAction where broker=? and orderNo='' and done=0`;
+    let sql = `select * from tRuleAction where (broker=? or broker='') and orderNo='' and done=0`;
     let r = await db.allSync(sql, [broker]);
     r.rows.forEach(async (row) => {
         row.scode = formatScode(row.scode);
