@@ -1737,7 +1737,12 @@ app.get('/stock/rule/cancel', async (req, res) => {
     }
 
     if (result.error == null) {
-        reloadRule(rules[scode], req);
+        if (all) {
+            rules = {}
+            reloadRules();
+        } else {
+            reloadRule(rules[scode], req);
+        }
     }
 
 
