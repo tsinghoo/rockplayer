@@ -1732,8 +1732,13 @@ app.get('/stock/rule/cancel', async (req, res) => {
     let result = await db.runSync(sql, params);
 
     if (result.error == null) {
-        sql = `update tRuleAction set done = -1 where scode=?`;
-        result = await db.runSync(sql, [scode]);
+        if (all) {
+            sql = `update tRuleAction set done = -1 `;
+            result = await db.runSync(sql, []);
+        } else {
+            sql = `update tRuleAction set done = -1 where scode=?`;
+            result = await db.runSync(sql, [scode]);
+        }
     }
 
     if (result.error == null) {
