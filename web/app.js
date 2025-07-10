@@ -393,9 +393,9 @@ async function reloadRule(r, req) {
         } else if (ra.done == -1) {
             r.status = "cancelled";
         } else {
-            if (ra.action == "buy" && r.rule.order == "buyFirst") {
+            if (ra.action == "buy" && (r.rule.order == "buyFirst" || r.rule.order == "")) {
                 r.status = "toSell";
-            } else if (ra.action == "sell" && r.rule.order == "sellFirst") {
+            } else if (ra.action == "sell" && (r.rule.order == "sellFirst" || r.rule.order == "")) {
                 r.status = "toBuy";
             } else {
                 info("rule done", req);
