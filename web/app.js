@@ -1138,6 +1138,16 @@ async function upgradeDb(succ, fail) {
         "update config set value='37' where key='dbVersion';",
         `create table tcandidate(id text primary key, scode text, sname text, priority int default 0, updateTime integer);`,
         "update config set value='39' where key='dbVersion';",
+        `alter table tStockBasic add column volumeMultiple int default 100;`,
+        "update config set value='41' where key='dbVersion';",
+        `alter table tStockBasic add column upStopPrice real default 0;`,
+        "update config set value='43' where key='dbVersion';",
+        `alter table tStockBasic add column downStopPrice real default 0;`,
+        "update config set value='45' where key='dbVersion';",
+        `alter table tStockBasic add column totalVolume real default 0;`,
+        "update config set value='47' where key='dbVersion';",
+        `alter table tStockBasic add column floatVolume real default 0;`,
+        "update config set value='49' where key='dbVersion';",
 
     ];
 
@@ -1546,6 +1556,27 @@ app.post('/stock/quotes.mini', async (req, res) => {
     })
 
     setTimeout(function () { checkRule(Object.keys(data)) }, 100);
+
+    res.send("ok");
+});
+
+app.post('/stock/details', async (req, res) => {
+    info("post /stock/details", req)
+
+    info(JSON.stringify(req.body), req)
+    let passcode = req.body.passcode;
+    if (passcode != "995560") {
+        info("bad request", req)
+        res.send("bad request");
+        return;
+    }
+
+    let data = req.body.data;
+    let updateTime = Date.now();
+    data.forEach(async (row) => {
+        let sql = `update tStockBasic set LastVolume=?,TotalVolume=?,FloatVolume=?,UpStopPrice=?,DownStopPrice=?,VolumeMultiple=?,updateTime=? where scode=?`;
+        await db.runSync(sql, [row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, updateTime, row.scode]);
+    })
 
     res.send("ok");
 });

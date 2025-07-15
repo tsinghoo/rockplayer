@@ -249,7 +249,7 @@ def getStockList():
             print("请求失败，状态码:", response.status_code)
             return
         else:
-            print("从test1获取stock codes成功:", response.status_code)
+            print("从", baseUrl, "获取stock codes成功:", response.status_code)
             response.encoding = 'utf-8'
             content = response.text
             print(content)
@@ -298,6 +298,22 @@ def uploadStockPrice():
             # info("请求test1成功:", response.status_code, response.text)
     except Exception as e:
         error("请求失败:", str(e))
+
+
+def getStockDetail(scode):
+    info("getStockDetail", scode)
+    si = xtdata.get_instrument_detail(scode)
+    detail = {
+        "scode": scode,
+        "LastVolume": si["LastVolume"],
+        "TotalVolume": si["TotalVolume"],
+        "FloatVolume": si["FloatVolume"],
+        "UpStopPrice": si["UpStopPrice"],
+        "DownStopPrice": si["DownStopPrice"],
+        "VolumeMultiple": si["VolumeMultiple"]
+    }
+
+    return detail
 
 
 def uploadPosition(positions=None):
@@ -366,6 +382,36 @@ def update1mTask():
         resetThreadId("u1m")
         update1m(g.stocklist)
         # update1m(g.candidates)
+
+
+def uploadDetail(details):
+    info("uploadDetail ", len(details))
+    try:
+        response = requests.post(baseUrl+"/stock/details", json={
+            "data": details, "passcode": "995560"}, timeout=5)
+        if response.status_code != 200:
+            error("上传详情失败，状态码:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            info("上传详情到test1成功:", response.status_code, response.text)
+    except Exception as e:
+        info("请求失败:", str(e))
+
+
+def updateDetailTask():
+    resetThreadId("udt")
+    info("updateDetailTask")
+    details = []
+    for index, scode in enumerate(g.stocklist):
+        detail = getStockDetail(scode)
+        details.append(detail)
+        # 如果 details 里有 10 个元素，则上传到 test1
+        if len(details) >= 20:
+            uploadDetail(details)
+            details = []
+
+    uploadDetail(details)
 
 
 def getActionsTask():
@@ -983,6 +1029,13 @@ if __name__ == '__main__':
     info('总资产', xt_asset.total_asset)
 
     init()
+    info("start updateDetailTask")
+    t0 = Thread(target=updateDetailTask)
+    t0.start()
+
+    # while True:
+    #     info(".")
+    #     time.sleep(1)
 
     startUpdatePositions()
 
