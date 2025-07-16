@@ -40,8 +40,8 @@ g.reloadK1d = []
 g.uploading = 0
 g.stocklist = ['000300.SH', '000004.SZ']
 
-baseUrl = "http://192.168.66.205:3001"
-baseUrl = "http://test1.91taogu.com"
+g.baseUrl = "http://192.168.66.205:3001"
+g.baseUrl = "http://test1.91taogu.com"
 
 g.log = {
     "level": 4,
@@ -237,19 +237,18 @@ def init():
     print(sys.executable)
     loadConfig()
     g.stocklist = getStockList()
-    # 设置全局变量
 
 
 def getStockList():
     # 从test1获取股票列表
     try:
         response = requests.get(
-            baseUrl + "/stock/codes", timeout=5)
+            g.baseUrl + "/stock/codes", timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
             return
         else:
-            print("从", baseUrl, "获取stock codes成功:", response.status_code)
+            print("从", g.baseUrl, "获取stock codes成功:", response.status_code)
             response.encoding = 'utf-8'
             content = response.text
             print(content)
@@ -263,7 +262,7 @@ def getCandidates():
     # 从test1获取股票列表
     try:
         response = requests.get(
-            baseUrl + "/stock/candidates", timeout=5)
+            g.baseUrl + "/stock/candidates", timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
             return
@@ -387,7 +386,7 @@ def update1mTask():
 def uploadDetail(details):
     info("uploadDetail ", len(details))
     try:
-        response = requests.post(baseUrl+"/stock/details", json={
+        response = requests.post(g.baseUrl+"/stock/details", json={
             "data": details, "passcode": "995560"}, timeout=5)
         if response.status_code != 200:
             error("上传详情失败，状态码:", response.status_code)
@@ -503,7 +502,7 @@ def cancelAction(scode):
 def actionDone(id):
     try:
         response = requests.get(
-            baseUrl+"/stock/action/done?id="+id, timeout=20)
+            g.baseUrl+"/stock/action/done?id="+id, timeout=20)
         if response.status_code != 200:
             error("action done error:", response.status_code,
                   "响应内容:", response.text)
@@ -598,7 +597,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                     # 上传数据到test1
                     try:
                         response = requests.post(
-                            baseUrl+"/stock/data/upload", json=body, timeout=20)
+                            g.baseUrl+"/stock/data/upload", json=body, timeout=20)
                         if response.status_code != 200:
                             error("上传失败，状态码:", response.status_code,
                                   "响应内容:", response.text)
@@ -667,7 +666,7 @@ def update1m(stocklist):
                     # 上传数据到test1
                     try:
                         response = requests.post(
-                            baseUrl+"/stock/data/upload", json=body, timeout=20)
+                            g.baseUrl+"/stock/data/upload", json=body, timeout=20)
                         if response.status_code != 200:
                             error("上传失败，状态码:", response.status_code,
                                   "响应内容:", response.text)
@@ -977,6 +976,26 @@ def updatePositions():
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
     path = r'D:\国金证券QMT交易端\userdata_mini'
+
+
+
+    print("1.http://test1.91taogu.com")
+    print("2.http://192.168.66.205:3001")
+    print("q.退出")
+    ui = input("请选择:")
+    if ui == "1":
+        g.baseUrl = "http://test1.91taogu.com"
+    elif ui == "2":
+        g.baseUrl = "http://192.168.66.205:3001"
+    elif ui == "q":
+        sys.exit()
+    else:
+        g.baseUrl = "http://test1.91taogu.com"
+
+    info("baseUrl:", g.baseUrl)
+    time.sleep(2)
+    
+
     # 生成session id 整数类型 同时运行的策略不能重复
     stockAccount = StockAccount(g.account)
     stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
@@ -985,6 +1004,7 @@ if __name__ == '__main__':
     xt_trader.register_callback(callback)
     # 启动本地客户端
     xt_trader.start()
+
 
     # 建立交易连接，返回0表示连接成功
     connect_result = xt_trader.connect()
@@ -1009,6 +1029,8 @@ if __name__ == '__main__':
         info("订阅失败")
         xt_trader.stop()
         sys.exit(1)
+
+
 
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
