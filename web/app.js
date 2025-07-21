@@ -100,6 +100,10 @@ function isVideo(file) {
     return false;
 }
 
+function getRuleId(scode, broker) {
+    return `${scode}.${broker}`;
+}
+
 function info(msg, req) {
     if (logLevel > INFO) {
         return;
@@ -367,7 +371,7 @@ async function reloadRule(r, req) {
 
     info("reloadRule:" + r.scode, req);
     if (r.closed != 0) {
-        delete rules[r.scode];
+        delete rules[r.scode][r.broker];
         return;
     }
     try {
@@ -377,7 +381,11 @@ async function reloadRule(r, req) {
         info(e.message, req);
     }
 
-    rules[r.scode] = r;
+    if (rules[r.scode] == null) {
+        rules[r.scode] = {};
+    }
+    rules[r.scode][r.broker] = r;
+
     let sb = await db.getSync(`select * from tStockBasic where scode = '${r.scode}'`);
     if (sb != null) {
         r.rule.currentPrice = r.rule.minPrice = r.rule.maxPrice = sb.buy;
@@ -385,7 +393,7 @@ async function reloadRule(r, req) {
 
     r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
-    let ra = await db.getSync(`select * from tRuleAction where scode = '${r.scode}' order by createTime desc limit 1`);
+    let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`);
     if (ra) {
         info(JSON.stringify(ra), req);
         if (ra.done == 0) {
@@ -400,12 +408,11 @@ async function reloadRule(r, req) {
             } else {
                 info("rule done", req);
                 r.status = "done";
-                await db.runSync(`update tTradeRule set closed=1 where scode = '${r.scode}'`);
+                await db.runSync(`update tTradeRule set closed=1 where ruleId = '${r.id}'`);
 
                 setTimeout(() => {
-                    delete rules[r.scode];
+                    delete rules[r.scode][r.broker];
                 }, 1000 * 3);
-
             }
         }
         r.actions.push(ra);
@@ -522,24 +529,26 @@ async function checkRule(scodes) {
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
         let scode = scodes[i].split(".")[0];
-        let r = rules[scode];
-        if (r != null) {
-            debug(`checking rule: scode=${scode} status=${r.status}`);
-            switch (r.status) {
-                case "todo":
-                    //检查是否满足条件
-                    let succ = await tryToBuy(r);
-                    if (!succ) {
-                        succ = await tryToSell(r);
-                    }
-                    break;
-                case "toBuy":
-                    await tryToBuy(r);
-                    break;
-                case "toSell":
-                    await tryToSell(r);
-                    break;
-            }
+        let rs = rules[scode];
+        if (rs != null) {
+            Object.values(rs).forEach(async (r) => {
+                debug(`checking rule: scode=${scode} status=${r.status}`);
+                switch (r.status) {
+                    case "todo":
+                        //检查是否满足条件
+                        let succ = await tryToBuy(r);
+                        if (!succ) {
+                            succ = await tryToSell(r);
+                        }
+                        break;
+                    case "toBuy":
+                        await tryToBuy(r);
+                        break;
+                    case "toSell":
+                        await tryToSell(r);
+                        break;
+                }
+            });
         }
     }
 
@@ -1114,7 +1123,7 @@ async function upgradeDb(succ, fail) {
         "update config set value='13' where key='dbVersion';",
         `drop table tStockAction;`,
         "update config set value='15' where key='dbVersion';",
-        `create table tRuleAction(id text primary key, ruleId text, scode text,sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer);`,
+        `create table tRuleAction(id text primary key, ruleId text, scode text, sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer);`,
         "update config set value='17' where key='dbVersion';",
         `alter table tTradeRule add column closed integer default 0;`,
         "update config set value='19' where key='dbVersion';",
@@ -1147,6 +1156,8 @@ async function upgradeDb(succ, fail) {
         `alter table tStockBasic add column totalVolume real default 0;`,
         "update config set value='47' where key='dbVersion';",
         `alter table tStockBasic add column floatVolume real default 0;`,
+        "update config set value='49' where key='dbVersion';",
+        `alter table tTradeRule add column broker text;`,
         "update config set value='49' where key='dbVersion';",
 
     ];
@@ -1605,11 +1616,17 @@ app.get('/stock/rule/create', async (req, res) => {
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
     let now = Date.now();
-    let sql = `insert or replace into tTradeRule(id, scode, sname, rule, createTime) values(?,?,?,?,?)`;
-    let result = await db.runSync(sql, [json.scode, json.scode, json.sname, JSON.stringify(json), now]);
-    await db.runSync(`delete from tRuleAction where scode=?`, [json.scode]);
-    rules[json.scode] = await db.getSync(`select * from tTradeRule where id=?`, [json.scode]);
-    reloadRule(rules[json.scode], req);
+    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime) values(?,?,?,?,?,?)`;
+    let broker = json.broker;
+    let id = `${json.scode}.${broker}`;
+    let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now]);
+    await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
+    if (rules[json.scode] == null) {
+        rules[json.scode] = {};
+    }
+
+    rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker]);
+    reloadRule(rules[json.scode][broker], req);
 
     await insertOrReplace("tStockBasic", {
         id: json.scode,
@@ -1744,22 +1761,24 @@ app.get('/stock/rule/cancel', async (req, res) => {
     info("get /stock/rule/cancel", req)
     let js = req.query.js;
     let scode = req.query.scode;
+    let broker = req.query.broker;
     let all = req.query.all;
     let now = Date.now();
-    if (rules[scode]) {
-        rules[scode].closed = 1;
+    if (rules[scode] && rules[scode][broker]) {
+        rules[scode][broker].closed = 1;
     }
-    let sql = `update tTradeRule set closed = 1 where scode=?`;
-    let params = [scode];
+    let ruleId = getRuleId(scode, broker);
+    let sql = `update tTradeRule set closed = 1 where id=?`;
+    let params = [ruleId];
 
-    let cancelled = scode;
-
+    let cancelled = ruleId;
 
     if (all) {
         sql = `update tTradeRule set closed = 1`;
         cancelled = "";
         params = [];
     }
+
     let result = await db.runSync(sql, params);
 
     if (result.error == null) {
@@ -1767,8 +1786,8 @@ app.get('/stock/rule/cancel', async (req, res) => {
             sql = `update tRuleAction set done = -1 `;
             result = await db.runSync(sql, []);
         } else {
-            sql = `update tRuleAction set done = -1 where scode=?`;
-            result = await db.runSync(sql, [scode]);
+            sql = `update tRuleAction set done = -1 where ruleId=?`;
+            result = await db.runSync(sql, [ruleId]);
         }
     }
 
@@ -1777,16 +1796,17 @@ app.get('/stock/rule/cancel', async (req, res) => {
             rules = {}
             reloadRules();
         } else {
-            reloadRule(rules[scode], req);
+            reloadRule(rules[scode][broker], req);
         }
     }
 
 
     let action = {
         id: `${cancelled}-cancelAction`,
-        ruleId: scode,
-        scode: cancelled,
-        sname: cancelled,
+        ruleId: ruleId,
+        broker: broker,
+        scode: scode,
+        sname: scode,
         action: "cancelAction",
         price: 0,
         amount: 0,
@@ -1795,16 +1815,10 @@ app.get('/stock/rule/cancel', async (req, res) => {
         createTime: now
     }
 
-    let brokers = ["国信", "国金"];
-    brokers.forEach(async (broker) => {
-        action.broker = broker;
-        action.id = `${action.scode}-cancelAction-${action.broker}`;
-        result = await insertOrReplace("tRuleAction", action);
-    });
+    result = await insertOrReplace("tRuleAction", action);
 
     var resp = JSON.stringify({});
     if (result.error) {
-
         resp = JSON.stringify(result);
     }
 
@@ -1818,16 +1832,20 @@ app.get('/stock/rule/cancel', async (req, res) => {
 app.get('/stock/rule/delete', async (req, res) => {
     info("get /stock/rule/delete", req)
     let js = req.query.js;
+    let id = req.query.id;
     let scode = req.query.scode;
+    let broker = req.query.broker;
     let now = Date.now();
-    delete rules[scode]
+    if (rules[scode] && rules[scode][broker]) {
+        delete rules[scode][broker];
+    }
 
-    let sql = `delete from tTradeRule where scode=?`;
-    let result = await db.runSync(sql, [scode]);
+    let sql = `delete from tTradeRule where id=?`;
+    let result = await db.runSync(sql, [id]);
 
     if (result.error == null) {
-        sql = `delete from tRuleAction where scode=?`;
-        result = await db.runSync(sql, [scode]);
+        sql = `delete from tRuleAction where scode=? and broker=?`;
+        result = await db.runSync(sql, [scode, broker]);
     }
 
     var resp = JSON.stringify({});
@@ -1930,17 +1948,19 @@ app.get('/stock/fe/user/login', async (req, res) => {
 });
 
 function updatePriceToRule(scode, price) {
-    let r = rules[scode];
-    if (r != null) {
-        let rule = r.rule;
-        rule.currentPrice = price;
-        if (rule.maxPrice == null || price > rule.maxPrice) {
-            rule.maxPrice = price;
-        }
+    let rs = rules[scode];
+    if (rs != null) {
+        Object.values(rs).forEach((r) => {
+            let rule = r.rule;
+            rule.currentPrice = price;
+            if (rule.maxPrice == null || price > rule.maxPrice) {
+                rule.maxPrice = price;
+            }
 
-        if (rule.minPrice == null || price < rule.minPrice) {
-            rule.minPrice = price;
-        }
+            if (rule.minPrice == null || price < rule.minPrice) {
+                rule.minPrice = price;
+            }
+        })
     }
 }
 function getMarket(stockCode) {

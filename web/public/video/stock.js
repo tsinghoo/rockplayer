@@ -250,7 +250,7 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         deleteRule: async function () {
-            let res = await share.getSync__("/stock/rule/delete", { scode: self.selectedData["代码"] });
+            let res = await share.getSync__("/stock/rule/delete", { scode: self.selectedData["代码"], id: self.selectedData["id"], broker: self.selectedData["broker"] });
             if (res.error) {
                 share.toastError__(res.error);
             } else {
@@ -259,7 +259,7 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         toCancelRule: async function (all) {
-            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], all });
+            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], broker: self.selectedData["broker"], all });
             if (res.error) {
                 share.toastError__(res.error);
             } else {
@@ -268,7 +268,7 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         showMenu4RuleContent: async function () {
-            let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"] });
+            let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"], broker: self.selectedData["broker"] });
             let guide = ``;
 
             let buttons = [
@@ -556,6 +556,8 @@ window.feed_list = window.feed_list || (function () {
                             td.html(row[key]);
                             td.addClass("almostwhite");
                         }
+                    } else if (key == "broker") {
+                        td.html(row[key]);
                     } else if (key == "tid") {
                         if (firstRow) {
                             td.html(`<span class="deleteRow clickable white">X</span>` + row[key]);
@@ -579,7 +581,7 @@ window.feed_list = window.feed_list || (function () {
                         } catch (e) {
 
                         }
-                        if (firstRow && rc != null) {
+                        if (rc != null) {
                             self.showRule({ rule: rc }, td);
                             if (rc.order == "") {
                                 td.find("table").css({
@@ -772,12 +774,17 @@ window.feed_list = window.feed_list || (function () {
             })
             $(".tdRule").each(function () {
                 let td = $(this);
-                let ac = td.parents("tr").attr("code");
-                if (ac == null) {
+                let data = td.parents("tr").attr("data");
+                if (data == null) {
                     return;
                 }
-                let scode = ac.trim();
-                let r = res.data[scode];
+
+                data = JSON.parse(data);
+
+                let scode = data["代码"];
+                let broker = data["broker"];
+
+                let r = res.data[scode][broker];
                 if (r) {
                     self.showRuleStatus(r, td);
                 }
