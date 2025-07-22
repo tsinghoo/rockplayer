@@ -1927,7 +1927,7 @@ app.get('/stock/rule/status', async (req, res) => {
             resp = JSON.stringify({ data: null });
         }
     } else {
-        resp = JSON.stringify({ data: rules[scode] });
+        resp = JSON.stringify({ data: Object.values(rules[scode])[0] });
     }
     if (js) {
         resp = `${js}(${resp})`;
