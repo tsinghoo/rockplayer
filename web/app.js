@@ -875,9 +875,6 @@ app.post('/stock/update', async (req, res) => {
             });
         } else if (broker == "国金当日") {
             //tdx 国金证券
-            //成交时间	资金账号	证券代码	证券名称	买卖标记	成交价格	成交数量	成交金额	成交编号	合同编号	账号名称	投资备注	策略名称	股东号
-            //11:27:22	8883949249	688012	中微公司	限价卖出	188.66	200	3 7732.00	33674804	39324	李庆虎	remark	strategy_name	A519736316
-
             fields = fields.concat([""]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
@@ -893,7 +890,30 @@ app.post('/stock/update', async (req, res) => {
             } else {
             }
 
-            await insertOrIgnore("tStockBasic", {
+            await insertOrReplace("tStockBasic", {
+                id: fields[1],
+                scode: fields[1],
+                sname: fields[2],
+                buy: fields[5],
+                updateTime: now
+            });
+        } else if (broker == "国金qmt成交") {
+            //国金qmt成交
+            fields = fields.concat([""]);
+            var sql = `insert or replace into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            let tday = timeFormat(new Date(), "yyyyMMdd");
+            let ttime = fields[0];
+            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], "国金", getMarket(fields[2]), fields[6], fields[5],
+                fields[7], fields[8], fields[1], '', tday + " " + ttime]);
+            if (res.error) {
+                info(res.error, req)
+                res.send(res);
+                return;
+            } else {
+            }
+            await insertOrReplace("tStockBasic", {
                 id: fields[1],
                 scode: fields[1],
                 sname: fields[2],
@@ -964,7 +984,7 @@ app.post('/stock/update', async (req, res) => {
             } else {
             }
 
-            await insertOrIgnore("tStockBasic", {
+            await insertOrReplace("tStockBasic", {
                 id: fields[5],
                 scode: fields[5],
                 sname: fields[6],
