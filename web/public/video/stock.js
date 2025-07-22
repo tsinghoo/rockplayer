@@ -250,7 +250,7 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         deleteRule: async function () {
-            let res = await share.getSync__("/stock/rule/delete", { scode: self.selectedData["代码"], id: self.selectedData["id"], broker: self.selectedData["broker"] });
+            let res = await share.getSync__("/stock/rule/delete", { scode: self.selectedData["代码"], id: self.selectedData["id"], broker: self.selectedData["券商"] });
             if (res.error) {
                 share.toastError__(res.error);
             } else {
@@ -259,7 +259,7 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         toCancelRule: async function (all) {
-            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], broker: self.selectedData["broker"], all });
+            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], broker: self.selectedData["券商"], all });
             if (res.error) {
                 share.toastError__(res.error);
             } else {
@@ -268,7 +268,7 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         showMenu4RuleContent: async function () {
-            let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"], broker: self.selectedData["broker"] });
+            let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"], broker: self.selectedData["券商"] });
             let guide = ``;
 
             let buttons = [
@@ -556,7 +556,7 @@ window.feed_list = window.feed_list || (function () {
                             td.html(row[key]);
                             td.addClass("almostwhite");
                         }
-                    } else if (key == "broker") {
+                    } else if (key == "券商") {
                         td.html(row[key]);
                     } else if (key == "tid") {
                         if (firstRow) {
@@ -782,11 +782,13 @@ window.feed_list = window.feed_list || (function () {
                 data = JSON.parse(data);
 
                 let scode = data["代码"];
-                let broker = data["broker"];
+                let broker = data["券商"];
 
-                let r = res.data[scode][broker];
-                if (r) {
-                    self.showRuleStatus(r, td);
+                if (res.data[scode]) {
+                    let r = res.data[scode][broker];
+                    if (r) {
+                        self.showRuleStatus(r, td);
+                    }
                 }
             })
         },
@@ -1842,11 +1844,10 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         showRuleStatus: function (r, c) {
-            if (r == null || Object.values(r).length == 0) {
+            if (r == null) {
                 return;
             }
-
-            r = Object.values(r)[0];
+            
             let rc = r.rule;
 
             let statusMapping = self.statusMapping;
