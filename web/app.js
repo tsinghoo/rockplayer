@@ -371,9 +371,13 @@ async function reloadRule(r, req) {
 
     info("reloadRule:" + r.scode, req);
     if (r.closed != 0) {
-        delete rules[r.scode][r.broker];
+        if (rules[r.scode] && rules[r.scode][r.broker]) {
+            delete rules[r.scode][r.broker];
+        }
+
         return;
     }
+    
     try {
         info("r.rule:" + r.rule, req);
         r.rule = JSON.parse(r.rule);
