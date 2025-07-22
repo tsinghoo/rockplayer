@@ -1842,9 +1842,11 @@ window.feed_list = window.feed_list || (function () {
             });
         },
         showRuleStatus: function (r, c) {
-            if (r == null) {
+            if (r == null || Object.values(r).length == 0) {
                 return;
             }
+
+            r = Object.values(r)[0];
             let rc = r.rule;
 
             let statusMapping = self.statusMapping;
