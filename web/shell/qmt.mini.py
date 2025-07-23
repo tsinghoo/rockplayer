@@ -197,9 +197,11 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
 
 def updateDeal(deal):
     try:
+        info("updateDeal:", deal)
         # 目标 URL
         url = "http://test1.91taogu.com/stock/deal/update"
-
+        info("url:", url)
+        info("data:", json.dumps(deal))
         # 设置请求头（声明内容类型为 JSON）
         headers = {
             "Content-Type": "application/json"
@@ -512,9 +514,10 @@ def actionDone(id):
 
 def updateActionOrdered(scode, type, status, price, orderId):
     try:
+        info("updateActionOrdered", scode, type, status, price, orderId)
         # 目标 URL
         url = "http://test1.91taogu.com/stock/rule/action/ordered"
-
+        info("url:", url)
         # 要发送的 JSON 数据（Python 字典）
         data = {
             "broker": g.broker,
@@ -522,7 +525,7 @@ def updateActionOrdered(scode, type, status, price, orderId):
             "status": status,
             "orderNo": orderId
         }
-
+        info("data:", json.dumps(data))
         # 设置请求头（声明内容类型为 JSON）
         headers = {
             "Content-Type": "application/json"

@@ -2292,7 +2292,7 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
         info(r.error, req)
         resp = { error: r.error };
     } else {
-        reloadRule(rules[scode], req);
+        reloadRule(rules[scode][broker], req);
     }
 
     res.send(JSON.stringify(resp));
