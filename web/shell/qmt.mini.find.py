@@ -854,9 +854,9 @@ def findStock(sector):
                 1 for price in close_prices if price < current_price) / len(close_prices)
 
             info(hist_percentile, "in", len(close_prices), "close_prices")
-            if hist_percentile > g.low_percentile:
-                info("bad")
-                continue
+            # if hist_percentile > g.low_percentile:
+            #     info("bad")
+            #     continue
 
             # 检查最近三天是否连续上涨
             if len(close_prices) >= 4:
