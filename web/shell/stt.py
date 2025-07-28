@@ -236,7 +236,7 @@ def genScript(file_name):
                                     # 将原始内容写回文件中
                                     f.write(content)
             except Exception as e:
-                log("error:"+e)
+                log("error")
 
 
 with open('/flv/todo') as f:
