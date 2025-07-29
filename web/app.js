@@ -1618,7 +1618,7 @@ app.post('/stock/details', async (req, res) => {
     if (data.length < 1) {
         await db.runSync(`UPDATE tstock 
                     SET sname = (SELECT tsb.sname FROM tStockBasic tsb WHERE tsb.scode = tstock.scode)
-                    WHERE EXISTS (SELECT 1 FROM tStockBasic tsb WHERE tsb.scode = tstock.scode);`);
+                    WHERE EXISTS (SELECT 1 FROM tStockBasic tsb WHERE tsb.scode = tstock.scode);`, []);
     }
 
     res.send("ok");
