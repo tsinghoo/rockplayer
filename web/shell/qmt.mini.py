@@ -306,6 +306,7 @@ def getStockDetail(scode):
     si = xtdata.get_instrument_detail(scode)
     detail = {
         "scode": scode,
+        "sname": si["InstrumentName"],
         "LastVolume": si["LastVolume"],
         "TotalVolume": si["TotalVolume"],
         "FloatVolume": si["FloatVolume"],
@@ -373,7 +374,7 @@ def update1dTask():
             for scode in reloadK1d:
                 updateActionOrdered(scode, "", "56", 0, "")
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
-
+        g.stocklist = getStockList()
         update1d(g.stocklist)
 
 
@@ -413,6 +414,7 @@ def updateDetailTask():
             details = []
 
     uploadDetail(details)
+    uploadDetail([])
 
 
 def getActionsTask():

@@ -1611,9 +1611,13 @@ app.post('/stock/details', async (req, res) => {
     let data = req.body.data;
     let updateTime = Date.now();
     data.forEach(async (row) => {
-        let sql = `update tStockBasic set LastVolume=?,TotalVolume=?,FloatVolume=?,UpStopPrice=?,DownStopPrice=?,VolumeMultiple=?,updateTime=? where scode=?`;
-        await db.runSync(sql, [row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, updateTime, row.scode]);
+        let sql = `update tStockBasic set sname=?, LastVolume=?,TotalVolume=?,FloatVolume=?,UpStopPrice=?,DownStopPrice=?,VolumeMultiple=?,updateTime=? where scode=?`;
+        await db.runSync(sql, [row.sname, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, updateTime, row.scode]);
     })
+
+    if (data.length < 1) {
+        await db.runSync("update tstock set sname=(select sname from tstockBasic where scode=? limit 1) where scode=?", [row.scode, row.scode]);
+    }
 
     res.send("ok");
 });

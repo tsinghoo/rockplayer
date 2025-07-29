@@ -837,11 +837,13 @@ def findStock(sector):
                                            start_time="", end_time=current_date, count=days, dividend_type='none', fill_data=True)
             prices = df[scode]
             # debug("prices:", prices)
-            if prices is None or len(prices['close']) < 5:
+            if prices is None or len(prices['high']) < 3:
                 continue
 
+            high_prices = prices['high']
+            low_prices = prices['low']
             close_prices = prices['close']
-            current_price = close_prices[-1]
+            current_price = high_prices[-1]
 
             # 检查股价是否在合理范围内
             if current_price < g.min_price or current_price > g.max_price:
@@ -850,25 +852,60 @@ def findStock(sector):
 
             info()
             # 计算历史分位数判断是否低位
-            hist_percentile = sum(
-                1 for price in close_prices if price < current_price) / len(close_prices)
+            # hist_percentile = sum(
+            #     1 for price in close_prices if price < current_price) / len(close_prices)
 
-            info(hist_percentile, "in", len(close_prices), "close_prices")
+            # info(hist_percentile, "in", len(close_prices), "close_prices")
             # if hist_percentile > g.low_percentile:
             #     info("bad")
             #     continue
 
-            # 检查最近三天是否连续上涨
-            if len(close_prices) >= 4:
-                day0 = close_prices[-1]
-                day1 = close_prices[-2]
-                day2 = close_prices[-3]
-                day3 = close_prices[-4]
+            # 最近一个月涨幅超过8%的次数
+            minRate = 0.08
+            highIncreaseCount = 0
+            days = 30
+            if len(close_prices) < days:
+                days = len(close_prices)-1
 
-                if day0 > day1 > day2:
-                    # 满足条件，加入候选列表
-                    info(Back.GREEN, "OK", Style.RESET_ALL)
-                    candidate.append([scode, sname])
+            if (days < 1):
+                continue
+
+            for i in range(len(close_prices)-1, len(close_prices)-1-days, -1):
+                if high_prices[i] > close_prices[i-1] * (1+minRate):
+                    highIncreaseCount += 1
+                else:
+                    break
+            if (highIncreaseCount < 3):
+                continue
+
+            # 检查最近几天连续上涨的天数
+            days = 3
+            highIncrease = 0
+            if len(close_prices) < days:
+                days = len(close_prices)-1
+
+            if (days < 1):
+                continue
+            for i in range(len(high_prices)-1, len(high_prices)-1-days, -1):
+                if high_prices[i] > high_prices[i-1]:
+                    highIncrease += 1
+                else:
+                    break
+
+            if (highIncrease < 3):
+                continue
+
+            lowIncrease = 0
+            for i in range(len(low_prices)-1, len(high_prices)-1-days, -1):
+                if low_prices[i] > low_prices[i-1]:
+                    lowIncrease += 1
+                else:
+                    break
+            if (lowIncrease < 3):
+                continue
+
+            info(Back.GREEN, "OK", Style.RESET_ALL)
+            candidate.append([scode, sname])
 
         except Exception as e:
             error_msg = traceback.format_exc()
@@ -882,8 +919,7 @@ def uploadCandidates(stocks):
     bsize = 200
     for i in range(0, len(stocks), bsize):
         batch = stocks[i:i + bsize]
-        info("uploading candidates",
-             "[", i, ",", i+bsize, "]", len(batch))
+        info("uploading candidates", "[", i, ",", i+bsize, "]", len(batch))
 
         doUploadCandidates(batch)
 
@@ -894,8 +930,7 @@ def doUploadCandidates(batch):
         response = requests.post(
             baseUrl+"/stock/candidates", json=body, timeout=20)
         if response.status_code != 200:
-            error("上传失败，状态码:", response.status_code,
-                  "响应内容:", response.text)
+            error("上传失败，状态码:", response.status_code,  "响应内容:", response.text)
     except Exception as e:
         error("上传失败:", str(e))
 
