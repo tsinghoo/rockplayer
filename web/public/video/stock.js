@@ -24,6 +24,7 @@ window.feed_list = window.feed_list || (function () {
         currentPrices: {},
         init: async function () {
             self.sql.name = decodeURIComponent(window.location.hash.substring(1));
+            window.name = self.sql.name;
             await self.getSqls();
             Chart.register(ChartDataLabels);
             self.bindEvents();
@@ -57,7 +58,11 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         sqlClicked: function (row) {
-            self.toEditSql(row);
+            if (window.name == row.name) {
+                self.toEditSql(row);
+            } else {
+                window.open('./stock.html#' + row.name, row.name);
+            }
         },
         toEditSql: async function (row) {
             //弹出的窗口中有两个输入框，一个是name,一个是sql，name是row.name,sql是row.sql，点击确定后，将name和sql更新到数据库
@@ -1847,7 +1852,7 @@ window.feed_list = window.feed_list || (function () {
             if (r == null) {
                 return;
             }
-            
+
             let rc = r.rule;
 
             let statusMapping = self.statusMapping;
