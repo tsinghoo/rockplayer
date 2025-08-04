@@ -814,9 +814,9 @@ def findStock(sector):
     # 找出低位且连续三天上涨的股票
     candidate = []
     # dataStartTime设置为70天前
-    days = 60
+    startDays = 60
     dataStartTime = (datetime.datetime.now() -
-                     datetime.timedelta(days=(days*3))).strftime("%Y%m%d")
+                     datetime.timedelta(days=(startDays*3))).strftime("%Y%m%d")
     dataEndTime = current_date
     params = ['open', 'close', 'high', 'low', 'volume', 'amount']
     for index, scode in enumerate(g.stocklist):
@@ -831,10 +831,10 @@ def findStock(sector):
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
 
-            info(Back.RED, 'get', days, period, 'for', scode, 'from',
+            info(Back.RED, 'get', startDays, period, 'for', scode, 'from',
                  '', 'to', current_date, "(", index, "/", len(g.stocklist), ")", Style.RESET_ALL)
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                           start_time="", end_time=current_date, count=days, dividend_type='none', fill_data=True)
+                                           start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
             prices = df[scode]
             # debug("prices:", prices)
             if prices is None or len(prices['high']) < 3:
