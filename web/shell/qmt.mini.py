@@ -551,9 +551,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
     if (dataStartTime is None):
         # 判断g.config里是否有lastStartTime1d这个key
         if "lastStartTime1d" not in g.config:
-            g.config["lastStartTime1d"] = datetime.datetime.now().strftime(
-                "%Y%m%d")
-            info("lastStartTime1d:", g.config["lastStartTime1d"])
+            updateLastStartTime1d()
             saveConfig()
 
         dataStartTime = (datetime.datetime.strptime(
@@ -616,6 +614,14 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
 
             # print(obj2JsonString(df[scode]))
             # print(datas.to_json(orient='index'))
+    updateLastStartTime1d()
+    saveConfig()
+
+
+def updateLastStartTime1d():
+    g.config["lastStartTime1d"] = datetime.datetime.now().strftime(
+        "%Y%m%d")
+    info("lastStartTime1d:", g.config["lastStartTime1d"])
 
 
 def update1m(stocklist):
@@ -623,10 +629,8 @@ def update1m(stocklist):
     pds = ["1m"]
 
     if "lastStartTime1m" not in g.config:
-        today = datetime.datetime.now().date()
-        g.config["lastStartTime1m"] = datetime.datetime.combine(
-            today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
-        info("lastStartTime1m:", g.config["lastStartTime1m"])
+        initLastStartTime1m()
+        saveConfig()
     dataStartTime = (datetime.datetime.strptime(
         g.config["lastStartTime1m"], "%Y%m%d%H%M%S") - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
     info("dataStartTime:", dataStartTime)
@@ -661,30 +665,34 @@ def update1m(stocklist):
                 batch = datas.iloc[i:i+bsize]
                 info("上传", scode, period,
                      "[", i, ",", i+bsize, "]", len(batch))
+                batch_data = []
                 for idx, row in batch.iterrows():
-                    batch_data = [[str(idx)] + [row["open"], row["close"],
-                                                row["high"], row["low"], row["volume"], row["amount"]]]
+                    batch_data.append([str(idx)] + [row["open"], row["close"],
+                                                    row["high"], row["low"], row["volume"], row["amount"]])
                 # info(obj2JsonString(batch_data, indent=None))
-                    body = {"data": obj2Json(
-                        batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                    debug("body:", body)
-                    # 上传数据到test1
-                    try:
-                        response = requests.post(
-                            g.baseUrl+"/stock/data/upload", json=body, timeout=20)
-                        if response.status_code != 200:
-                            error("上传失败，状态码:", response.status_code,
-                                  "响应内容:", response.text)
-                    except Exception as e:
-                        error("上传失败:", str(e))
 
-            # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
-            # info(obj2JsonString(result_dict))
-            # json_result = json.dumps(result_dict, indent=4)
-            # info(json_result)
+                if (len(batch_data) == 0):
+                    info("no data")
+                    continue
+                body = {"data": obj2Json(
+                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                debug("body:", body)
+                # 上传数据到test1
+                try:
+                    response = requests.post(
+                        g.baseUrl+"/stock/data/upload", json=body, timeout=20)
+                    if response.status_code != 200:
+                        error("上传失败，状态码:", response.status_code,
+                              "响应内容:", response.text)
+                except Exception as e:
+                    error("上传失败:", str(e))
 
-            # info(obj2JsonString(df[scode]))
-            # info(datas.to_json(orient='index'))
+
+def initLastStartTime1m():
+    today = datetime.datetime.now().date()
+    g.config["lastStartTime1m"] = datetime.datetime.combine(
+        today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
+    info("lastStartTime1m:", g.config["lastStartTime1m"])
 
 
 def obj2Json(obj, max_depth=4, current_depth=1):
@@ -982,8 +990,6 @@ if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
     path = r'D:\国金证券QMT交易端\userdata_mini'
 
-
-
     print("1.http://test1.91taogu.com")
     print("2.http://192.168.66.205:3001")
     print("q.退出")
@@ -999,7 +1005,6 @@ if __name__ == '__main__':
 
     info("baseUrl:", g.baseUrl)
     time.sleep(2)
-    
 
     # 生成session id 整数类型 同时运行的策略不能重复
     stockAccount = StockAccount(g.account)
@@ -1009,7 +1014,6 @@ if __name__ == '__main__':
     xt_trader.register_callback(callback)
     # 启动本地客户端
     xt_trader.start()
-
 
     # 建立交易连接，返回0表示连接成功
     connect_result = xt_trader.connect()
@@ -1034,8 +1038,6 @@ if __name__ == '__main__':
         info("订阅失败")
         xt_trader.stop()
         sys.exit(1)
-
-
 
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
