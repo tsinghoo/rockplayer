@@ -677,6 +677,7 @@ window.feed_list = window.feed_list || (function () {
             })
 
             $(".buySell").click(function (e) {
+                e.stopPropagation();
                 self.onBuySellClicked(this);
             })
 

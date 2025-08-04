@@ -1184,7 +1184,7 @@ async function upgradeDb(succ, fail) {
         `alter table tStockBasic add column floatVolume real default 0;`,
         "update config set value='49' where key='dbVersion';",
         `alter table tTradeRule add column broker text;`,
-        "update config set value='49' where key='dbVersion';",
+        "update config set value='51' where key='dbVersion';",
 
     ];
 
