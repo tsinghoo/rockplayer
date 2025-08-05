@@ -464,6 +464,7 @@ window.feed_list = window.feed_list || (function () {
             let tr = $("<tr>");
             let params = JSON.parse(self.sql.params);
             let kvs = params.keys;
+            let showAll=params.showAll;
             let keys = [];
             kvs.forEach(ele => {
                 if (typeof ele == "string") {
@@ -639,7 +640,7 @@ window.feed_list = window.feed_list || (function () {
                 table.append(tr);
             }
 
-            if (expanded) {
+            if (expanded || showAll) {
                 $(".repeatCode").show();
             } else {
                 $(".repeatCode").hide();
