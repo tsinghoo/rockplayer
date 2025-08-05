@@ -2060,7 +2060,7 @@ function formatScode(stockCode) {
 app.get('/stock/codes', async (req, res) => {
     info("/stock/codes", req)
     let js = req.query.js;
-    let sql = `select distinct tsb.scode from tstockbasic tsb join tstock ts on tsb.scode=ts.scode order by tsb.priority desc`;
+    let sql = `select distinct tsb.scode from tstockbasic tsb order by tsb.priority desc`;
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {
