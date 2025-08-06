@@ -2152,11 +2152,13 @@ app.get('/stock/pair', async (req, res) => {
 });
 
 app.post('/stock/query', async (req, res) => {
-    let sql = decodeURIComponent(req.body.sql);
-
-    let name = req.body.name;
-    let params = req.body.params;
+    let text = req.body.text;
+    let row = JSON.parse(decodeURIComponent(atob(text)));
+    let sql = row.sql;
+    let name = row.name;
+    let params = row.params;
     info(`/stock/query:${name}:sql:${sql}`, req)
+    info(`/stock/query:${name}:params:${params}`, req)
     let r = await db.allSync(sql);
     if (r.error) {
         info(r.error, req)

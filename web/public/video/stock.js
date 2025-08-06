@@ -121,9 +121,9 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         exeSql: async function (row, show) {
-            row.sql = encodeURIComponent(row.sql);
-            delete row["params"]
-            let res = await share.postSync__("/stock/query", row);
+            //将sql 以base64编码
+            let text = btoa(encodeURIComponent(JSON.stringify(row)));
+            let res = await share.postSync__("/stock/query", {text});
             let table = $("#stockTable");
             self.sql = row;
             if (res.error) {
