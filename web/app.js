@@ -2155,7 +2155,7 @@ app.post('/stock/query', async (req, res) => {
     let sql = req.body.sql;
     let name = req.body.name;
     let params = req.body.params;
-    info(`sql:${sql}`, req)
+    info(`/stock/query:sql:${sql}`, req)
     let r = await db.allSync(sql);
     if (r.error) {
         info(r.error, req)
@@ -2534,7 +2534,13 @@ app.get('/video/player', (req, res) => {
 });
 app.get('/video/config', (req, res) => {
     const fp = path.join(directoryPath, "config.json");
-    var text = fs.readFileSync(fp, "utf-8");
+    var text = "{}";
+    try {
+        text = fs.readFileSync(fp, "utf-8");
+    } catch (e) {
+        error("error reading config.json:" + e.message, req);
+    }
+
     var json = { data: JSON.parse(text) }
     var resp = req.query.js + "(" + JSON.stringify(json) + ");";
     res.send(resp);
@@ -2542,7 +2548,12 @@ app.get('/video/config', (req, res) => {
 
 app.post('/video/ping', (req, res) => {
     const fp = path.join(directoryPath, "config.json");
-    var text = fs.readFileSync(fp, "utf-8");
+    var text = "{}";
+    try {
+        text = fs.readFileSync(fp, "utf-8");
+    } catch (e) {
+        error("error reading config.json:" + e.message, req);
+    }
     var config = JSON.parse(text);
     var bd = req.body
     info("body:" + JSON.stringify(bd), req)
