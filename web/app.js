@@ -2152,7 +2152,8 @@ app.get('/stock/pair', async (req, res) => {
 });
 
 app.post('/stock/query', async (req, res) => {
-    let sql = req.body.sql;
+    let sql = decodeURIComponent(req.body.sql);
+
     let name = req.body.name;
     let params = req.body.params;
     info(`/stock/query:${name}:sql:${sql}`, req)

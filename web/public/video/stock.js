@@ -121,6 +121,7 @@ window.feed_list = window.feed_list || (function () {
             }
         },
         exeSql: async function (row, show) {
+            row.sql = encodeURIComponent(row.sql);
             let res = await share.postSync__("/stock/query", row);
             let table = $("#stockTable");
             self.sql = row;
