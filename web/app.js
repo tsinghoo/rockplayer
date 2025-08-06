@@ -2155,7 +2155,7 @@ app.post('/stock/query', async (req, res) => {
     let sql = req.body.sql;
     let name = req.body.name;
     let params = req.body.params;
-    info(`/stock/query:sql:${sql}`, req)
+    info(`/stock/query:${name}:sql:${sql}`, req)
     let r = await db.allSync(sql);
     if (r.error) {
         info(r.error, req)
