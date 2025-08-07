@@ -989,19 +989,17 @@ def updatePositions():
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
     path = r'D:\国金证券QMT交易端\userdata_mini'
-
-    print("1.http://test1.91taogu.com")
-    print("2.http://192.168.66.205:3001")
-    print("q.退出")
-    ui = input("请选择:")
-    if ui == "1":
-        g.baseUrl = "http://test1.91taogu.com"
-    elif ui == "2":
-        g.baseUrl = "http://192.168.66.205:3001"
-    elif ui == "q":
-        sys.exit()
+    #获取环境变量proxy的值
+    proxy = os.getenv("proxy")
+    if proxy:
+        g.baseUrl = proxy
     else:
         g.baseUrl = "http://test1.91taogu.com"
+        
+    # print("1.http://test1.91taogu.com")
+    # print("2.http://192.168.66.205:3001")
+    # print("q.退出")
+    # ui = input("请选择:")
 
     info("baseUrl:", g.baseUrl)
     time.sleep(2)

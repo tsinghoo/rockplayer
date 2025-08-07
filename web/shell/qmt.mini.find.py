@@ -40,8 +40,8 @@ g.reloadK1d = []
 g.uploading = 0
 g.stocklist = ['000300.SH', '000004.SZ']
 
-baseUrl = "http://192.168.66.205:3001"
-baseUrl = "http://test1.91taogu.com"
+g.baseUrl = "http://192.168.66.205:3001"
+g.baseUrl = "http://test1.91taogu.com"
 
 g.log = {
     "level": 4,
@@ -416,7 +416,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                 # 上传数据到test1
                 try:
                     response = requests.post(
-                        baseUrl+"/stock/data/upload", json=body, timeout=20)
+                        g.baseUrl+"/stock/data/upload", json=body, timeout=20)
                     if response.status_code != 200:
                         error("上传失败，状态码:", response.status_code,
                               "响应内容:", response.text)
@@ -486,7 +486,7 @@ def update1m():
                     # 上传数据到test1
                     try:
                         response = requests.post(
-                            baseUrl+"/stock/data/upload", json=body, timeout=20)
+                            g.baseUrl+"/stock/data/upload", json=body, timeout=20)
                         if response.status_code != 200:
                             error("上传失败，状态码:", response.status_code,
                                   "响应内容:", response.text)
@@ -785,7 +785,7 @@ def listStock(sector):
         body = {"sector": sector, "data": batch}
         try:
             response = requests.post(
-                baseUrl+"/stock/basic/update", json=body, timeout=20)
+                g.baseUrl+"/stock/basic/update", json=body, timeout=20)
             if response.status_code != 200:
                 error("上传失败，状态码:", response.status_code,
                       "响应内容:", response.text)
@@ -928,7 +928,7 @@ def doUploadCandidates(batch):
     body = {"data": batch}
     try:
         response = requests.post(
-            baseUrl+"/stock/candidates", json=body, timeout=20)
+            g.baseUrl+"/stock/candidates", json=body, timeout=20)
         if response.status_code != 200:
             error("上传失败，状态码:", response.status_code,  "响应内容:", response.text)
     except Exception as e:
@@ -938,6 +938,19 @@ def doUploadCandidates(batch):
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
     path = r'D:\国金证券QMT交易端\userdata_mini'
+    proxy = os.getenv("proxy")
+    if proxy:
+        g.baseUrl = proxy
+    else:
+        g.baseUrl = "http://test1.91taogu.com"
+        
+    # print("1.http://test1.91taogu.com")
+    # print("2.http://192.168.66.205:3001")
+    # print("q.退出")
+    # ui = input("请选择:")
+
+    info("baseUrl:", g.baseUrl)
+    
     # 生成session id 整数类型 同时运行的策略不能重复
     stockAccount = StockAccount(g.account)
     stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
