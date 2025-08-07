@@ -11,11 +11,11 @@ echo q. quit
 set /p "input=Please select: "
 
 if %input%==1 ( 
-  proxy=http://test1.91taogu.com
-  pause
+  set proxy=http://test1.91taogu.com
+  
 ) else if %input%==2 (
-  proxy=http://192.168.66.205:3001
-  pause
+  set proxy=http://192.168.66.205:3001
+  
 ) else if %input%==q ( 
   echo quit
 ) else ( 
