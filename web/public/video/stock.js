@@ -24,6 +24,10 @@ window.feed_list = window.feed_list || (function () {
         currentPrices: {},
         init: async function () {
             self.sql.name = decodeURIComponent(window.location.hash.substring(1));
+            if (self.sql.name == null || self.sql.name == "") {
+                self.sql.name = "all";
+            }
+            
             window.name = self.sql.name;
             await self.getSqls();
             Chart.register(ChartDataLabels);
