@@ -886,6 +886,7 @@ def findStock(sector):
 
             if (days < 1):
                 continue
+            
             for i in range(len(high_prices)-1, len(high_prices)-1-days, -1):
                 if high_prices[i] > high_prices[i-1]:
                     highIncrease += 1
@@ -950,7 +951,14 @@ if __name__ == '__main__':
     # ui = input("请选择:")
 
     info("baseUrl:", g.baseUrl)
-    
+
+    # 等待用户输入，如果用户输入q，则退出,否则继续
+    print("1.搜索股票")
+    print("2.更新所有股票代码")
+    print("3.获取所有板块信息")
+    print("q.退出")
+    ui = input("请选择:")
+
     # 生成session id 整数类型 同时运行的策略不能重复
     stockAccount = StockAccount(g.account)
     stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
@@ -996,39 +1004,33 @@ if __name__ == '__main__':
     sector_list = ['创业板', '沪深A股', '沪深B股', '沪深ETF', '深市ETF', '科创板', '香港联交所股票']
 
     time.sleep(5)
-    # 等待用户输入，如果用户输入q，则退出,否则继续
-    while True:
-        print("1.搜索股票")
-        print("2.更新所有股票代码")
-        print("3.获取所有板块信息")
-        print("q.退出")
-        ui = input("请选择:")
-        if ui == "2":
-            # 对于每个sector,查询成分股
-            g.stocks = []
-            for sector in sector_list:
-                stocks = listStock(sector)
-                # info("stocks in:", sector, ":\n", stocks)
-                # 将stocks加入全局变量g.stocks
-                g.stocks = g.stocks + stocks
-        if ui == "1":
-            # 先清空所有候选
-            doUploadCandidates([])
-            # 对于每个sector,调用findStock
-            for sector in sector_list:
-                candidates = findStock(sector)
-                # 将candidates分批上传到test1
-                uploadCandidates(candidates)
-                update1d([c[0] for c in candidates], "20210101")
+    
+    if ui == "2":
+        # 对于每个sector,查询成分股
+        g.stocks = []
+        for sector in sector_list:
+            stocks = listStock(sector)
+            # info("stocks in:", sector, ":\n", stocks)
+            # 将stocks加入全局变量g.stocks
+            g.stocks = g.stocks + stocks
+    if ui == "1":
+        # 先清空所有候选
+        doUploadCandidates([])
+        # 对于每个sector,调用findStock
+        for sector in sector_list:
+            candidates = findStock(sector)
+            # 将candidates分批上传到test1
+            uploadCandidates(candidates)
+            update1d([c[0] for c in candidates], "20210101")
 
-            info("all candidates\n", g.candidates)
-        if ui == "3":
-            info("下载sector_data")
-            xtdata.download_sector_data()
-            sector_list = xtdata.get_sector_list()
-            info("sector_list:", sector_list)
-        if ui == "q":
-            break
+        info("all candidates\n", g.candidates)
+    if ui == "3":
+        info("下载sector_data")
+        xtdata.download_sector_data()
+        sector_list = xtdata.get_sector_list()
+        info("sector_list:", sector_list)
+    if ui == "q":
+        sys.exit(1)
 
     # 阻塞主线程退出
     # xt_trader.run_forever()

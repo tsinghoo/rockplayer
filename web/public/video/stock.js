@@ -123,7 +123,7 @@ window.feed_list = window.feed_list || (function () {
         exeSql: async function (row, show) {
             //将sql 以base64编码
             let text = btoa(encodeURIComponent(JSON.stringify(row)));
-            let res = await share.postSync__("/stock/query", {text});
+            let res = await share.postSync__("/stock/query", { text });
             let table = $("#stockTable");
             self.sql = row;
             if (res.error) {
@@ -466,7 +466,7 @@ window.feed_list = window.feed_list || (function () {
             let tr = $("<tr>");
             let params = JSON.parse(self.sql.params);
             let kvs = params.keys;
-            let showAll=params.showAll;
+            let showAll = params.showAll;
             let keys = [];
             kvs.forEach(ele => {
                 if (typeof ele == "string") {
@@ -819,7 +819,11 @@ window.feed_list = window.feed_list || (function () {
             }
 
             if (!["国信", "国金"].includes(broker)) {
-                broker = "国金";
+                if (self.lastBroker) {
+                    broker = self.lastBroker;
+                } else {
+                    broker = "国信";
+                }
             }
 
             if (self.formatScode(self.selectedData["代码"]).indexOf("BJ") >= 0) {
@@ -908,6 +912,7 @@ window.feed_list = window.feed_list || (function () {
 
             c.find(".buttonConfirm").click(async function () {
                 let broker = c.find(".operationName").val().trim();
+                self.lastBroker = broker;
                 let buy = c.find(".buy").val().trim();
                 let bounce = c.find(".bounce").val().trim();
                 let sell = c.find(".sell").val().trim();
