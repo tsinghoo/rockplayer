@@ -195,7 +195,8 @@ def genScript(file_name):
                     with open(os.path.join(dir_path, "scripts"), 'r', encoding='utf-8') as file:
                         tags = file.read()
                         log(tags)
-                        spos=(hasScript(tags, file_name))
+                        
+                        spos=(hasScript(tags, file_name)) # 是否有字幕
                         if (spos is not None):
                             command = "VideoSubFinderCli.run -c -r -i \"{}\" -te \"{}\"  -be \"{}\"  -le \"{}\"  -re \"{}\"  -o \"{}\"".format(filePath.replace("\"", "\\\""),spos["top"], spos["bottom"],spos["left"],spos["right"], dir_path)
                             log(command)
@@ -238,6 +239,11 @@ def genScript(file_name):
             except Exception as e:
                 log("error")
 
+#罗列目录"/flv/audio"下的所有mp3文件
+for file_name in os.listdir("/flv/voice"):
+    if file_name.endswith(".mp3"):
+        genScript(file_name)
+        
 
 with open('/flv/todo') as f:
     # 每次从文件中读取一行并打印
