@@ -2405,6 +2405,11 @@ app.post('/video/upload', (req, res) => {
     if (dir == null) {
         dir = "";
     }
+    
+    if (!fs.existsSync(directoryPath + "/" + dir)) {
+        fs.mkdirSync(directoryPath + "/" + dir);
+    }
+    
     var fileName = decodeURIComponent(file.name);
     const filePath = path.join(directoryPath + "/" + dir, fileName);
 
