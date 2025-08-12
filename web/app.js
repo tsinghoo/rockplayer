@@ -1073,8 +1073,15 @@ app.get('/stock/deleteRow', async (req, res) => {
     info("/stock/deleteRow", req)
     let js = req.query.js;
     let tid = req.query.tid;
-    let sql = `delete from tstock where tid=? `;
-    await db.runSync(sql, [tid]);
+    let id = req.query.id;
+    let table = req.query.table;
+    if (id && table) {
+        let sql = `delete from ${table} where id=? `;
+        await db.runSync(sql, [id]);
+    } else {
+        let sql = `delete from tstock where tid=? `;
+        await db.runSync(sql, [tid]);
+    }
 
     var resp = `${js}({})`;
     res.send(resp);
@@ -2407,7 +2414,7 @@ app.post('/video/upload', (req, res) => {
     if (dir == null) {
         dir = "";
     }
-    
+
     if (!fs.existsSync(directoryPath + "/" + dir)) {
         fs.mkdirSync(directoryPath + "/" + dir);
     }

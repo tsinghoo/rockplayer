@@ -27,7 +27,7 @@ window.feed_list = window.feed_list || (function () {
             if (self.sql.name == null || self.sql.name == "") {
                 self.sql.name = "all";
             }
-            
+
             window.name = self.sql.name;
             await self.getSqls();
             Chart.register(ChartDataLabels);
@@ -580,6 +580,8 @@ window.feed_list = window.feed_list || (function () {
                                 td.html(`<span class="deleteRow clickable">X</span>` + row[key]);
                             }
                         }
+                    } else if (key == "id") {
+                        td.html(`<span class="deleteRowById clickable gray">X</span>` + row[key]);
                     } else if (key == "买卖") {
                         td.text(row[key]);
                         td.addClass("buySell");
@@ -760,6 +762,28 @@ window.feed_list = window.feed_list || (function () {
                 let isConfirmed = await share.isConfirmed__(`确定要删除${data.tid}吗?`);
                 if (isConfirmed) {
                     let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                    if (res.error) {
+                        share.toastError__(res.error);
+                    } else {
+                        tr.remove();
+                    }
+                }
+            })
+
+            $(".deleteRowById").click(async function (e) {
+                e.stopPropagation();
+                let tr = $(this).parents("tr");
+                let data = tr.attr("data");
+                data = JSON.parse(data);
+                let isConfirmed = await share.isConfirmed__(`确定要删除${data.id}吗?`);
+                if (isConfirmed) {
+                    let params = JSON.parse(self.sql.params);
+                    let table = params.mainTable;
+                    if (table == null) {
+                        share.toastWarning__("no mainTable in params");
+                        return;
+                    }
+                    let res = await share.getSync__(`/stock/deleteRow?id=${data.id}&table=${table}`);
                     if (res.error) {
                         share.toastError__(res.error);
                     } else {
