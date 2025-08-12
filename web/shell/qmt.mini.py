@@ -312,6 +312,7 @@ def getStockDetail(scode):
         "FloatVolume": si["FloatVolume"],
         "UpStopPrice": si["UpStopPrice"],
         "DownStopPrice": si["DownStopPrice"],
+        "bNotProfitable": si["bNotProfitable"],
         "VolumeMultiple": si["VolumeMultiple"]
     }
 

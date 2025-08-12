@@ -1185,6 +1185,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='49' where key='dbVersion';",
         `alter table tTradeRule add column broker text;`,
         "update config set value='51' where key='dbVersion';",
+        `alter table tStockBasic add column bNotProfitable real default 0;`,
+        "update config set value='53' where key='dbVersion';",
 
     ];
 
@@ -1611,7 +1613,7 @@ app.post('/stock/details', async (req, res) => {
     let data = req.body.data;
     let updateTime = Date.now();
     data.forEach(async (row) => {
-        let sql = `update tStockBasic set sname=?, LastVolume=?,TotalVolume=?,FloatVolume=?,UpStopPrice=?,DownStopPrice=?,VolumeMultiple=?,updateTime=? where scode=?`;
+        let sql = `update tStockBasic set sname=?, LastVolume=?,TotalVolume=?,FloatVolume=?,UpStopPrice=?,DownStopPrice=?,VolumeMultiple=?,updateTime=?,bNotProfitable=? where scode=?`;
         await db.runSync(sql, [row.sname, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, updateTime, row.scode]);
     })
 
@@ -2162,7 +2164,7 @@ app.post('/stock/query', async (req, res) => {
     let r = await db.allSync(sql);
     if (r.error) {
         info(r.error, req)
-        res.send(JSON.stringify({ error: r.error }));
+        res.send(JSON.stringify({ error: `${r.error}` }));
         return;
     }
 
