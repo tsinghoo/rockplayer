@@ -780,7 +780,7 @@ app.post('/video/cookies', (req, res) => {
     res.send(resp);
 });
 
-app.post('/stock/update', async (req, res) => {
+app.post('/stock/update', async (req, resp) => {
     info("/stock/update", req)
     let broker = req.body.broker;
     if (broker == null) {
@@ -815,7 +815,7 @@ app.post('/stock/update', async (req, res) => {
             let res = await db.runSync(sql, fields.concat([tday + " " + ttime]));
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -838,7 +838,7 @@ app.post('/stock/update', async (req, res) => {
                 fields[7], fields[19], fields[20], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -861,7 +861,7 @@ app.post('/stock/update', async (req, res) => {
                 fields[8], fields[9], fields[11], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -885,7 +885,7 @@ app.post('/stock/update', async (req, res) => {
                 fields[8], fields[9], fields[11], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -909,7 +909,7 @@ app.post('/stock/update', async (req, res) => {
                 fields[7], fields[8], fields[1], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -956,7 +956,7 @@ app.post('/stock/update', async (req, res) => {
 
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -979,7 +979,7 @@ app.post('/stock/update', async (req, res) => {
                 fields[11], fields[12], fields[3], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -1002,7 +1002,7 @@ app.post('/stock/update', async (req, res) => {
             fields[11], fields[13], fields[14], '', tday + " " + ttime]);
             if (res.error) {
                 info(res.error, req)
-                res.send(res);
+                resp.send(res);
                 return;
             } else {
             }
@@ -1028,8 +1028,8 @@ app.post('/stock/update', async (req, res) => {
         await db.runSync(sql, [maxOperationTime, scode]);
     }
 
-    var resp = JSON.stringify({ data: "success" });
-    res.send(resp);
+    var res = JSON.stringify({ data: "success" });
+    resp.send(res);
 });
 
 app.get('/stock/account', async (req, res) => {
