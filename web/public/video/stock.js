@@ -878,14 +878,11 @@ window.feed_list = window.feed_list || (function () {
             c.find(".scode").val(`${self.selectedData["代码"]}`);
             c.find(".operationName").val(`${broker}`);
             let np = self.selectedData.curPrice;
-            if (np == null) {
+            if (np == null || np == 0) {
                 np = self.selectedData["价格"];
             }
             let oper = self.selectedData["买卖"];
 
-            if (delta == null) {
-                delta = 0.02;
-            }
             if (oper && oper.indexOf("买") > -1) {
                 if (sell == null) {
                     sell = (np * (1 + 0.02)).toFixed(3);
@@ -924,6 +921,22 @@ window.feed_list = window.feed_list || (function () {
                 c.find(".buyFirst").prop("checked", true);
             }
 
+            let autoDelta = function () {
+                let buy = c.find(".buy").val().trim();
+                if (buy >= 100) {
+                    c.find(".bounce").val(0.2);
+                    c.find(".dip").val(0.2);
+                } else {
+                    c.find(".bounce").val(0.02);
+                    c.find(".dip").val(0.02);
+                }
+            }
+
+
+            if (delta == null) {
+                delta = 0.02;
+            }
+
             if (dip == null) {
                 dip = delta;
             }
@@ -933,7 +946,28 @@ window.feed_list = window.feed_list || (function () {
 
             c.find(".bounce").val(bounce);
             c.find(".dip").val(dip);
+            autoDelta();
 
+            let autoPrice = function (changed) {
+                let buy = c.find(".buy").val().trim();
+                let sell = c.find(".sell").val().trim();
+                if (changed == 1) {
+                    if (parseFloat(sell) < parseFloat(buy) + 2)
+                        c.find(".sell").val(2 + parseFloat(buy));
+                }
+                if (changed == 2) {
+                    if (parseFloat(buy) > parseFloat(sell) - 2)
+                        c.find(".buy").val(parseFloat(sell) - 2);
+                }
+                autoDelta();
+            }
+
+            $('.buy', c).change(function () {
+                autoPrice(1);
+            });
+            $('.sell', c).change(function () {
+                autoPrice(2);
+            });
 
             c.find(".buyAmount").val(buyAmount);
             c.find(".sellAmount").val(sellAmount);
