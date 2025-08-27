@@ -604,7 +604,7 @@ ul.pagination li span input {
 }
 
 .bg_purple {
-	background-color: #6f5499;
+	background-color: #6f5499 !important;
 }
 
 .bg_green {

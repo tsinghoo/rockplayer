@@ -762,28 +762,19 @@ window.feed_list = window.feed_list || (function () {
                 let data = tr.attr("data");
                 data = JSON.parse(data);
 
+                let pairedId = data["配对"];
+                let pairedTr = $(`.tid${pairedId}`);
+                pairedTr.find("td").addClass("bg_purple");
+                setTimeout(function () {
+                    pairedTr.find("td").removeClass("bg_purple");
+                }, 2000);
                 let popup;
                 let buttons = [
-                    {
-                        text: "删除本行",
-                        onTap: async function () {
-                            popup.close();
-
-                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
-                            if (res.error) {
-                                share.toastError__(res.error);
-                            } else {
-                                tr.remove();
-                            }
-                        }
-                    },
                     {
                         text: "删除本行及关联",
                         onTap: async function () {
                             popup.close();
 
-                            let pairedId = data["配对"];
-                            let pairedTr = $(`.tid${pairedId}`);
                             if (pairedId == "" || pairedId == null || pairedTr.length == 0) {
                                 share.toastError__("未找到配对行");
                                 return;
@@ -809,6 +800,19 @@ window.feed_list = window.feed_list || (function () {
                                         pairedTr.remove();
                                     }
                                 }
+                            }
+                        }
+                    },
+                    {
+                        text: "删除本行",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.remove();
                             }
                         }
                     },
