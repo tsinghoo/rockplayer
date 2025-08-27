@@ -1174,7 +1174,9 @@ async function upgradeDb(succ, fail) {
         "update config set value='31' where key='dbVersion';",
         `alter table tpositions add column floatProfit real default 0;`,
         "update config set value='33' where key='dbVersion';",
-        `alter table tstockbasic add column priority int default 0;`,
+        `/* The code you provided is not valid JavaScript code. It appears to be a mix of SQL and some
+        other characters that are not recognized in JavaScript. */
+        alter table tstockbasic add column priority int default 0;`,
         "update config set value='35' where key='dbVersion';",
         `create table tallstock(id text primary key, scode text, sname text, sector text, priority int default 0, updateTime integer);`,
         "update config set value='37' where key='dbVersion';",
@@ -1194,7 +1196,10 @@ async function upgradeDb(succ, fail) {
         "update config set value='51' where key='dbVersion';",
         `alter table tStockBasic add column bNotProfitable real default 0;`,
         "update config set value='53' where key='dbVersion';",
-
+        `alter table tStockBasic add column market text;`,
+        "update config set value='55' where key='dbVersion';",
+        `alter table tStockBasic add column LastVolume real,add column TotalVolume real,add column FloatVolume real,add column UpStopPrice real,add column DownStopPrice real,add column VolumeMultiple int;`,
+        "update config set value='57' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1620,8 +1625,8 @@ app.post('/stock/details', async (req, res) => {
     let data = req.body.data;
     let updateTime = Date.now();
     data.forEach(async (row) => {
-        let sql = `update tStockBasic set sname=?, LastVolume=?,TotalVolume=?,FloatVolume=?,UpStopPrice=?,DownStopPrice=?,VolumeMultiple=?,updateTime=?,bNotProfitable=? where scode=?`;
-        await db.runSync(sql, [row.sname, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, updateTime, row.scode]);
+        let sql = `update tStockBasic set sname=?, market=?, LastVolume=?, TotalVolume=?, FloatVolume=?,    UpStopPrice=?,   DownStopPrice=?,   VolumeMultiple=?,updateTime=? where scode=?`;
+        await db.runSync(sql, [row.sname, row.ExchangeID, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, updateTime, row.scode.split(".")[0]]);
     })
 
     if (data.length < 1) {
@@ -1669,10 +1674,12 @@ app.get('/stock/rule/create', async (req, res) => {
     rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker]);
     reloadRule(rules[json.scode][broker], req);
 
+    let market=getMarket(json.scode);
     await insertOrReplace("tStockBasic", {
         id: json.scode,
         scode: json.scode,
         sname: json.sname,
+        market: market,
         buy: 0,
         priority: now,
         updateTime: now

@@ -307,12 +307,13 @@ def getStockDetail(scode):
     detail = {
         "scode": scode,
         "sname": si["InstrumentName"],
+        "ExchangeID": si["ExchangeID"],
         "LastVolume": si["LastVolume"],
         "TotalVolume": si["TotalVolume"],
         "FloatVolume": si["FloatVolume"],
         "UpStopPrice": si["UpStopPrice"],
         "DownStopPrice": si["DownStopPrice"],
-        "bNotProfitable": si["bNotProfitable"],
+        # "bNotProfitable": si["bNotProfitable"],
         "VolumeMultiple": si["VolumeMultiple"]
     }
 
@@ -388,7 +389,7 @@ def update1mTask():
 
 
 def uploadDetail(details):
-    info("uploadDetail ", len(details))
+    info("uploadDetail", (details))
     try:
         response = requests.post(g.baseUrl+"/stock/details", json={
             "data": details, "passcode": "995560"}, timeout=5)
@@ -1060,6 +1061,8 @@ if __name__ == '__main__':
     info("start updateDetailTask")
     t0 = Thread(target=updateDetailTask)
     t0.start()
+    t3 = Thread(target=printTask)
+    t3.start()
 
     # while True:
     #     info(".")
@@ -1077,11 +1080,9 @@ if __name__ == '__main__':
 
     t1 = Thread(target=update1dTask)
     t2 = Thread(target=update1mTask)
-    t3 = Thread(target=printTask)
     t4 = Thread(target=getActionsTask)
     t1.start()
     t2.start()
-    t3.start()
     t4.start()
 
     while True:
