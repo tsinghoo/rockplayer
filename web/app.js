@@ -1113,10 +1113,16 @@ async function dbCall(options) {
             let params = stat[1];
             debug("dbCall sql:" + sql);
             debug("params:" + JSON.stringify(params));
-            await db.runSync(sql, params);
+            let res = await db.runSync(sql, params);
+            if (res.error) {
+                return res;
+            }
         } else {
             debug("sql:" + stat);
-            await db.runSync(stat);
+            let res = await db.runSync(stat);
+            if (res.error) {
+                return res;
+            }
         }
     }
 
@@ -1200,6 +1206,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='55' where key='dbVersion';",
         `alter table tStockBasic add column LastVolume real,add column TotalVolume real,add column FloatVolume real,add column UpStopPrice real,add column DownStopPrice real,add column VolumeMultiple int;`,
         "update config set value='57' where key='dbVersion';",
+        `alter table tStockBasic add column LastVolume real;`,
+        "update config set value='59' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1237,7 +1245,11 @@ async function upgradeDb(succ, fail) {
         await db.runSync("insert into config values('dbVersion', 1);");
 
         updates.forEach(async (sql, i) => {
-            await db.runSync(sql);
+            let res = await db.runSync(sql);
+            if (res.error) {
+                error(res.error);
+                return res;
+            }
         });
 
     } else {
@@ -1247,7 +1259,11 @@ async function upgradeDb(succ, fail) {
         updates.splice(0, parseInt(ver));
 
         if (updates.length > 0) {
-            await dbCall(updates);
+            let res = await dbCall(updates);
+            if (res.error) {
+                error(res.error);
+                return res;
+            }
         }
 
         let row = await db.getSync("SELECT * FROM config where key=?", ["dbVersion"]);
@@ -2785,7 +2801,11 @@ app.get('/video/doSplit', (req, res) => {
 });
 
 async function init() {
-    await upgradeDb();
+    let res = await upgradeDb();
+    if (res && res.error) {
+        error(res.error);
+        return res;
+    }
     reloadRules();
     app.listen(port, () => {
         info(`Server is running on port ${port}`);
