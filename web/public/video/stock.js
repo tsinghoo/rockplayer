@@ -571,6 +571,8 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "券商") {
                         td.html(row[key]);
                     } else if (key == "tid") {
+
+                        tr.addClass(`tid${row[key]}`);
                         if (firstRow) {
                             td.html(`<span class="deleteRow clickable white">X</span>` + row[key]);
                         } else {
@@ -759,15 +761,66 @@ window.feed_list = window.feed_list || (function () {
                 let tr = $(this).parents("tr");
                 let data = tr.attr("data");
                 data = JSON.parse(data);
-                let isConfirmed = await share.isConfirmed__(`确定要删除${data.tid}吗?`);
-                if (isConfirmed) {
-                    let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
-                    if (res.error) {
-                        share.toastError__(res.error);
-                    } else {
-                        tr.remove();
+
+                let popup;
+                let buttons = [
+                    {
+                        text: "删除本行",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.remove();
+                            }
+                        }
+                    },
+                    {
+                        text: "删除本行及关联",
+                        onTap: async function () {
+                            popup.close();
+
+                            let pairedId = data["配对"];
+                            let pairedTr = $(`.tid${pairedId}`);
+                            if (pairedId == "" || pairedId == null || pairedTr.length == 0) {
+                                share.toastError__("未找到配对行");
+                                return;
+                            }
+
+                            let isFirst = pairedTr.hasClass("firstCode");
+                            if (isFirst) {
+                                share.toastError__("不能删除第一行");
+                                return;
+                            }
+
+                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.remove();
+
+                                if (pairedId != "" && pairedId != null) {
+                                    let res = await share.getSync__(`/stock/deleteRow?tid=${pairedId}`);
+                                    if (res.error) {
+                                        share.toastError__(res.error);
+                                    } else {
+                                        pairedTr.remove();
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        text: "取消",
+                        onTap: function () {
+                            popup.close();
+                        }
                     }
-                }
+                ];
+                share.currentTarget = e.currentTarget;
+                popup = await share.popupAction__("", buttons);
             })
 
             $(".deleteRowById").click(async function (e) {
@@ -972,7 +1025,19 @@ window.feed_list = window.feed_list || (function () {
             c.find(".buyAmount").val(buyAmount);
             c.find(".sellAmount").val(sellAmount);
 
-            c.find(".buttonConfirm").click(async function () {
+            c.find(".buyFirst").on('change', function () {
+                if (this.checked) {
+                    c.find(".sellFirst").prop("checked", !this.checked);
+                }
+            });
+
+            c.find(".sellFirst").on('change', function () {
+                if (this.checked) {
+                    c.find(".buyFirst").prop("checked", !this.checked);
+                }
+            });
+
+            c.find(".buttonConfirm").click(async function (ele) {
                 let broker = c.find(".operationName").val().trim();
                 self.lastBroker = broker;
                 let buy = c.find(".buy").val().trim();
@@ -992,26 +1057,45 @@ window.feed_list = window.feed_list || (function () {
                     order = "sellFirst";
                 }
 
-                let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, broker, order };
-                let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
-                if (res.error) {
-                    share.toastError__(res.error);
-                } else {
-                    share.toastSuccess__("上传成功");
+                let submit = async function () {
+
+                    let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, broker, order };
+                    let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
+                    if (res.error) {
+                        share.toastError__(res.error);
+                    } else {
+                        share.toastSuccess__("上传成功");
+                    }
                 }
+                let brokerPopup;
+                let buttons = [
+                    {
+                        text: "国信",
+                        onTap: function () {
+                            broker = "国信";
+                            submit();
+                            brokerPopup.close();
+                        }
+                    },
+                    {
+                        text: "国金",
+                        onTap: function () {
+                            broker = "国金";
+                            submit();
+                            brokerPopup.close();
+                        }
+                    },
+                    {
+                        text: "取消",
+                        onTap: function () {
+                            brokerPopup.close();
+                        }
+                    }
+                ];
+
+                share.currentTarget = ele.currentTarget;
+                brokerPopup = await share.popupAction__("", buttons);
             })
-
-            c.find(".buyFirst").on('change', function () {
-                if (this.checked) {
-                    c.find(".sellFirst").prop("checked", !this.checked);
-                }
-            });
-
-            c.find(".sellFirst").on('change', function () {
-                if (this.checked) {
-                    c.find(".buyFirst").prop("checked", !this.checked);
-                }
-            });
         },
 
         createFloatingWindow: function (url, width) {
