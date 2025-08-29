@@ -16,9 +16,6 @@ import requests
 import sys
 import traceback
 from threading import Thread
-from colorama import Fore, Back, Style
-import colorama
-colorama.init()
 
 
 class G():
@@ -284,9 +281,9 @@ def uploadStockPrice():
     # 为data添加passcode属性
     sb, g.tick = g.tick, {}  # 这行是原子的
     if (len(list(sb)) < 1):
-        info(Back.CYAN, "0 stocks, skip upload", Style.RESET_ALL)
+        info( "0 stocks, skip upload")
         return
-    info(Back.CYAN, "上传", len(list(sb)), "个股票价格", Style.RESET_ALL)
+    info( "上传", len(list(sb)), "个股票价格")
     # info(sb.keys())
     try:
         response = requests.post("http://test1.91taogu.com/stock/quotes.mini", json={
@@ -573,8 +570,8 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
             # params = []
-            info(Back.RED, 'get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")", Style.RESET_ALL)
+            info('get', period, 'for', scode, 'from',
+                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
             datas = df[scode]
@@ -649,8 +646,8 @@ def update1m(stocklist):
             info('==downloading', period, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
-            info(Back.GREEN, 'get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")", Style.RESET_ALL)
+            info('get', period, 'for', scode, 'from',
+                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
             datas = df[scode]
