@@ -985,7 +985,8 @@ def updatePositions():
 
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
-    path = r'D:\国金证券QMT交易端\userdata_mini'
+    #path = r'D:\国金证券QMT交易端\userdata_mini'
+    path=os.getenv("qmtpath")
     #获取环境变量proxy的值
     proxy = os.getenv("proxy")
     if proxy:
@@ -1102,3 +1103,4 @@ if __name__ == '__main__':
 
     # 阻塞主线程退出
     # xt_trader.run_forever()
+
