@@ -8,10 +8,8 @@ echo q. quit
 set /p "input=Please select: "
 if "%input%"=="0" (
   start z:\data\soft\gjzqqmt\bin.x64\XtItClient.exe
-) else if "%input%"=="q" ( 
-  goto exit
-  pause
 ) else ( 
+  echo no start
 )
 
 echo 1. wine
@@ -28,10 +26,8 @@ if "%input%"=="1" (
   set qmtpath=D:\国金证券QMT交易端\userdata_mini
   set configPathPrefix=d:
   set logPathPrefix=d:
-) else if "%input%"=="q" ( 
-  goto exit
 ) else ( 
-  echo no start
+  goto exit
 )
 
 
@@ -45,11 +41,9 @@ if "%input%"=="1" (
   set proxy=http://test1.91taogu.com
 ) else if "%input%"=="2" (
   set proxy=http://192.168.66.205:3001
-) else if "%input%"=="q" ( 
-  goto exit
 ) else ( 
-  goto url
-)
+  goto exit
+) 
 
 
 :script
@@ -64,10 +58,8 @@ if "%input%"=="1" (
 ) else if "%input%"=="2" ( 
   python .\qmt.mini.find.py 
   pause
-) else if "%input%"=="q" ( 
-  goto exit
 ) else ( 
-  goto script
+  goto exit
 )
 
 :exit
