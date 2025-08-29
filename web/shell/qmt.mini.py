@@ -928,7 +928,7 @@ def log(*args, **kwargs):
     g.toPrint.append([all_args, kwargs])
 
 
-def log2File(toPrint, file=g.logPathPrefix + "\\qmt.mini", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
     """
     将打印内容输出到文件，参数与print()函数保持一致
 
@@ -957,7 +957,7 @@ def log2File(toPrint, file=g.logPathPrefix + "\\qmt.mini", sep=' ', end='\n', fl
 def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
-        log2File(toPrint)
+        log2File(toPrint, g.logPathPrefix + "\\qmt.mini")
         while len(toPrint) > 0:
             item = toPrint.pop(0)
             print(*item[0], **item[1])
@@ -994,6 +994,7 @@ if __name__ == '__main__':
         g.baseUrl = "http://test1.91taogu.com"
 
     configPathPrefix = os.getenv("configPathPrefix")
+    
     if configPathPrefix:
         g.configFile = configPathPrefix + r"\qmt.config.json"
     else:
@@ -1005,12 +1006,15 @@ if __name__ == '__main__':
     else:
         g.logPathPrefix = r"d:"
         
+    print("configPathPrefix:", configPathPrefix)
+    print("configFile:", g.configFile)
+    print("logPathPrefix:", logPathPrefix)
     # print("1.http://test1.91taogu.com")
     # print("2.http://192.168.66.205:3001")
     # print("q.退出")
     # ui = input("请选择:")
 
-    info("baseUrl:", g.baseUrl)
+    print("baseUrl:", g.baseUrl)
     time.sleep(2)
 
     # 生成session id 整数类型 同时运行的策略不能重复

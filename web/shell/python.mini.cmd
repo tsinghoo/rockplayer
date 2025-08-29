@@ -16,7 +16,7 @@ if %input%==1 (
   set configPathPrefix=z:\data\noDel
   set logPathPrefix=z:\data\logs
 ) else if %input%==2 (
-  set configPathPrefix=c:
+  set configPathPrefix=d:
   set logPathPrefix=d:
 ) else if %input%==q ( 
   echo quit
