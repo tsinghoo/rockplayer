@@ -49,8 +49,6 @@ g.log = {
     "debug": 4,
 }
 
-g.configFile = "d:\\qmt.config.json"
-
 g.log["level"] = g.log["debug"]
 
 g.toPrint = []
@@ -802,11 +800,11 @@ def getPositions():
 def getDeals():
     stockAccount = StockAccount(g.account)
     result = xt_trader.export_data(
-        stockAccount, "d:\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
+        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
     info(result)
 
     deals = xt_trader.query_data(
-        stockAccount, "d:\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
+        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
     return deals
 
 
@@ -930,7 +928,7 @@ def log(*args, **kwargs):
     g.toPrint.append([all_args, kwargs])
 
 
-def log2File(toPrint, file="d:\\qmt.mini", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+def log2File(toPrint, file=g.logPathPrefix + "\\qmt.mini", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
     """
     将打印内容输出到文件，参数与print()函数保持一致
 
@@ -994,6 +992,18 @@ if __name__ == '__main__':
         g.baseUrl = proxy
     else:
         g.baseUrl = "http://test1.91taogu.com"
+
+    configPathPrefix = os.getenv("configPathPrefix")
+    if configPathPrefix:
+        g.configFile = configPathPrefix + r"\qmt.config.json"
+    else:
+        g.configFile = r"c:\qmt.config.json"
+        
+    logPathPrefix = os.getenv("logPathPrefix")
+    if logPathPrefix:
+        g.logPathPrefix = logPathPrefix
+    else:
+        g.logPathPrefix = r"d:"
         
     # print("1.http://test1.91taogu.com")
     # print("2.http://192.168.66.205:3001")

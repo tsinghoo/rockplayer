@@ -4,6 +4,29 @@ cd /d "%~dp0"
 cls
 
 
+
+
+echo 1. wine
+echo 2. windows
+echo q. quit
+
+set /p "input=Please select: "
+
+if %input%==1 ( 
+  set configPathPrefix=z:\data\noDel
+  set logPathPrefix=z:\data\logs
+) else if %input%==2 (
+  set configPathPrefix=c:
+  set logPathPrefix=d:
+) else if %input%==q ( 
+  echo quit
+  exit /b 0
+) else ( 
+  goto begin
+)
+
+
+:url
 echo 1. http://test1.91taogu.com
 echo 2. http://192.168.66.205:3001
 echo q. quit
@@ -18,11 +41,13 @@ if %input%==1 (
   
 ) else if %input%==q ( 
   echo quit
+  exit /b 0
 ) else ( 
-  goto begin
+  goto url
 )
 
 
+:script
 echo 1. qmt.mini.py
 echo 2. qmt.mini.find.py
 echo q. quit
@@ -37,8 +62,9 @@ if %input%==1 (
   pause
 ) else if %input%==q ( 
   echo quit
+  exit /b 0
 ) else ( 
-  goto begin
+  goto script
 )
 
 
