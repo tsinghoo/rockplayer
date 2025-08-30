@@ -52,7 +52,6 @@ g.log = {
     "debug": 4,
 }
 g.candidates = []
-g.configFile = "d:\\qmt.config.json"
 
 g.log["level"] = g.log["debug"]
 
@@ -602,11 +601,11 @@ def getPositions():
 def getDeals():
     stockAccount = StockAccount(g.account)
     result = xt_trader.export_data(
-        stockAccount, "d:\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
+        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
     info(result)
 
     deals = xt_trader.query_data(
-        stockAccount, "d:\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
+        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
     return deals
 
 
@@ -730,7 +729,7 @@ def log(*args, **kwargs):
     g.toPrint.append([all_args, kwargs])
 
 
-def log2File(toPrint, file="d:\\qmt.mini.find", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
     """
     将打印内容输出到文件，参数与print()函数保持一致
 
@@ -938,19 +937,38 @@ def doUploadCandidates(batch):
 
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
-    path = r'D:\国金证券QMT交易端\userdata_mini'
+    #path = r'D:\国金证券QMT交易端\userdata_mini'
+    path=os.getenv("qmtpath")
+    #获取环境变量proxy的值
     proxy = os.getenv("proxy")
     if proxy:
         g.baseUrl = proxy
     else:
         g.baseUrl = "http://test1.91taogu.com"
+
+    configPathPrefix = os.getenv("configPathPrefix")
+    
+    if configPathPrefix:
+        g.configFile = configPathPrefix + r"\qmt.config.json"
+    else:
+        g.configFile = r"d:\qmt.config.json"
         
+    logPathPrefix = os.getenv("logPathPrefix")
+    if logPathPrefix:
+        g.logPathPrefix = logPathPrefix
+    else:
+        g.logPathPrefix = r"d:"
+        
+    print("configPathPrefix:", configPathPrefix)
+    print("configFile:", g.configFile)
+    print("logPathPrefix:", logPathPrefix)
     # print("1.http://test1.91taogu.com")
     # print("2.http://192.168.66.205:3001")
     # print("q.退出")
     # ui = input("请选择:")
 
-    info("baseUrl:", g.baseUrl)
+    print("baseUrl:", g.baseUrl)
+    time.sleep(2)
 
     # 等待用户输入，如果用户输入q，则退出,否则继续
     print("1.搜索股票")

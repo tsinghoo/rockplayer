@@ -999,7 +999,7 @@ if __name__ == '__main__':
     if configPathPrefix:
         g.configFile = configPathPrefix + r"\qmt.config.json"
     else:
-        g.configFile = r"c:\qmt.config.json"
+        g.configFile = r"d:\qmt.config.json"
         
     logPathPrefix = os.getenv("logPathPrefix")
     if logPathPrefix:
