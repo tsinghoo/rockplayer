@@ -384,8 +384,8 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
             # params = []
-            info(Back.RED, 'get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")", Style.RESET_ALL)
+            info( 'get', period, 'for', scode, 'from',
+                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
             datas = df[scode]
@@ -457,8 +457,8 @@ def update1m():
             info('==downloading', period, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
-            info(Back.GREEN, 'get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")", Style.RESET_ALL)
+            info( 'get', period, 'for', scode, 'from',
+                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
             datas = df[scode]
@@ -758,7 +758,7 @@ def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='u
 def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
-        log2File(toPrint)
+        log2File(toPrint, g.logPathPrefix + "\\qmt.mini.find.log")
         while len(toPrint) > 0:
             item = toPrint.pop(0)
             print(*item[0], **item[1])
@@ -830,8 +830,8 @@ def findStock(sector):
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
 
-            info(Back.RED, 'get', startDays, period, 'for', scode, 'from',
-                 '', 'to', current_date, "(", index, "/", len(g.stocklist), ")", Style.RESET_ALL)
+            info( 'get', startDays, period, 'for', scode, 'from',
+                 '', 'to', current_date, "(", index, "/", len(g.stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
             prices = df[scode]
@@ -904,7 +904,7 @@ def findStock(sector):
             if (lowIncrease < 3):
                 continue
 
-            info(Back.GREEN, "OK", Style.RESET_ALL)
+            info( "OK")
             candidate.append([scode, sname])
 
         except Exception as e:
