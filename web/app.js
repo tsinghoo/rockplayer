@@ -1690,7 +1690,7 @@ app.get('/stock/rule/create', async (req, res) => {
     rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker]);
     reloadRule(rules[json.scode][broker], req);
 
-    let market=getMarket(json.scode);
+    let market = getMarket(json.scode);
     await insertOrReplace("tStockBasic", {
         id: json.scode,
         scode: json.scode,
@@ -2290,6 +2290,9 @@ app.post('/stock/deal/update', async (req, res) => {
         deal.market = ocode.length > 1 ? ocode[1] : "";
     }
     deal.tday = deal.tday.replace(/\-/g, "");
+    if (deal.ttime.length == 6) {
+        deal.ttime = deal.ttime.substring(0, 2) + ":" + deal.ttime.substring(2, 4) + ":" + deal.ttime.substring(4, 6);
+    }
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
     let old = await db.getSync("select * from tStock where tid=?", [deal.tid]);
     let r;
