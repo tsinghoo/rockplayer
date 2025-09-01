@@ -2290,7 +2290,9 @@ app.post('/stock/deal/update', async (req, res) => {
         deal.market = ocode.length > 1 ? ocode[1] : "";
     }
     deal.tday = deal.tday.replace(/\-/g, "");
-    if (deal.ttime.length == 6) {
+    if (deal.ttime.length == 5) {
+        deal.ttime = "0" + deal.ttime.substring(0, 1) + ":" + deal.ttime.substring(1, 3) + ":" + deal.ttime.substring(3, 5);
+    } else if (deal.ttime.length == 6) {
         deal.ttime = deal.ttime.substring(0, 2) + ":" + deal.ttime.substring(2, 4) + ":" + deal.ttime.substring(4, 6);
     }
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
