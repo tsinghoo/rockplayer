@@ -360,7 +360,7 @@ def resetThreadId(label=""):
 
 def update1dTask():
     g.candidates = getCandidates()
-    update1d(g.candidates)
+    update1d(g.candidates, datetime.datetime.now() - datetime.timedelta(days=370))
 
     while True:
         time.sleep(1)
@@ -373,6 +373,9 @@ def update1dTask():
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
         g.stocklist = getStockList()
         update1d(g.stocklist)
+        
+        updateLastStartTime1d()
+        saveConfig()
 
 
 def update1mTask():
@@ -612,8 +615,6 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
 
             # print(obj2JsonString(df[scode]))
             # print(datas.to_json(orient='index'))
-    updateLastStartTime1d()
-    saveConfig()
 
 
 def updateLastStartTime1d():
