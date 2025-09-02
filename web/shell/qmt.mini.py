@@ -360,7 +360,8 @@ def resetThreadId(label=""):
 
 def update1dTask():
     g.candidates = getCandidates()
-    update1d(g.candidates, datetime.datetime.now() - datetime.timedelta(days=370))
+    update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime(
+        "%Y%m%d"))
 
     while True:
         time.sleep(1)
@@ -1111,3 +1112,4 @@ if __name__ == '__main__':
 
     # 阻塞主线程退出
     # xt_trader.run_forever()
+
