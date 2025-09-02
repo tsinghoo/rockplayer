@@ -641,7 +641,7 @@ def update1m(stocklist):
             if period == "tick":
                 params = ['volume', 'amount', 'lastPrice']
             # params = []
-            info('==downloading', period, 'from', dataStartTime)
+            info('downloading', period, 'for', scode, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
             info('get', period, 'for', scode, 'from',
