@@ -553,6 +553,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
 
         dataStartTime = (datetime.datetime.strptime(
             g.config["lastStartTime1d"], "%Y%m%d") - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
+        info("update1d dataStartTime:", dataStartTime)
     if (dataEndTime is None):
         dataEndTime = ""
 
