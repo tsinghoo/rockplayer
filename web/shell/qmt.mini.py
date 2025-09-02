@@ -279,9 +279,9 @@ def uploadStockPrice():
     # 为data添加passcode属性
     sb, g.tick = g.tick, {}  # 这行是原子的
     if (len(list(sb)) < 1):
-        info( "0 stocks, skip upload")
+        info("0 stocks, skip upload")
         return
-    info( "上传", len(list(sb)), "个股票价格")
+    info("上传", len(list(sb)), "个股票价格")
     # info(sb.keys())
     try:
         response = requests.post("http://test1.91taogu.com/stock/quotes.mini", json={
@@ -621,8 +621,9 @@ def updateLastStartTime1d():
         "%Y%m%d")
     info("lastStartTime1d:", g.config["lastStartTime1d"])
 
+
 def initLastStartTime1d():
-    g.config["lastStartTime1d"] = (datetime.datetime.now()- datetime.timedelta(days=370)).strftime(
+    g.config["lastStartTime1d"] = (datetime.datetime.now() - datetime.timedelta(days=370)).strftime(
         "%Y%m%d")
     info("lastStartTime1d:", g.config["lastStartTime1d"])
 
@@ -991,9 +992,9 @@ def updatePositions():
 
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
-    #path = r'D:\国金证券QMT交易端\userdata_mini'
-    path=os.getenv("qmtpath")
-    #获取环境变量proxy的值
+    # path = r'D:\国金证券QMT交易端\userdata_mini'
+    path = os.getenv("qmtpath")
+    # 获取环境变量proxy的值
     proxy = os.getenv("proxy")
     if proxy:
         g.baseUrl = proxy
@@ -1001,18 +1002,18 @@ if __name__ == '__main__':
         g.baseUrl = "http://test1.91taogu.com"
 
     configPathPrefix = os.getenv("configPathPrefix")
-    
+
     if configPathPrefix:
         g.configFile = configPathPrefix + r"\qmt.config.json"
     else:
         g.configFile = r"d:\qmt.config.json"
-        
+
     logPathPrefix = os.getenv("logPathPrefix")
     if logPathPrefix:
         g.logPathPrefix = logPathPrefix
     else:
         g.logPathPrefix = r"d:"
-        
+
     print("configPathPrefix:", configPathPrefix)
     print("configFile:", g.configFile)
     print("logPathPrefix:", logPathPrefix)
@@ -1109,4 +1110,3 @@ if __name__ == '__main__':
 
     # 阻塞主线程退出
     # xt_trader.run_forever()
-
