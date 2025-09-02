@@ -22,6 +22,7 @@ if "%input%"=="1" (
   set qmtpath=z:\data\soft\gjzqqmt\userdata_mini
   set configPathPrefix=z:\data\noDel
   set logPathPrefix=z:\data\logs
+  set PATH=z:\data\soft\pythonwin3.6.8\;%PATH%
 ) else if "%input%"=="2" (
   set qmtpath=D:\国金证券QMT交易端\userdata_mini
   set configPathPrefix=d:
