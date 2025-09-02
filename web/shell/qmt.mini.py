@@ -548,7 +548,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
     if (dataStartTime is None):
         # 判断g.config里是否有lastStartTime1d这个key
         if "lastStartTime1d" not in g.config:
-            updateLastStartTime1d()
+            initLastStartTime1d()
             saveConfig()
 
         dataStartTime = (datetime.datetime.strptime(
@@ -617,6 +617,11 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
 
 def updateLastStartTime1d():
     g.config["lastStartTime1d"] = datetime.datetime.now().strftime(
+        "%Y%m%d")
+    info("lastStartTime1d:", g.config["lastStartTime1d"])
+
+def initLastStartTime1d():
+    g.config["lastStartTime1d"] = (datetime.datetime.now()- datetime.timedelta(days=370)).strftime(
         "%Y%m%d")
     info("lastStartTime1d:", g.config["lastStartTime1d"])
 
