@@ -765,9 +765,6 @@ window.feed_list = window.feed_list || (function () {
                 let pairedId = data["配对"];
                 let pairedTr = $(`.tid${pairedId}`);
                 pairedTr.find("td").addClass("bg_purple");
-                setTimeout(function () {
-                    pairedTr.find("td").removeClass("bg_purple");
-                }, 2000);
                 let popup;
                 let buttons = [
                     {
@@ -825,6 +822,9 @@ window.feed_list = window.feed_list || (function () {
                 ];
                 share.currentTarget = e.currentTarget;
                 popup = await share.popupAction__("", buttons);
+                popup.onClosed=function(){
+                    pairedTr.find("td").removeClass("bg_purple");
+                }
             })
 
             $(".deleteRowById").click(async function (e) {

@@ -904,6 +904,7 @@ window.mhgl_share =
           },
           close: async function () {
             let p = [];
+            popup.onClosed && popup.onClosed();
             p.push(share.fadeOut__($(`#bg${popupId}`, document)));
             p.push(share.fadeOut__($(`#${popupId}`, document)));
             await Promise.allSettled(p);
@@ -912,7 +913,6 @@ window.mhgl_share =
 
         $(`#bg${popupId}`, document).off("click").on("click", async function () {
           await popup.close();
-          popup.onClosed && popup.onClosed();
         });
 
         return popup;
