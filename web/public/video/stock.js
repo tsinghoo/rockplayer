@@ -822,7 +822,7 @@ window.feed_list = window.feed_list || (function () {
                 ];
                 share.currentTarget = e.currentTarget;
                 popup = await share.popupAction__("", buttons);
-                popup.onClosed=function(){
+                popup.onClosed = function () {
                     pairedTr.find("td").removeClass("bg_purple");
                 }
             })
@@ -888,7 +888,7 @@ window.feed_list = window.feed_list || (function () {
         },
 
         toBuySell: async function (opt, c) {
-            let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce;
+            let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce, order;
             if (opt) {
                 sell = opt.sell;
                 buy = opt.buy;
@@ -898,6 +898,7 @@ window.feed_list = window.feed_list || (function () {
                 buyAmount = opt.buyAmount;
                 dip = opt.dip;
                 bounce = opt.bounce;
+                order = opt.order;
             }
             if (broker == null) {
                 broker = self.selectedData["券商"];
@@ -925,7 +926,10 @@ window.feed_list = window.feed_list || (function () {
                 buyAmount = sellAmount;
             }
 
+            let toModify = false;
+
             if (c == null) {
+                toModify = true;
                 c = $("#templateBuySell").html();
                 let popup = await share.popup__(null, c);
                 c = $(`#${popup.id}`);
@@ -976,6 +980,17 @@ window.feed_list = window.feed_list || (function () {
                 c.find(".sell").val(sell);
                 c.find(".sellFirst").prop("checked", false);
                 c.find(".buyFirst").prop("checked", true);
+            }
+
+            if (toModify) {
+                c.find(".sellFirst").prop("checked", false);
+                c.find(".buyFirst").prop("checked", false);
+                if (order == "buyFirst") {
+                    c.find(".buyFirst").prop("checked", true);
+                }
+                if (order == "sellFirst") {
+                    c.find(".sellFirst").prop("checked", true);
+                }
             }
 
             let autoDelta = function () {
@@ -1068,7 +1083,7 @@ window.feed_list = window.feed_list || (function () {
                     if (res.error) {
                         share.toastError__(res.error);
                     } else {
-                        share.toastSuccess__("上传成功");
+                        share.toastSuccess__("上传成功", 1000);
                     }
                 }
                 let brokerPopup;
@@ -1388,14 +1403,14 @@ window.feed_list = window.feed_list || (function () {
             let d0high = share.toFixed(d0v[2]);
             let d0close = share.toFixed(d0v[1]);
             c.find(".day0").text(`${lastDay}`);
-            
+
             //获取今天的日期字符串YYYY-MM-dd
             let today = new Date();
             let year = today.getFullYear();
             let month = today.getMonth() + 1;
             let day = today.getDate();
             let todayStr = `${year}-${month}-${day}`;
-            if (todayStr != lastDay){
+            if (todayStr != lastDay) {
                 c.find(".day0").addClass("bg_purple gray");
             }
 
