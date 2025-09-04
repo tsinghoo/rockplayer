@@ -33,7 +33,7 @@ if "%input%"=="1" (
 
 
 echo 1. http://test1.91taogu.com
-echo 2. http://192.168.66.205:3001
+echo 2. https://vbj.labadida.com
 echo q. quit
 
 set /p "input=Please select: "
@@ -41,7 +41,7 @@ set /p "input=Please select: "
 if "%input%"=="1" ( 
   set proxy=http://test1.91taogu.com
 ) else if "%input%"=="2" (
-  set proxy=http://192.168.66.205:3001
+  set proxy=https://vbj.labadida.com
 ) else ( 
   goto exit
 ) 
