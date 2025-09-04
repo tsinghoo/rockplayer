@@ -240,7 +240,7 @@ def getStockList():
     # 从test1获取股票列表
     try:
         response = requests.get(
-            g.baseUrl + "/stock/codes", timeout=5)
+            g.baseUrl + "/stock/codes", verify=False, timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
             return
@@ -259,7 +259,7 @@ def getCandidates():
     # 从test1获取股票列表
     try:
         response = requests.get(
-            g.baseUrl + "/stock/candidates", timeout=5)
+            g.baseUrl + "/stock/candidates", verify=False, timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
             return
@@ -428,7 +428,7 @@ def getActionsTask():
 def getActions():
     try:
         response = requests.get(
-            g.baseUrl+"/stock/rule/actions?broker="+g.broker, timeout=5)
+            g.baseUrl+"/stock/rule/actions?broker="+g.broker, verify=False, timeout=5)
         if response.status_code != 200:
             error("getActions失败，状态码:", response.status_code)
             return
@@ -507,7 +507,7 @@ def cancelAction(scode):
 def actionDone(id):
     try:
         response = requests.get(
-            g.baseUrl+"/stock/action/done?id="+id, timeout=20)
+            g.baseUrl+"/stock/action/done?id="+id, verify=False, timeout=20)
         if response.status_code != 200:
             error("action done error:", response.status_code,
                   "响应内容:", response.text)
