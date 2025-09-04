@@ -1302,7 +1302,14 @@ window.feed_list = window.feed_list || (function () {
                        </div>
                        <div class="flexcolumn">
                             <div class="kTick border margin4">loading 1m</div>
-                            <div class="day0Status margin4"></div>
+                            <div class="flexrow margin4">
+                                <div class="day0 margin4">
+
+                                </div>
+                                <div class="day0Status margin4">
+                                
+                                </div>
+                            </div>
                             <div class="k1d border margin4">loading 1d</div>
                        </div>
                     </div>
@@ -1380,7 +1387,19 @@ window.feed_list = window.feed_list || (function () {
             let d0low = share.toFixed(d0v[3]);
             let d0high = share.toFixed(d0v[2]);
             let d0close = share.toFixed(d0v[1]);
-            c.find(".day0Status").text(`${lastDay}: ${d0low} < ${d0close} < ${d0high} `);
+            c.find(".day0").text(`${lastDay}`);
+            
+            //获取今天的日期字符串YYYY-MM-dd
+            let today = new Date();
+            let year = today.getFullYear();
+            let month = today.getMonth() + 1;
+            let day = today.getDate();
+            let todayStr = `${year}-${month}-${day}`;
+            if (todayStr != lastDay){
+                c.find(".day0").addClass("bg_purple gray");
+            }
+
+            c.find(".day0Status").text(`${d0low} < ${d0close} < ${d0high} `);
         },
         splitData: function (rawData) {
             let categoryData = [];
