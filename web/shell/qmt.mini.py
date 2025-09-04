@@ -203,7 +203,7 @@ def updateDeal(deal):
         }
 
         # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(deal), headers=headers)
+        response = requests.post(url, data=json.dumps(deal), verify=False, headers=headers)
 
         # 输出响应
         debug("updateDeal:", response.status_code)
@@ -285,7 +285,7 @@ def uploadStockPrice():
     # info(sb.keys())
     try:
         response = requests.post(g.baseUrl+"/stock/quotes.mini", json={
-            "data": sb, "passcode": "995560"}, timeout=5)
+            "data": sb, "passcode": "995560"}, verify=False, timeout=5)
         if response.status_code != 200:
             error("请求失败，状态码:", response.status_code)
             return
@@ -342,7 +342,7 @@ def uploadPosition(positions=None):
         body = {"data": data, "passcode": "995560"}
         info(url, "\n", body)
     try:
-        response = requests.post(url, json=body, timeout=5)
+        response = requests.post(url, json=body, verify=False, timeout=5)
         if response.status_code != 200:
             error("上传持仓失败，状态码:", response.status_code)
             return
@@ -391,7 +391,7 @@ def uploadDetail(details):
     info("uploadDetail", (details))
     try:
         response = requests.post(g.baseUrl+"/stock/details", json={
-            "data": details, "passcode": "995560"}, timeout=5)
+            "data": details, "passcode": "995560"}, verify=False, timeout=5)
         if response.status_code != 200:
             error("上传详情失败，状态码:", response.status_code)
             return
@@ -535,7 +535,7 @@ def updateActionOrdered(scode, type, status, price, orderId):
         }
 
         # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(data), headers=headers)
+        response = requests.post(url, data=json.dumps(data), verify=False, headers=headers)
 
         # 输出响应
         debug("updateActionStatus:", response.status_code)
@@ -602,7 +602,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                     # 上传数据到test1
                     try:
                         response = requests.post(
-                            g.baseUrl+"/stock/data/upload", json=body, timeout=20)
+                            g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
                         if response.status_code != 200:
                             error("上传失败，状态码:", response.status_code,
                                   "响应内容:", response.text)
@@ -686,7 +686,7 @@ def update1m(stocklist):
                 # 上传数据到test1
                 try:
                     response = requests.post(
-                        g.baseUrl+"/stock/data/upload", json=body, timeout=20)
+                        g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
                     if response.status_code != 200:
                         error("上传失败，状态码:", response.status_code,
                               "响应内容:", response.text)
