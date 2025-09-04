@@ -194,7 +194,7 @@ def updateDeal(deal):
     try:
         info("updateDeal:", deal)
         # 目标 URL
-        url = "http://test1.91taogu.com/stock/deal/update"
+        url = g.baseUrl+"/stock/deal/update"
         info("url:", url)
         info("data:", json.dumps(deal))
         # 设置请求头（声明内容类型为 JSON）
@@ -284,7 +284,7 @@ def uploadStockPrice():
     info("上传", len(list(sb)), "个股票价格")
     # info(sb.keys())
     try:
-        response = requests.post("http://test1.91taogu.com/stock/quotes.mini", json={
+        response = requests.post(g.baseUrl+"/stock/quotes.mini", json={
             "data": sb, "passcode": "995560"}, timeout=5)
         if response.status_code != 200:
             error("请求失败，状态码:", response.status_code)
@@ -317,7 +317,7 @@ def getStockDetail(scode):
 
 def uploadPosition(positions=None):
     # 组装成json对象post到test1.91taogu.com
-    url = "http://test1.91taogu.com/stock/positions"
+    url = g.baseUrl+"/stock/positions"
     body = {"broker": g.broker, "clean": 1, "passcode": "995560"}
     if (positions is None):
         info("clean股票持仓")
@@ -428,7 +428,7 @@ def getActionsTask():
 def getActions():
     try:
         response = requests.get(
-            "http://test1.91taogu.com/stock/rule/actions?broker="+g.broker, timeout=5)
+            g.baseUrl+"/stock/rule/actions?broker="+g.broker, timeout=5)
         if response.status_code != 200:
             error("getActions失败，状态码:", response.status_code)
             return
@@ -519,7 +519,7 @@ def updateActionOrdered(scode, type, status, price, orderId):
     try:
         info("updateActionOrdered", scode, type, status, price, orderId)
         # 目标 URL
-        url = "http://test1.91taogu.com/stock/rule/action/ordered"
+        url = g.baseUrl+"/stock/rule/action/ordered"
         info("url:", url)
         # 要发送的 JSON 数据（Python 字典）
         data = {
