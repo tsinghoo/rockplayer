@@ -1404,12 +1404,7 @@ window.feed_list = window.feed_list || (function () {
             let d0close = share.toFixed(d0v[1]);
             c.find(".day0").text(`${lastDay}`);
 
-            //获取今天的日期字符串YYYY-MM-dd
-            let today = new Date();
-            let year = today.getFullYear();
-            let month = today.getMonth() + 1;
-            let day = today.getDate();
-            let todayStr = `${year}-${month}-${day}`;
+            let todayStr = share.timeFormat__(new Date(),"yyyyMMdd");
             if (todayStr != lastDay) {
                 c.find(".day0").addClass("bg_purple gray");
             }
