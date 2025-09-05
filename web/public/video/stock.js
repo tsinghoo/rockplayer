@@ -1440,7 +1440,12 @@ window.feed_list = window.feed_list || (function () {
                 }
                 var sum = 0;
                 for (var j = 0; j < dayCount; j++) {
-                    sum += data.values[i - j][1];
+                    let d = data.values[i - j];
+                    if (d == null) {
+                        result.push('-');
+                        continue;
+                    }
+                    sum += d[1];
                 }
                 result.push(+(sum / dayCount).toFixed(3));
             }
