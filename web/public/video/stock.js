@@ -1451,6 +1451,17 @@ window.feed_list = window.feed_list || (function () {
             }
             return result;
         },
+        calculateTickMA: function (data) {
+            var result = [];
+            var sum = 0;
+            var volume = 0;
+            for (var i = 0, len = data.values.length; i < len; i++) {
+                sum += data.values[i] * data.volumes[i];
+                volume += data.volumes[i];
+                result.push(+(sum / volume).toFixed(3));
+            }
+            return result;
+        },
 
         onTdClicked: function (ele) {
             let data = $(ele).parent("tr").attr("data");
@@ -1686,7 +1697,7 @@ window.feed_list = window.feed_list || (function () {
                     {
                         name: 'MA',
                         type: 'line',
-                        data: self.calculateMA(1, { categoryData, values, volumes }),
+                        data: self.calculateTickMA({ categoryData, values, volumes }),
                         smooth: true,
                         lineStyle: {
                             opacity: 0.5
