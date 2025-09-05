@@ -2136,6 +2136,23 @@ app.get('/stock/candidates', async (req, res) => {
     res.send(resp);
 });
 
+
+app.get('/stock/1d/lastDate', async (req, res) => {
+    info("/stock/1d/lastDate", req)
+    let js = req.query.js;
+    let scode = req.query.scode;
+    info("scode:" + scode, req)
+    let sql = `select max(time) as lastDate from t1d where scode=?`;
+    let r = await db.getSync(sql, [scode.split(".")[0]]);
+
+    var resp = JSON.stringify(r);
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/price/current', async (req, res) => {
     info("/stock/trade/all", req)
     let js = req.query.js;

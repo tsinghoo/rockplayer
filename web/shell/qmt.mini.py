@@ -29,7 +29,7 @@ g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
 g.broker = "国金"
 
-g.session_id = 1001
+g.session_id = random.randint(1000, 10000)
 
 g.tick = {}
 g.actions = {}
@@ -256,23 +256,42 @@ def getStockList():
         print("获取stockk list失败:", str(e))
 
 
-def getCandidates():
+def get1dLastDate(scode):
     # 从test1获取股票列表
+    try:
+        url = g.baseUrl + "/stock/1d/lastDate?scode=" + scode
+        info("get", url)
+        response = requests.get(url, verify=False, timeout=5)
+        if response.status_code != 200:
+            print("getLast1dDate failed:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            content = response.text
+            info(content)
+            return json.loads(content)["lastDate"]
+
+    except Exception as e:
+        print("getLast1dDate failed:", str(e))
+
+
+def getCandidates():
+    info("getCandidates")
     try:
         response = requests.get(
             g.baseUrl + "/stock/candidates", verify=False, timeout=5)
         if response.status_code != 200:
-            print("请求失败，状态码:", response.status_code)
+            info("请求失败，状态码:", response.status_code)
             return
         else:
-            print("从test1获取candidates成功:", response.status_code)
+            info("获取candidates成功:", response.status_code)
             response.encoding = 'utf-8'
             content = response.text
-            print(content)
+            info(content)
             return json.loads(content)
 
     except Exception as e:
-        print("获取candidates失败:", str(e))
+        info("获取candidates失败:", str(e))
 
 
 def uploadStockPrice():
@@ -360,9 +379,10 @@ def resetThreadId(label=""):
 
 
 def update1dTask():
+    info("update1dTask")
     g.candidates = getCandidates()
-    update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime(
-        "%Y%m%d"))
+    # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
+    update1d(g.candidates)
 
     while True:
         time.sleep(1)
@@ -547,69 +567,63 @@ def updateActionOrdered(scode, type, status, price, orderId):
         error("updateActionStatus 出错:", traceback.format_exc())
 
 
-def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
+def update1d(stocklist=None, startTime=None, endTime=None):
     info("update1d")
     if (stocklist is None):
         stocklist = g.stocklist
-    if (dataStartTime is None):
-        # 判断g.config里是否有lastStartTime1d这个key
-        if "lastStartTime1d" not in g.config:
-            initLastStartTime1d()
-            saveConfig()
+    if (endTime is None):
+        endTime = ""
 
-        dataStartTime = (datetime.datetime.strptime(
-            g.config["lastStartTime1d"], "%Y%m%d") - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
-        info("update1d dataStartTime:", dataStartTime)
-    if (dataEndTime is None):
-        dataEndTime = ""
-
-    pds = ["1d"]
     for index, scode in enumerate(stocklist):
-        for period in pds:
-            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
-            if period == "tick":
-                params = ['volume', 'amount', 'lastPrice']
+        dataStartTime = startTime
+        if (startTime is None):
+            lastDate = get1dLastDate(scode)
+            if lastDate:
+                dataStartTime = lastDate
+            else:
+                continue
+        period='1d'
+        params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+        info('downloading', period, 'from', dataStartTime, "for", scode)
+        xtdata.download_history_data(
+            scode, period, dataStartTime, endTime)
+        # download_history_data2 批量版本 todo
+        # params = []
+        info('get', period, 'from', dataStartTime, 'to', endTime,
+                'for', scode, "(", index, "/", len(stocklist), ")")
+        df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
+                                        start_time=dataStartTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
+        datas = df[scode]
+        # print("所有列名:", df.keys())
+        # print("所有:", df.values())
+        columns = ['Time'] + datas.columns.tolist()
+        # print(columns)
+        info("", len(datas), "rows")
+        # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
-            info('downloading', period, 'from', dataStartTime)
-            xtdata.download_history_data(
-                scode, period, dataStartTime, dataEndTime)
-            # download_history_data2 批量版本 todo
-            # params = []
-            info('get', period, 'from', dataStartTime, 'to', dataEndTime,
-                 'for', scode, "(", index, "/", len(stocklist), ")")
-            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
-            datas = df[scode]
-            # print("所有列名:", df.keys())
-            # print("所有:", df.values())
-            columns = ['Time'] + datas.columns.tolist()
-            # print(columns)
-            info("", len(datas), "rows")
-            # array_data = [datas.columns.tolist()] + datas.values.tolist()
-
-            # 将datas的数据分批上传，每批100条
-            bsize = 500
-            for i in range(0, len(datas), bsize):
-                batch = datas.iloc[i:i+bsize]
-                info("上传", scode, period,
-                     "[", i, ",", i+bsize, "]", len(batch))
-                for idx, row in batch.iterrows():
-                    # info(row)
-                    batch_data = [[str(idx)] + [row["open"], row["close"],
-                                                row["high"], row["low"], row["volume"], row["amount"]]]
-                # print(obj2JsonString(batch_data, indent=None))
-                    body = {"data": obj2Json(
-                        batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                    debug("body:", body)
-                    # 上传数据到test1
-                    try:
-                        response = requests.post(
-                            g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
-                        if response.status_code != 200:
-                            error("上传失败，状态码:", response.status_code,
-                                  "响应内容:", response.text)
-                    except Exception as e:
-                        error("上传失败:", str(e))
+        # 将datas的数据分批上传，每批100条
+        bsize = 500
+        for i in range(0, len(datas), bsize):
+            batch = datas.iloc[i:i+bsize]
+            info("上传", scode, period,
+                    "[", i, ",", i+bsize, "]", len(batch))
+            for idx, row in batch.iterrows():
+                # info(row)
+                batch_data = [[str(idx)] + [row["open"], row["close"],
+                                            row["high"], row["low"], row["volume"], row["amount"]]]
+            # print(obj2JsonString(batch_data, indent=None))
+                body = {"data": obj2Json(
+                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                debug("body:", body)
+                # 上传数据到test1
+                try:
+                    response = requests.post(
+                        g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
+                    if response.status_code != 200:
+                        error("上传失败，状态码:", response.status_code,
+                                "响应内容:", response.text)
+                except Exception as e:
+                    error("上传失败:", str(e))
 
             # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
             # print(obj2JsonString(result_dict))
@@ -1105,8 +1119,8 @@ if __name__ == '__main__':
     t2 = Thread(target=update1mTask)
     t4 = Thread(target=getActionsTask)
     t1.start()
-    t2.start()
-    t4.start()
+    # t2.start()
+    # t4.start()
 
     while True:
         uploadStockPrice()
