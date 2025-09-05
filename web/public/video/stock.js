@@ -1699,7 +1699,9 @@ window.feed_list = window.feed_list || (function () {
                         type: 'line',
                         data: self.calculateTickMA({ categoryData, values, volumes }),
                         smooth: true,
+                        symbol: 'none',
                         lineStyle: {
+                            color: "red",
                             opacity: 0.5
                         }
                     },
@@ -2006,6 +2008,7 @@ window.feed_list = window.feed_list || (function () {
                         type: 'line',
                         data: self.calculateMA(5, data),
                         smooth: true,
+                        symbol: 'none',
                         lineStyle: {
                             opacity: 0.5
                         }
@@ -2015,6 +2018,7 @@ window.feed_list = window.feed_list || (function () {
                         type: 'line',
                         data: self.calculateMA(10, data),
                         smooth: true,
+                        symbol: 'none',
                         lineStyle: {
                             opacity: 0.5
                         }
@@ -2024,6 +2028,7 @@ window.feed_list = window.feed_list || (function () {
                         type: 'line',
                         data: self.calculateMA(20, data),
                         smooth: true,
+                        symbol: 'none',
                         lineStyle: {
                             opacity: 0.5
                         }
@@ -2033,6 +2038,7 @@ window.feed_list = window.feed_list || (function () {
                         type: 'line',
                         data: self.calculateMA(30, data),
                         smooth: true,
+                        symbol: 'none',
                         lineStyle: {
                             opacity: 0.5
                         }
