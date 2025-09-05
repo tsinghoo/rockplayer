@@ -1527,7 +1527,7 @@ window.feed_list = window.feed_list || (function () {
             });
         },
 
-        drawKTickChart: function (scode, timeData, priceData, volumeData, $c) {
+        drawKTickChart: function (scode, categoryData, values, volumes, $c) {
             if ($c == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
@@ -1550,8 +1550,8 @@ window.feed_list = window.feed_list || (function () {
             }
 
             let lastTime = 9 * 60 + 9;
-            if (timeData.length > 0) {
-                lastTime = timeData[timeData.length - 1].split(":");
+            if (categoryData.length > 0) {
+                lastTime = categoryData[categoryData.length - 1].split(":");
                 lastTime = parseInt(lastTime[0]) * 60 + parseInt(lastTime[1]);
             }
             for (let i = lastTime + 1; i <= finalTime; i++) {
@@ -1566,9 +1566,9 @@ window.feed_list = window.feed_list || (function () {
                     m = "0" + m;
                 }
 
-                timeData.push(h + ":" + m);
-                priceData.push(null);
-                volumeData.push(null);
+                categoryData.push(h + ":" + m);
+                values.push(null);
+                volumes.push(null);
             }
 
 
@@ -1603,7 +1603,7 @@ window.feed_list = window.feed_list || (function () {
                 xAxis: [
                     {
                         type: 'category',
-                        data: timeData,
+                        data: categoryData,
                         scale: true,
                         boundaryGap: false,
                         axisLine: { onZero: false },
@@ -1617,7 +1617,7 @@ window.feed_list = window.feed_list || (function () {
                     {
                         type: 'category',
                         gridIndex: 1,
-                        data: timeData,
+                        data: categoryData,
                         scale: true,
                         boundaryGap: false,
                         axisLine: { onZero: false },
@@ -1658,7 +1658,7 @@ window.feed_list = window.feed_list || (function () {
                     {
                         name: '价格',
                         type: 'line',
-                        data: priceData,
+                        data: values,
                         smooth: true,
                         lineStyle: {
                             width: 1
@@ -1679,16 +1679,25 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
+                        name: 'MA',
+                        type: 'line',
+                        data: self.calculateMA(1, { categoryData, values, volumes }),
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
                         name: '成交量',
                         type: 'bar',
                         xAxisIndex: 1,
                         yAxisIndex: 1,
-                        data: volumeData,
+                        data: volumes,
                         itemStyle: {
                             color: function (params) {
-                                var colorList = priceData.map((price, index) => {
+                                var colorList = values.map((price, index) => {
                                     return index === 0 ? '#aaa' :
-                                        price > priceData[index - 1] ? '#f00' : '#0f0';
+                                        price > values[index - 1] ? '#f00' : '#0f0';
                                 });
                                 return colorList[params.dataIndex];
                             },

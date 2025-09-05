@@ -203,7 +203,8 @@ def updateDeal(deal):
         }
 
         # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(deal), verify=False, headers=headers)
+        response = requests.post(url, data=json.dumps(
+            deal), verify=False, headers=headers)
 
         # 输出响应
         debug("updateDeal:", response.status_code)
@@ -374,7 +375,7 @@ def update1dTask():
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
         g.stocklist = getStockList()
         update1d(g.stocklist)
-        
+
         updateLastStartTime1d()
         saveConfig()
 
@@ -535,7 +536,8 @@ def updateActionOrdered(scode, type, status, price, orderId):
         }
 
         # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(data), verify=False, headers=headers)
+        response = requests.post(url, data=json.dumps(
+            data), verify=False, headers=headers)
 
         # 输出响应
         debug("updateActionStatus:", response.status_code)
@@ -573,8 +575,8 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
             # params = []
-            info('get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
+            info('get', period, 'from', dataStartTime, 'to', dataEndTime,
+                 'for', scode, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
             datas = df[scode]
@@ -653,8 +655,8 @@ def update1m(stocklist):
             info('downloading', period, 'for', scode, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
-            info('get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
+            info('get', period, 'from', dataStartTime, 'to', dataEndTime,
+                 'for', scode, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
             datas = df[scode]
@@ -1112,4 +1114,3 @@ if __name__ == '__main__':
 
     # 阻塞主线程退出
     # xt_trader.run_forever()
-
