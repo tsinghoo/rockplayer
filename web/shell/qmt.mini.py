@@ -260,19 +260,19 @@ def get1dLastDate(scode):
     # 从test1获取股票列表
     try:
         url = g.baseUrl + "/stock/1d/lastDate?scode=" + scode
-        info("get", url)
+        debug("get", url)
         response = requests.get(url, verify=False, timeout=5)
         if response.status_code != 200:
-            print("getLast1dDate failed:", response.status_code)
+            error("getLast1dDate failed:", response.status_code)
             return
         else:
             response.encoding = 'utf-8'
             content = response.text
-            info(content)
+            debug(content)
             return json.loads(content)["lastDate"]
 
     except Exception as e:
-        print("getLast1dDate failed:", str(e))
+        error("getLast1dDate failed:", str(e))
 
 
 def getCandidates():
@@ -1119,8 +1119,8 @@ if __name__ == '__main__':
     t2 = Thread(target=update1mTask)
     t4 = Thread(target=getActionsTask)
     t1.start()
-    # t2.start()
-    # t4.start()
+    t2.start()
+    t4.start()
 
     while True:
         uploadStockPrice()
