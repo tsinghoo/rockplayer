@@ -1880,6 +1880,13 @@ window.mhgl_share =
       isFromDevice__: function () {
         return jQuery.browser.mobile || jQuery.browser.iPad;
       },
+      sleep: async function (ms) {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve();
+          }, ms);
+        });
+      },
       scan__: function (successFunc, errorFunc, options) {
         if (share.isFromWechatBrowser__()) {
           var index = options.inputs.length == 1 ? 0 : options.start;

@@ -849,11 +849,16 @@ window.feed_list = window.feed_list || (function () {
                 }
             })
 
-            if (self.task == null) {
-                self.task = setInterval(async function () {
-                    await self.updateData();
-                }, 1000);
-            }
+            setTimeout(async function () {
+                while (1 == 1) {
+                    try {
+                        await self.updateData();
+                    } catch (e) {
+                        console.log(e);
+                        await share.sleep(200);
+                    }
+                }
+            }, 500);
         },
 
         getRuleStatus: async function () {
@@ -1404,7 +1409,7 @@ window.feed_list = window.feed_list || (function () {
             let d0close = share.toFixed(d0v[1]);
             c.find(".day0").text(`${lastDay}`);
 
-            let todayStr = share.timeFormat__(new Date(),"yyyyMMdd");
+            let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
             if (todayStr != lastDay) {
                 c.find(".day0").addClass("bg_purple gray");
             }
