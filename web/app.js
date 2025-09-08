@@ -1051,6 +1051,7 @@ app.get('/stock/vote', async (req, res) => {
     let now = timeFormat(new Date(), "yyyyMMdd hhmmss");
     await db.runSync(sql, [now, code]);
     await db.runSync(`update tStockBasic set priority=? where scode=?`, [new Date().getTime(), code]);
+    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [new Date().getTime(), code]);
     var resp = `${js}({})`;
     res.send(resp);
 });
