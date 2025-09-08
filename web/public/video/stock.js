@@ -1323,11 +1323,14 @@ window.feed_list = window.feed_list || (function () {
                        <div class="flexcolumn">
                             <div class="kTick border margin4">loading 1m</div>
                             <div class="flexrow margin4">
-                                <div class="day0 margin4">
-
-                                </div>
-                                <div class="day0Status margin4">
-                                
+                                <div class="day0Status flexrow width100p margin4 hide">
+                                    <div class="day0"></div>
+                                    <div style="width:10px;"></div>
+                                    <div class="priceLow"></div>
+                                    <div class="progressContainer separator flexcolumn widthauto height20">
+                                        <div class="progressBar center"></div>
+                                    </div>               
+                                    <div class="priceHigh"></div>                
                                 </div>
                             </div>
                             <div class="k1d border margin4">loading 1d</div>
@@ -1414,7 +1417,21 @@ window.feed_list = window.feed_list || (function () {
                 c.find(".day0").addClass("bg_purple gray");
             }
 
-            c.find(".day0Status").text(`${d0low} < ${d0close} < ${d0high} `);
+            c.find(".day0Status").removeClass("hide");
+            c.find(".priceLow").text(`${d0low}`);
+            c.find(".priceHigh").text(`${d0high}`);
+            //获取progressContainer的实际宽度
+            let totalWidth = c.find(".progressContainer").width();
+            if (d0high == d0low) {
+                c.find(".progressBar").width(totalWidth);
+            } else if (d0close == d0low) {
+                c.find(".progressBar").width(0);
+            } else {
+                let lw = 4;
+                let w = lw + (totalWidth - lw) * (d0close - d0low) / (d0high - d0low);
+                c.find(".progressBar").width(w);
+                c.find(".progressBar").text(`${d0close}`);
+            }
         },
         splitData: function (rawData) {
             let categoryData = [];
