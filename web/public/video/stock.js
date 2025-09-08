@@ -1456,7 +1456,7 @@ window.feed_list = window.feed_list || (function () {
             var sum = 0;
             var volume = 0;
             for (var i = 0, len = data.values.length; i < len; i++) {
-                if (data.values[i] == 0 && data.volumes[i] == 0) {
+                if (data.values[i] == null && data.volumes[i] == null) {
                     break;
                 }
                 sum += data.values[i] * data.volumes[i];
