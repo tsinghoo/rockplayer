@@ -1424,8 +1424,10 @@ window.feed_list = window.feed_list || (function () {
             let totalWidth = c.find(".progressContainer").width();
             if (d0high == d0low) {
                 c.find(".progressBar").width(totalWidth);
+                c.find(".progressBar").text(`|---|`);
             } else if (d0close == d0low) {
                 c.find(".progressBar").width(0);
+                c.find(".progressBar").text(`|---`);
             } else {
                 let lw = 4;
                 let w = lw + (totalWidth - lw) * (d0close - d0low) / (d0high - d0low);
