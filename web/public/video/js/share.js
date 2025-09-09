@@ -1882,6 +1882,11 @@ window.mhgl_share =
       },
       sleep: async function (ms) {
         return new Promise((resolve, reject) => {
+          if (ms <= 0) {
+            resolve();
+            return;
+          }
+
           setTimeout(() => {
             resolve();
           }, ms);

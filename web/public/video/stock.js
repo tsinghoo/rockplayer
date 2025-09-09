@@ -851,12 +851,16 @@ window.feed_list = window.feed_list || (function () {
 
             setTimeout(async function () {
                 while (1 == 1) {
+                    let start = new Date().getTime();
                     try {
                         await self.updateData();
                     } catch (e) {
                         console.log(e);
                         await share.sleep(200);
                     }
+                    let end = new Date().getTime();
+
+                    await share.sleep(1000 - (end - start));
                 }
             }, 500);
         },
