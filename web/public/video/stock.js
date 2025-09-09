@@ -853,7 +853,9 @@ window.feed_list = window.feed_list || (function () {
                 while (1 == 1) {
                     let start = new Date().getTime();
                     try {
-                        await self.updateData();
+                        if (!document.hidden) {
+                            await self.updateData();
+                        }
                     } catch (e) {
                         console.log(e);
                         await share.sleep(200);
