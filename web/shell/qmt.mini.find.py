@@ -800,10 +800,8 @@ def getStockName(scode):
 
 def getIncreaseDays(prices, rangeStart, rangeEnd, minRate, maxRate):
     count = 0
+    days = rangeEnd-rangeStart
     if len(prices) < days:
-        days = len(prices)-1
-
-    if (days < 1):
         return 0
 
     for i in range(rangeEnd, rangeStart, -1):
@@ -840,13 +838,12 @@ def findStock(sector):
             if sname.startswith(('ST', '*ST', '退')):
                 continue
 
-            info('downloading', period, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
 
             info('get', startDays, period, 'for', scode, 'from',
-                 '', 'to', current_date, "(", index, "/", len(g.stocklist), ")")
+                 '', 'to', current_date, "(", index, "/", len(g.stocklist), ")", sector)
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
             prices = df[scode]
@@ -873,22 +870,34 @@ def findStock(sector):
             #     info("bad")
             #     continue
 
-            # 最近 3 天连续上涨:start
-            days = 2
-            count = getIncreaseDays(high_prices, days, 0, 1)
-            if (count < days):
+            dayStart = -3
+            dayEnd = -1
+            count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
+            info(" high price increase:", count)
+            if (count < (dayEnd-dayStart)):
                 continue
 
-            count = getIncreaseDays(low_prices, days, 0, 1)
-            if (count < days):
+            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
+            info(" close price increase:", count)
+            if (count < (dayEnd-dayStart)):
                 continue
-            # 最近 3 天连续上涨:end
 
-            # 最近12天下跌天数
-            days = 9
-            count = getIncreaseDays(close_prices, days, -1, 0)
+            #计算high_prices中最近30天的最大值
+            days=30
+            if (len(high_prices) < days):
+                days=len(high_prices)
+            maxPrice = max(high_prices[-1*days:])
+            minPrice = min(high_prices[-1*days:])
+            if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
+                continue
 
-            if (count < days-2-1):
+            # 最近7天下跌天数
+            dayStart = -5
+            dayEnd = -3
+            count = getIncreaseDays(close_prices, dayStart, dayEnd, -1, 0)
+            info(" close price decrease:", count)
+
+            if (count < (dayEnd-dayStart)):
                 continue
 
             info("OK")
@@ -1006,7 +1015,7 @@ if __name__ == '__main__':
                    '沪深指数', '沪深转债', '深市ETF', '深市债券', '深市基金', '深市指数', '深证A股', '深证B股', '深证期权', '深证转债', '科创板', '科创板CDR', '能源中心', '连续合约', '郑商所', '香港联交所指数', '香港联交所股票']
     sector_list = ['上证A股', '上证B股', '创业板', '沪深A股', '沪深B股',
                    '沪深ETF', '深市ETF', '深证A股', '深证B股', '科创板', '香港联交所股票']
-    sector_list = ['创业板', '沪深A股', '沪深B股', '沪深ETF', '深市ETF', '科创板', '香港联交所股票']
+    sector_list = ['创业板', '沪深A股', '沪深B股', '沪深ETF', '科创板', '香港联交所股票']
 
     time.sleep(5)
 
