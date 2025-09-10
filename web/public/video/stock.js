@@ -1030,19 +1030,23 @@ window.feed_list = window.feed_list || (function () {
             c.find(".bounce").val(bounce);
             c.find(".dip").val(dip);
             autoDelta();
-
+            let priceAutoed = 0;
             let autoPrice = function (changed) {
+                if (priceAutoed) {
+                    return;
+                }
                 let buy = c.find(".buy").val().trim();
                 let sell = c.find(".sell").val().trim();
                 if (changed == 1) {
-                    if (parseFloat(sell) < parseFloat(buy) + 2)
-                        c.find(".sell").val(2 + parseFloat(buy));
+                    if (parseFloat(sell) < parseFloat(buy) * (1 + 0.02))
+                        c.find(".sell").val(parseFloat(buy) * (1 + 0.02));
                 }
                 if (changed == 2) {
-                    if (parseFloat(buy) > parseFloat(sell) - 2)
-                        c.find(".buy").val(parseFloat(sell) - 2);
+                    if (parseFloat(buy) > parseFloat(sell) * (1 - 0.02))
+                        c.find(".buy").val(parseFloat(sell) * (1 - 0.02));
                 }
                 autoDelta();
+                priceAutoed = 1;
             }
 
             $('.buy', c).change(function () {

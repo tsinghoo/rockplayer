@@ -384,7 +384,7 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
             # params = []
-            info( 'get', period, 'for', scode, 'from',
+            info('get', period, 'for', scode, 'from',
                  dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
@@ -457,7 +457,7 @@ def update1m():
             info('==downloading', period, 'from', dataStartTime)
             xtdata.download_history_data(
                 scode, period, dataStartTime, dataEndTime)
-            info( 'get', period, 'for', scode, 'from',
+            info('get', period, 'for', scode, 'from',
                  dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
@@ -798,6 +798,22 @@ def getStockName(scode):
     return sname
 
 
+def getIncreaseDays(prices, rangeStart, rangeEnd, minRate, maxRate):
+    count = 0
+    if len(prices) < days:
+        days = len(prices)-1
+
+    if (days < 1):
+        return 0
+
+    for i in range(rangeEnd, rangeStart, -1):
+        if prices[i] > prices[i-1] * (1+minRate):
+            if prices[i] < prices[i-1] * (1+maxRate):
+                count += 1
+
+    return count
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
@@ -820,7 +836,6 @@ def findStock(sector):
     params = ['open', 'close', 'high', 'low', 'volume', 'amount']
     for index, scode in enumerate(g.stocklist):
         try:
-
             sname = getStockName(scode)
             if sname.startswith(('ST', '*ST', '退')):
                 continue
@@ -830,7 +845,7 @@ def findStock(sector):
                 scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
 
-            info( 'get', startDays, period, 'for', scode, 'from',
+            info('get', startDays, period, 'for', scode, 'from',
                  '', 'to', current_date, "(", index, "/", len(g.stocklist), ")")
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
@@ -849,7 +864,6 @@ def findStock(sector):
                 info("bad price:", current_price)
                 continue
 
-            info()
             # 计算历史分位数判断是否低位
             # hist_percentile = sum(
             #     1 for price in close_prices if price < current_price) / len(close_prices)
@@ -859,52 +873,25 @@ def findStock(sector):
             #     info("bad")
             #     continue
 
-            # 最近一个月涨幅超过8%的次数
-            minRate = 0.08
-            highIncreaseCount = 0
-            days = 30
-            if len(close_prices) < days:
-                days = len(close_prices)-1
-
-            if (days < 1):
+            # 最近 3 天连续上涨:start
+            days = 2
+            count = getIncreaseDays(high_prices, days, 0, 1)
+            if (count < days):
                 continue
 
-            for i in range(len(close_prices)-1, len(close_prices)-1-days, -1):
-                if high_prices[i] > close_prices[i-1] * (1+minRate):
-                    highIncreaseCount += 1
-                else:
-                    break
-            if (highIncreaseCount < 3):
+            count = getIncreaseDays(low_prices, days, 0, 1)
+            if (count < days):
+                continue
+            # 最近 3 天连续上涨:end
+
+            # 最近12天下跌天数
+            days = 9
+            count = getIncreaseDays(close_prices, days, -1, 0)
+
+            if (count < days-2-1):
                 continue
 
-            # 检查最近几天连续上涨的天数
-            days = 3
-            highIncrease = 0
-            if len(close_prices) < days:
-                days = len(close_prices)-1
-
-            if (days < 1):
-                continue
-            
-            for i in range(len(high_prices)-1, len(high_prices)-1-days, -1):
-                if high_prices[i] > high_prices[i-1]:
-                    highIncrease += 1
-                else:
-                    break
-
-            if (highIncrease < 3):
-                continue
-
-            lowIncrease = 0
-            for i in range(len(low_prices)-1, len(high_prices)-1-days, -1):
-                if low_prices[i] > low_prices[i-1]:
-                    lowIncrease += 1
-                else:
-                    break
-            if (lowIncrease < 3):
-                continue
-
-            info( "OK")
+            info("OK")
             candidate.append([scode, sname])
 
         except Exception as e:
@@ -937,9 +924,9 @@ def doUploadCandidates(batch):
 
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
-    #path = r'D:\国金证券QMT交易端\userdata_mini'
-    path=os.getenv("qmtpath")
-    #获取环境变量proxy的值
+    # path = r'D:\国金证券QMT交易端\userdata_mini'
+    path = os.getenv("qmtpath")
+    # 获取环境变量proxy的值
     proxy = os.getenv("proxy")
     if proxy:
         g.baseUrl = proxy
@@ -947,18 +934,18 @@ if __name__ == '__main__':
         g.baseUrl = "http://test1.91taogu.com"
 
     configPathPrefix = os.getenv("configPathPrefix")
-    
+
     if configPathPrefix:
         g.configFile = configPathPrefix + r"\qmt.config.json"
     else:
         g.configFile = r"d:\qmt.config.json"
-        
+
     logPathPrefix = os.getenv("logPathPrefix")
     if logPathPrefix:
         g.logPathPrefix = logPathPrefix
     else:
         g.logPathPrefix = r"d:"
-        
+
     print("configPathPrefix:", configPathPrefix)
     print("configFile:", g.configFile)
     print("logPathPrefix:", logPathPrefix)
@@ -1022,7 +1009,7 @@ if __name__ == '__main__':
     sector_list = ['创业板', '沪深A股', '沪深B股', '沪深ETF', '深市ETF', '科创板', '香港联交所股票']
 
     time.sleep(5)
-    
+
     if ui == "2":
         # 对于每个sector,查询成分股
         g.stocks = []
