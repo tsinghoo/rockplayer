@@ -196,7 +196,7 @@ window.feed_list = window.feed_list || (function () {
             if (res.error) {
                 share.toastError__(res.error);
             } else {
-                share.toastSuccess__("pair success");
+                share.toastSuccess__("pair success", 1000);
             }
         },
         bindEvents: function () {
@@ -246,7 +246,7 @@ window.feed_list = window.feed_list || (function () {
                     "broker": broker
                 };
                 let success = function () {
-                    share.toastSuccess__("submitted");
+                    share.toastSuccess__("submitted", 1000);
                     popup.close();
                 };
 
@@ -265,7 +265,7 @@ window.feed_list = window.feed_list || (function () {
             if (res.error) {
                 share.toastError__(res.error);
             } else {
-                share.toastSuccess__("canceled");
+                share.toastSuccess__("canceled", 1000);
                 self.exeSql(self.sqlRow, true);
             }
         },
@@ -274,7 +274,7 @@ window.feed_list = window.feed_list || (function () {
             if (res.error) {
                 share.toastError__(res.error);
             } else {
-                share.toastSuccess__("canceled");
+                share.toastSuccess__("canceled", 1000);
                 self.exeSql(self.sqlRow, true);
             }
         },

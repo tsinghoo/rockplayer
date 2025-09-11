@@ -859,6 +859,50 @@ app.post('/stock/update', async (req, resp) => {
                 buy: fields[6],
                 updateTime: now
             });
+        } else if (broker == "国信当日") {
+            //tdx 国信证券
+            fields = fields.concat([""]);
+            let tday = timeFormat(new Date(), "yyyyMMdd");
+            let ttime = fields[9];
+            let sname = fields[1];
+            let scode = fields[0];
+            let operationDirection = fields[2];
+            let operationName = "国信";
+            let market = fields[11];
+            let tamount = fields[3];
+            let tprice = fields[4];
+            let tcash = fields[5];
+            let tid = fields[8];
+            let taccount = fields[10];
+            let tpair = "";
+            let lastOperationTime = tday + " " + ttime;
+
+
+            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+
+
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
+            }
+
+            let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
+                tcash, tid, taccount, tpair, lastOperationTime]);
+            if (res.error) {
+                info(res.error, req)
+                resp.send(res);
+                return;
+            } else {
+            }
+
+            await insertOrIgnore("tStockBasic", {
+                id: fields[2],
+                scode: fields[2],
+                sname: fields[3],
+                buy: fields[6],
+                updateTime: now
+            });
         } else if (broker == "国金历史") {
             //tdx 国金证券
             fields = fields.concat([""]);
