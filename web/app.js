@@ -833,6 +833,15 @@ app.post('/stock/update', async (req, resp) => {
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            if (ttime.length == 7) {
+                ttime = "0" + ttime.substring(0, 1) + ":" + ttime.substring(1, 3) + ":" + ttime.substring(3, 5);
+            } else if (ttime.length == 8) {
+                ttime = ttime.substring(0, 2) + ":" + ttime.substring(2, 4) + ":" + ttime.substring(4, 6);
+            }
+
+            if (fields[4].indexOf("卖") >= 0 && fields[5].substring(0, 1) != "-") {
+                fields[5] = "-" + fields[5];
+            }
 
             let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], "国信", fields[21], fields[5], fields[6],
                 fields[7], fields[19], fields[20], '', tday + " " + ttime]);
