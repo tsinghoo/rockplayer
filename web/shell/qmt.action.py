@@ -2,6 +2,9 @@
 '''
 
 '''
+import random
+import threading
+import time
 import datetime
 import json
 import pandas as pd
@@ -87,6 +90,16 @@ def updateActionOrdered(scode, type, status, price, orderId):
     except Exception as e:
         error("updateActionStatus 出错:", traceback.format_exc())
 
+
+def printTask():
+    while True:
+        toPrint, g.toPrint = g.toPrint, []
+        log2File(toPrint, g.logPathPrefix + "\\qmt.mini.find.log")
+        while len(toPrint) > 0:
+            item = toPrint.pop(0)
+            print(*item[0], **item[1])
+
+        time.sleep(0.1)
 
 def getActions(ContextInfo):
     try:
@@ -248,10 +261,24 @@ def log(*args, **kwargs):
 
     # 处理print的特殊参数（file/flush等）
     print(*all_args, **kwargs)
+    log2File(*args)
+
+def log2File(*args, file="d:\\qmt.action", sep=' ', end='\n', flush=True):
+    
+    file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
+
+    with open(file, mode='a', encoding='utf-8') as f:
+            # 将多个参数用分隔符连接
+            output = sep.join(str(arg) for arg in args)
+            f.write(output + end)
+            if flush:
+                f.flush()
 
 
-def log2File(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+def log2FileBatch(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
     """
+    # The above code is written in Python and it seems to be a comment explaining how to output print
+    # content to a file using a function or method similar to print.
     将打印内容输出到文件，参数与print()函数保持一致
 
     参数:
