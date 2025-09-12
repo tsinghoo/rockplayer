@@ -3,6 +3,7 @@
 
 '''
 import random
+import os
 import threading
 import time
 import datetime
@@ -15,6 +16,8 @@ import requests
 import sys
 import traceback
 import math
+
+from threading import Thread
 
 
 class G():
@@ -44,11 +47,29 @@ runGetActionTask = 1
 baseUrl = "http://192.168.66.205:3001"
 baseUrl = "http://test1.91taogu.com"
 
+
+logPathPrefix = os.getenv("logPathPrefix")
+if logPathPrefix:
+    g.logPathPrefix = logPathPrefix
+else:
+    g.logPathPrefix = r"d:"
+
 #####################################################
 
 g.actions = {}
+g.toPrint = []
+today = datetime.datetime.now().date()
+threadLocal = threading.local()
+
 stocks = {}
 # 初始化函数 - 策略运行开始时调用一次
+
+
+def printTask():
+    while True:
+        toPrint, g.toPrint = g.toPrint, []
+        log2File(toPrint, g.logPathPrefix + "\\qmt.action")
+        time.sleep(0.1)
 
 
 def init(ContextInfo):
@@ -57,6 +78,9 @@ def init(ContextInfo):
     ContextInfo.set_account(account)
     stocklist = ['000300.SH', '000004.SZ']
     ContextInfo.set_universe(stocklist)
+
+    t3 = Thread(target=printTask)
+    t3.start()
     if (runGetActionTask == 1):
         info("start getActions task")
         ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
@@ -90,16 +114,6 @@ def updateActionOrdered(scode, type, status, price, orderId):
     except Exception as e:
         error("updateActionStatus 出错:", traceback.format_exc())
 
-
-def printTask():
-    while True:
-        toPrint, g.toPrint = g.toPrint, []
-        log2File(toPrint, g.logPathPrefix + "\\qmt.mini.find.log")
-        while len(toPrint) > 0:
-            item = toPrint.pop(0)
-            print(*item[0], **item[1])
-
-        time.sleep(0.1)
 
 def getActions(ContextInfo):
     try:
@@ -202,7 +216,7 @@ def syncPosition(accountType):
 
     if (accountType != "clean"):
         data = get_trade_detail_data(account, accountType, 'position')
-        print('查询持仓结果：')
+        info('查询持仓结果：')
         positions = []
         for dt in data:
             position = {
@@ -254,42 +268,19 @@ def error(*args, **kwargs):
 def log(*args, **kwargs):
     """增强版log函数，完全模拟print的参数行为"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     # 将时间作为第一个元素插入到输出中
-    time_header = f"[{current_time}]"
+    if (hasattr(threadLocal, "id")):
+        time_header = f"[{current_time}][{threadLocal.id}]"
+    else:
+        time_header = f"[{current_time}]"
+
     all_args = (time_header,) + args
-
-    # 处理print的特殊参数（file/flush等）
     print(*all_args, **kwargs)
-    log2File(*args)
-
-def log2File(*args, file="d:\\qmt.action", sep=' ', end='\n', flush=True):
-    
-    file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
-
-    with open(file, mode='a', encoding='utf-8') as f:
-            # 将多个参数用分隔符连接
-            output = sep.join(str(arg) for arg in args)
-            f.write(output + end)
-            if flush:
-                f.flush()
+    g.toPrint.append([all_args, kwargs])
 
 
-def log2FileBatch(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
-    """
-    # The above code is written in Python and it seems to be a comment explaining how to output print
-    # content to a file using a function or method similar to print.
-    将打印内容输出到文件，参数与print()函数保持一致
-
-    参数:
-        *args: 要打印的内容，多个参数会自动用sep分隔
-        file: 输出文件名(默认'output.txt')
-        sep: 分隔符(默认空格)
-        end: 结束符(默认换行)
-        flush: 是否立即刷新缓冲区(默认False)
-        mode: 文件打开模式('a'追加或'w'写入，默认'a')
-        encoding: 文件编码(默认'utf-8')
-    """
+def log2File(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+    print("log2File")
     # 在file文件名后边加上当天日期
     file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
 
@@ -301,8 +292,6 @@ def log2FileBatch(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True,
             f.write(output + end)
             if flush:
                 f.flush()
-
-
 
 
 def handlebar(ContextInfo):
@@ -319,16 +308,16 @@ def account_callback(ContextInfo, accountInfo):
 def printObj(data, indent="  "):
     dirs = dir(data)
     if not dirs:
-        print(data)
+        info(data)
     else:
         for field in dirs:
             if not field.startswith("_"):  # 过滤掉Python内置属性
                 try:
                     value = getattr(data, field)
                     # child = printObj(value, indent+"  ")
-                    print(f"{indent}{field}:{value}\n")
+                    info(f"{indent}{field}:{value}\n")
                 except Exception as e:
-                    print(f"{field}: (无法获取值: {e})")
+                    info(f"{field}: (无法获取值: {e})")
 
 
 # 账号委托状态变化主推
