@@ -830,21 +830,39 @@ app.post('/stock/update', async (req, resp) => {
         } else if (broker == "国信历史") {
             //tdx 国信证券
             fields = fields.concat([""]);
-            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
-            tcash,tid,taccount, tpair,lastOperationTime) 
-        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            let tday = fields[0];
+            let ttime = fields[1];
+            let sname = fields[3];
+            let scode = fields[2];
+            let operationDirection = fields[4];
+            let operationName = "国信";
+            let market = fields[21];
+            let tprice = fields[6];
+            let tamount = fields[5];
+            let tcash = fields[7];
+            let taccount = fields[20];
+            let tpair = "";
+
+            scode = fixScode(scode);
+
             if (ttime.length == 7) {
                 ttime = "0" + ttime.substring(0, 1) + ":" + ttime.substring(1, 3) + ":" + ttime.substring(3, 5);
             } else if (ttime.length == 8) {
                 ttime = ttime.substring(0, 2) + ":" + ttime.substring(2, 4) + ":" + ttime.substring(4, 6);
             }
 
-            if (fields[4].indexOf("卖") >= 0 && fields[5].substring(0, 1) != "-") {
-                fields[5] = "-" + fields[5];
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
             }
 
-            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], "国信", fields[21], fields[5], fields[6],
-                fields[7], fields[19], fields[20], '', tday + " " + ttime]);
+            let tid = `${tday}.${ttime}.${scode}.${tprice}`;
+            let lastOperationTime = tday + " " + ttime;
+
+            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
+                tcash, tid, taccount, tpair, lastOperationTime]);
             if (res.error) {
                 info(res.error, req)
                 resp.send(res);
@@ -872,20 +890,19 @@ app.post('/stock/update', async (req, resp) => {
             let tamount = fields[3];
             let tprice = fields[4];
             let tcash = fields[5];
-            let tid = fields[8];
             let taccount = fields[10];
             let tpair = "";
-            let lastOperationTime = tday + " " + ttime;
 
+            scode = fixScode(scode);
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
+            }
+            let lastOperationTime = tday + " " + ttime;
+            let tid = `${tday}.${ttime}.${scode}.${tprice}`;
 
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
-
-
-            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
-                tamount = "-" + tamount;
-            }
 
             let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
                 tcash, tid, taccount, tpair, lastOperationTime]);
@@ -1158,6 +1175,14 @@ app.post('/stock/account', async (req, res) => {
     res.send(resp);
 });
 
+
+function fixScode(scode) {
+    if (scode.length < 6) {
+        scode = "000000".substring(0, 6 - scode.length) + scode;
+    }
+
+    return scode;
+}
 
 async function dbCall(options) {
     for (let i = 0; i < options.length; ++i) {
@@ -2359,7 +2384,14 @@ async function getDealName(scode) {
 
     return name;
 }
+function convertIfInteger(number) {
+    number = parseFloat(number.toFixed(3));
+    if (Number.isInteger(number)) {
+        return parseInt(number); // 或者 Math.trunc(number)
+    }
 
+    return number; // 保持原值
+}
 app.post('/stock/deal/update', async (req, res) => {
     info(`/stock/deal/update:${JSON.stringify(req.body)}`, req)
     let deal = req.body;
@@ -2378,6 +2410,7 @@ app.post('/stock/deal/update', async (req, res) => {
         deal.ttime = deal.ttime.substring(0, 2) + ":" + deal.ttime.substring(2, 4) + ":" + deal.ttime.substring(4, 6);
     }
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
+    deal.tprice = convertIfInteger(deal.tprice);
     let old = await db.getSync("select * from tStock where tid=?", [deal.tid]);
     let r;
     if (old == null) {
