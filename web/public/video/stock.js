@@ -513,6 +513,7 @@ window.feed_list = window.feed_list || (function () {
             table.append(thead);
 
             let lastCode;
+            let lastBroker;
             for (let i = 0; i < rows.length; i++) {
                 let tr = $("<tr>");
                 let row = rows[i];
@@ -527,10 +528,11 @@ window.feed_list = window.feed_list || (function () {
                 if (row["代码"] == null) {
                     row["代码"] = "";
                 }
-                if (row["代码"] == lastCode) {
+                if (row["代码"] == lastCode && row["券商"] == lastBroker) {
                     firstRow = false;
                 } else {
                     lastCode = row["代码"];
+                    lastBroker = row["券商"];
                 }
 
                 for (let j = 0; j < keys.length; j++) {
