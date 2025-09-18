@@ -2411,6 +2411,8 @@ app.post('/stock/deal/update', async (req, res) => {
     }
     deal.lastOperationTime = deal.tday + " " + deal.ttime;
     deal.tprice = convertIfInteger(deal.tprice);
+    deal.tid = `${deal.tday}.${deal.ttime}.${deal.scode}.${deal.tprice}`;
+
     let old = await db.getSync("select * from tStock where tid=?", [deal.tid]);
     let r;
     if (old == null) {
