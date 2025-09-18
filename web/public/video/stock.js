@@ -574,7 +574,7 @@ window.feed_list = window.feed_list || (function () {
                         td.html(row[key]);
                     } else if (key == "tid") {
 
-                        tr.addClass(`tid${row[key]}`);
+                        tr.addClass(`tid${row[key].replace(/[\.:]/g, '_')}`);
                         if (firstRow) {
                             td.html(`<span class="deleteRow clickable white">X</span>` + row[key]);
                         } else {
@@ -765,7 +765,7 @@ window.feed_list = window.feed_list || (function () {
                 data = JSON.parse(data);
 
                 let pairedId = data["配对"];
-                let pairedTr = $(`.tid${pairedId}`);
+                let pairedTr = $(`.tid${pairedId.replace(/[\.:]/g, '_')}`);
                 pairedTr.find("td").addClass("bg_purple");
                 let popup;
                 let buttons = [
