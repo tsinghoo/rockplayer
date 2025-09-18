@@ -767,6 +767,7 @@ window.feed_list = window.feed_list || (function () {
                 let pairedId = data["配对"];
                 let pairedTr = $(`.tid${pairedId.replace(/[\.:]/g, '_')}`);
                 pairedTr.find("td").addClass("bg_purple");
+                tr.find("td").addClass("bg_purple");
                 let popup;
                 let buttons = [
                     {
@@ -826,6 +827,7 @@ window.feed_list = window.feed_list || (function () {
                 popup = await share.popupAction__("", buttons);
                 popup.onClosed = function () {
                     pairedTr.find("td").removeClass("bg_purple");
+                    tr.find("td").removeClass("bg_purple");
                 }
             })
 
