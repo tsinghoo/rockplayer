@@ -509,6 +509,14 @@ async function tryToBuy(r) {
             createTime: now
         }
 
+        if (r.actions.length > 0) {
+            let oc = r.actions[r.actions.length - 1].createTime;
+            let n = Date().now();
+            if (n - oc < 1000) {
+                return false;
+            }
+        }
+
         await insertOrReplace("tRuleAction", action);
         r.status = "ordered";
 
