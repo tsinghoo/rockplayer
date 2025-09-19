@@ -2171,7 +2171,54 @@ function formatScode(stockCode) {
 app.get('/stock/codes', async (req, res) => {
     info("/stock/codes", req)
     let js = req.query.js;
-    let sql = `select distinct tsb.scode from tstockbasic tsb order by tsb.priority desc`;
+    let sql = `select distinct tsb.scode from tstockbasic tsb union select distinct scode from tTradeRule where closed=0;`;
+    let r = await db.allSync(sql);
+    let scodes = [];
+    r.rows.forEach((row) => {
+        let code = row.scode;
+        code = formatScode(code);
+        if (code == null) {
+        } else {
+            scodes.push(code);
+        }
+    })
+
+    var resp = JSON.stringify(scodes);
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+
+app.get('/stock/rule/codes', async (req, res) => {
+    info("/stock/rule/codes", req)
+    let js = req.query.js;
+    let sql = `select distinct scode from tTradeRule`;
+    let r = await db.allSync(sql);
+    let scodes = [];
+    r.rows.forEach((row) => {
+        let code = row.scode;
+        code = formatScode(code);
+        if (code == null) {
+        } else {
+            scodes.push(code);
+        }
+    })
+
+    var resp = JSON.stringify(scodes);
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+app.get('/stock/rule/codes/active', async (req, res) => {
+    info("/stock/rule/codes", req)
+    let js = req.query.js;
+    let sql = `select distinct scode from tTradeRule where closed=0;`;
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {

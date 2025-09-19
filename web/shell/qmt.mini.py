@@ -293,6 +293,24 @@ def getCandidates():
     except Exception as e:
         info("获取candidates失败:", str(e))
 
+def getRuleCodes():
+    info("getRuleCodes")
+    try:
+        response = requests.get(
+            g.baseUrl + "/stock/rule/codes", verify=False, timeout=5)
+        if response.status_code != 200:
+            info("getRuleCodes:", response.status_code)
+            return
+        else:
+            info("getRuleCodes:", response.status_code)
+            response.encoding = 'utf-8'
+            content = response.text
+            info(content)
+            return json.loads(content)
+
+    except Exception as e:
+        info("getRuleCodes failed:", str(e))
+
 
 def uploadStockPrice():
     # 组装成json对象post到test1.91taogu.com
@@ -383,6 +401,9 @@ def update1dTask():
     g.candidates = getCandidates()
     # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
     update1d(g.candidates)
+
+    g.ruleCodes = getRuleCodes()
+    update1d(g.ruleCodes)
 
     while True:
         time.sleep(1)
@@ -582,7 +603,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                 dataStartTime = lastDate
             else:
                 continue
-        period='1d'
+        period = '1d'
         params = ['open', 'close', 'high', 'low', 'volume', 'amount']
         info('downloading', period, 'from', dataStartTime, "for", scode)
         xtdata.download_history_data(
@@ -590,9 +611,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
         # download_history_data2 批量版本 todo
         # params = []
         info('get', period, 'from', dataStartTime, 'to', endTime,
-                'for', scode, "(", index, "/", len(stocklist), ")")
+             'for', scode, "(", index, "/", len(stocklist), ")")
         df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                        start_time=dataStartTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
+                                       start_time=dataStartTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
         datas = df[scode]
         # print("所有列名:", df.keys())
         # print("所有:", df.values())
@@ -606,7 +627,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
         for i in range(0, len(datas), bsize):
             batch = datas.iloc[i:i+bsize]
             info("上传", scode, period,
-                    "[", i, ",", i+bsize, "]", len(batch))
+                 "[", i, ",", i+bsize, "]", len(batch))
             for idx, row in batch.iterrows():
                 # info(row)
                 batch_data = [[str(idx)] + [row["open"], row["close"],
@@ -621,7 +642,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                         g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
                     if response.status_code != 200:
                         error("上传失败，状态码:", response.status_code,
-                                "响应内容:", response.text)
+                              "响应内容:", response.text)
                 except Exception as e:
                     error("上传失败:", str(e))
 
