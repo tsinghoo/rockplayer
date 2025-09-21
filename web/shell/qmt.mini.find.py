@@ -870,7 +870,7 @@ def findStock(sector):
             #     info("bad")
             #     continue
 
-            dayStart = -3
+            dayStart = -4
             dayEnd = -1
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
             info(" high price increase:", count)
