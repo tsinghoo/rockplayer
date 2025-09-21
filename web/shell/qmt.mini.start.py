@@ -1,0 +1,114 @@
+import os
+import subprocess
+import sys
+
+def main():
+    # 切换到脚本所在目录
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
+    
+    while True:
+        # 清屏
+        os.system('cls' if os.name == 'nt' else 'clear')
+        
+        print("0. start gjzqqmt")
+        print("q. quit")
+        user_input = input("Please select: ")
+        
+        if user_input == "0":
+            # 启动XtItClient.exe
+            exe_path = r"z:\data\soft\gjzqqmt\bin.x64\XtItClient.exe"
+            try:
+                subprocess.Popen(['start', exe_path], shell=True)
+            except Exception as e:
+                print(f"启动失败: {e}")
+        elif user_input.lower() == "q":
+            sys.exit(0)
+        else:
+            print("no start")
+        
+        print("1. wine")
+        print("2. windows")
+        print("q. quit")
+        
+        user_input = input("Please select: ")
+        
+        if user_input == "1":
+            qmtpath = r"z:\data\soft\gjzqqmt\userdata_mini"
+            configPathPrefix = r"z:\data\noDel"
+            logPathPrefix = r"z:\data\logs"
+            # 设置PATH环境变量
+            python_path = r"z:\data\soft\pythonwin3.6.8"
+            os.environ['PATH'] = python_path + os.pathsep + os.environ.get('PATH', '')
+        elif user_input == "2":
+            qmtpath = r"D:\国金证券QMT交易端\userdata_mini"
+            configPathPrefix = "d:"
+            logPathPrefix = "d:"
+        elif user_input.lower() == "q":
+            break
+        else:
+            continue
+        
+        print("1. https://vbj.labadida.com")
+        print("2. http://test1.91taogu.com")
+        print("3. http://192.168.66.205:3001")
+        print("q. quit")
+        
+        user_input = input("Please select: ")
+        
+        if user_input == "1":
+            proxy = "https://vbj.labadida.com"
+        elif user_input == "2":
+            proxy = "http://test1.91taogu.com"
+        elif user_input == "3":
+            proxy = "http://192.168.66.205:3001"
+        elif user_input.lower() == "q":
+            break
+        else:
+            continue
+        
+        # 设置环境变量
+        os.environ['qmtpath'] = qmtpath
+        os.environ['configPathPrefix'] = configPathPrefix
+        os.environ['logPathPrefix'] = logPathPrefix
+        os.environ['proxy'] = proxy
+        
+        while True:
+            print("1. qmt.mini.py")
+            print("2. qmt.mini.find.py")
+            print("q. quit")
+            
+            user_input = input("Please select: ")
+            
+            if user_input == "1":
+                try:
+                    subprocess.run([sys.executable, "qmt.mini.py"], check=True)
+                except subprocess.CalledProcessError as e:
+                    print(f"脚本执行失败: {e}")
+            elif user_input == "2":
+                try:
+                    subprocess.run([sys.executable, "qmt.mini.find.py"], check=True)
+                except subprocess.CalledProcessError as e:
+                    print(f"脚本执行失败: {e}")
+            elif user_input.lower() == "q":
+                break
+            else:
+                continue
+            
+            # 执行完一个脚本后询问是否继续
+            continue_script = input("是否继续执行其他脚本? (y/n): ")
+            if continue_script.lower() != 'y':
+                break
+        
+        # 询问是否重新开始整个流程
+        restart = input("是否重新开始? (y/n): ")
+        if restart.lower() != 'y':
+            break
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n程序已退出")
+    finally:
+        input("按任意键退出...")
