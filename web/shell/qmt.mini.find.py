@@ -882,23 +882,22 @@ def findStock(sector):
             if (count < (dayEnd-dayStart)):
                 continue
 
-            #计算high_prices中最近30天的最大值
-            days=30
-            if (len(high_prices) < days):
-                days=len(high_prices)
-            maxPrice = max(high_prices[-1*days:])
-            minPrice = min(high_prices[-1*days:])
-            if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
-                continue
+            # #计算high_prices中最近30天的最大值
+            # days=30
+            # if (len(high_prices) < days):
+            #     days=len(high_prices)
+            # maxPrice = max(high_prices[-1*days:])
+            # minPrice = min(high_prices[-1*days:])
+            # if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
+            #     continue
 
-            # 最近7天下跌天数
-            dayStart = -5
-            dayEnd = -3
-            count = getIncreaseDays(close_prices, dayStart, dayEnd, -1, 0)
-            info(" close price decrease:", count)
-
-            if (count < (dayEnd-dayStart)):
-                continue
+            # # 最近7天下跌天数
+            # dayStart = -5
+            # dayEnd = -3
+            # count = getIncreaseDays(close_prices, dayStart, dayEnd, -1, 0)
+            # info(" close price decrease:", count)
+            # if (count < (dayEnd-dayStart)):
+            #     continue
 
             info("OK")
             candidate.append([scode, sname])
