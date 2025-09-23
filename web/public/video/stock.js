@@ -588,7 +588,7 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "id") {
                         td.html(`<span class="deleteRowById clickable gray">X</span>` + row[key]);
                     } else if (key == "买卖") {
-                        td.text(row[key]);
+                        td.text(row[key].indexOf("买") >= 0 ? "买入" : "卖出");
                         td.addClass("buySell");
                     } else if (key == "总额") {
                         td.text(share.toFixed(row[key]));
@@ -1326,6 +1326,8 @@ window.feed_list = window.feed_list || (function () {
             let tbs = $("#templateBuySell").html();
             let html = `
                     <div class="flexrow">
+                       <div class="tradeList">
+                       </div>
                        <div class="flexcolumn border padding4 margin4">
                             <div class="position flexrow center margin4">
                             </div>
@@ -1356,6 +1358,7 @@ window.feed_list = window.feed_list || (function () {
 
             let c = $(`#${popup.id}`);
             self.showPosition(null, c.find(".position"), scode);
+            self.showTradeList(c.find(".tradeList"), scode);
             self.toBuySell(null, c);
             let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
             c.find(".rule").click(function (e) {
@@ -1449,6 +1452,8 @@ window.feed_list = window.feed_list || (function () {
                 c.find(".progressBar").width(w);
                 c.find(".progressBar").text(`${d0close}`);
             }
+
+            popup.setPosition();
         },
         splitData: function (rawData) {
             let categoryData = [];
@@ -1794,6 +1799,42 @@ window.feed_list = window.feed_list || (function () {
                                `;
 
 
+            $c.html(html);
+        },
+        showTradeList: async function ($c, scode) {
+            let res = await share.getSync__(`/stock/trades?scode=${scode}`);
+            let trades = res.data;
+            let tr = trades.map(row => {
+                let html = `
+                    <tr> 
+                        <td>${row.tday}</td> 
+                        <td>${row.ttime}</td>
+                        <td>${row.operationDirection.indexOf("买") >= 0 ? "买入" : "卖出"}</td>
+                        <td>${row.tprice}</td>
+                        <td>${row.tamount}</td>
+                        <td>${row.operationName}</td>
+                    </tr>
+                 `;
+                return html;
+            });
+
+            let html = `
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th class="nowrap">日期</th>
+                                    <th class="nowrap">时间</th>
+                                    <th class="nowrap">买卖</th>
+                                    <th class="nowrap">价格</th>
+                                    <th class="nowrap">数量</th>
+                                    <th class="nowrap">券商</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tr.join("")}
+                            </tbody>
+                        </table>
+                               `;
             $c.html(html);
         },
         showRule: async function (r, c, scode, statusContainer) {

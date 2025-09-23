@@ -902,6 +902,9 @@ window.mhgl_share =
             onShown && onShown();
             await setPosition();
           },
+          setPosition: async function () {
+            await setPosition();
+          },
           close: async function () {
             let p = [];
             popup.onClosed && popup.onClosed();

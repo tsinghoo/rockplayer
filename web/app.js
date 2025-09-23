@@ -411,7 +411,7 @@ async function reloadRule(r, req) {
             } else {
                 info("rule done", req);
                 r.status = "done";
-                await db.runSync(`update tTradeRule set closed=1 where ruleId = '${r.id}'`);
+                await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
 
                 setTimeout(() => {
                     delete rules[r.scode][r.broker];
@@ -1615,6 +1615,26 @@ app.get('/stock/positions', async (req, res) => {
 
     res.send(resp);
 
+});
+
+app.get('/stock/trades', async (req, res) => {
+    info("get /stock/trades", req)
+
+    let js = req.query.js;
+    let scode = req.query.scode;
+    var resp = null;
+    if (scode == null) {
+        resp = await db.allSync(`select * from tstock`);
+        resp = JSON.stringify({ data: resp.rows });
+    } else {
+        resp = await db.allSync(`select * from tstock where scode=?`, [scode]);
+        resp = JSON.stringify({ data: resp.rows });
+    }
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
 });
 
 function parseTime(str) {
