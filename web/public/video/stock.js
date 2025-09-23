@@ -7,6 +7,7 @@ window.feed_list = window.feed_list || (function () {
         data: {},
         rows: [],
         statusMapping: {
+            "10": "出错",
             "49": "待报",
             "50": "已报",
             "54": "已撤",
@@ -2161,9 +2162,12 @@ window.feed_list = window.feed_list || (function () {
             let actions = "";
             if (r.actions && r.actions.length > 0) {
                 actions = r.actions.map(a => {
-                    let statusText = statusMapping[a.status];
+                    let statusText = statusMapping["" + a.status];
                     if (statusText == null) {
                         statusText = a.status ? a.status : "";
+                    }
+                    if (a.status == 10) {
+                        statusText = +":" + a.orderNo;
                     }
                     return `
                                         <tr>

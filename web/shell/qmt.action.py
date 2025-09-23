@@ -324,6 +324,13 @@ def printObj(data, indent="  "):
 def task_callback(ContextInfo, data):
     info('task_callback')
     debug(obj2JsonString(data))
+    js=obj2Json(data)
+    type = js["m_eOrderType"]
+    status = js["m_eStatus"]
+    scode = js["m_stockCode"]
+    strMsg = js["m_strMsg"]
+    
+    updateActionOrdered(scode, type, status, 0, strMsg)
 
 # 账号成交状态变化主推
 
