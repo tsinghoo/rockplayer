@@ -2502,12 +2502,12 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
 
     let r;
     if (status == 56) {
-        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? and done=0", [status, orderNo, scode, broker]);
+        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
     } else if (status == 10) {
         let err = orderNo;
-        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? and done=0", [status, err, scode, broker]);
+        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, err, scode, broker]);
     } else {
-        r = await db.runSync("update tRuleAction set status=?, orderNo=? where scode=? and broker=? and done=0", [status, orderNo, scode, broker]);
+        r = await db.runSync("update tRuleAction set status=?, orderNo=? where scode=? and broker=?", [status, orderNo, scode, broker]);
     }
     let resp = {};
     if (r.error) {
