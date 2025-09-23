@@ -588,7 +588,7 @@ window.feed_list = window.feed_list || (function () {
                     } else if (key == "id") {
                         td.html(`<span class="deleteRowById clickable gray">X</span>` + row[key]);
                     } else if (key == "买卖") {
-                        td.text(row[key].indexOf("买") >= 0 ? "买入" : "卖出");
+                        td.text(self.getBuySellText(row[key]));
                         td.addClass("buySell");
                     } else if (key == "总额") {
                         td.text(share.toFixed(row[key]));
@@ -1801,6 +1801,15 @@ window.feed_list = window.feed_list || (function () {
 
             $c.html(html);
         },
+        getBuySellText: function (buySell) {
+            if (buySell == null || buySell == "") {
+                return "";
+            } else if (buySell.indexOf("买") >= 0) {
+                return "买入";
+            } else if (buySell.indexOf("卖") >= 0) {
+                return "卖出";
+            }
+        },
         showTradeList: async function ($c, scode) {
             let res = await share.getSync__(`/stock/trades?scode=${scode}`);
             let trades = res.data;
@@ -1809,7 +1818,7 @@ window.feed_list = window.feed_list || (function () {
                     <tr> 
                         <td>${row.tday}</td> 
                         <td>${row.ttime}</td>
-                        <td>${row.operationDirection.indexOf("买") >= 0 ? "买入" : "卖出"}</td>
+                        <td>${self.getBuySellText(row.operationDirection)}</td>
                         <td>${row.tprice}</td>
                         <td>${row.tamount}</td>
                         <td>${row.operationName}</td>
