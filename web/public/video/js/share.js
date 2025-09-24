@@ -704,6 +704,17 @@ window.mhgl_share =
         });
       },
 
+      convertIfInteger: function (number, fixed) {
+        if (fixed == null) {
+          fixed = 3;
+        }
+        number = parseFloat(parseFloat(number).toFixed(fixed));
+        if (Number.isInteger(number)) {
+          return parseInt(number); // 或者 Math.trunc(number)
+        }
+
+        return number; // 保持原值
+      },
       httpPost__: function (
         url,
         params,
