@@ -891,13 +891,13 @@ def findStock(sector):
             # if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
             #     continue
 
-            # # 最近7天下跌天数
-            # dayStart = -5
-            # dayEnd = -3
-            # count = getIncreaseDays(close_prices, dayStart, dayEnd, -1, 0)
-            # info(" close price decrease:", count)
-            # if (count < (dayEnd-dayStart)):
-            #     continue
+            # 最近30天较大涨幅天数
+            dayStart = -30
+            dayEnd = -1
+            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0.07, 1)
+            info(" close price decrease:", count)
+            if (count < (3)):
+                continue
 
             info("OK")
             candidate.append([scode, sname])
@@ -963,7 +963,6 @@ if __name__ == '__main__':
     # ui = input("请选择:")
 
     print("baseUrl:", g.baseUrl)
-    time.sleep(2)
 
     # 等待用户输入，如果用户输入q，则退出,否则继续
     print("1.搜索股票")
