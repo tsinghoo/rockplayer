@@ -1158,7 +1158,7 @@ app.get('/stock/deleteRow', async (req, res) => {
         let sql = `delete from ${table} where id=? `;
         await db.runSync(sql, [id]);
     } else {
-        let sql = `delete from tstock where tid=? `;
+        let sql = `update tstock set deleted=1 where tid=? `;
         await db.runSync(sql, [tid]);
     }
 
@@ -1295,6 +1295,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='57' where key='dbVersion';",
         `alter table tStockBasic add column LastVolume real;`,
         "update config set value='59' where key='dbVersion';",
+        `alter table tStock add column deleted int default 0;`,
+        "update config set value='61' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1785,6 +1787,7 @@ app.get('/stock/rule/create', async (req, res) => {
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
     let now = Date.now();
+
     let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime) values(?,?,?,?,?,?)`;
     let broker = json.broker;
     let id = `${json.scode}.${broker}`;
@@ -1807,6 +1810,31 @@ app.get('/stock/rule/create', async (req, res) => {
         priority: now,
         updateTime: now
     });
+
+    let r = await db.allSync(`select * from tStock where scode=?`, [json.scode]);
+    if (r.rows.length == 0) {
+        let tday = timeFormat(now, "yyyyMMdd");
+        let ttime = timeFormat(now, "hh:mm:ss");
+        let obj = {
+            tday,
+            ttime,
+            sname: json.sname,
+            scode: json.scode,
+            operationDirection: "买入",
+            operationName: broker,
+            market: market,
+            tamount: 0,
+            tprice: 0,
+            tcash: 0,
+            tid: `${json.scode}.${json.sname}`,
+            taccount: "",
+            tpair: "",
+            deleted: 0,
+            lastOperationTime: tday + " " + ttime
+        }
+
+        await insertOrReplace("tstock", obj);
+    }
 
     var resp = JSON.stringify({});
     if (result.error) {
