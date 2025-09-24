@@ -2339,7 +2339,7 @@ app.get('/stock/pair', async (req, res) => {
     for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
         info(`${sell.sname}(${sell.scode}):${sell.tid}`, req)
-        let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday, ttime, tprice desc",
+        let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday desc, ttime desc, tprice desc",
             [sell.tamount * -1, sell.scode, sell.operationName, sell.tprice]);
         let buys = r.rows;
         if (buys.length > 0) {
