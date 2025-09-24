@@ -1070,14 +1070,39 @@ app.post('/stock/update', async (req, resp) => {
                 updateTime: now
             });
         } else if (broker == "国信港股通历史") {
-            //tdx 国信证券 港股通
-            fields = fields.concat([""]);
+            let tday = fields[1];
+            let ttime = fields[2];
+            let sname = fields[5];
+            let scode = fields[4];
+            let operationDirection = fields[6];
+            let operationName = "国信";
+            let market = fields[0];
+            let tprice = fields[9];
+            let tamount = fields[10];
+            let tcash = fields[11];
+            let taccount = fields[14];
+            let tpair = "";
+
+            scode = fixScode(scode, 5);
+
+            if (ttime.length == 7) {
+                ttime = "0" + ttime.substring(0, 1) + ":" + ttime.substring(1, 3) + ":" + ttime.substring(3, 5);
+            } else if (ttime.length == 8) {
+                ttime = ttime.substring(0, 2) + ":" + ttime.substring(2, 4) + ":" + ttime.substring(4, 6);
+            }
+
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
+            }
+
+            let tid = `${tday}.${ttime}.${scode}.${tprice}`;
+            let lastOperationTime = tday + " " + ttime;
+
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
-
-            let res = await db.runSync(sql, [fields[1], fields[2], fields[5], fields[4], fields[6], "国信", fields[0], fields[10], fields[9],
-            fields[11], fields[13], fields[14], '', tday + " " + ttime]);
+            let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
+                tcash, tid, taccount, tpair, lastOperationTime]);
             if (res.error) {
                 info(res.error, req)
                 resp.send(res);
@@ -1086,12 +1111,15 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             await insertOrIgnore("tStockBasic", {
-                id: fields[4],
-                scode: fields[4],
-                sname: fields[5],
-                buy: fields[9],
+                id: fields[2],
+                scode: fields[2],
+                sname: fields[3],
+                buy: fields[6],
                 updateTime: now
             });
+
+
+
         }
     };
 
@@ -1184,9 +1212,12 @@ app.post('/stock/account', async (req, res) => {
 });
 
 
-function fixScode(scode) {
-    if (scode.length < 6) {
-        scode = "000000".substring(0, 6 - scode.length) + scode;
+function fixScode(scode, minLength) {
+    if (minLength == null) {
+        minLength = 6;
+    }
+    if (scode.length < minLength) {
+        scode = "000000".substring(0, minLength - scode.length) + scode;
     }
 
     return scode;
