@@ -1660,7 +1660,7 @@ app.get('/stock/trades', async (req, res) => {
         resp = await db.allSync(`select * from tstock`);
         resp = JSON.stringify({ data: resp.rows });
     } else {
-        resp = await db.allSync(`select * from tstock where scode=? order by tday desc, ttime desc`, [scode]);
+        resp = await db.allSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc`, [scode]);
         resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {
