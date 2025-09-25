@@ -418,7 +418,6 @@ def update1dTask():
                 updateActionOrdered(scode, "", "56", 0, "")
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
         g.stocklist = getStockList()
-        resubscribe()
         update1d(g.stocklist)
 
         updateLastStartTime1d()
