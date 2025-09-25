@@ -1843,7 +1843,7 @@ app.get('/stock/rule/create', async (req, res) => {
     });
 
     if (json.order == "buyFirst") {
-        let r = await db.allSync(`select * from tStock where scode=? and deleted=0`, [json.scode]);
+        let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode]);
         if (r.rows.length == 0) {
             let tday = timeFormat(now, "yyyyMMdd");
             let ttime = timeFormat(now, "hh:mm:ss");
