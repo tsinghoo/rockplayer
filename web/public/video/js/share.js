@@ -705,6 +705,10 @@ window.mhgl_share =
       },
 
       convertIfInteger: function (number, fixed) {
+        if (isNaN(number) || isNaN(parseFloat(number))){
+          return number;
+        }
+
         if (fixed == null) {
           fixed = 3;
         }

@@ -638,7 +638,7 @@ window.feed_list = window.feed_list || (function () {
                             // td.removeClass("nowrap"); 
                         }
                     } else {
-                        td.text(row[key]);
+                        td.text(share.convertIfInteger(row[key]));
                         if (key == "现价") {
                             td.addClass("curPrice");
                         } else if (key == "市场") {
