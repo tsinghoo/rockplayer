@@ -1855,7 +1855,7 @@ app.get('/stock/rule/create', async (req, res) => {
             operationName: broker,
             market: market,
             tamount: 0,
-            tprice: 0,
+            tprice: json.buy,
             tcash: 0,
             tid: `${json.scode}.${json.sname}`,
             taccount: "",
