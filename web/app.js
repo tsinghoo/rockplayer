@@ -1863,6 +1863,7 @@ app.get('/stock/rule/create', async (req, res) => {
             lastOperationTime: tday + " " + ttime
         }
         await insertOrReplace("tstock", obj);
+        await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
     }
 
     var resp = JSON.stringify({});
