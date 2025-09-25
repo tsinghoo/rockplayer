@@ -1841,9 +1841,8 @@ app.get('/stock/rule/create', async (req, res) => {
         priority: now,
         updateTime: now
     });
-
-    let r = await db.allSync(`select * from tStock where scode=?`, [json.scode]);
-    if (r.rows.length == 0) {
+    
+    if (json.order == "buyFirst") {
         let tday = timeFormat(now, "yyyyMMdd");
         let ttime = timeFormat(now, "hh:mm:ss");
         let obj = {
@@ -1863,7 +1862,6 @@ app.get('/stock/rule/create', async (req, res) => {
             deleted: 0,
             lastOperationTime: tday + " " + ttime
         }
-
         await insertOrReplace("tstock", obj);
     }
 
