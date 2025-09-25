@@ -337,6 +337,9 @@ def uploadStockPrice():
 def getStockDetail(scode):
     info("getStockDetail", scode)
     si = xtdata.get_instrument_detail(scode)
+    if (si is None):
+        error(scode, "error")
+        return None
     detail = {
         "scode": scode,
         "sname": si["InstrumentName"],
@@ -415,6 +418,7 @@ def update1dTask():
                 updateActionOrdered(scode, "", "56", 0, "")
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
         g.stocklist = getStockList()
+        resubscribe()
         update1d(g.stocklist)
 
         updateLastStartTime1d()
@@ -446,10 +450,12 @@ def uploadDetail(details):
 
 def updateDetailTask():
     resetThreadId("udt")
-    info("updateDetailTask")
+    info("updateDetailTask start")
     details = []
     for index, scode in enumerate(g.stocklist):
         detail = getStockDetail(scode)
+        if (detail is None):
+            continue
         details.append(detail)
         # 如果 details 里有 10 个元素，则上传到 test1
         if len(details) >= 20:
@@ -458,6 +464,7 @@ def updateDetailTask():
 
     uploadDetail(details)
     uploadDetail([])
+    info("updateDetailTask end")
 
 
 def getActionsTask():
@@ -1029,6 +1036,15 @@ def updatePositions():
     uploadPosition(js)
 
 
+def resubscribe():
+    info("resubscribe")
+    if g.subscribeId is not None:
+        info("unsubscribe", g.subscribeId)
+        xtdata.unsubscribe_quote(g.subscribeId)
+        
+    g.subscribeId = xtdata.subscribe_whole_quote(
+        g.stocklist, callback=subscribe_whole_callback)
+
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
     # path = r'D:\国金证券QMT交易端\userdata_mini'
@@ -1133,7 +1149,7 @@ if __name__ == '__main__':
     # js = python_to_json(deals)
     # print(js)
 
-    xtdata.subscribe_whole_quote(
+    g.subscribeId = xtdata.subscribe_whole_quote(
         g.stocklist, callback=subscribe_whole_callback)
 
     t1 = Thread(target=update1dTask)
