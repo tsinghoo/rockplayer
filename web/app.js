@@ -1841,29 +1841,32 @@ app.get('/stock/rule/create', async (req, res) => {
         priority: now,
         updateTime: now
     });
-    
+
     if (json.order == "buyFirst") {
-        let tday = timeFormat(now, "yyyyMMdd");
-        let ttime = timeFormat(now, "hh:mm:ss");
-        let obj = {
-            tday,
-            ttime,
-            sname: json.sname,
-            scode: json.scode,
-            operationDirection: "买入",
-            operationName: broker,
-            market: market,
-            tamount: 0,
-            tprice: json.buy,
-            tcash: 0,
-            tid: `${json.scode}.${json.sname}`,
-            taccount: "",
-            tpair: "",
-            deleted: 0,
-            lastOperationTime: tday + " " + ttime
+        let r = await db.allSync(`select * from tStock where scode=? and deleted=0`, [json.scode]);
+        if (r.rows.length == 0) {
+            let tday = timeFormat(now, "yyyyMMdd");
+            let ttime = timeFormat(now, "hh:mm:ss");
+            let obj = {
+                tday,
+                ttime,
+                sname: json.sname,
+                scode: json.scode,
+                operationDirection: "买入",
+                operationName: broker,
+                market: market,
+                tamount: 0,
+                tprice: json.buy,
+                tcash: 0,
+                tid: `${json.scode}.${json.sname}`,
+                taccount: "",
+                tpair: "",
+                deleted: 0,
+                lastOperationTime: tday + " " + ttime
+            }
+            await insertOrReplace("tstock", obj);
+            await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
         }
-        await insertOrReplace("tstock", obj);
-        await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
     }
 
     var resp = JSON.stringify({});
