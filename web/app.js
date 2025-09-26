@@ -1200,7 +1200,7 @@ app.get('/stock/undeleteRow', async (req, res) => {
     let tid = req.query.tid;
     let id = req.query.id;
     let table = req.query.table;
-    let sql = `update tstock set deleted=0 where tid=? `;
+    let sql = `update tstock set deleted=0, tpair="" where tid=? `;
     await db.runSync(sql, [tid]);
 
     var resp = `${js}({})`;
