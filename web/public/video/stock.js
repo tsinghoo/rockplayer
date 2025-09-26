@@ -732,7 +732,8 @@ window.feed_list = window.feed_list || (function () {
                 share.popupPlacement = "top";
                 let trs = $(`.repeatCode${code}`);
                 trs.show();
-                self.showChart(rows);
+                self.showStockDetail(code);
+                //self.showChart(rows);
             })
 
             //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
@@ -772,6 +773,19 @@ window.feed_list = window.feed_list || (function () {
                 let popup;
                 let buttons = [
                     {
+                        text: "删除本行",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.remove();
+                            }
+                        }
+                    },
+                    {
                         text: "删除本行及关联",
                         onTap: async function () {
                             popup.close();
@@ -805,20 +819,18 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
-                        text: "删除本行",
+                        text: "取消删除",
                         onTap: async function () {
                             popup.close();
 
-                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                            let res = await share.getSync__(`/stock/undeleteRow?tid=${data.tid}`);
                             if (res.error) {
                                 share.toastError__(res.error);
-                            } else {
-                                tr.remove();
                             }
                         }
                     },
                     {
-                        text: "取消",
+                        text: "关闭",
                         onTap: function () {
                             popup.close();
                         }
@@ -1260,6 +1272,17 @@ window.feed_list = window.feed_list || (function () {
             share.closePopup__();
             let fullCode = self.formatScode(code);
             let link = `https://xueqiu.com/S/${fullCode}`;
+
+            self.openMiniBrowser(link, 840, 790);
+            //self.createFloatingWindow(link, 800);
+            //share.open__(link, `${code}`);
+
+        },
+
+        showStockDetail: async function (code) {
+            share.closePopup__();
+            let fullCode = self.formatScode(code);
+            let link = `https://xueqiu.com/snowman/S/${fullCode}/detail`;
 
             self.openMiniBrowser(link, 840, 790);
             //self.createFloatingWindow(link, 800);

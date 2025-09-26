@@ -895,8 +895,16 @@ def findStock(sector):
             dayStart = -30
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0.07, 1)
-            info(" close price decrease:", count)
+            info(" close price increase:", count)
             if (count < (3)):
+                continue
+            
+            # 最近60天较大跌幅天数
+            dayStart = -60
+            dayEnd = -1
+            count = getIncreaseDays(close_prices, dayStart, dayEnd, -1, -0.07)
+            info(" close price decrease:", count)
+            if (count > 0):
                 continue
 
             info("OK")

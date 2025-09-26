@@ -1194,6 +1194,19 @@ app.get('/stock/deleteRow', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/undeleteRow', async (req, res) => {
+    info("/stock/deleteRow", req)
+    let js = req.query.js;
+    let tid = req.query.tid;
+    let id = req.query.id;
+    let table = req.query.table;
+    let sql = `update tstock set deleted=0 where tid=? `;
+    await db.runSync(sql, [tid]);
+
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
 app.post('/stock/account', async (req, res) => {
     info("/stock/account", req)
     info(JSON.stringify(req.body), req)
