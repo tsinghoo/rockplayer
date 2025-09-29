@@ -2202,24 +2202,21 @@ window.feed_list = window.feed_list || (function () {
                 </div>
             `;
 
-
-
-
             if (r.status == "toBuy") {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${mapping[r.status]}<br><span class="font10">${share.toFixed(parseFloat(rc.bounce), 3)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${rc.buy} : <br>${rc.buyAmount}</div>
+                            <div class="margin4">${mapping[r.status]}<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${share.convertIfInteger(rc.buy, 3)} : <br>${rc.buyAmount}</div>
                                 ${prices}
-                            <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell, 3)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip), 3)}</span><br>${rc.sellAmount}</div>
+                            <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell, 3)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.convertIfInteger(rc.dip, 3)}</span><br>${rc.sellAmount}</div>
                           </div>`;
             } else if (r.status == "toSell") {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br><span class="font10">${share.toFixed(parseFloat(rc.bounce), 3)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${rc.buy} : <br>${rc.buyAmount}</div>
+                            <div class="margin4">${rc.broker}<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${rc.buy} : <br>${rc.buyAmount}</div>
                             ${prices}
                             <div class="margin4">${mapping[r.status]}<br>: ${share.convertIfInteger(rc.sell, 3)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip), 3)}</span><br> ${rc.sellAmount}</div>
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br><span class="font10">${share.toFixed(parseFloat(rc.bounce), 3)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${rc.buy} : <br> ${rc.buyAmount} </div>
+                            <div class="margin4">${rc.broker}<br><span class="font10">${share.convertIfInteger(rc.bounce, 3)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${share.convertIfInteger(rc.buy, 3)} : <br> ${rc.buyAmount} </div>
                             ${prices}
                             <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell, 3)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip), 3)}</span><br>${rc.sellAmount}</div>
                           </div>`;

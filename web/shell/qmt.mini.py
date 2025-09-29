@@ -16,6 +16,8 @@ import requests
 import sys
 import traceback
 from threading import Thread
+import asyncio
+import websocket
 
 
 class G():
@@ -30,7 +32,7 @@ g.account = "8883949249"  # 国金
 g.broker = "国金"
 
 g.session_id = random.randint(1000, 10000)
-
+g.subscribeId=0
 g.tick = {}
 g.actions = {}
 g.reloadK1d = []
@@ -54,6 +56,56 @@ g.log["level"] = g.log["debug"]
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
+
+
+async def websocket_client():
+    info("start websocket_client")
+    uri = g.baseUrl.replace("http", "ws")
+    info(f"websocket connecting to {uri}")
+    try:
+        # 连接到 WebSocket 服务器
+        async with websocket.connect(uri) as wsc:
+            info(f"websocket connected to {uri}")
+
+            while True:
+                response = await wsc.recv()
+                info(f"ws received: {response}")
+                # 解析 JSON 消息
+                try:
+                    message = json.loads(response)
+                    # 处理消息
+                    if message["func"] == "register":
+                        response = {
+                            "id": message["id"],
+                            "clientId": g.account,
+                        }
+
+                        await wsc.send(json.dumps(response))
+                        info(f"发送消息: {response}")
+
+                    elif message["func"] == "reloadStockCodes":
+                        params = message["params"]
+                        response = {
+                            "id": message["id"]
+                        }
+
+                        await wsc.send(json.dumps(response))
+                        info(f"发送消息: {response}")
+                        
+                        g.stocklist = getStockList()
+                        resubscribe()
+                    else:
+                        error(f"未知消息类型")
+                except json.JSONDecodeError:
+                    error(f"ws decode error: {response}")
+                    continue
+
+                await asyncio.sleep(1)
+
+    except websocket.exceptions.ConnectionClosed:
+        error("websocket closed")
+    except Exception as e:
+        error(f"websocket connect error: {e}")
 
 
 class MyXtQuantTraderCallback(XtQuantTraderCallback):
@@ -244,9 +296,9 @@ def getStockList():
             g.baseUrl + "/stock/codes", verify=False, timeout=5)
         if response.status_code != 200:
             print("请求失败，状态码:", response.status_code)
-            return
+            return g.stocklist
         else:
-            print("从", g.baseUrl, "获取stock codes成功:", response.status_code)
+            print("获取stock codes成功:", response.status_code)
             response.encoding = 'utf-8'
             content = response.text
             print(content)
@@ -254,6 +306,7 @@ def getStockList():
 
     except Exception as e:
         print("获取stockk list失败:", str(e))
+        return g.stocklist
 
 
 def get1dLastDate(scode):
@@ -292,6 +345,7 @@ def getCandidates():
 
     except Exception as e:
         info("获取candidates失败:", str(e))
+
 
 def getRuleCodes():
     info("getRuleCodes")
@@ -430,6 +484,11 @@ def update1mTask():
         resetThreadId("u1m")
         update1m(g.stocklist)
         # update1m(g.candidates)
+
+def updatePriceTask():
+    while True:
+        uploadStockPrice()
+        time.sleep(0.1)
 
 
 def uploadDetail(details):
@@ -1036,13 +1095,16 @@ def updatePositions():
 
 
 def resubscribe():
-    info("resubscribe")
-    if g.subscribeId is not None:
+    info("resubscribe start")
+    if g.subscribeId != 0:
         info("unsubscribe", g.subscribeId)
         xtdata.unsubscribe_quote(g.subscribeId)
-        
+
     g.subscribeId = xtdata.subscribe_whole_quote(
         g.stocklist, callback=subscribe_whole_callback)
+
+    
+    info("resubscribe end", g.subscribeId)
 
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
@@ -1086,8 +1148,11 @@ if __name__ == '__main__':
     callback = MyXtQuantTraderCallback()
     xt_trader.register_callback(callback)
     # 启动本地客户端
+    print("start xt_trader")
     xt_trader.start()
 
+
+    print("connect xt_trader")
     # 建立交易连接，返回0表示连接成功
     connect_result = xt_trader.connect()
     if connect_result != 0:
@@ -1147,20 +1212,34 @@ if __name__ == '__main__':
     # print("deals:", len(deals))
     # js = python_to_json(deals)
     # print(js)
-
-    g.subscribeId = xtdata.subscribe_whole_quote(
-        g.stocklist, callback=subscribe_whole_callback)
+    resubscribe()
+    # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
     t1 = Thread(target=update1dTask)
-    t2 = Thread(target=update1mTask)
-    t4 = Thread(target=getActionsTask)
     t1.start()
+    
+    t2 = Thread(target=update1mTask)
     t2.start()
+    
+    t4 = Thread(target=getActionsTask)
     t4.start()
+    
+    t5 = Thread(target=updatePriceTask)
+    t5.start()
 
-    while True:
-        uploadStockPrice()
-        time.sleep(0.5)
+    info("start websocket_client")
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(websocket_client())
+    finally:
+        loop.close()
+        asyncio.set_event_loop(None)
+
+
+    info("started websocket_client")
+
 
     # 阻塞主线程退出
     # xt_trader.run_forever()
