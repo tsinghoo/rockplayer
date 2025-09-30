@@ -594,6 +594,7 @@ window.feed_list = window.feed_list || (function () {
                         td.text(share.toFixed(row[key]));
                     } else if (key == "规则") {
                         td.addClass("tdRule");
+                        td.addClass("ruleContent");
                         let rc = null;
                         try {
                             rc = JSON.parse(row[key]);
@@ -612,7 +613,6 @@ window.feed_list = window.feed_list || (function () {
                                 });
                             }
 
-                            td.addClass("ruleContent");
                         }
                     } else if (key == "状态") {
                         td.addClass("tdStatus");
