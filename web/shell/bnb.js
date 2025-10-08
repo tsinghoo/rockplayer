@@ -233,7 +233,7 @@ async function doBuy(amount, buyPrice, notTest) {
 
   buyPrice = convertIfInteger(buyPrice, 8);
   amount = quantity * buyPrice;
-  amount = amount.toFixed(8);
+  amount = Math.floor(amount * 100000000) / 100000000;
 
   const json = {
     "baseAsset": window.stocks[window.stock.toLowerCase()],
@@ -281,7 +281,8 @@ async function sell(sellPrice, quantity, notTest) {
   //{"baseAsset":"ALPHA_368","quoteAsset":"USDT",
   // "side":"SELL","price":0.12735,"quantity":2351.57,"paymentDetails":[{"amount":2351.57,"paymentWalletType":"ALPHA"}]}
   if (quantity == 0) {
-    quantity = window.quantity;
+    quantity = window.quantity * (1 - 1 / 10000);
+    quantity = Math.floor(quantity * 100) / 100;
   }
 
   let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/order/place"; //post
