@@ -1137,7 +1137,7 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
-                        text: "取消",
+                        text: "关闭",
                         onTap: function () {
                             brokerPopup.close();
                         }
@@ -1405,6 +1405,18 @@ window.feed_list = window.feed_list || (function () {
                     c.find(".buyFirst").prop("checked", false);
                 }
             })
+
+            c.find(".buttonCancelRule").click(async function (e) {
+                let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], broker: self.selectedData["券商"] });
+                if (res.error) {
+                    share.toastError__(res.error);
+                } else {
+                    share.toastSuccess__("canceled", 1000);
+                    popup.close();
+                }
+            })
+
+
 
             let kTick = c.find(".kTick");
 
