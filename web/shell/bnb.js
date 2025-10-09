@@ -113,19 +113,19 @@ function init() {
 
   let headers =
     `baggage
-sentry-environment=prod,sentry-release=20250924-d1d0004c-2900,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=5baf199c1cca49748541596ba6f1c6db,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false
+sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=e1d097cf83634693a89d2aca0dd456bb,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false
 bnc-uuid
 67e6afe2-047e-4d30-bdc1-19151112790b
 clienttype
 web
 content-length
-2
+155
 content-type
 application/json
 cookie
-bnc-uuid=67e6afe2-047e-4d30-bdc1-19151112790b; BNC_FV_KEY=3305c6443bdca07787f83231ec0fc6da0757b0c6; OptanonAlertBoxClosed=2025-10-03T02:13:21.738Z; _gcl_au=1.1.1685839591.1759457606; _gid=GA1.2.1778629017.1759563539; lang=zh-CN; language=zh-CN; se_gd=AJXEVDgUEGbCwxbxXUA9gZZCFDQoXBSWlIOVZUkd1hRWwV1NWVBU1; se_gsd=Sjo2GgpVIwAiBjcmJzInIyk9VBMGDgUHUVxBW1ZTVlhXJFNT1; currentAccount=; _ga_MEG0BSW76K=GS2.1.s1759586256$o1$g1$t1759586422$j60$l0$h0; g_state={"i_l":0}; isAccountsLoggedIn=y; BNC-Location=CN; userPreferredCurrency=USD_USD; forterToken=8bab0270232a41f9a898284c4156659a_1759635706349__UDF43-mnf-a4_21ck_; aws-waf-token=dc432087-c592-4555-b92f-f02c31bac4d0:BgoAnHkSP38pAAAA:zD+2/LRijTtX9jqfZof4RBErnFX1KCcRUcFDSqLp6A1gtN2y8ZvX6s1l+03nKss8GdWzjiVo0bSBlxoPMl+8O4OMX6h/y9pQlQMFhuhvx+l3BeIpDpsjzupWG/4uExFIQnt3ccqrnj5CYRawxYNMOqQtntRthag/pku4JbYcBb+KFy8MzpHw1ertiBt/ffAQWd8=; changeBasisTimeZone=; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2229062185%22%2C%22first_id%22%3A%22199a7d80d15581-0879b6d1278a92-1f525631-1764000-199a7d80d16b7b%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22aws_waf_referrer%22%3A%22%7B%5C%22referrer%5C%22%3A%5C%22https%3A%2F%2Fwww.google.com%2F%5C%22%7D%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMTk5YTdkODBkMTU1ODEtMDg3OWI2ZDEyNzhhOTItMWY1MjU2MzEtMTc2NDAwMC0xOTlhN2Q4MGQxNmI3YiIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjI5MDYyMTg1In0%3D%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2229062185%22%7D%2C%22%24device_id%22%3A%22199af83906a75-0bf04d3d7a0ff3-1e525631-1764000-199af83906b4da%22%7D; logined=y; theme=dark; neo-theme=dark; r30t=1; BNC_FV_KEY_T=101-WI%2Bvdi%2B9%2FyPO5QN6DXAj2WI%2FiQzcd8NIf7mk%2FH%2Ba7ac7I09nLjE0Y0XcetiVfFwStnaWCmeCECfXDTX5rDLNZw%3D%3D-bGSh16KQqZxWfjXtQp5%2FTA%3D%3D-ef; BNC_FV_KEY_EXPIRE=1759908905518; _uetsid=33ac7200a0f511f0a14e872544e61aa9; _uetvid=8c9cd7f09ffe11f0bdf9cd4c1d08b540; _ga_3WP50LGEEC=GS2.1.s1759887304$o19$g1$t1759887497$j60$l0$h0; _ga=GA1.2.1791296862.1759457604; r20t=web.A159B93F2C9FD4DF10325DBDABD09B50; cr00=1EEDF2BCFBF66D2EC1A3F5C1726C6C8E; d1og=web.29062185.D89E2B716958631802829EB9287CA1B8; r2o1=web.29062185.1B31F8C3C9DA67719B626700B82FE798; f30l=web.29062185.52273741785D391123B6C269144514ED; p20t=web.29062185.F3D2E88F47F754DE4FC5412E1EB2267C; OptanonConsent=isGpcEnabled=0&datestamp=Wed+Oct+08+2025+10%3A54%3A21+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=202506.1.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=6298cb37-9de2-41b1-804b-070908bdd651&interactionCount=2&isAnonUser=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0003%3A1%2CC0004%3A1%2CC0002%3A1&intType=1&geolocation=CN%3BBJ&AwaitingReconsent=false; _gat=1
+bnc-uuid=67e6afe2-047e-4d30-bdc1-19151112790b; BNC_FV_KEY=3305c6443bdca07787f83231ec0fc6da0757b0c6; OptanonAlertBoxClosed=2025-10-03T02:13:21.738Z; _gcl_au=1.1.1685839591.1759457606; _gid=GA1.2.1778629017.1759563539; se_gd=AJXEVDgUEGbCwxbxXUA9gZZCFDQoXBSWlIOVZUkd1hRWwV1NWVBU1; se_gsd=Sjo2GgpVIwAiBjcmJzInIyk9VBMGDgUHUVxBW1ZTVlhXJFNT1; currentAccount=; _ga_MEG0BSW76K=GS2.1.s1759586256$o1$g1$t1759586422$j60$l0$h0; g_state={"i_l":0}; isAccountsLoggedIn=y; BNC-Location=CN; userPreferredCurrency=USD_USD; forterToken=8bab0270232a41f9a898284c4156659a_1759635706349__UDF43-mnf-a4_21ck_; changeBasisTimeZone=; logined=y; neo-theme=dark; r30t=1; theme=dark; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2229062185%22%2C%22first_id%22%3A%22199a7d80d15581-0879b6d1278a92-1f525631-1764000-199a7d80d16b7b%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22aws_waf_referrer%22%3A%22%7B%5C%22referrer%5C%22%3A%5C%22https%3A%2F%2Fwww.google.com%2F%5C%22%7D%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMTk5YTdkODBkMTU1ODEtMDg3OWI2ZDEyNzhhOTItMWY1MjU2MzEtMTc2NDAwMC0xOTlhN2Q4MGQxNmI3YiIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjI5MDYyMTg1In0%3D%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2229062185%22%7D%2C%22%24device_id%22%3A%22199af83906a75-0bf04d3d7a0ff3-1e525631-1764000-199af83906b4da%22%7D; lang=zh-CN; language=zh-CN; language=zh-CN; BNC_FV_KEY_T=101-WzKupWyF5xlLjtGPTdX4TqysHy8FxbmbLyifGmrJe12uG4DL6NmFMe5fncdqwwRHg77kChKtKWJolOdDenrCZw%3D%3D-d%2B584EhfSHeRTeutxdA71Q%3D%3D-e4; BNC_FV_KEY_EXPIRE=1759998568769; aws-waf-token=0c0842f6-080a-4103-964c-87e983ae2ec1:BgoAqLMXHtpYAAAA:8LMRBQ7qTK0LN+2qgJOsAOcqMCmSeV/Am/ImCN+ZFBkHxSA8RArKhgQ8h162r4KjtuE4ANPDbytGI4iCegweda1PUz+M+HjxBQPUP6C78dBvecCQOVDKWTyGthYbD+4js4Sfu4fHVLcZsDSpTlCSCVK+g3yTulWK3R6thoV5coSsRMeTja1cwj3Cl/4vDI21Cyw=; _uetsid=33ac7200a0f511f0a14e872544e61aa9; _uetvid=8c9cd7f09ffe11f0bdf9cd4c1d08b540; _ga_3WP50LGEEC=GS2.1.s1759980300$o26$g1$t1759984530$j52$l0$h0; _ga=GA1.2.1791296862.1759457604; r20t=web.E7D85E5F74948481A6436E62312DA068; cr00=FCA166AB774F9CABF09112065585BEE5; d1og=web.29062185.C80D2BBA975362353DFBD4983C7B1BFB; r2o1=web.29062185.0A29485AFE8520344F61326E3BA95667; f30l=web.29062185.82C5343EA68AF8B5FF6775DE48189F42; p20t=web.29062185.6B1DD027161000D45738981B6610A668; OptanonConsent=isGpcEnabled=0&datestamp=Thu+Oct+09+2025+12%3A39%3A43+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=202506.1.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=6298cb37-9de2-41b1-804b-070908bdd651&interactionCount=2&isAnonUser=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0003%3A1%2CC0004%3A1%2CC0002%3A1&intType=1&geolocation=CN%3BBJ&AwaitingReconsent=false
 csrftoken
-acc304e2e36ef8507e60b54a723eaf40
+ec8c56bddb096db03dae70e45cf8e63c
 device-info
 eyJzY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTA1MCIsImF2YWlsYWJsZV9zY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTAyNSIsInN5c3RlbV92ZXJzaW9uIjoibWFjT1MgMTAuMTUuNyIsImJyYW5kX21vZGVsIjoiZGVza3RvcCBBcHBsZSBNYWNpbnRvc2ggIiwic3lzdGVtX2xhbmciOiJ6aC1DTiIsInRpbWV6b25lIjoiR01UKzA4OjAwIiwidGltZXpvbmVPZmZzZXQiOi00ODAsInVzZXJfYWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQxLjAuMC4wIFNhZmFyaS81MzcuMzYiLCJsaXN0X3BsdWdpbiI6IlBERiBWaWV3ZXIsQ2hyb21lIFBERiBWaWV3ZXIsQ2hyb21pdW0gUERGIFZpZXdlcixNaWNyb3NvZnQgRWRnZSBQREYgVmlld2VyLFdlYktpdCBidWlsdC1pbiBQREYiLCJjYW52YXNfY29kZSI6IjNmYTgyM2QxIiwid2ViZ2xfdmVuZG9yIjoiR29vZ2xlIEluYy4gKEludGVsIEluYy4pIiwid2ViZ2xfcmVuZGVyZXIiOiJBTkdMRSAoSW50ZWwgSW5jLiwgSW50ZWwoUikgSXJpcyhUTSkgR3JhcGhpY3MgNjEwMCwgT3BlbkdMIDQuMSkiLCJhdWRpbyI6IjEyNC4wNDM0NzY1NzgwODEwMyIsInBsYXRmb3JtIjoiTWFjSW50ZWwiLCJ3ZWJfdGltZXpvbmUiOiJBc2lhL1NoYW5naGFpIiwiZGV2aWNlX25hbWUiOiJDaHJvbWUgVjE0MS4wLjAuMCAobWFjT1MpIiwiZmluZ2VycHJpbnQiOiIwMGE1MWM1Zjc3ZTkzMjM3YWI0MTRmMTBiMDY0ZTgxZSIsImRldmljZV9pZCI6IiIsInJlbGF0ZWRfZGV2aWNlX2lkcyI6IiJ9
 fvideo-id
@@ -151,7 +151,7 @@ zh-CN
   window.delta = 0.00001;
   window.orderId = [];
   window.maxDelta = 0.0001;
-  window.stock = "pingpong";
+  window.stock = "aop";
   window.stocks = {
     aop: "ALPHA_382",
     pingpong: "ALPHA_368"
@@ -502,6 +502,28 @@ function sellAll() {
   sell(min, 0, 1);
 }
 
+function sellAllForce(delta) {
+  if (delta == null) {
+    delta = 0.0001;
+  }
+  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
+  let min = 0, max = 0;
+  for (let i = 0; i < 3; i++) {
+    let pe = peles[i];
+    let text = pe.innerText;
+    if (i == 0) {
+      min = parseFloat(text);
+      max = parseFloat(text);
+    } else {
+      min = Math.min(min, parseFloat(text));
+      max = Math.max(max, parseFloat(text));
+    }
+  }
+
+  sell(min - delta, 0, 1);
+
+}
+
 function help() {
   let text = `
     * window.stock="${window.stock}"
@@ -515,6 +537,7 @@ function help() {
 
     -前三最大买: buyMax(201,1)
     -卖出所有(前三最小): sellAll()
+    -强制卖出: sellAllForce(0.0001)
 
     -帮助: help()
   `
