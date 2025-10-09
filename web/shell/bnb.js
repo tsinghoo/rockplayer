@@ -333,89 +333,26 @@ async function sell(sellPrice, quantity, notTest) {
 
 
 async function buyMinAndSell(amount, notTest) {
-  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
-  let min = 0, max = 0;
-  for (let i = 0; i < 3; i++) {
-    let pe = peles[i];
-    let text = pe.innerText;
-    if (i == 0) {
-      min = parseFloat(text);
-      max = parseFloat(text);
-    } else {
-      min = Math.min(min, parseFloat(text));
-      max = Math.max(max, parseFloat(text));
-    }
-  }
-
-  console.log("min:", min);
-  console.log("max:", max);
+  let { min, max } = getMinMaxPriceFromUi();
 
   doBuyAndSell(amount, min, min - window.delta, notTest);
 
 }
 
 async function buyMaxAndSell(amount, notTest) {
-  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
-  let min = 0, max = 0;
-  for (let i = 0; i < 3; i++) {
-    let pe = peles[i];
-    let text = pe.innerText;
-    if (i == 0) {
-      min = parseFloat(text);
-      max = parseFloat(text);
-    } else {
-      min = Math.min(min, parseFloat(text));
-      max = Math.max(max, parseFloat(text));
-    }
-  }
-
-  console.log("min:", min);
-  console.log("max:", max);
+  let { min, max } = getMinMaxPriceFromUi();
 
   doBuyAndSell(amount, max, max - window.delta, notTest);
 
 }
 
 async function buyMax(amount, notTest) {
-  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
-  let min = 0, max = 0;
-  for (let i = 0; i < 3; i++) {
-    let pe = peles[i];
-    let text = pe.innerText;
-    if (i == 0) {
-      min = parseFloat(text);
-      max = parseFloat(text);
-    } else {
-      min = Math.min(min, parseFloat(text));
-      max = Math.max(max, parseFloat(text));
-    }
-  }
-
-  console.log("min:", min);
-  console.log("max:", max);
-
+  let { min, max } = getMinMaxPriceFromUi();
   doBuy(amount, max, notTest);
 }
 async function buyMaxSellMin(amount, notTest) {
-  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
-  let min = 0, max = 0;
-  for (let i = 0; i < 3; i++) {
-    let pe = peles[i];
-    let text = pe.innerText;
-    if (i == 0) {
-      min = parseFloat(text);
-      max = parseFloat(text);
-    } else {
-      min = Math.min(min, parseFloat(text));
-      max = Math.max(max, parseFloat(text));
-    }
-  }
-
-  console.log("min:", min);
-  console.log("max:", max);
-
+  let { min, max } = getMinMaxPriceFromUi();
   doBuyAndSell(amount, max, min, notTest);
-
 }
 
 
@@ -483,6 +420,11 @@ async function cancelAll() {
 
 
 function sellAll() {
+  let { min, max } = getMinMaxPriceFromUi();
+  sell(min, 0, 1);
+}
+
+function getMinMaxPriceFromUi() {
   let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
   let min = 0, max = 0;
   for (let i = 0; i < 3; i++) {
@@ -499,26 +441,15 @@ function sellAll() {
 
   console.log("min:", min);
   console.log("max:", max);
-  sell(min, 0, 1);
+
+  return { min, max };
 }
 
 function sellAllForce(delta) {
   if (delta == null) {
     delta = 0.0001;
   }
-  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
-  let min = 0, max = 0;
-  for (let i = 0; i < 3; i++) {
-    let pe = peles[i];
-    let text = pe.innerText;
-    if (i == 0) {
-      min = parseFloat(text);
-      max = parseFloat(text);
-    } else {
-      min = Math.min(min, parseFloat(text));
-      max = Math.max(max, parseFloat(text));
-    }
-  }
+  let { min, max } = getMinMaxPriceFromUi();
 
   sell(min - delta, 0, 1);
 
