@@ -109,6 +109,434 @@ function convertIfInteger(number, fixed) {
 }
 
 
+function config() {
+  console.log("Headers:", window.bnb.lqhHeaders);
+  console.log("Delta:", window.bnb.delta);
+  console.log("OrderId:", window.bnb.orderId);
+  console.log("stock:", window.bnb.stock);
+}
+
+async function doBuyAndSell(amount, buyPrice, sellPrice, notTest) {
+  let quantity = amount / buyPrice;
+  quantity = Math.floor(quantity * 100) / 100;
+
+  let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/oto-order/place"; //post
+
+  buyPrice = convertIfInteger(buyPrice, 8);
+  sellPrice = convertIfInteger(sellPrice, 8);
+  amount = quantity * buyPrice;
+  amount = Math.floor(amount * 100000000) / 100000000;
+  const json = {
+    "baseAsset": window.bnb.stocks[window.bnb.stock.toLowerCase()],
+    "quoteAsset": "USDT",
+    "workingSide": "BUY",
+    "workingPrice": buyPrice,
+    "workingQuantity": quantity,
+    "paymentDetails":
+      [{ "amount": amount, "paymentWalletType": "CARD" }],
+    "pendingPrice": sellPrice
+  };
+
+  console.log(JSON.stringify(json, null, 2));
+  if (window.bnb.maxDelta == null) {
+    window.bnb.maxDelta = 0.0001;
+  }
+  if (sellPrice - buyPrice > maxDelta) {
+    console.log("价格差异超过最大允许值", maxDelta);
+    return;
+  }
+
+  if (notTest) {
+    // 发送 POST 请求
+    console.log("POST to " + url);
+    window.bnb.quantity = quantity;
+    fetch(url, {
+      method: 'POST',
+      headers: window.bnb.lqhHeaders,
+      body: JSON.stringify(json)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('网络响应不正常');
+        }
+        return response.text();
+      })
+      .then(data => {
+        let resp = JSON.parse(data);
+        if (resp.code == "000000") {
+          window.bnb.orderId = [resp.data.workingOrderId, resp.data.pendingOrderId];
+          console.log("订单创建成功", window.bnb.orderId);
+        } else {
+          console.log("订单创建失败", resp.message);
+        }
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+      });
+  }
+}
+async function doBuy(amount, buyPrice, notTest) {
+  let quantity = amount / buyPrice;
+  quantity = Math.floor(quantity * 100) / 100;
+
+  let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/order/place"; //post
+
+  buyPrice = convertIfInteger(buyPrice, 8);
+  amount = quantity * buyPrice;
+  amount = Math.floor(amount * 100000000) / 100000000;
+
+  const json = {
+    "baseAsset": window.bnb.stocks[window.bnb.stock.toLowerCase()],
+    "quoteAsset": "USDT",
+    "side": "BUY",
+    "price": buyPrice,
+    "quantity": quantity,
+    "paymentDetails":
+      [{ "amount": amount, "paymentWalletType": "CARD" }]
+  };
+
+  console.log(JSON.stringify(json, null, 2));
+
+  if (notTest) {
+    // 发送 POST 请求
+    console.log("POST to " + url);
+    window.bnb.quantity = quantity;
+    fetch(url, {
+      method: 'POST',
+      headers: window.bnb.lqhHeaders,
+      body: JSON.stringify(json)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('网络响应不正常');
+        }
+        return response.text();
+      })
+      .then(data => {
+        let resp = JSON.parse(data);
+        if (resp.code == "000000") {
+          window.bnb.orderId = [0, resp.data];
+          console.log("订单创建成功", window.bnb.orderId);
+        } else {
+          console.log("订单创建失败", resp.message);
+        }
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+      });
+  }
+}
+
+async function sell(sellPrice, quantity, notTest) {
+  //{"baseAsset":"ALPHA_368","quoteAsset":"USDT",
+  // "side":"SELL","price":0.12735,"quantity":2351.57,"paymentDetails":[{"amount":2351.57,"paymentWalletType":"ALPHA"}]}
+  if (quantity == 0) {
+    quantity = window.bnb.quantity * (1 - 1 / 10000);
+    quantity = Math.floor(quantity * 100) / 100;
+  }
+
+  let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/order/place"; //post
+  let pprice = sellPrice;
+  pprice = convertIfInteger(pprice, 8);
+  const json = {
+    "baseAsset": window.bnb.stocks[window.bnb.stock.toLowerCase()],
+    "quoteAsset": "USDT",
+    "side": "SELL",
+    "price": pprice,
+    "quantity": quantity,
+    "paymentDetails":
+      [{ "amount": quantity, "paymentWalletType": "ALPHA" }]
+  };
+
+  console.log(JSON.stringify(json, null, 2));
+
+  if (notTest) {
+    // 发送 POST 请求
+    console.log("POST to " + url);
+    fetch(url, {
+      method: 'POST',
+      headers: window.bnb.lqhHeaders,
+      body: JSON.stringify(json)
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('网络响应不正常');
+        }
+        return response.text();
+      })
+      .then(data => {
+        let resp = JSON.parse(data);
+        if (resp.code == "000000") {
+          window.bnb.orderId = [0, resp.data];
+          console.log("订单创建成功", window.bnb.orderId);
+        } else {
+          console.log("订单创建失败", resp.message);
+        }
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+      });
+  }
+
+
+}
+
+
+async function buyMinAndSell(amount, notTest) {
+  let { min, max } = getMinMaxPriceFromUi();
+
+  doBuyAndSell(amount, min, min - window.bnb.delta, notTest);
+
+}
+
+async function buyMaxAndSell(amount, notTest) {
+  let { min, max } = getMinMaxPriceFromUi();
+
+  doBuyAndSell(amount, max, max - window.bnb.delta, notTest);
+
+}
+
+async function buyMax(amount, notTest) {
+  let { min, max } = getMinMaxPriceFromUi();
+  doBuy(amount, max, notTest);
+}
+async function buyMaxSellMin(amount, notTest) {
+  let { min, max } = getMinMaxPriceFromUi();
+  doBuyAndSell(amount, max + window.bnb.delta, min - window.bnb.delta, notTest);
+}
+
+async function cancel(i) {
+  let url = "https://www.binance.com/bapi/defi/v1/private/alpha-trade/order/cancel"; //post
+  const json = { "orderId": window.bnb.orderId[i], "symbol": window.bnb.stocks[window.bnb.stock.toLowerCase()] + "USDT" };
+
+  console.log(JSON.stringify(json, null, 2));
+
+  // 发送 POST 请求
+  fetch(url, {
+    method: 'POST',
+    headers: window.bnb.lqhHeaders,
+    body: JSON.stringify(json)
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('网络响应不正常');
+      }
+      return response.text();
+    })
+    .then(data => {
+      console.log("response:" + data);
+      let resp = JSON.parse(data);
+
+    })
+    .catch(error => {
+      console.error('请求失败:', error);
+    });
+
+  await sleep(1000);
+  sellAll();
+}
+
+
+
+async function cancelAll() {
+  let url = "https://www.binance.com/bapi/defi/v1/private/alpha-trade/order/cancel-all"; //post
+  const json = {};
+
+  console.log(JSON.stringify(json, null, 2));
+
+  // 发送 POST 请求
+  fetch(url, {
+    method: 'POST',
+    headers: window.bnb.lqhHeaders,
+    body: JSON.stringify(json)
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('网络响应不正常');
+      }
+      return response.text();
+    })
+    .then(data => {
+      console.log("response:" + data);
+      let resp = JSON.parse(data);
+
+    })
+    .catch(error => {
+      console.error('请求失败:', error);
+    });
+
+}
+
+
+function sellAll() {
+  let { min, max } = getMinMaxPriceFromUi();
+  sell(min, 0, 1);
+}
+
+function infoRed(info) {
+  console.log(`%c${info}`, 'color: red;');
+}
+function info(info) {
+  console.log(info);
+}
+
+function getMinMaxPriceFromUi() {
+  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center > :first-child");
+  let timeStr = peles[0].innerText;
+  const today = new Date();
+  const now = today.getTime();
+  const [hours, minutes, seconds] = timeStr.split(':');
+  today.setHours(hours, minutes, seconds, 0);
+  let latency = now - today.getTime();
+  info(`延迟${latency / 1000}s`);
+  if (latency > 2 * 1000) {
+    infoRed(`时间延迟${latency / 1000}s超过2秒`);
+  }
+
+  peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
+  let min = 0, max = 0;
+  for (let i = 0; i < 3; i++) {
+    let pe = peles[i];
+    let text = pe.innerText;
+    if (i == 0) {
+      min = parseFloat(text);
+      max = parseFloat(text);
+    } else {
+      min = Math.min(min, parseFloat(text));
+      max = Math.max(max, parseFloat(text));
+    }
+  }
+
+  console.log("min:", min);
+  console.log("max:", max);
+
+  return { min, max };
+}
+
+function sellAllForce(delta) {
+  if (delta == null) {
+    delta = 0.0001;
+  }
+  let { min, max } = getMinMaxPriceFromUi();
+
+  sell(min - delta, 0, 1);
+
+}
+
+function getBalance() {
+  let url = "https://www.binance.com/bapi/c2c/v1/private/c2c/asset/balance"
+  fetch(url, {
+    method: 'GET',
+    headers: window.bnb.lqhHeaders
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('网络响应不正常');
+      }
+      return response.text();
+    })
+    .then(data => {
+      let resp = JSON.parse(data);
+      if (resp.code == "000000") {
+        window.bnb.balance = 0;
+        //console.log("成功:", data);
+        resp.data.forEach(ele => {
+          let free = parseFloat(ele.free);
+          let freeze = parseFloat(ele.freeze);
+          window.bnb.balance += free + freeze;
+        });
+        console.log("余额:", window.bnb.balance);
+      } else {
+        console.log("失败", resp.message);
+      }
+    })
+    .catch(error => {
+      console.error('请求失败:', error);
+    });
+}
+
+function fBuy() {
+  let url = "https://www.binance.com/bapi/defi/v2/private/wallet-direct/swap/cex/buy/pre/payment";
+  let data = `{"fromToken":"USDT","fromBinanceChainId":"56","fromCoinAmount":"3","toToken":"PINGPONG","toContractAddress":"0x3ecb529752dec6c6ab08fd83e425497874e21d49","toCoinAmount":"20.029321640000000000","priorityMode":"priorityOnSuccess","extra":"{\"uniQuoteId\":\"5b7765a31f5f4a49b72e00d6f04f4667\"}","payMethod":"FUNDING_AND_SPOT"}`
+  let response = {
+    "code": "000000",
+    "message": null,
+    "messageDetail": null,
+    "data": {
+      "payStatus": "SUCCESS",
+      "orderHistory": {
+        "orderId": "25100900001159952116",
+        "direction": "buy",
+        "fromToken": "USDT",
+        "fromTokenAmount": "3.000000000000000000",
+        "fromBinanceChainId": "56",
+        "fromTokenId": "A97B597E63B7FCC51BB9E307E13EC2E3",
+        "fromContractAddress": "0x55d398326f99059ff775485246999027b3197955",
+        "toToken": "PINGPONG",
+        "toTokenAmount": "20.029321640000000000",
+        "toBinanceChainId": "56",
+        "toTokenId": "B48B7AAE6CA16153F10C0221EC1C65B3",
+        "toContractAddress": "0x3ecb529752dec6c6ab08fd83e425497874e21d49",
+        "status": "processing",
+        "dbCreateTime": 1760006873000,
+        "dbUpdateTime": 1760006873000,
+        "feeDetail": {
+          "id": 49,
+          "direction": "FROM",
+          "ratePercent": 0.0000,
+          "defaultRatePercent": 0.005,
+          "rateCoinAmount": 0,
+          "rateFiatValue": 0.00000000,
+          "coinPriceInUSD": null,
+          "decimals": null
+        },
+        "intermediateTokens": null,
+        "source": "BINANCE_ALPHA_PAY",
+        "fromBridgeFee": 0.00000000,
+        "nativeTokenPrice": 1279.26337603,
+        "vendorFromCoinAmount": 3.000000000000000000,
+        "chainGasFeeInUsd": 0.00000000,
+        "chainGasTokenAmount": null,
+        "chainToAmount": null,
+        "uniQuoteId": "5b7765a31f5f4a49b72e00d6f04f4667",
+        "quotePrice": null,
+        "chainAmount": null,
+        "slippage": 0.01200000
+      }
+    },
+    "success": true
+  };
+
+
+
+
+
+}
+
+
+
+function help() {
+  let text = `
+    * window.bnb.stock="${window.bnb.stock}"
+    -初始化: init()
+
+    -前三最大买、最小卖: buyMaxSellMin(201,1)
+    -取消买单: cancel(0)
+    -取消反向卖单并卖出所有订单: cancel(1)
+
+    -取消所有订单: cancelAll()
+
+    -前三最大买: buyMax(201,1)
+    -卖出所有(前三最小): sellAll()
+    -强制卖出: sellAllForce(0.0001)
+
+    -帮助: help()
+  `
+  console.log(text);
+}
+
+
+
 function init() {
 
   let headers =
@@ -145,335 +573,18 @@ zh-CN
 
     i += 2;
   }
+  
+  window.bnb = {};
+  window.bnb.lqhHeaders = json;
 
-  window.lqhHeaders = json;
-
-  window.delta = 0.00001;
-  window.orderId = [];
-  window.maxDelta = 0.0001;
-  window.stock = "aop";
-  window.stocks = {
+  window.bnb.delta = 0.00001;
+  window.bnb.orderId = [];
+  window.bnb.maxDelta = 0.0001;
+  window.bnb.stock = "aop";
+  window.bnb.stocks = {
     aop: "ALPHA_382",
     pingpong: "ALPHA_368"
   }
   config();
 }
-
-function config() {
-  console.log("Headers:", window.lqhHeaders);
-  console.log("Delta:", window.delta);
-  console.log("OrderId:", window.orderId);
-  console.log("stock:", window.stock);
-}
-
-async function doBuyAndSell(amount, buyPrice, sellPrice, notTest) {
-  let quantity = amount / buyPrice;
-  quantity = Math.floor(quantity * 100) / 100;
-
-  let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/oto-order/place"; //post
-
-  buyPrice = convertIfInteger(buyPrice, 8);
-  sellPrice = convertIfInteger(sellPrice, 8);
-  amount = quantity * buyPrice;
-  amount = Math.floor(amount * 100000000) / 100000000;
-  const json = {
-    "baseAsset": window.stocks[window.stock.toLowerCase()],
-    "quoteAsset": "USDT",
-    "workingSide": "BUY",
-    "workingPrice": buyPrice,
-    "workingQuantity": quantity,
-    "paymentDetails":
-      [{ "amount": amount, "paymentWalletType": "CARD" }],
-    "pendingPrice": sellPrice
-  };
-
-  console.log(JSON.stringify(json, null, 2));
-  if (window.maxDelta == null) {
-    window.maxDelta = 0.0001;
-  }
-  if (sellPrice - buyPrice > maxDelta) {
-    console.log("价格差异超过最大允许值", maxDelta);
-    return;
-  }
-
-  if (notTest) {
-    // 发送 POST 请求
-    console.log("POST to " + url);
-    window.quantity = quantity;
-    fetch(url, {
-      method: 'POST',
-      headers: window.lqhHeaders,
-      body: JSON.stringify(json)
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('网络响应不正常');
-        }
-        return response.text();
-      })
-      .then(data => {
-        let resp = JSON.parse(data);
-        if (resp.code == "000000") {
-          window.orderId = [resp.data.workingOrderId, resp.data.pendingOrderId];
-          console.log("订单创建成功", window.orderId);
-        } else {
-          console.log("订单创建失败", resp.message);
-        }
-      })
-      .catch(error => {
-        console.error('请求失败:', error);
-      });
-  }
-}
-async function doBuy(amount, buyPrice, notTest) {
-  let quantity = amount / buyPrice;
-  quantity = Math.floor(quantity * 100) / 100;
-
-  let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/order/place"; //post
-
-  buyPrice = convertIfInteger(buyPrice, 8);
-  amount = quantity * buyPrice;
-  amount = Math.floor(amount * 100000000) / 100000000;
-
-  const json = {
-    "baseAsset": window.stocks[window.stock.toLowerCase()],
-    "quoteAsset": "USDT",
-    "side": "BUY",
-    "price": buyPrice,
-    "quantity": quantity,
-    "paymentDetails":
-      [{ "amount": amount, "paymentWalletType": "CARD" }]
-  };
-
-  console.log(JSON.stringify(json, null, 2));
-
-  if (notTest) {
-    // 发送 POST 请求
-    console.log("POST to " + url);
-    window.quantity = quantity;
-    fetch(url, {
-      method: 'POST',
-      headers: window.lqhHeaders,
-      body: JSON.stringify(json)
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('网络响应不正常');
-        }
-        return response.text();
-      })
-      .then(data => {
-        let resp = JSON.parse(data);
-        if (resp.code == "000000") {
-          window.orderId = [0, resp.data];
-          console.log("订单创建成功", window.orderId);
-        } else {
-          console.log("订单创建失败", resp.message);
-        }
-      })
-      .catch(error => {
-        console.error('请求失败:', error);
-      });
-  }
-}
-
-async function sell(sellPrice, quantity, notTest) {
-  //{"baseAsset":"ALPHA_368","quoteAsset":"USDT",
-  // "side":"SELL","price":0.12735,"quantity":2351.57,"paymentDetails":[{"amount":2351.57,"paymentWalletType":"ALPHA"}]}
-  if (quantity == 0) {
-    quantity = window.quantity * (1 - 1 / 10000);
-    quantity = Math.floor(quantity * 100) / 100;
-  }
-
-  let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/order/place"; //post
-  let pprice = sellPrice;
-  pprice = convertIfInteger(pprice, 8);
-  const json = {
-    "baseAsset": window.stocks[window.stock.toLowerCase()],
-    "quoteAsset": "USDT",
-    "side": "SELL",
-    "price": pprice,
-    "quantity": quantity,
-    "paymentDetails":
-      [{ "amount": quantity, "paymentWalletType": "ALPHA" }]
-  };
-
-  console.log(JSON.stringify(json, null, 2));
-
-  if (notTest) {
-    // 发送 POST 请求
-    console.log("POST to " + url);
-    fetch(url, {
-      method: 'POST',
-      headers: window.lqhHeaders,
-      body: JSON.stringify(json)
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('网络响应不正常');
-        }
-        return response.text();
-      })
-      .then(data => {
-        let resp = JSON.parse(data);
-        if (resp.code == "000000") {
-          window.orderId = [0, resp.data];
-          console.log("订单创建成功", window.orderId);
-        } else {
-          console.log("订单创建失败", resp.message);
-        }
-      })
-      .catch(error => {
-        console.error('请求失败:', error);
-      });
-  }
-
-
-}
-
-
-async function buyMinAndSell(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
-
-  doBuyAndSell(amount, min, min - window.delta, notTest);
-
-}
-
-async function buyMaxAndSell(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
-
-  doBuyAndSell(amount, max, max - window.delta, notTest);
-
-}
-
-async function buyMax(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
-  doBuy(amount, max, notTest);
-}
-async function buyMaxSellMin(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
-  doBuyAndSell(amount, max, min, notTest);
-}
-
-
-async function cancel(i) {
-  let url = "https://www.binance.com/bapi/defi/v1/private/alpha-trade/order/cancel"; //post
-  const json = { "orderId": window.orderId[i], "symbol": window.stocks[window.stock.toLowerCase()] + "USDT" };
-
-  console.log(JSON.stringify(json, null, 2));
-
-  // 发送 POST 请求
-  fetch(url, {
-    method: 'POST',
-    headers: window.lqhHeaders,
-    body: JSON.stringify(json)
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('网络响应不正常');
-      }
-      return response.text();
-    })
-    .then(data => {
-      console.log("response:" + data);
-      let resp = JSON.parse(data);
-
-    })
-    .catch(error => {
-      console.error('请求失败:', error);
-    });
-
-  await sleep(1000);
-  sellAll();
-}
-
-
-
-async function cancelAll() {
-  let url = "https://www.binance.com/bapi/defi/v1/private/alpha-trade/order/cancel-all"; //post
-  const json = {};
-
-  console.log(JSON.stringify(json, null, 2));
-
-  // 发送 POST 请求
-  fetch(url, {
-    method: 'POST',
-    headers: window.lqhHeaders,
-    body: JSON.stringify(json)
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('网络响应不正常');
-      }
-      return response.text();
-    })
-    .then(data => {
-      console.log("response:" + data);
-      let resp = JSON.parse(data);
-
-    })
-    .catch(error => {
-      console.error('请求失败:', error);
-    });
-
-}
-
-
-function sellAll() {
-  let { min, max } = getMinMaxPriceFromUi();
-  sell(min, 0, 1);
-}
-
-function getMinMaxPriceFromUi() {
-  let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
-  let min = 0, max = 0;
-  for (let i = 0; i < 3; i++) {
-    let pe = peles[i];
-    let text = pe.innerText;
-    if (i == 0) {
-      min = parseFloat(text);
-      max = parseFloat(text);
-    } else {
-      min = Math.min(min, parseFloat(text));
-      max = Math.max(max, parseFloat(text));
-    }
-  }
-
-  console.log("min:", min);
-  console.log("max:", max);
-
-  return { min, max };
-}
-
-function sellAllForce(delta) {
-  if (delta == null) {
-    delta = 0.0001;
-  }
-  let { min, max } = getMinMaxPriceFromUi();
-
-  sell(min - delta, 0, 1);
-
-}
-
-function help() {
-  let text = `
-    * window.stock="${window.stock}"
-    -初始化: init()
-
-    -前三最大买、最小卖: buyMaxSellMin(201,1)
-    -取消买单: cancel(0)
-    -取消反向卖单并卖出所有订单: cancel(1)
-
-    -取消所有订单: cancelAll()
-
-    -前三最大买: buyMax(201,1)
-    -卖出所有(前三最小): sellAll()
-    -强制卖出: sellAllForce(0.0001)
-
-    -帮助: help()
-  `
-  console.log(text);
-}
-
-
 
