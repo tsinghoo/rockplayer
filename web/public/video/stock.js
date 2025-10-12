@@ -1137,6 +1137,13 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
+                        text: "不变",
+                        onTap: function () {
+                            submit();
+                            brokerPopup.close();
+                        }
+                    },
+                    {
                         text: "关闭",
                         onTap: function () {
                             brokerPopup.close();
@@ -1233,6 +1240,8 @@ window.feed_list = window.feed_list || (function () {
                 }
             } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
                 suffix = ""; // 港交所（4-5位数字，或 08 开头）
+            } else if (code.indexOf("USDT") >= 0 || code.indexOf("BTC") >= 0 || code.indexOf("ETH") >= 0) {
+                suffix = "EC";
             } else {
                 share.debug__(`未知：${code}`);
             }
@@ -1260,6 +1269,8 @@ window.feed_list = window.feed_list || (function () {
                 }
             } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
                 suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
+            } else if (code.indexOf("USDT") >= 0 || code.indexOf("BTC") >= 0 || code.indexOf("ETH") >= 0) {
+                suffix = "EC";
             } else {
                 share.debug__(`未知：${code}`);
             }
@@ -1647,6 +1658,15 @@ window.feed_list = window.feed_list || (function () {
                 lastTime = categoryData[categoryData.length - 1].split(":");
                 lastTime = parseInt(lastTime[0]) * 60 + parseInt(lastTime[1]);
             }
+
+            if (self.formatScode(scode).indexOf("EC") >= 0) {
+                let now=new Date();
+                let hour=now.getHours();
+                let min=now.getMinutes();
+                finalTime = hour * 60 + min +30;
+                lastTime = 0;
+            }
+
             for (let i = lastTime + 1; i <= finalTime; i++) {
                 //将i转换成 01:01 这种"时:分"格式，不足两位的前面补0
                 let h = Math.floor(i / 60);

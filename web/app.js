@@ -2289,6 +2289,8 @@ function getMarket(stockCode) {
         }
     } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
         suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
+    } else if (code.indexOf("USDT") >= 0 || code.indexOf("BTC") >= 0 || code.indexOf("ETH") >= 0) {
+        suffix = "EC";
     } else {
         share.debug__(`未知：${code}`);
     }
@@ -2317,6 +2319,8 @@ function formatScode(stockCode) {
         }
     } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
         suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
+    } else if (code.indexOf("USDT") >= 0 || code.indexOf("BTC") >= 0 || code.indexOf("ETH") >= 0) {
+        suffix = "EC";
     } else {
         info(`未知：${code}`);
     }

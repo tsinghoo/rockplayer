@@ -110,10 +110,7 @@ function convertIfInteger(number, fixed) {
 
 
 function config() {
-  console.log("Headers:", window.bnb.lqhHeaders);
-  console.log("Delta:", window.bnb.delta);
-  console.log("OrderId:", window.bnb.orderId);
-  console.log("stock:", window.bnb.stock);
+  console.log(`window.bnb=${JSON.stringify(window.bnb, null, 2)}`);
 }
 
 async function doBuyAndSell(amount, buyPrice, sellPrice, notTest) {
@@ -141,8 +138,8 @@ async function doBuyAndSell(amount, buyPrice, sellPrice, notTest) {
   if (window.bnb.maxDelta == null) {
     window.bnb.maxDelta = 0.0001;
   }
-  if (sellPrice - buyPrice > maxDelta) {
-    console.log("价格差异超过最大允许值", maxDelta);
+  if (sellPrice - buyPrice > window.bnb.maxDelta) {
+    console.log("价格差异超过最大允许值", window.bnb.maxDelta);
     return;
   }
 
@@ -232,9 +229,9 @@ async function sell(sellPrice, quantity, notTest) {
   // "side":"SELL","price":0.12735,"quantity":2351.57,"paymentDetails":[{"amount":2351.57,"paymentWalletType":"ALPHA"}]}
   if (quantity == 0) {
     quantity = window.bnb.quantity * (1 - 1 / 10000);
-    quantity = Math.floor(quantity * 100) / 100;
   }
 
+  quantity = Math.floor(quantity * 100) / 100;
   let url = "https://www.binance.com/bapi/asset/v1/private/alpha-trade/order/place"; //post
   let pprice = sellPrice;
   pprice = convertIfInteger(pprice, 8);
@@ -285,7 +282,7 @@ async function sell(sellPrice, quantity, notTest) {
 async function buyMinAndSell(amount, notTest) {
   let { min, max } = getMinMaxPriceFromUi();
 
-  doBuyAndSell(amount, min, min - window.bnb.delta, notTest);
+  doBuyAndSell(amount, max, min - window.bnb.delta, notTest);
 
 }
 
@@ -370,7 +367,7 @@ async function cancelAll() {
 
 function sellAll() {
   let { min, max } = getMinMaxPriceFromUi();
-  sell(min, 0, 1);
+  sell(min - window.bnb.delta, 0, 1);
 }
 
 function infoRed(info) {
@@ -413,13 +410,19 @@ function getMinMaxPriceFromUi() {
   return { min, max };
 }
 
-function sellAllForce(delta) {
+function sellAllForce(amount, delta) {
   if (delta == null) {
     delta = 0.0001;
   }
+
+  if (amount == null) {
+    amount = 0;
+  }
+
+
   let { min, max } = getMinMaxPriceFromUi();
 
-  sell(min - delta, 0, 1);
+  sell(min - delta, amount, 1);
 
 }
 
@@ -446,6 +449,17 @@ function getBalance() {
           window.bnb.balance += free + freeze;
         });
         console.log("余额:", window.bnb.balance);
+        if (window.bnb.balanceStart == null) {
+          window.bnb.balanceStart = window.bnb.balance;
+        } else {
+          infoRed(`余额变化:${window.bnb.balance - window.bnb.balanceStart}`);
+        }
+        if (window.bnb.lastBalance == null) {
+          window.bnb.lastBalance = 0;
+        } else {
+          infoRed(`盈亏:${window.bnb.balance - window.bnb.lastBalance}`);
+          window.bnb.lastBalance = window.bnb.balance;
+        }
       } else {
         console.log("失败", resp.message);
       }
@@ -506,33 +520,37 @@ function fBuy() {
     },
     "success": true
   };
-
-
-
-
-
 }
 
 
-
+let gb = getBalance;
+let bmsm = buyMaxSellMin;
+let c = cancel;
+let ca = cancelAll;
+let bm = buyMax;
+let sa = sellAll;
+let saf = sellAllForce;
 function help() {
+
   let text = `
     * window.bnb.stock="${window.bnb.stock}"
     -初始化: init()
 
-    -前三最大买、最小卖: buyMaxSellMin(201,1)
-    -取消买单: cancel(0)
-    -取消反向卖单并卖出所有订单: cancel(1)
+    -获取余额: gb()
 
-    -取消所有订单: cancelAll()
+    -前三最大买、最小卖: bmsm(201,1)
+    -取消买单: c(0)
+    -取消反向卖单并卖出所有订单: c(1)
 
-    -前三最大买: buyMax(201,1)
-    -卖出所有(前三最小): sellAll()
-    -强制卖出: sellAllForce(0.0001)
+    -取消所有订单: ca()
+
+    -前三最大买: bm(201,1)
+    -卖出所有(前三最小): sa()
+    -强制卖出: saf(0.0001, 235.134)
 
     -帮助: help()
   `
-  console.log(text);
+  info(text);
 }
 
 
@@ -541,7 +559,7 @@ function init() {
 
   let headers =
     `baggage
-sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=e1d097cf83634693a89d2aca0dd456bb,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false
+sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=9635b761822b4bc9a4dcf8a3eef82515,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false
 bnc-uuid
 67e6afe2-047e-4d30-bdc1-19151112790b
 clienttype
@@ -551,9 +569,9 @@ content-length
 content-type
 application/json
 cookie
-bnc-uuid=67e6afe2-047e-4d30-bdc1-19151112790b; BNC_FV_KEY=3305c6443bdca07787f83231ec0fc6da0757b0c6; OptanonAlertBoxClosed=2025-10-03T02:13:21.738Z; _gcl_au=1.1.1685839591.1759457606; _gid=GA1.2.1778629017.1759563539; se_gd=AJXEVDgUEGbCwxbxXUA9gZZCFDQoXBSWlIOVZUkd1hRWwV1NWVBU1; se_gsd=Sjo2GgpVIwAiBjcmJzInIyk9VBMGDgUHUVxBW1ZTVlhXJFNT1; currentAccount=; _ga_MEG0BSW76K=GS2.1.s1759586256$o1$g1$t1759586422$j60$l0$h0; g_state={"i_l":0}; isAccountsLoggedIn=y; BNC-Location=CN; userPreferredCurrency=USD_USD; forterToken=8bab0270232a41f9a898284c4156659a_1759635706349__UDF43-mnf-a4_21ck_; changeBasisTimeZone=; logined=y; neo-theme=dark; r30t=1; theme=dark; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2229062185%22%2C%22first_id%22%3A%22199a7d80d15581-0879b6d1278a92-1f525631-1764000-199a7d80d16b7b%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22aws_waf_referrer%22%3A%22%7B%5C%22referrer%5C%22%3A%5C%22https%3A%2F%2Fwww.google.com%2F%5C%22%7D%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMTk5YTdkODBkMTU1ODEtMDg3OWI2ZDEyNzhhOTItMWY1MjU2MzEtMTc2NDAwMC0xOTlhN2Q4MGQxNmI3YiIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjI5MDYyMTg1In0%3D%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2229062185%22%7D%2C%22%24device_id%22%3A%22199af83906a75-0bf04d3d7a0ff3-1e525631-1764000-199af83906b4da%22%7D; lang=zh-CN; language=zh-CN; language=zh-CN; BNC_FV_KEY_T=101-WzKupWyF5xlLjtGPTdX4TqysHy8FxbmbLyifGmrJe12uG4DL6NmFMe5fncdqwwRHg77kChKtKWJolOdDenrCZw%3D%3D-d%2B584EhfSHeRTeutxdA71Q%3D%3D-e4; BNC_FV_KEY_EXPIRE=1759998568769; aws-waf-token=0c0842f6-080a-4103-964c-87e983ae2ec1:BgoAqLMXHtpYAAAA:8LMRBQ7qTK0LN+2qgJOsAOcqMCmSeV/Am/ImCN+ZFBkHxSA8RArKhgQ8h162r4KjtuE4ANPDbytGI4iCegweda1PUz+M+HjxBQPUP6C78dBvecCQOVDKWTyGthYbD+4js4Sfu4fHVLcZsDSpTlCSCVK+g3yTulWK3R6thoV5coSsRMeTja1cwj3Cl/4vDI21Cyw=; _uetsid=33ac7200a0f511f0a14e872544e61aa9; _uetvid=8c9cd7f09ffe11f0bdf9cd4c1d08b540; _ga_3WP50LGEEC=GS2.1.s1759980300$o26$g1$t1759984530$j52$l0$h0; _ga=GA1.2.1791296862.1759457604; r20t=web.E7D85E5F74948481A6436E62312DA068; cr00=FCA166AB774F9CABF09112065585BEE5; d1og=web.29062185.C80D2BBA975362353DFBD4983C7B1BFB; r2o1=web.29062185.0A29485AFE8520344F61326E3BA95667; f30l=web.29062185.82C5343EA68AF8B5FF6775DE48189F42; p20t=web.29062185.6B1DD027161000D45738981B6610A668; OptanonConsent=isGpcEnabled=0&datestamp=Thu+Oct+09+2025+12%3A39%3A43+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=202506.1.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=6298cb37-9de2-41b1-804b-070908bdd651&interactionCount=2&isAnonUser=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0003%3A1%2CC0004%3A1%2CC0002%3A1&intType=1&geolocation=CN%3BBJ&AwaitingReconsent=false
+bnc-uuid=67e6afe2-047e-4d30-bdc1-19151112790b; BNC_FV_KEY=3305c6443bdca07787f83231ec0fc6da0757b0c6; OptanonAlertBoxClosed=2025-10-03T02:13:21.738Z; _gcl_au=1.1.1685839591.1759457606; _gid=GA1.2.1778629017.1759563539; se_gd=AJXEVDgUEGbCwxbxXUA9gZZCFDQoXBSWlIOVZUkd1hRWwV1NWVBU1; se_gsd=Sjo2GgpVIwAiBjcmJzInIyk9VBMGDgUHUVxBW1ZTVlhXJFNT1; currentAccount=; isAccountsLoggedIn=y; BNC-Location=CN; userPreferredCurrency=USD_USD; forterToken=8bab0270232a41f9a898284c4156659a_1759635706349__UDF43-mnf-a4_21ck_; changeBasisTimeZone=; neo-theme=dark; theme=dark; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2229062185%22%2C%22first_id%22%3A%22199a7d80d15581-0879b6d1278a92-1f525631-1764000-199a7d80d16b7b%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22aws_waf_referrer%22%3A%22%7B%5C%22referrer%5C%22%3A%5C%22https%3A%2F%2Fwww.google.com%2F%5C%22%7D%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMTk5YTdkODBkMTU1ODEtMDg3OWI2ZDEyNzhhOTItMWY1MjU2MzEtMTc2NDAwMC0xOTlhN2Q4MGQxNmI3YiIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjI5MDYyMTg1In0%3D%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2229062185%22%7D%2C%22%24device_id%22%3A%22199af83906a75-0bf04d3d7a0ff3-1e525631-1764000-199af83906b4da%22%7D; language=zh-CN; logined=y; _ga_MEG0BSW76K=GS2.1.s1760085488$o2$g1$t1760085502$j46$l0$h0; aws-waf-token=95aa2b31-ec04-4fb3-baa6-518731971152:EAoAqP8eDV/AAAAA:HokqRmY5R22bZOuqleQJHc7d4aJRjKHhDRe062jQCkZ0DpCduMBy3SveHfXPdAfM4I73c5E2fdqTx4W2IdJ4UE0S4bSvNg8A5u2MUIPN3NZ5x97FdCMaapM+4Uqmp/zpkuH7cLeUT3UEz++ya67gfWsRzxwYPvQT5gXSL1+G+vF3L/KkVSVG4NYYRGlf93a7wuw=; BNC_FV_KEY_T=101-Qr94%2BJXa7BloI6sDXNW63MqjCcqZ9%2FW590wlPUES2SiBy75fu0V11iOl5KVu4prbQmNvjI%2B76Zy7HCXAG5FWFA%3D%3D-ldbY9GO9kgKxEU%2BmXaatBA%3D%3D-b6; BNC_FV_KEY_EXPIRE=1760265054566; se_sd=g4FVgUl4HRQE1cP0FCVRgZZFhF1QOEQV1tXRdW09FFWVwV1NWVhX1; g_state={"i_l":0,"i_ll":1760243726815}; language=pt-BR; s9r1=D311DF59DF7F6685A541E62B8D6DB92F; r20t=web.450BFB120AE5AA6B04B957556780D0E9; r30t=1; cr00=FCC05B94A45C55C32F059273E7B572A4; d1og=web.29062185.DFE896EA61EB9DE65A84BC8E2A90F25E; r2o1=web.29062185.FF018DA0917474E17B5B13A561F63F24; f30l=web.29062185.A242474242C2BA87AD5A18FBDD973548; p20t=web.29062185.BBEFE208842D1F758EE0D75FB95F0F83; lang=zh-CN; _uetsid=33ac7200a0f511f0a14e872544e61aa9; _uetvid=8c9cd7f09ffe11f0bdf9cd4c1d08b540; _ga=GA1.2.1791296862.1759457604; _ga_3WP50LGEEC=GS2.1.s1760254356$o41$g1$t1760255464$j60$l0$h0; OptanonConsent=isGpcEnabled=0&datestamp=Sun+Oct+12+2025+15%3A51%3A52+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=202506.1.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=6298cb37-9de2-41b1-804b-070908bdd651&interactionCount=2&isAnonUser=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0003%3A1%2CC0004%3A1%2CC0002%3A1&intType=1&geolocation=CN%3BBJ&AwaitingReconsent=false
 csrftoken
-ec8c56bddb096db03dae70e45cf8e63c
+395b7f3f2a2b017f6f5c2998b9ab1189
 device-info
 eyJzY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTA1MCIsImF2YWlsYWJsZV9zY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTAyNSIsInN5c3RlbV92ZXJzaW9uIjoibWFjT1MgMTAuMTUuNyIsImJyYW5kX21vZGVsIjoiZGVza3RvcCBBcHBsZSBNYWNpbnRvc2ggIiwic3lzdGVtX2xhbmciOiJ6aC1DTiIsInRpbWV6b25lIjoiR01UKzA4OjAwIiwidGltZXpvbmVPZmZzZXQiOi00ODAsInVzZXJfYWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQxLjAuMC4wIFNhZmFyaS81MzcuMzYiLCJsaXN0X3BsdWdpbiI6IlBERiBWaWV3ZXIsQ2hyb21lIFBERiBWaWV3ZXIsQ2hyb21pdW0gUERGIFZpZXdlcixNaWNyb3NvZnQgRWRnZSBQREYgVmlld2VyLFdlYktpdCBidWlsdC1pbiBQREYiLCJjYW52YXNfY29kZSI6IjNmYTgyM2QxIiwid2ViZ2xfdmVuZG9yIjoiR29vZ2xlIEluYy4gKEludGVsIEluYy4pIiwid2ViZ2xfcmVuZGVyZXIiOiJBTkdMRSAoSW50ZWwgSW5jLiwgSW50ZWwoUikgSXJpcyhUTSkgR3JhcGhpY3MgNjEwMCwgT3BlbkdMIDQuMSkiLCJhdWRpbyI6IjEyNC4wNDM0NzY1NzgwODEwMyIsInBsYXRmb3JtIjoiTWFjSW50ZWwiLCJ3ZWJfdGltZXpvbmUiOiJBc2lhL1NoYW5naGFpIiwiZGV2aWNlX25hbWUiOiJDaHJvbWUgVjE0MS4wLjAuMCAobWFjT1MpIiwiZmluZ2VycHJpbnQiOiIwMGE1MWM1Zjc3ZTkzMjM3YWI0MTRmMTBiMDY0ZTgxZSIsImRldmljZV9pZCI6IiIsInJlbGF0ZWRfZGV2aWNlX2lkcyI6IiJ9
 fvideo-id
@@ -573,18 +591,55 @@ zh-CN
 
     i += 2;
   }
-  
+
   window.bnb = {};
   window.bnb.lqhHeaders = json;
 
   window.bnb.delta = 0.00001;
   window.bnb.orderId = [];
   window.bnb.maxDelta = 0.0001;
-  window.bnb.stock = "aop";
+  window.bnb.stock = "numi";
   window.bnb.stocks = {
     aop: "ALPHA_382",
-    pingpong: "ALPHA_368"
+    pingpong: "ALPHA_368",
+    p: "ALPHA_408",
+    numi: "ALPHA_387",
+    btg: "ALPHA_406",
+    hana: "ALPHA_394",
+    jojo: "ALPHA_383"
   }
   config();
 }
 
+
+window.bnb={
+  "lqhHeaders": {
+    "baggage": "sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=9635b761822b4bc9a4dcf8a3eef82515,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false",
+    "bnc-uuid": "67e6afe2-047e-4d30-bdc1-19151112790b",
+    "clienttype": "web",
+    "content-type": "application/json",
+    "csrftoken": "395b7f3f2a2b017f6f5c2998b9ab1189",
+    "device-info": "eyJzY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTA1MCIsImF2YWlsYWJsZV9zY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTAyNSIsInN5c3RlbV92ZXJzaW9uIjoibWFjT1MgMTAuMTUuNyIsImJyYW5kX21vZGVsIjoiZGVza3RvcCBBcHBsZSBNYWNpbnRvc2ggIiwic3lzdGVtX2xhbmciOiJ6aC1DTiIsInRpbWV6b25lIjoiR01UKzA4OjAwIiwidGltZXpvbmVPZmZzZXQiOi00ODAsInVzZXJfYWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQxLjAuMC4wIFNhZmFyaS81MzcuMzYiLCJsaXN0X3BsdWdpbiI6IlBERiBWaWV3ZXIsQ2hyb21lIFBERiBWaWV3ZXIsQ2hyb21pdW0gUERGIFZpZXdlcixNaWNyb3NvZnQgRWRnZSBQREYgVmlld2VyLFdlYktpdCBidWlsdC1pbiBQREYiLCJjYW52YXNfY29kZSI6IjNmYTgyM2QxIiwid2ViZ2xfdmVuZG9yIjoiR29vZ2xlIEluYy4gKEludGVsIEluYy4pIiwid2ViZ2xfcmVuZGVyZXIiOiJBTkdMRSAoSW50ZWwgSW5jLiwgSW50ZWwoUikgSXJpcyhUTSkgR3JhcGhpY3MgNjEwMCwgT3BlbkdMIDQuMSkiLCJhdWRpbyI6IjEyNC4wNDM0NzY1NzgwODEwMyIsInBsYXRmb3JtIjoiTWFjSW50ZWwiLCJ3ZWJfdGltZXpvbmUiOiJBc2lhL1NoYW5naGFpIiwiZGV2aWNlX25hbWUiOiJDaHJvbWUgVjE0MS4wLjAuMCAobWFjT1MpIiwiZmluZ2VycHJpbnQiOiIwMGE1MWM1Zjc3ZTkzMjM3YWI0MTRmMTBiMDY0ZTgxZSIsImRldmljZV9pZCI6IiIsInJlbGF0ZWRfZGV2aWNlX2lkcyI6IiJ9",
+    "fvideo-id": "3305c6443bdca07787f83231ec0fc6da0757b0c6"
+  },
+  "delta": 0.00001,
+  "orderId": [
+    0,
+    "2840718"
+  ],
+  "maxDelta": 0.0001,
+  "stock": "jojo",
+  "stocks": {
+    "aop": "ALPHA_382",
+    "pingpong": "ALPHA_368",
+    "p": "ALPHA_408",
+    "numi": "ALPHA_387",
+    "btg": "ALPHA_406",
+    "hana": "ALPHA_394",
+    "jojo": "ALPHA_383"
+  },
+  "balance": 627.81654803,
+  "balanceStart": 628.71942763,
+  "lastBalance": 627.81654803,
+  "quantity": 4640.96
+}
