@@ -1660,11 +1660,7 @@ window.feed_list = window.feed_list || (function () {
             }
 
             if (self.formatScode(scode).indexOf("EC") >= 0) {
-                let now=new Date();
-                let hour=now.getHours();
-                let min=now.getMinutes();
-                finalTime = hour * 60 + min +30;
-                lastTime = 0;
+                finalTime = lastTime +30;
             }
 
             for (let i = lastTime + 1; i <= finalTime; i++) {

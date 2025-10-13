@@ -177,29 +177,49 @@ function info(msg) {
   console.log(msg);
 }
 
-function start() {
+async function updateSticks(stock, period, limit) {
 
-  binance.candlesticks("BTCUSDT", "1d", { limit: 400 }).then(
-    (response) => {
-      let data = [];
-      for (let i = 0; i < response.length; i++) {
-        let item = response[i];
-        data.push([timeFormat(item.openTime, "yyyyMMdd"), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
-        if (data.length == 50) {
-          let body = {
-            period: "1d",
-            scode: "BTCUSDT",
-            data: data
-          }
-          post(`${g.baseUrl}/stock/data/upload`, body);
-          data=[];
-        }
-      }
+  if (period == "1d") {
+    timePatten = "yyyyMMdd";
+  }else if (period == "1m") {
+    timePatten = "yyyyMMddhhmmss";
+  }
+  
+
+  let response = await binance.candlesticks(stock, period, { limit: limit });
+  let data = [];
+  for (let i = 0; i < response.length; i++) {
+    let item = response[i];
+    data.push([timeFormat(item.openTime, timePatten), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
+    if (data.length == 50) {
+      let body = {
+        period: period,
+        scode: stock,
+        data: data
+      };
+      post(`${g.baseUrl}/stock/data/upload`, body);
+      data = [];
     }
-  );
+  }
+
+  let body = {
+    period: period,
+    scode: stock,
+    data: data
+  };
+
+  post(`${g.baseUrl}/stock/data/upload`, body);
+  data = [];
+}
+
+
+async function start() {
+  await updateSticks("BTCUSDT", "1d", 400);
+  await updateSticks("ETHUSDT", "1d", 400);
+  await updateSticks("BTCUSDT", "1m", 400);
+  await updateSticks("ETHUSDT", "1m", 400);
 
   return;
-
   binance.websockets.candlesticks(['BTCUSDT', 'ETHUSDT'], "1m", (candlesticks) => {
     let { e: type, E: time, s: symbol, k: ticks } = candlesticks;
     let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
@@ -222,6 +242,5 @@ function start() {
 }
 
 start();
-
 
 

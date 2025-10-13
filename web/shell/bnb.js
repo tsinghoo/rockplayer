@@ -611,7 +611,6 @@ zh-CN
   config();
 }
 
-
 window.bnb={
   "lqhHeaders": {
     "baggage": "sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=9635b761822b4bc9a4dcf8a3eef82515,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false",
@@ -624,11 +623,11 @@ window.bnb={
   },
   "delta": 0.00001,
   "orderId": [
-    0,
-    "2840718"
+    177948020,
+    177948021
   ],
   "maxDelta": 0.0001,
-  "stock": "jojo",
+  "stock": "aop",
   "stocks": {
     "aop": "ALPHA_382",
     "pingpong": "ALPHA_368",
@@ -636,10 +635,11 @@ window.bnb={
     "numi": "ALPHA_387",
     "btg": "ALPHA_406",
     "hana": "ALPHA_394",
+    "stbl": "ALPHA_376",
     "jojo": "ALPHA_383"
   },
-  "balance": 627.81654803,
-  "balanceStart": 628.71942763,
-  "lastBalance": 627.81654803,
-  "quantity": 4640.96
+  "balance": 622.34164654,
+  "balanceStart": 622.34256915,
+  "lastBalance": 622.34164654,
+  "quantity": 12.15
 }
