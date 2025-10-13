@@ -241,8 +241,8 @@ def genScript(file_name):
 
 #罗列目录"/flv/audio"下的所有mp3文件
 for file_name in os.listdir("/flv/voice"):
-    if file_name.endswith(".mp3"):
-        genScript(file_name)
+    log(file_name)
+    genScript("voice/" + file_name)
         
 
 with open('/flv/todo') as f:
