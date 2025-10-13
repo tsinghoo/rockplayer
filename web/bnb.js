@@ -15,7 +15,7 @@ binance.httpsProxy = 'http://192.168.66.205:8080/';
 let g = {};
 g.broker = "BNB";
 g.baseUrl = "http://localhost:3001";
-
+g.actions = [];
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -173,18 +173,41 @@ function post(url, body) {
   });
 
 }
+
+function get(url) {
+  info(`GET ${url}`);
+  return fetch(url, {
+    method: "GET"
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error('网络响应不正常');
+    }
+    return response.text();
+  }).then(data => {
+
+  }).catch(error => {
+    console.error('上传失败:', JSON.stringify(body), error);
+  });
+
+}
 function info(msg) {
+  console.log(...arguments);
+}
+function debug(msg) {
   console.log(msg);
+}
+function error(msg) {
+  console.log(...arguments);
 }
 
 async function updateSticks(stock, period, limit) {
 
   if (period == "1d") {
     timePatten = "yyyyMMdd";
-  }else if (period == "1m") {
+  } else if (period == "1m") {
     timePatten = "yyyyMMddhhmmss";
   }
-  
+
 
   let response = await binance.candlesticks(stock, period, { limit: limit });
   let data = [];
@@ -212,19 +235,116 @@ async function updateSticks(stock, period, limit) {
   data = [];
 }
 
+async function getActions() {
+  try {
+    let response = await fetch(g.baseUrl + "/stock/rule/actions?broker=" + g.broker, {
+      method: 'GET',
+      timeout: 5000
+    });
+
+    if (!response.ok) {
+      error("getActions失败，状态码:", response.status);
+      return;
+    }
+
+    const content = await response.text();
+    debug("getActions成功:", response.status, content);
+    const jso = JSON.parse(content);
+
+    for (const act of jso.data) {
+      act.scode = act.scode.split(".")[0];
+
+      if (g.actions.includes(act.scode)) {
+        info("已存在", act.scode, "的action");
+      } else {
+
+        try {
+          if (act.action === "buy") {
+            info("买入", act.sname, act.scode, act.price, act.amount);
+            let price = parseFloat(act.price);
+            info("price:", price);
+            let response = await binance.buy(act.scode, parseFloat(act["amount"]), price);
+            console.log(response);
+            info("已买入", act.sname, act.scode, act.price, act.amount);
+
+          } else if (act.action === "sell") {
+            info("卖出", act.sname, act.scode, act.price, act.amount);
+            let price = "" + parseFloat(act.price).toFixed(2);
+            info("price:", price);
+            let response = await binance.sell(act.scode, act["amount"], price);
+            console.log(response);
+            info("已卖出", act.sname, act.scode, act.price, act.amount);
+          } else if (act.action === "reloadK1d") {
+            info("reloadK1d action for", act.scode);
+          } else if (act.action === "cancelAction") {
+            info("cancel action for", act.scode);
+
+            response = await binance.cancelAll(act.scode);
+            console.info(response);
+          }
+        } catch (e) {
+          error("cancel action for", act.scode, "失败:", e);
+        }
+
+        actionDone(act.id);
+      }
+    }
+
+  } catch (err) {
+    error("getActions出错:", err);
+  }
+}
+
+async function actionDone(id) {
+  try {
+    const response = await fetch(g.baseUrl + "/stock/action/done?id=" + id, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("action done error:", response.status, "响应内容:", errorText);
+    }
+  } catch (e) {
+    console.error("action done error:", e.toString());
+  }
+}
+
+async function sleep(ms) {
+  return new Promise((resolve, reject) => {
+    if (ms <= 0) {
+      resolve();
+      return;
+    }
+
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+}
 
 async function start() {
+
+  while (1 == 1) {
+    await getActions();
+    await sleep(100);
+  }
+
+
+
   await updateSticks("BTCUSDT", "1d", 400);
   await updateSticks("ETHUSDT", "1d", 400);
   await updateSticks("BTCUSDT", "1m", 400);
   await updateSticks("ETHUSDT", "1m", 400);
 
-  return;
   binance.websockets.candlesticks(['BTCUSDT', 'ETHUSDT'], "1m", (candlesticks) => {
     let { e: type, E: time, s: symbol, k: ticks } = candlesticks;
     let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
 
     let data = [[timeFormat(time, "yyyyMMddhhmmss"), open, close, high, low, volume, quoteVolume]];
+
+    get(`${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}`);
+
     if (isFinal) {
       let body = {
         period: "1m",
@@ -233,11 +353,15 @@ async function start() {
       }
 
       post(`${g.baseUrl}/stock/data/upload`, body);
-    } else {
-      info(timeFormat(time, "yyyyMMddhhmmss") + ":" + symbol);
+
+      updateSticks("BTCUSDT", "1d", 1);
+      updateSticks("ETHUSDT", "1d", 1);
+      updateSticks("BTCUSDT", "1m", 10);
+      updateSticks("ETHUSDT", "1m", 10);
     }
 
   });
+
 
 }
 
