@@ -1,5 +1,6 @@
 // const Binance = require('node-binance-api');
 // import Binance from "node-binance-api";
+const { json } = require("express");
 const Binance = require("node-binance-api");
 
 
@@ -15,6 +16,7 @@ binance.httpsProxy = 'http://192.168.66.205:8080/';
 let g = {};
 g.broker = "BNB";
 g.baseUrl = "http://localhost:3001";
+g.baseUrl = "http://test1.91taogu.com";
 g.actions = [];
 
 function printObjFunc(obj) {
@@ -323,14 +325,34 @@ async function sleep(ms) {
   });
 }
 
-async function start() {
-
-  while (1 == 1) {
-    await getActions();
-    await sleep(100);
+function balance_update(data) {
+  console.log("Balance Update");
+  for (let obj of data.B) {
+    let { a: asset, f: available, l: onOrder } = obj;
+    if (available == "0.00000000") continue;
+    console.log(asset + "\tavailable: " + available + " (" + onOrder + " on order)");
   }
 
+  updatePositions();
+}
 
+function execution_update(data) {
+  let { x: executionType, s: symbol, p: price, q: quantity, S: side, o: orderType, i: orderId, X: orderStatus } = data;
+  if (executionType == "NEW") {
+    if (orderStatus == "REJECTED") {
+      console.log("Order Failed! Reason: " + data.r);
+    }
+    console.log(symbol + " " + side + " " + orderType + " ORDER #" + orderId + " (" + orderStatus + ")");
+    console.log("..price: " + price + ", quantity: " + quantity);
+    return;
+  }
+  //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
+  console.log(symbol + "\t" + side + " " + executionType + " " + orderType + " ORDER #" + orderId);
+}
+async function start() {
+  await updatePositions();
+
+  binance.websockets.userData(balance_update, execution_update);
 
   await updateSticks("BTCUSDT", "1d", 400);
   await updateSticks("ETHUSDT", "1d", 400);
@@ -359,12 +381,41 @@ async function start() {
       updateSticks("BTCUSDT", "1m", 10);
       updateSticks("ETHUSDT", "1m", 10);
     }
-
   });
+
+  while (1 == 1) {
+    await getActions();
+    await sleep(100);
+  }
 
 
 }
 
 start();
 
+
+async function updatePositions() {
+  let response = await binance.balance();
+  let data = [];
+  Object.keys(response).forEach(key => {
+    let { available, onOrder } = response[key];
+    available = parseFloat(available);
+    if (available <= 0 && parseFloat(onOrder) <= 0) return;
+    data.push({
+      "broker": g.broker,
+      "account_id": "",
+      "avg_price": 0,
+      "can_use_volume": available,
+      "frozen_volume": 0,
+      "market_value": 0,
+      "on_road_volume": 0,
+      "open_price": 0,
+      "stock_code": key + "USDT",
+      "volume": available
+    });
+  });
+
+  let body = { "data": data, "passcode": "995560" };
+  post(`${g.baseUrl}/stock/positions`, body);
+}
 
