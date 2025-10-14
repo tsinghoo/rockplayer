@@ -204,37 +204,42 @@ function error(msg) {
 
 async function updateSticks(stock, period, limit) {
 
-  if (period == "1d") {
-    timePatten = "yyyyMMdd";
-  } else if (period == "1m") {
-    timePatten = "yyyyMMddhhmmss";
-  }
-
-
-  let response = await binance.candlesticks(stock, period, { limit: limit });
-  let data = [];
-  for (let i = 0; i < response.length; i++) {
-    let item = response[i];
-    data.push([timeFormat(item.openTime, timePatten), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
-    if (data.length == 50) {
-      let body = {
-        period: period,
-        scode: stock,
-        data: data
-      };
-      post(`${g.baseUrl}/stock/data/upload`, body);
-      data = [];
+  try {
+    if (period == "1d") {
+      timePatten = "yyyyMMdd";
+    } else if (period == "1m") {
+      timePatten = "yyyyMMddhhmmss";
     }
+
+
+    let response = await binance.candlesticks(stock, period, { limit: limit });
+    let data = [];
+    for (let i = 0; i < response.length; i++) {
+      let item = response[i];
+      data.push([timeFormat(item.openTime, timePatten), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
+      if (data.length == 50) {
+        let body = {
+          period: period,
+          scode: stock,
+          data: data
+        };
+        post(`${g.baseUrl}/stock/data/upload`, body);
+        data = [];
+      }
+    }
+
+    let body = {
+      period: period,
+      scode: stock,
+      data: data
+    };
+
+    post(`${g.baseUrl}/stock/data/upload`, body);
+    data = [];
+
+  } catch (e) {
+    error("updateSticks失败:", e);
   }
-
-  let body = {
-    period: period,
-    scode: stock,
-    data: data
-  };
-
-  post(`${g.baseUrl}/stock/data/upload`, body);
-  data = [];
 }
 
 async function getActions() {
@@ -351,7 +356,7 @@ function execution_update(data) {
 }
 async function start() {
   await updatePositions();
-  
+
   binance.websockets.userData(balance_update, execution_update);
 
   await updateSticks("BTCUSDT", "1d", 400);
@@ -401,7 +406,7 @@ async function updatePositions() {
     let { available, onOrder } = response[key];
     available = parseFloat(available);
     if (available <= 0 && parseFloat(onOrder) <= 0) return;
-    info(key,JSON.stringify(response[key]));
+    info(key, JSON.stringify(response[key]));
     data.push({
       "broker": g.broker,
       "account_id": "",
