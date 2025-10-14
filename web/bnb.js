@@ -3,11 +3,16 @@
 const { json } = require("express");
 const Binance = require("node-binance-api");
 
+let DEBUG = 2;
+let INFO = 3;
+let ERROR = 4;
+let logLevel = INFO;
+
 
 const binance = new Binance({
   APIKEY: 'zN75a6JuEP3jaffhC3LiCbjsHbMcgrW9MWQX4HqjUXKiVqXt9iRwMYPDfykCUEz1',
   APISECRET: 'JV3y11RJ6Jgy5S0VPN58neQTD7AlvrVVv12cgsoxmEYwkMXrE9fheibFmryFQ95E',
-  verbose: false,
+  verbose: logLevel <= DEBUG,
   //test: true, // if you want to use the sandbox/testnet
 });
 
@@ -18,14 +23,15 @@ g.broker = "BNB";
 g.baseUrl = "http://localhost:3001";
 g.baseUrl = "http://test1.91taogu.com";
 g.actions = [];
+g.getActionTimes = 0;
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
   const functions = allProps.filter(prop => typeof obj[prop] === 'function');
 
-  console.log('对象中的函数:');
+  debug('对象中的函数:');
   functions.forEach(funcName => {
-    console.log(`- ${funcName}`);
+    debug(`- ${funcName}`);
   });
 
   return functions;
@@ -156,7 +162,7 @@ function timeFormat(time, fmt) {
 };
 
 function post(url, body) {
-  info(`POST ${url}:${JSON.stringify(body, null, 2)}`);
+  debug(`POST ${url}:${JSON.stringify(body)}`);
   return fetch(url, {
     method: "POST",
     headers: {
@@ -170,40 +176,48 @@ function post(url, body) {
     return response.text();
   }).then(data => {
 
-  }).catch(error => {
-    console.error('上传失败:', JSON.stringify(body), error);
+  }).catch(e => {
+    error('上传失败:', JSON.stringify(body), e.toString());
   });
 
 }
 
 function get(url) {
-  info(`GET ${url}`);
+  debug(`GET ${url}`);
   return fetch(url, {
     method: "GET"
-  }).then(response => {
-    if (!response.ok) {
-      throw new Error('网络响应不正常');
-    }
-    return response.text();
-  }).then(data => {
-
-  }).catch(error => {
-    console.error('上传失败:', error);
   });
-
 }
-function info(msg) {
-  console.log(...arguments);
+function log() {
+
+  let now = timeFormat(new Date(), "yy-MM-dd hh:mm:ss");
+  console.log(now, ...arguments);
+}
+function info() {
+
+  if (logLevel > INFO) {
+    return;
+  }
+
+  log(...arguments);
 }
 function debug(msg) {
-  console.log(msg);
+
+  if (logLevel > DEBUG) {
+    return;
+  }
+  log(...arguments);
 }
 function error(msg) {
-  console.log(...arguments);
+  if (logLevel > ERROR) {
+    return;
+  }
+
+  log(...arguments);
 }
 
 async function updateSticks(stock, period, limit) {
-
+  info(`updateSticks ${stock} ${period} ${limit}`);
   try {
     if (period == "1d") {
       timePatten = "yyyyMMdd";
@@ -244,19 +258,25 @@ async function updateSticks(stock, period, limit) {
 
 async function getActions() {
   try {
-    let response = await fetch(g.baseUrl + "/stock/rule/actions?broker=" + g.broker, {
-      method: 'GET',
-      timeout: 5000
-    });
-
+    let response = await get(g.baseUrl + "/stock/rule/actions?broker=" + g.broker);
     if (!response.ok) {
       error("getActions失败，状态码:", response.status);
       return;
     }
 
     const content = await response.text();
-    debug("getActions成功:", response.status, content);
     const jso = JSON.parse(content);
+    if (jso.data.length == 0) {
+      g.getActionTimes++;
+      if (g.getActionTimes > 10) {
+        info("getActions ok");
+        g.getActionTimes = 0;
+      }
+
+    } else {
+      g.getActionTimes = 0;
+      info("getActions:", response.status, content);
+    }
 
     for (const act of jso.data) {
       act.scode = act.scode.split(".")[0];
@@ -271,7 +291,7 @@ async function getActions() {
             let price = parseFloat(act.price);
             info("price:", price);
             let response = await binance.buy(act.scode, parseFloat(act["amount"]), price);
-            console.log(response);
+            debug(response);
             info("已买入", act.sname, act.scode, act.price, act.amount);
 
           } else if (act.action === "sell") {
@@ -279,7 +299,7 @@ async function getActions() {
             let price = "" + parseFloat(act.price).toFixed(2);
             info("price:", price);
             let response = await binance.sell(act.scode, act["amount"], price);
-            console.log(response);
+            debug(response);
             info("已卖出", act.sname, act.scode, act.price, act.amount);
           } else if (act.action === "reloadK1d") {
             info("reloadK1d action for", act.scode);
@@ -290,7 +310,7 @@ async function getActions() {
             console.info(response);
           }
         } catch (e) {
-          error("cancel action for", act.scode, "失败:", e);
+          error(act.action, act.scode, "fail:", e);
         }
 
         actionDone(act.id);
@@ -298,7 +318,7 @@ async function getActions() {
     }
 
   } catch (err) {
-    error("getActions出错:", err);
+    error("getActions出错:", err.toString());
   }
 }
 
@@ -310,10 +330,10 @@ async function actionDone(id) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("action done error:", response.status, "响应内容:", errorText);
+      error("action done error:", response.status, "响应内容:", errorText);
     }
   } catch (e) {
-    console.error("action done error:", e.toString());
+    error("action done error:", e.toString());
   }
 }
 
@@ -331,11 +351,11 @@ async function sleep(ms) {
 }
 
 function balance_update(data) {
-  console.log("Balance Update");
+  debug("Balance Update");
   for (let obj of data.B) {
     let { a: asset, f: available, l: onOrder } = obj;
     if (available == "0.00000000") continue;
-    console.log(asset + "\tavailable: " + available + " (" + onOrder + " on order)");
+    debug(asset + "\tavailable: " + available + " (" + onOrder + " on order)");
   }
 
   updatePositions();
@@ -345,14 +365,14 @@ function execution_update(data) {
   let { x: executionType, s: symbol, p: price, q: quantity, S: side, o: orderType, i: orderId, X: orderStatus } = data;
   if (executionType == "NEW") {
     if (orderStatus == "REJECTED") {
-      console.log("Order Failed! Reason: " + data.r);
+      debug("Order Failed! Reason: " + data.r);
     }
-    console.log(symbol + " " + side + " " + orderType + " ORDER #" + orderId + " (" + orderStatus + ")");
-    console.log("..price: " + price + ", quantity: " + quantity);
+    debug(symbol + " " + side + " " + orderType + " ORDER #" + orderId + " (" + orderStatus + ")");
+    debug("..price: " + price + ", quantity: " + quantity);
     return;
   }
   //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
-  console.log(symbol + "\t" + side + " " + executionType + " " + orderType + " ORDER #" + orderId);
+  debug(symbol + "\t" + side + " " + executionType + " " + orderType + " ORDER #" + orderId);
 }
 async function start() {
   await updatePositions();
@@ -393,6 +413,7 @@ async function start() {
     await sleep(100);
   }
 
+  return;
 
 }
 
@@ -400,6 +421,7 @@ start();
 
 
 async function updatePositions() {
+  info("updatePositions");
   let response = await binance.balance();
   let data = [];
   Object.keys(response).forEach(key => {
