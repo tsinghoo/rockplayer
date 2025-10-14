@@ -7,7 +7,7 @@ const Binance = require("node-binance-api");
 const binance = new Binance({
   APIKEY: 'zN75a6JuEP3jaffhC3LiCbjsHbMcgrW9MWQX4HqjUXKiVqXt9iRwMYPDfykCUEz1',
   APISECRET: 'JV3y11RJ6Jgy5S0VPN58neQTD7AlvrVVv12cgsoxmEYwkMXrE9fheibFmryFQ95E',
-  verbose: true,
+  verbose: false,
   //test: true, // if you want to use the sandbox/testnet
 });
 
@@ -188,7 +188,7 @@ function get(url) {
   }).then(data => {
 
   }).catch(error => {
-    console.error('上传失败:', JSON.stringify(body), error);
+    console.error('上传失败:', error);
   });
 
 }
@@ -351,7 +351,7 @@ function execution_update(data) {
 }
 async function start() {
   await updatePositions();
-
+  
   binance.websockets.userData(balance_update, execution_update);
 
   await updateSticks("BTCUSDT", "1d", 400);
@@ -401,6 +401,7 @@ async function updatePositions() {
     let { available, onOrder } = response[key];
     available = parseFloat(available);
     if (available <= 0 && parseFloat(onOrder) <= 0) return;
+    info(key,JSON.stringify(response[key]));
     data.push({
       "broker": g.broker,
       "account_id": "",

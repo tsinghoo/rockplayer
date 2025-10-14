@@ -606,11 +606,11 @@ zh-CN
     numi: "ALPHA_387",
     btg: "ALPHA_406",
     hana: "ALPHA_394",
+    koge: "ALPHA_22",
     jojo: "ALPHA_383"
   }
   config();
 }
-
 window.bnb={
   "lqhHeaders": {
     "baggage": "sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=9635b761822b4bc9a4dcf8a3eef82515,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false",
@@ -623,11 +623,11 @@ window.bnb={
   },
   "delta": 0.00001,
   "orderId": [
-    177948020,
-    177948021
+    129473792,
+    129473793
   ],
   "maxDelta": 0.0001,
-  "stock": "aop",
+  "stock": "numi",
   "stocks": {
     "aop": "ALPHA_382",
     "pingpong": "ALPHA_368",
@@ -635,11 +635,11 @@ window.bnb={
     "numi": "ALPHA_387",
     "btg": "ALPHA_406",
     "hana": "ALPHA_394",
-    "stbl": "ALPHA_376",
+    "koge": "ALPHA_22",
     "jojo": "ALPHA_383"
   },
-  "balance": 622.34164654,
-  "balanceStart": 622.34256915,
-  "lastBalance": 622.34164654,
-  "quantity": 12.15
+  "balance": 609.80661563,
+  "balanceStart": 613.35150974,
+  "lastBalance": 609.80661563,
+  "quantity": 5655.94
 }
