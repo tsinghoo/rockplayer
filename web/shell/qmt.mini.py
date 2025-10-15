@@ -1,4 +1,5 @@
 import os
+import shutil
 import random
 import threading
 import time
@@ -32,7 +33,7 @@ g.account = "8883949249"  # 国金
 g.broker = "国金"
 
 g.session_id = random.randint(1000, 10000)
-g.subscribeId=0
+g.subscribeId = 0
 g.tick = {}
 g.actions = {}
 g.reloadK1d = []
@@ -91,9 +92,21 @@ async def websocket_client():
 
                         await wsc.send(json.dumps(response))
                         info(f"发送消息: {response}")
-                        
+
                         g.stocklist = getStockList()
                         resubscribe()
+                    elif message["func"] == "forceUpdate1d":
+                        params = message["params"]
+                        scode = params["scode"]
+                        startTime = datetime.datetime.now().strftime("%Y%m%d%H")
+                        update1d([scode], startTime)
+
+                        response = {
+                            "id": message["id"]
+                        }
+
+                        await wsc.send(json.dumps(response))
+                        info(f"发送消息: {response}")
                     else:
                         error(f"未知消息类型")
                 except json.JSONDecodeError:
@@ -278,6 +291,9 @@ def loadConfig():
 
 
 def saveConfig():
+    # 备份g.configFile到g.configFile+".bak"
+    shutil.copy(g.configFile, g.configFile+".bak")
+
     with open(g.configFile, 'w') as f:
         json.dump(g.config, f)
 
@@ -485,6 +501,7 @@ def update1mTask():
         update1m(g.stocklist)
         # update1m(g.candidates)
 
+
 def updatePriceTask():
     while True:
         uploadStockPrice()
@@ -669,17 +686,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             else:
                 continue
         period = '1d'
-        params = ['open', 'close', 'high', 'low', 'volume', 'amount']
-        info('downloading', period, 'from', dataStartTime, "for", scode)
-        xtdata.download_history_data(
-            scode, period, dataStartTime, endTime)
-        # download_history_data2 批量版本 todo
-        # params = []
-        info('get', period, 'from', dataStartTime, 'to', endTime,
-             'for', scode, "(", index, "/", len(stocklist), ")")
-        df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                       start_time=dataStartTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
-        datas = df[scode]
+        datas = get1dData(stocklist, index, dataStartTime, endTime)
         # print("所有列名:", df.keys())
         # print("所有:", df.values())
         columns = ['Time'] + datas.columns.tolist()
@@ -711,13 +718,36 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                 except Exception as e:
                     error("上传失败:", str(e))
 
-            # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
-            # print(obj2JsonString(result_dict))
-            # json_result = json.dumps(result_dict, indent=4)
-            # print(json_result)
 
-            # print(obj2JsonString(df[scode]))
-            # print(datas.to_json(orient='index'))
+def get1dData(stocklist, index, startTime, endTime):
+    if (startTime is None):
+        startTime = datetime.datetime.now().strftime("%Y%m%d%H")
+
+    if (endTime is None):
+        endTime = ""
+
+    scode = stocklist[index]
+    period = '1d'
+    params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+    info('downloading', period, 'from', startTime, "for", scode)
+    xtdata.download_history_data(scode, period, startTime, endTime)
+    # download_history_data2 批量版本 todo
+    # params = []
+    info('get', period, 'from', startTime, 'to', endTime,
+         'for', scode, "(", index, "/", len(stocklist), ")")
+    df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
+                                   start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
+    datas = df[scode]
+
+    return datas
+
+    # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
+    # print(obj2JsonString(result_dict))
+    # json_result = json.dumps(result_dict, indent=4)
+    # print(json_result)
+
+    # print(obj2JsonString(df[scode]))
+    # print(datas.to_json(orient='index'))
 
 
 def updateLastStartTime1d():
@@ -1103,8 +1133,8 @@ def resubscribe():
     g.subscribeId = xtdata.subscribe_whole_quote(
         g.stocklist, callback=subscribe_whole_callback)
 
-    
     info("resubscribe end", g.subscribeId)
+
 
 if __name__ == '__main__':
     # Mini-QMT的userdata_mini路径
@@ -1150,7 +1180,6 @@ if __name__ == '__main__':
     # 启动本地客户端
     print("start xt_trader")
     xt_trader.start()
-
 
     print("connect xt_trader")
     # 建立交易连接，返回0表示连接成功
@@ -1217,13 +1246,13 @@ if __name__ == '__main__':
 
     t1 = Thread(target=update1dTask)
     t1.start()
-    
+
     t2 = Thread(target=update1mTask)
     t2.start()
-    
+
     t4 = Thread(target=getActionsTask)
     t4.start()
-    
+
     t5 = Thread(target=updatePriceTask)
     t5.start()
 
@@ -1237,9 +1266,7 @@ if __name__ == '__main__':
         loop.close()
         asyncio.set_event_loop(None)
 
-
     info("started websocket_client")
-
 
     # 阻塞主线程退出
     # xt_trader.run_forever()

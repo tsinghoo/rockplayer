@@ -278,27 +278,12 @@ async function sell(sellPrice, quantity, notTest) {
 
 }
 
-
-async function buyMinAndSell(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
-
-  doBuyAndSell(amount, max, min - window.bnb.delta, notTest);
-
-}
-
-async function buyMaxAndSell(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
-
-  doBuyAndSell(amount, max, max - window.bnb.delta, notTest);
-
-}
-
 async function buyMax(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
+  let { min, max } = getMinMaxPriceFromUi(1);
   doBuy(amount, max, notTest);
 }
 async function buyMaxSellMin(amount, notTest) {
-  let { min, max } = getMinMaxPriceFromUi();
+  let { min, max } = getMinMaxPriceFromUi(1);
   doBuyAndSell(amount, max + window.bnb.delta, min - window.bnb.delta, notTest);
 }
 
@@ -377,7 +362,7 @@ function info(info) {
   console.log(info);
 }
 
-function getMinMaxPriceFromUi() {
+function getMinMaxPriceFromUi(stopOnLatency) {
   let peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center > :first-child");
   let timeStr = peles[0].innerText;
   const today = new Date();
@@ -388,6 +373,8 @@ function getMinMaxPriceFromUi() {
   info(`延迟${latency / 1000}s`);
   if (latency > 2 * 1000) {
     infoRed(`时间延迟${latency / 1000}s超过2秒`);
+    if (stopOnLatency)
+    throw `时间延迟${latency / 1000}s超过2秒`;
   }
 
   peles = $$(".text-PrimaryText .ReactVirtualized__Grid__innerScrollContainer .items-center .cursor-pointer");
@@ -638,8 +625,8 @@ window.bnb={
     "koge": "ALPHA_22",
     "jojo": "ALPHA_383"
   },
-  "balance": 609.80661563,
-  "balanceStart": 613.35150974,
-  "lastBalance": 609.80661563,
+  "balance": 609.38957937,
+  "balanceStart": 609.38957937,
+  "lastBalance": 609.38957937,
   "quantity": 5655.94
 }

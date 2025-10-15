@@ -54,6 +54,7 @@ wss.on('connection', async (ws, request) => {
                     let res = wss.funcs[json.func](json.params, ws);
                 } else if (json.id) {
                     wss.callbacks[json.id](json.result, ws);
+                    delete wss.callbacks[json.id];
                 }
             }
         }
@@ -66,8 +67,17 @@ wss.on('connection', async (ws, request) => {
     ws.callFunc = async function (func, params) {
         return new Promise((resolve, reject) => {
             let id = uuid();
+            let timer = setTimeout(() => {
+                delete wss.callbacks[id];
+                resolve({ error: `ws.callFunc(${func}) timeout` });
+            }, 3000);
+
+            wss.callbacks[id] = function (res) {
+                clearTimeout(timer);
+                resolve(res);
+            }
+
             ws.send(JSON.stringify({ func: func, params: params, id }));
-            wss.callbacks[id] = function (res) { resolve(res) }
         });
     }
 
@@ -2047,6 +2057,8 @@ app.get('/stock/k1d', async (req, res) => {
 
     startDay = timeFormat(startDay, "yyyyMMdd");
     endDay = timeFormat(endDay, "yyyyMMdd");
+
+    await wss.callFunc("国金", "forceUpdate1d", { scode: scode });
 
     let sql = `select * from t1d where scode in ('${scode.split(",").join("','")}') and time >= ? and time <= ? order by scode,time`;
     let result = await db.allSync(sql, [startDay, endDay]);
