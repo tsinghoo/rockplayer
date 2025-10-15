@@ -82,6 +82,7 @@ wss.on('connection', async (ws, request) => {
     }
 
     let result = await ws.callFunc("register");
+    info(`${result.clientId} registerred`);
     ws.clientId = result.clientId;
 });
 

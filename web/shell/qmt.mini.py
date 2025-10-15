@@ -78,7 +78,7 @@ async def websocket_client():
                     if message["func"] == "register":
                         response = {
                             "id": message["id"],
-                            "clientId": g.account,
+                            "clientId": g.broker,
                         }
 
                         await wsc.send(json.dumps(response))
