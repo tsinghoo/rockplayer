@@ -484,7 +484,7 @@ async function reloadRule(r, req) {
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`);
     if (ra) {
-        info(JSON.stringify(ra), req);
+        info("ra:" + JSON.stringify(ra), req);
         if (ra.done == 0) {
             r.status = "ordered";
         } else if (ra.done == -1) {
@@ -504,8 +504,11 @@ async function reloadRule(r, req) {
                 }, 1000 * 3);
             }
         }
+
+        info(`r.status=${r.status}`, req);
         r.actions.push(ra);
     } else {
+        info(`r.status=${r.status}`, req);
         if (r.rule.order == "buyFirst") {
             r.status = "toBuy";
         } else if (r.rule.order == "sellFirst") {
@@ -513,8 +516,7 @@ async function reloadRule(r, req) {
         } else {
             r.status = "todo";
         }
-
-        info(`r.status=${r.status}`, req);
+        info(`set r.status=${r.status}`, req);
     }
 }
 
