@@ -1206,6 +1206,9 @@ window.feed_list = window.feed_list || (function () {
                 share.currentTarget = ele.currentTarget;
                 brokerPopup = await share.popupAction__("", buttons);
             })
+
+            autoPrice("buyAmount");
+            autoPrice("sellAmount");
         },
 
         createFloatingWindow: function (url, width) {
