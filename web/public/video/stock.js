@@ -1047,31 +1047,66 @@ window.feed_list = window.feed_list || (function () {
             c.find(".bounce").val(bounce);
             c.find(".dip").val(dip);
             autoDelta();
-            let priceAutoed = 0;
+            let priceAutoed = "";
             let autoPrice = function (changed) {
-                if (priceAutoed) {
-                    return;
-                }
                 let buy = c.find(".buy").val().trim();
                 let sell = c.find(".sell").val().trim();
-                if (changed == 1) {
+                let buyAmount = c.find(".buyAmount").val().trim();
+                let sellAmount = c.find(".sellAmount").val().trim();
+                let buyTotal = c.find(".buyTotal").val().trim();
+                let sellTotal = c.find(".sellTotal").val().trim();
+
+                if (changed == "buyTotal") {
+                    c.find(".buyAmount").val(parseFloat(buyTotal) / parseFloat(buy));
+                }
+                if (changed == "sellTotal") {
+                    c.find(".sellAmount").val(parseFloat(sellTotal) / parseFloat(sell));
+                }
+
+                if (changed == "buy") {
+                    let buyTotal = parseFloat(buy) * parseFloat(buyAmount);
+
+                    $(".buyTotal").val(buyTotal);
+
+                    if (priceAutoed == "sell") {
+                        priceAutoed = "";
+                        return;
+                    }
+                    priceAutoed = "buy";
                     if (parseFloat(sell) < parseFloat(buy) * (1 + 0.02))
                         c.find(".sell").val(parseFloat(buy) * (1 + 0.02));
                 }
-                if (changed == 2) {
+                if (changed == "sell") {
+                    let sellTotal = parseFloat(sell) * parseFloat(c.find(".sellAmount").val().trim());
+
+                    $(".sellTotal").val(sellTotal);
+                    if (priceAutoed == "buy") {
+                        priceAutoed = "";
+                        return;
+                    }
+                    priceAutoed = "sell";
                     if (parseFloat(buy) > parseFloat(sell) * (1 - 0.02))
                         c.find(".buy").val(parseFloat(sell) * (1 - 0.02));
                 }
+
                 autoDelta();
-                priceAutoed = 1;
             }
 
             $('.buy', c).change(function () {
-                autoPrice(1);
+                autoPrice("buy");
             });
             $('.sell', c).change(function () {
-                autoPrice(2);
+                autoPrice("sell");
             });
+
+            $('.buyTotal', c).change(function () {
+                autoPrice("buyTotal");
+            });
+
+            $('.sellTotal', c).change(function () {
+                autoPrice("sellTotal");
+            });
+
 
             c.find(".buyAmount").val(buyAmount);
             c.find(".sellAmount").val(sellAmount);
@@ -1660,7 +1695,7 @@ window.feed_list = window.feed_list || (function () {
             }
 
             if (self.formatScode(scode).indexOf("EC") >= 0) {
-                finalTime = lastTime +30;
+                finalTime = lastTime + 30;
             }
 
             for (let i = lastTime + 1; i <= finalTime; i++) {

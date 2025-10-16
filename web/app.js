@@ -32,70 +32,84 @@ app.use(fileUpload({
 }));
 
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-wss.on('connection', async (ws, request) => {
-    // 获取客户端 IP
-    const clientIP = request.socket.remoteAddress;
-    info(`新的 WebSocket 连接IP: ${clientIP}`);
+let wss = null;
 
-    // 接收消息
-    ws.on('message', (message, isBinary) => {
-        if (isBinary) {
-            //todo
-        } else {
-            let json = null;
-            try {
-                json = JSON.parse(message);
-            } catch (e) {
-                console.log(e);
-            }
-            if (json) {
-                if (json.func) {
-                    let res = wss.funcs[json.func](json.params, ws);
-                } else if (json.id) {
-                    wss.callbacks[json.id](json.result, ws);
-                    delete wss.callbacks[json.id];
+function initWss() {
+    wss = new WebSocket.Server({ server });
+    wss.on('connection', async (ws, request) => {
+        // 获取客户端 IP
+        const clientIP = request.socket.remoteAddress;
+        info(`新的 WebSocket 连接IP: ${clientIP}`);
+
+        // 接收消息
+        ws.on('message', (message, isBinary) => {
+            if (isBinary) {
+                //todo
+            } else {
+                let json = null;
+                try {
+                    json = JSON.parse(message);
+                } catch (e) {
+                    console.log(e);
+                }
+                if (json) {
+                    if (json.func) {
+                        let res = wss.funcs[json.func](json.params, ws);
+                    } else if (json.id) {
+                        wss.callbacks[json.id](json.result, ws);
+                        delete wss.callbacks[json.id];
+                    }
                 }
             }
+        });
+
+        ws.on('close', (e) => {
+            ws.onClosed && ws.onClosed();
+        });
+
+        ws.callFunc = async function (func, params) {
+            return new Promise((resolve, reject) => {
+                let id = uuid();
+                let timer = setTimeout(() => {
+                    delete wss.callbacks[id];
+                    resolve({ error: `ws.callFunc(${func}) timeout` });
+                }, 3000);
+
+                wss.callbacks[id] = function (res) {
+                    clearTimeout(timer);
+                    resolve(res);
+                }
+
+                ws.send(JSON.stringify({ func: func, params: params, id }));
+            });
         }
+
+        let result = await ws.callFunc("register");
+        info(`${result.clientId} registerred`);
+        ws.clientId = result.clientId;
     });
 
-    ws.on('close', (e) => {
-        ws.onClosed && ws.onClosed();
-    });
+    wss.callFunc = async function (clientId, func, params) {
+        return new Promise(async (resolve, reject) => {
+            let client = null;
 
-    ws.callFunc = async function (func, params) {
-        return new Promise((resolve, reject) => {
-            let id = uuid();
-            let timer = setTimeout(() => {
-                delete wss.callbacks[id];
-                resolve({ error: `ws.callFunc(${func}) timeout` });
-            }, 3000);
-
-            wss.callbacks[id] = function (res) {
-                clearTimeout(timer);
-                resolve(res);
+            for (let i = 0; i < wss.clients.values().length; ++i) {
+                let c = wss.clients.values()[i];
+                if (c.id === clientId) {
+                    client = c;
+                    break;
+                }
             }
 
-            ws.send(JSON.stringify({ func: func, params: params, id }));
+            if (client) {
+                let result = await ws.callFunc(func, params);
+                resolve(result);
+            } else {
+                resolve({ error: `clientId ${clientId} not found` });
+            }
         });
     }
 
-    let result = await ws.callFunc("register");
-    info(`${result.clientId} registerred`);
-    ws.clientId = result.clientId;
-});
-
-wss.callFunc = async function (clientId, func, params) {
-    return new Promise(async (resolve, reject) => {
-        let client = wss.clients.find((client) => client.id === clientId);
-        if (client) {
-            let result = await ws.callFunc(func, params);
-            resolve(result);
-        } else {
-            resolve({ error: `clientId ${clientId} not found` });
-        }
-    });
 }
 
 
@@ -499,6 +513,8 @@ async function reloadRule(r, req) {
         } else {
             r.status = "todo";
         }
+
+        info(`r.status=${r.status}`, req);
     }
 }
 
@@ -3166,6 +3182,8 @@ async function init() {
 
     server.listen(port, () => {
         info(`Server is running on port ${port}`);
+        initWss();
+
     });
 }
 
