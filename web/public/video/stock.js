@@ -1059,8 +1059,17 @@ window.feed_list = window.feed_list || (function () {
                 if (changed == "buyTotal") {
                     c.find(".buyAmount").val(parseFloat(buyTotal) / parseFloat(buy));
                 }
+
+                if (changed == "buyAmount") {
+                    c.find(".buyTotal").val(parseFloat(buy) * parseFloat(buyAmount));
+                }
+
+
                 if (changed == "sellTotal") {
                     c.find(".sellAmount").val(parseFloat(sellTotal) / parseFloat(sell));
+                }
+                if (changed == "sellAmount") {
+                    c.find(".sellTotal").val(parseFloat(sell) * parseFloat(sellAmount));
                 }
 
                 if (changed == "buy") {
@@ -1103,8 +1112,16 @@ window.feed_list = window.feed_list || (function () {
                 autoPrice("buyTotal");
             });
 
+            $('.buyAmount', c).change(function () {
+                autoPrice("buyAmount");
+            });
+
             $('.sellTotal', c).change(function () {
                 autoPrice("sellTotal");
+            });
+
+            $('.sellAmount', c).change(function () {
+                autoPrice("sellAmount");
             });
 
 
