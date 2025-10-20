@@ -1373,7 +1373,7 @@ window.feed_list = window.feed_list || (function () {
                             const price = data["价格"];
                             let tp = share.getTimePassed__(row.updateTime);
                             if (price == null) {
-                                cpl.text(`${share.toFixed(curPrice, 3)} (${tp})`);
+                                cpl.text(`${share.convertIfInteger(curPrice)} (${tp})`);
                             } else {
                                 let delta = ((curPrice - price) / price * 100).toFixed(1);
                                 cpl.text(`${share.toFixed(curPrice, 3)} (${delta}% ${tp})`);
