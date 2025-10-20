@@ -1376,7 +1376,7 @@ window.feed_list = window.feed_list || (function () {
                                 cpl.text(`${share.convertIfInteger(curPrice)} (${tp})`);
                             } else {
                                 let delta = ((curPrice - price) / price * 100).toFixed(1);
-                                cpl.text(`${share.toFixed(curPrice, 3)} (${delta}% ${tp})`);
+                                cpl.text(`${share.convertIfInteger(curPrice)} (${delta}% ${tp})`);
 
                                 if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
                                     if (data["配对"] != "") {
