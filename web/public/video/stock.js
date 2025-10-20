@@ -1367,7 +1367,7 @@ window.feed_list = window.feed_list || (function () {
                             let cpl = th.find(".curPrice");
                             let data = th.attr("data");
                             data = JSON.parse(data);
-                            const curPrice = share.toFixed(row.buy);
+                            const curPrice = share.convertIfInteger(row.buy);
                             data.curPrice = curPrice;
                             th.attr("data", JSON.stringify(data));
                             const price = data["价格"];
