@@ -41,7 +41,11 @@ function printObjFunc(obj) {
 async function test() {
   // let ticker = await binance.prices();
   // console.info(`Price of BNB: ${ticker.BTCUSDT}`);
+ let json={"e":"executionReport","E":1760952876443,"s":"DOGEUSDT","c":"x-B3AUXNYVde3392c077544aa19e949a","S":"BUY","o":"LIMIT","f":"GTC","q":"8.00000000","p":"0.20000000","P":"0.00000000","F":"0.00000000","g":-1,"C":"","x":"TRADE","X":"FILLED","r":"NONE","i":12538778774,"l":"8.00000000","z":"8.00000000","L":"0.20000000","n":"0.00000107","N":"BNB","T":1760952876441,"t":1329259740,"I":26704157948,"w":false,"m":true,"M":true,"O":1760951855354,"Z":"1.60000000","Y":"1.60000000","Q":"0.00000000","W":1760951855354,"V":"EXPIRE_MAKER"};
 
+ balance_update(json);
+
+  return;
   let response;
   // response = await binance.balance();
   // Object.keys(response).forEach(key => {
@@ -292,7 +296,12 @@ async function getActions() {
             "DOGEUSDT": 1
           };
           let ratio = dotNums[act.scode];
-          let price = parseFloat(act.price).toFixed(2);
+          let price = parseFloat(act.price);
+          if (price < 1) {
+            price = price.toFixed(5);
+          } else {
+            price = price.toFixed(2);
+          }
           let quantity = Math.floor(parseFloat(act["amount"]) * ratio) / ratio;
           if (act.action === "buy") {
             info("买入", act.sname, act.scode, act.price, act.amount);
@@ -386,19 +395,19 @@ function balance_update(data) {
       }
 
       let orderId = data.c;
-      let time = data.o;
+      let time = data.O;
       let url = g.baseUrl + "/stock/deal/update"
 
       // 25-10-20 15:51:10 Balance Update {"e":"executionReport","E":1760946670457,"s":"BNBUSDT","c":"x-B3AUXNYV827cefbc0c9748448b195b","S":"BUY","o":"LIMIT","f":"GTC","q":"0.00700000","p":"1125.22000000","P":"0.00000000","F":"0.00000000","g":-1,"C":"","x":"TRADE","X":"FILLED","r":"NONE","i":9639329831,"l":"0.00700000","z":"0.00700000","L":"1125.22000000","n":"0.00000525","N":"BNB","T":1760946670456,"t":1251701408,"I":20702626656,"w":false,"m":true,"M":true,"O":1760946669042,"Z":"7.87654000","Y":"7.87654000","Q":"0.00000000","W":1760946669042,"V":"EXPIRE_MAKER"}
       deal = {
-        "tprice": data.p,//data.L
+        "tprice": parseFloat(data.p),//data.L
         "scode": scode.split(".")[0],
         "sname": "",
         "market": "",
         "operationDirection": operation,
         "operationName": g.broker,
-        "tday": timeFormat(time, "%Y-%m-%d"),
-        "ttime": timeFormat(time, "%H:%M:%S"),
+        "tday": timeFormat(time, "yyyyMMdd"),
+        "ttime": timeFormat(time, "hh:mm:ss"),
         "tid": orderId,
         "tcash": data.Z,
         "tamount": data.q,
@@ -484,8 +493,6 @@ async function start() {
 
 }
 
-start();
-
 
 async function updatePositions() {
   info("updatePositions");
@@ -513,4 +520,12 @@ async function updatePositions() {
   let body = { "data": data, "passcode": "995560" };
   post(`${g.baseUrl}/stock/positions`, body);
 }
+
+
+
+start();
+
+//test();
+
+
 
