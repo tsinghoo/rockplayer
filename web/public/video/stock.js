@@ -2307,7 +2307,7 @@ window.feed_list = window.feed_list || (function () {
 
             let price = `
                                 <tr>
-                                    <td colspan="7" class="nowrap">
+                                    <td colspan="6" class="nowrap">
                                     ${prices}
                                     </td>
                                 </tr>
@@ -2328,7 +2328,6 @@ window.feed_list = window.feed_list || (function () {
                                             <td>${a.action}</td>
                                             <td>${share.convertIfInteger(a.price)}</td>
                                             <td>${a.amount}</td>
-                                            <td>${a.orderNo}</td>
                                             <td>${a.done}</td>
                                             <td>${statusText}</td>
                                         </tr>
