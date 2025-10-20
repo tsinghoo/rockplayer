@@ -2279,29 +2279,29 @@ window.feed_list = window.feed_list || (function () {
             rc.maxPrice = rc.maxPrice ? parseFloat(rc.maxPrice) : 0;
             rc.currentPrice = rc.currentPrice ? parseFloat(rc.currentPrice) : 0;
             let prices = `<div class="flexcolumn margin4">
-                    <div>${share.convertIfInteger(rc.minPrice, 3)}</div> 
-                    <div> ${share.convertIfInteger(rc.currentPrice, 3)}</div>
-                    <div> ${share.convertIfInteger(rc.maxPrice, 3)}</div>
+                    <div>${share.convertIfInteger(rc.minPrice)}</div> 
+                    <div> ${share.convertIfInteger(rc.currentPrice)}</div>
+                    <div> ${share.convertIfInteger(rc.maxPrice)}</div>
                 </div>
             `;
 
             if (r.status == "toBuy") {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${mapping[r.status]}<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${share.convertIfInteger(rc.buy, 3)} : <br>${rc.buyAmount}</div>
+                            <div class="margin4">${mapping[r.status]}<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${share.convertIfInteger(rc.buy)} : <br>${rc.buyAmount}</div>
                                 ${prices}
-                            <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell, 3)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.convertIfInteger(rc.dip, 3)}</span><br>${rc.sellAmount}</div>
+                            <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.convertIfInteger(rc.dip)}</span><br>${rc.sellAmount}</div>
                           </div>`;
             } else if (r.status == "toSell") {
                 prices = `<div class="flexrow center">
                             <div class="margin4">${rc.broker}<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${rc.buy} : <br>${rc.buyAmount}</div>
                             ${prices}
-                            <div class="margin4">${mapping[r.status]}<br>: ${share.convertIfInteger(rc.sell, 3)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip), 3)}</span><br> ${rc.sellAmount}</div>
+                            <div class="margin4">${mapping[r.status]}<br>: ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip))}</span><br> ${rc.sellAmount}</div>
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
-                            <div class="margin4">${rc.broker}<br><span class="font10">${share.convertIfInteger(rc.bounce, 3)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${share.convertIfInteger(rc.buy, 3)} : <br> ${rc.buyAmount} </div>
+                            <div class="margin4">${rc.broker}<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${share.convertIfInteger(rc.buy)} : <br> ${rc.buyAmount} </div>
                             ${prices}
-                            <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell, 3)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip), 3)}</span><br>${rc.sellAmount}</div>
+                            <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip))}</span><br>${rc.sellAmount}</div>
                           </div>`;
             }
 
@@ -2326,7 +2326,7 @@ window.feed_list = window.feed_list || (function () {
                                         <tr>
                                             <td>${share.timeFormat__(a.createTime, "yyyy-MM-dd hh:mm:ss")}</td>
                                             <td>${a.action}</td>
-                                            <td>${share.convertIfInteger(a.price, 3)}</td>
+                                            <td>${share.convertIfInteger(a.price)}</td>
                                             <td>${a.amount}</td>
                                             <td>${a.orderNo}</td>
                                             <td>${a.done}</td>

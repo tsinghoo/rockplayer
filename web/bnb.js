@@ -24,6 +24,7 @@ g.baseUrl = "http://localhost:3001";
 g.baseUrl = "http://test1.91taogu.com";
 g.actions = [];
 g.getActionTimes = 0;
+g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'DOGEUSDT'];
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -174,8 +175,6 @@ function post(url, body) {
       throw new Error('网络响应不正常');
     }
     return response.text();
-  }).then(data => {
-
   }).catch(e => {
     error('上传失败:', JSON.stringify(body), e.toString());
   });
@@ -286,19 +285,27 @@ async function getActions() {
       } else {
 
         try {
+          let dotNums = {
+            "BTCUSDT": 100000,
+            "ETHUSDT": 10000,
+            "BNBUSDT": 1000,
+            "DOGEUSDT": 1
+          };
+          let ratio = dotNums[act.scode];
+          let price = parseFloat(act.price).toFixed(2);
+          let quantity = Math.floor(parseFloat(act["amount"]) * ratio) / ratio;
           if (act.action === "buy") {
             info("买入", act.sname, act.scode, act.price, act.amount);
-            let price = parseFloat(act.price);
-            info("price:", price);
-            let response = await binance.buy(act.scode, parseFloat(act["amount"]), price);
+            info("买入", price, quantity);
+
+            let response = await binance.buy(act.scode, quantity, price);
             debug(response);
             info("已买入", act.sname, act.scode, act.price, act.amount);
 
           } else if (act.action === "sell") {
             info("卖出", act.sname, act.scode, act.price, act.amount);
-            let price = "" + parseFloat(act.price).toFixed(2);
-            info("price:", price);
-            let response = await binance.sell(act.scode, act["amount"], price);
+            info("卖出", price, quantity);
+            let response = await binance.sell(act.scode, quantity, price);
             debug(response);
             info("已卖出", act.sname, act.scode, act.price, act.amount);
           } else if (act.action === "reloadK1d") {
@@ -307,7 +314,7 @@ async function getActions() {
             info("cancel action for", act.scode);
 
             response = await binance.cancelAll(act.scode);
-            console.info(response);
+            debug("cancelAll response:" + response);
           }
         } catch (e) {
           error(act.action, act.scode, "fail:", e);
@@ -351,14 +358,71 @@ async function sleep(ms) {
 }
 
 function balance_update(data) {
-  debug("Balance Update");
-  for (let obj of data.B) {
-    let { a: asset, f: available, l: onOrder } = obj;
-    if (available == "0.00000000") continue;
-    debug(asset + "\tavailable: " + available + " (" + onOrder + " on order)");
-  }
+  info("Balance Update", JSON.stringify(data));
+  if (data.e = "executionReport") {
+    if (data.x == "NEW") {
+      // 25-10-20 15:51:08 Balance Update {"e":"executionReport","E":1760946669043,"s":"BNBUSDT","c":"x-B3AUXNYV827cefbc0c9748448b195b","S":"BUY","o":"LIMIT","f":"GTC","q":"0.00700000","p":"1125.22000000","P":"0.00000000","F":"0.00000000","g":-1,"C":"","x":"NEW","X":"NEW","r":"NONE","i":9639329831,"l":"0.00000000","z":"0.00000000","L":"0.00000000","n":"0","N":null,"T":1760946669042,"t":-1,"I":20702625198,"w":true,"m":false,"M":false,"O":1760946669042,"Z":"0.00000000","Y":"0.00000000","Q":"0.00000000","W":1760946669042,"V":"EXPIRE_MAKER"}
 
-  updatePositions();
+      let scode = data.s;
+      let operation = data.S;
+      let orderId = data.c;
+
+      let url = g.baseUrl + "/stock/rule/action/ordered"
+      let body = {
+        "broker": g.broker,
+        "scode": scode.split(".")[0],
+        "status": 50,
+        "orderNo": orderId
+      }
+
+      post(url, body);
+    } else if (data.x == "TRADE") {
+      let scode = data.s;
+      let operation = data.S;
+      if (operation == "BUY") {
+        operation = "买入";
+      } else {
+        operation = "卖出";
+      }
+
+      let orderId = data.c;
+      let time = data.o;
+      let url = g.baseUrl + "/stock/deal/update"
+
+      // 25-10-20 15:51:10 Balance Update {"e":"executionReport","E":1760946670457,"s":"BNBUSDT","c":"x-B3AUXNYV827cefbc0c9748448b195b","S":"BUY","o":"LIMIT","f":"GTC","q":"0.00700000","p":"1125.22000000","P":"0.00000000","F":"0.00000000","g":-1,"C":"","x":"TRADE","X":"FILLED","r":"NONE","i":9639329831,"l":"0.00700000","z":"0.00700000","L":"1125.22000000","n":"0.00000525","N":"BNB","T":1760946670456,"t":1251701408,"I":20702626656,"w":false,"m":true,"M":true,"O":1760946669042,"Z":"7.87654000","Y":"7.87654000","Q":"0.00000000","W":1760946669042,"V":"EXPIRE_MAKER"}
+      deal = {
+        "tprice": data.p,//data.L
+        "scode": scode.split(".")[0],
+        "sname": "",
+        "market": "",
+        "operationDirection": operation,
+        "operationName": g.broker,
+        "tday": timeFormat(time, "%Y-%m-%d"),
+        "ttime": timeFormat(time, "%H:%M:%S"),
+        "tid": orderId,
+        "tcash": data.Z,
+        "tamount": data.q,
+        "tpair": ""
+      }
+
+      let body = deal;
+      post(url, body);
+    }
+
+  } else if (data.e == "outboundAccountPosition") {
+
+    // 25-10-20 15:51:08 Balance Update {"e":"outboundAccountPosition","E":1760946669043,"u":1760946669042,"B":[{"a":"BNB","f":"0.00000000","l":"0.00000000"},{"a":"USDT","f":"1.82939400","l":"7.87654000"}]}
+
+
+    for (let obj of data.B) {
+      let { a: asset, f: available, l: onOrder } = obj;
+      if (available == "0.00000000") continue;
+      info(asset + "\tavailable: " + available + " (" + onOrder + " on order)");
+    }
+
+    updatePositions();
+
+  }
 }
 
 function execution_update(data) {
@@ -379,18 +443,21 @@ async function start() {
 
   binance.websockets.userData(balance_update, execution_update);
 
-  await updateSticks("BTCUSDT", "1d", 400);
-  await updateSticks("ETHUSDT", "1d", 400);
-  await updateSticks("BTCUSDT", "1m", 400);
-  await updateSticks("ETHUSDT", "1m", 400);
+  for (let scode of g.stocklist) {
+    await updateSticks(scode, "1d", 400);
+    await updateSticks(scode, "1m", 400);
+  }
 
-  binance.websockets.candlesticks(['BTCUSDT', 'ETHUSDT'], "1m", (candlesticks) => {
+  binance.websockets.candlesticks(g.stocklist, "1m", (candlesticks) => {
     let { e: type, E: time, s: symbol, k: ticks } = candlesticks;
     let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
 
     let data = [[timeFormat(time, "yyyyMMddhhmmss"), open, close, high, low, volume, quoteVolume]];
 
-    get(`${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}`);
+    get(`${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}`)
+      .catch((err) => {
+        error("updatePrice error:", err.toString());
+      });
 
     if (isFinal) {
       let body = {
@@ -401,10 +468,10 @@ async function start() {
 
       post(`${g.baseUrl}/stock/data/upload`, body);
 
-      updateSticks("BTCUSDT", "1d", 1);
-      updateSticks("ETHUSDT", "1d", 1);
-      updateSticks("BTCUSDT", "1m", 10);
-      updateSticks("ETHUSDT", "1m", 10);
+      for (let scode of g.stocklist) {
+        updateSticks(scode, "1d", 1);
+        updateSticks(scode, "1m", 10);
+      }
     }
   });
 

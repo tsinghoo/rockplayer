@@ -705,12 +705,15 @@ window.mhgl_share =
       },
 
       convertIfInteger: function (number, fixed) {
-        if (isNaN(number) || isNaN(parseFloat(number))){
+        if (isNaN(number) || isNaN(parseFloat(number))) {
           return number;
         }
 
         if (fixed == null) {
           fixed = 3;
+          if (number < 1) {
+            fixed = 5;
+          }
         }
         number = parseFloat(parseFloat(number).toFixed(fixed));
         if (Number.isInteger(number)) {
