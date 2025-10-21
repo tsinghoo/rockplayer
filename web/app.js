@@ -1758,12 +1758,17 @@ app.get('/stock/trades', async (req, res) => {
 
     let js = req.query.js;
     let scode = req.query.scode;
+    let all = req.query.all;
     var resp = null;
     if (scode == null) {
         resp = await db.allSync(`select * from tstock`);
         resp = JSON.stringify({ data: resp.rows });
     } else {
-        resp = await db.allSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc`, [scode]);
+        let sql = `select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc`;
+        if (all == 1) {
+            sql = `select * from tstock where scode=? order by tday desc, ttime desc`;
+        }
+        resp = await db.allSync(sql, [scode]);
         resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {

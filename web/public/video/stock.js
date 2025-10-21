@@ -1916,8 +1916,12 @@ window.feed_list = window.feed_list || (function () {
                 return "卖出";
             }
         },
-        showTradeList: async function ($c, scode) {
-            let res = await share.getSync__(`/stock/trades?scode=${scode}`);
+        showTradeList: async function ($c, scode, all) {
+            if (all == null) {
+                all = 0;
+            }
+
+            let res = await share.getSync__(`/stock/trades?scode=${scode}&all=${all}`);
             let trades = res.data;
             let tr = trades.map(row => {
                 let html = `
@@ -1936,7 +1940,7 @@ window.feed_list = window.feed_list || (function () {
             let html = `
                         <table class="table">
                             <thead>
-                                <tr>
+                                <tr class="tradeListHeader clickable">
                                     <th class="nowrap">日期</th>
                                     <th class="nowrap">时间</th>
                                     <th class="nowrap">买卖</th>
@@ -1951,6 +1955,14 @@ window.feed_list = window.feed_list || (function () {
                         </table>
                                `;
             $c.html(html);
+
+            $c.find(".tradeListHeader").on("click", function () {
+                if (all == 0) {
+                    self.showTradeList($c, scode, 1);
+                } else {
+                    self.showTradeList($c, scode, 0);
+                }
+            });
         },
         showRule: async function (r, c, scode, statusContainer) {
             if (r == null) {
