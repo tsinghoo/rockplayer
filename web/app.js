@@ -2101,6 +2101,7 @@ app.get('/stock/k1d', async (req, res) => {
 
 app.get('/stock/rule/cancel', async (req, res) => {
     info("get /stock/rule/cancel", req)
+    info(JSON.stringify(req.query), req)
     let js = req.query.js;
     let scode = req.query.scode;
     let broker = req.query.broker;
@@ -2115,8 +2116,20 @@ app.get('/stock/rule/cancel', async (req, res) => {
 
     let cancelled = ruleId;
 
-    if (all) {
+    if (all == 1) {
         sql = `update tTradeRule set closed = 1`;
+        cancelled = "1";
+        params = [];
+    } else if (all == "A股") {
+        sql = `update tTradeRule set closed = 1 where scode in (select scode from tstockbasic where market in ('BJ','SH',"SZ"))`;
+        cancelled = "";
+        params = [];
+    } else if (all == "H股") {
+        sql = `update tTradeRule set closed = 1 where scode in (select scode from tstockbasic where market in ('HK'))`;
+        cancelled = "";
+        params = [];
+    } else if (all == "BNB") {
+        sql = `update tTradeRule set closed = 1 where scode in (select scode from tstockbasic where market in ('EC'))`;
         cancelled = "";
         params = [];
     }
@@ -2124,8 +2137,17 @@ app.get('/stock/rule/cancel', async (req, res) => {
     let result = await db.runSync(sql, params);
 
     if (result.error == null) {
-        if (all) {
+        if (all == 1) {
             sql = `update tRuleAction set done = -1 `;
+            result = await db.runSync(sql, []);
+        } else if (all == "A股") {
+            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('BJ','SH',"SZ"))`;
+            result = await db.runSync(sql, []);
+        } else if (all == "H股") {
+            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('HK"))`;
+            result = await db.runSync(sql, []);
+        } else if (all == "BNB") {
+            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('EC"))`;
             result = await db.runSync(sql, []);
         } else {
             sql = `update tRuleAction set done = -1 where ruleId=?`;
@@ -2134,11 +2156,13 @@ app.get('/stock/rule/cancel', async (req, res) => {
     }
 
     if (result.error == null) {
-        if (all) {
+        if (all == null) {
+            if (rules[scode] && rules[scode][broker]) {
+                reloadRule(rules[scode][broker], req);
+            }
+        } else {
             rules = {}
             reloadRules();
-        } else {
-            reloadRule(rules[scode][broker], req);
         }
     }
 

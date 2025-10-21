@@ -318,6 +318,42 @@ window.feed_list = window.feed_list || (function () {
                     text: "取消所有",
                     onTap: function () {
                         share.closePopup__();
+                        self.showCancelAllButton();
+                    }
+                }
+            ];
+
+            let popup = share.popupAction__(guide, buttons);
+        },
+        showCancelAllButton: async function () {
+            let guide = ``;
+
+            let buttons = [
+                {
+                    text: "取消所有A股",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toCancelRule("A股");
+                    }
+                },
+                {
+                    text: "取消所有H股",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toCancelRule("H股");
+                    }
+                },
+                {
+                    text: "取消所有币安",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toCancelRule("BNB");
+                    }
+                },
+                {
+                    text: "取消所有",
+                    onTap: function () {
+                        share.closePopup__();
                         self.toCancelRule(1);
                     }
                 }
