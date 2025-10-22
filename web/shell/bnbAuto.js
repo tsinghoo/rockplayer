@@ -673,11 +673,12 @@ window.bnb={
     "hana": "ALPHA_394",
     "koge": "ALPHA_22",
     "jojo": "ALPHA_383",
-    "merl": "ALPHA_195"
+    "merl": "ALPHA_195",
+    "anome": "ALPHA_433"
   },
-  "balance": 577.8023962,
-  "balanceStart": 577.8023962,
-  "lastBalance": 577.8023962,
+  "balance": 503.07267524,
+  "balanceStart": 503.07267524,
+  "lastBalance": 503.07267524,
   "running": true,
   "quantity": 1172.2
 }
