@@ -7,8 +7,7 @@ import time
 import datetime
 import json
 import inspect
-import pandas as pd
-import numpy as np
+
 import requests
 import sys
 import traceback
@@ -19,6 +18,11 @@ import okx.Trade as Trade
 
 import okx.MarketData as MarketData
 import okx.Account as Account
+from prompt_toolkit import PromptSession
+from prompt_toolkit.history import FileHistory
+
+
+HISTORY_FILE = os.path.expanduser('~/.pt_shell_history')
 
 
 class G():
@@ -32,14 +36,8 @@ g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
 g.broker = "国金"
 
-#main
-g.apikey = "1315b7af-d17e-4582-8de7-2919f4de5f20"
-g.secretkey = "EB46A9E766BFE107F37B882443FCB780"
-g.passphrase = "OkxPassw0rd!"
-
-#test
-g.apikey = "e9b7be84-d6e4-4176-86ef-6b695a2844ca"
-g.secretkey = "F0F9ED582D44E2F7ED116D96D2F99F86"
+g.orderId = "null"
+g.stock = "null"
 
 g.session_id = random.randint(1000, 10000)
 g.subscribeId = 0
@@ -52,6 +50,9 @@ g.stocklist = ['000300.SH', '000004.SZ']
 g.baseUrl = "http://192.168.66.205:3001"
 g.baseUrl = "http://test1.91taogu.com"
 
+g.usdtStart = 119.8176451524
+g.usdtLast = g.usdtStart
+g.usdt = g.usdtStart
 g.log = {
     "level": 4,
     "none": 0,
@@ -70,35 +71,62 @@ threadLocal = threading.local()
 
 def geMarketData():
     flag = "1"  # live trading: 0, demo trading: 1
-    marketDataAPI = MarketData.MarketAPI(flag=flag)
-    result = marketDataAPI.get_tickers(instType="SPOT")
-    print(result)
+    mapi = MarketData.MarketAPI(flag=flag)
+    result = mapi.get_tickers(instType="SPOT")
+    debug(result)
+    return result
+
+
+def getPrice(stock):
+    info(f"getPrice {stock}")
+    if not stock.endswith("-USDT"):
+        stock += "-USDT"
+    result = geMarketData()
+    if result["code"] == "0":
+        for item in result["data"]:
+            if item["instId"] == stock:
+                price = float(item["bidPx"])
+                return price
+    else:
+        error(f"getPrice Failed，error_code = ",
+              result["data"][0]["sCode"], ", Error_message = ", result["data"][0]["sMsg"])
+        return None
 
 
 def getPair():
-    # API initialization
 
-    flag = "1"  # Production trading: 0, Demo trading: 1
-
-    accountAPI = Account.AccountAPI(apikey, secretkey, passphrase, False, flag)
+    accountAPI = Account.AccountAPI(
+        g.apikey, g.secretkey, g.passphrase, False, g.flag)
 
     result = accountAPI.get_instruments(instType="SPOT")
     print(result)
 
 
 def getBalance():
-    flag = "1"  # live trading: 0, demo trading: 1
+    info("getBalance")
+
     accountAPI = Account.AccountAPI(
-        g.apikey, g.secretkey, g.passphrase, False, flag)
+        g.apikey, g.secretkey, g.passphrase, False, g.flag)
 
     result = accountAPI.get_account_balance()
-    print(result)
+    debug(result)
+
+    balances = {}
+    for i in result["data"]:
+        for field in i["details"]:
+            balances[field["ccy"]] = field["availBal"]
+
+    info(balances)
+    g.balances = balances
+    g.usdtLast = g.usdt
+    g.usdt = float(balances["USDT"])
+    info(f'总增量:{g.usdt-g.usdtStart}\n增量:{g.usdt-g.usdtLast}')
 
 
 def getAccountConfig():
     flag = "1"  # live trading: 0, demo trading: 1
     accountAPI = Account.AccountAPI(
-        g.apikey, g.secretkey, g.passphrase, False, flag)
+        g.apikey, g.secretkey, g.passphrase, False, g.flag)
 
     result = accountAPI.get_account_config()
     print(result)
@@ -114,13 +142,35 @@ def getAccountConfig():
         print("Portfolio margin mode")
 
 
+def prod():
+    info("prod")
+    g.apikey = "1315b7af-d17e-4582-8de7-2919f4de5f20"
+    g.secretkey = "EB46A9E766BFE107F37B882443FCB780"
+    g.flag = "0"
+    g.passphrase = "OkxPassw0rd!"
+    g.tradeApi = Trade.TradeAPI(
+        g.apikey, g.secretkey, g.passphrase, False, g.flag)
+
+
+def test():
+    info("test")
+    g.apikey = "e9b7be84-d6e4-4176-86ef-6b695a2844ca"
+    g.secretkey = "F0F9ED582D44E2F7ED116D96D2F99F86"
+    g.flag = "1"
+    g.passphrase = "OkxPassw0rd!"
+
+    g.tradeApi = Trade.TradeAPI(
+        g.apikey, g.secretkey, g.passphrase, False, g.flag)
+
+
 def buy(stock, price, total):
     # limit order
+    g.stock = stock
     amount = total/price
     amount = amount.__format__(".8f")
     info(f"buy {stock} {amount} @ {price}")
-    result = tradeAPI.place_order(
-        instId=stock,  # "BTC-USDT",
+    result = g.tradeApi.place_order(
+        instId=stock+"-USDT",  # "BTC-USDT",
         tdMode="cash",
         side="buy",
         ordType="limit",
@@ -133,15 +183,78 @@ def buy(stock, price, total):
     if result["code"] == "0":
         g.orderId = result["data"][0]["ordId"]
         info(f"buy OK，order_id = {g.orderId}")
+        getOrderList()
     else:
         print("buy Failed，error_code = ",
               result["data"][0]["sCode"], ", Error_message = ", result["data"][0]["sMsg"])
 
 
-def cancelOrder():
-    result = tradeAPI.cancel_order(
+def buyMarket(stock, amount):
+    # limit order
+    g.stock = stock
+    info(f"buy {stock} ${amount} @ market price")
+    result = g.tradeApi.place_order(
+        instId=stock+"-USDT",  # "BTC-USDT",
+        tdMode="cash",
+        side="buy",
+        ordType="market",
+        sz=amount,  # "0.01"
+    )
+
+    print(result)
+
+    if result["code"] == "0":
+        g.orderId = result["data"][0]["ordId"]
+        info(f"buy OK，order_id = {g.orderId}")
+        getOrderList()
+    else:
+        print("buy Failed，error_code = ",
+              result["data"][0]["sCode"], ", Error_message = ", result["data"][0]["sMsg"])
+
+
+def sellAllMarket(stock):
+    info(f"sellAllMarket {stock}")
+    getBalance()
+    g.stock = stock
+    amount = g.balances[stock]
+    info(f"sell {stock} {amount} @ market price")
+    result = g.tradeApi.place_order(
+        instId=stock+"-USDT",  # "BTC-USDT",
+        tdMode="cash",
+        side="sell",
+        ordType="market",
+        sz=amount,  # "0.01"
+    )
+
+    print(result)
+
+    if result["code"] == "0":
+        g.orderId = result["data"][0]["ordId"]
+        info(f"buy OK，order_id = {g.orderId}")
+        getOrderList()
+    else:
+        print("buy Failed，error_code = ",
+              result["data"][0]["sCode"], ", Error_message = ", result["data"][0]["sMsg"])
+
+
+def cancelAll():
+    info("cancelAll")
+    getOrderList()
+
+    # 对g.orders里的每一个订单，调用cancel_order
+    for order in g.orders:
+        cancelOrder(order["orderId"])
+
+
+def cancelOrder(orderId, stock):
+    if stock is None:
+        stock = g.stock
+    # 如果stock不是以"-USDT"结尾，添加"-USDT"
+    if not stock.endswith("-USDT"):
+        stock += "-USDT"
+    result = g.tradeApi.cancel_order(
         instId=stock,  # "BTC-USDT",
-        ordId=g.orderId,
+        ordId=orderId,
     )
 
     print(result)
@@ -153,12 +266,21 @@ def cancelOrder():
               result["data"][0]["sCode"], ", Error_message = ", result["data"][0]["sMsg"])
 
 
-def getOrderList():
-    result = tradeAPI.get_order_list(
-        instId=stock,  # "BTC-USDT",
+def getOrderList(stock=None):
+    info("getOrderList")
+    result = g.tradeApi.get_order_list(
+        # instId=g.stock,  # "BTC-USDT",
     )
 
     print(result)
+
+    orders = []
+    for i in result["data"]:
+        orders.append({"stock": i["instId"], "orderId": i["ordId"], "side": i["side"],
+                      "price": i["px"], "amount": i["sz"], "state": i["state"], "time": i["cTime"]})
+
+    info(orders)
+    g.orders = orders
 
 
 async def websocket_client():
@@ -223,140 +345,6 @@ async def websocket_client():
         error(f"websocket connect error: {e}")
 
 
-class MyXtQuantTraderCallback(XtQuantTraderCallback):
-    def on_disconnected(self):
-        """
-        连接状态回调
-        :return:
-        """
-        info("connection lost callback")
-
-    def on_account_status(self, status):
-        """
-        账号状态信息推送
-        :param response: XtAccountStatus 对象
-        :return:
-        """
-        info("on_account_status callback")
-        info(status.account_id, status.account_type, status.status)
-
-    def on_stock_asset(self, asset):
-        """
-        资金信息推送  注意，该回调函数目前不生效
-        :param asset: XtAsset对象
-        :return:
-        """
-        resetThreadId("osa")
-        info("on asset callback")
-        info(object_to_json(asset))
-        info(asset.account_id, asset.cash, asset.total_asset)
-
-    def on_stock_order(self, order):
-        """
-        委托信息推送
-        :param order: XtOrder对象
-        :return:
-        """
-        resetThreadId("oto")
-        info("on order callback:")
-        info(object_to_json(order))
-        updateActionOrdered(order.stock_code, order.order_type,
-                            order.order_status, order.traded_price, order.order_sysid)
-        # print(order.stock_code, order.order_status, order.order_sysid)
-
-    def on_stock_trade(self, trade):
-        """
-        成交信息推送
-        :param trade: XtTrade对象
-        :return: 17571235 01009714 0102000023061100
-        """
-        # resetThreadId("st")
-        resetThreadId("ost")
-        info("on_stock_trade callback:")
-        try:
-            js = obj2Json(trade, 1)
-            info(object_to_json(trade))
-            # js["traded_time"]是时间戳，将它转换成时间字符串
-            tradeTime = datetime.datetime.fromtimestamp(js["traded_time"])
-
-            deal = {
-                "tprice": js["traded_price"],
-                "scode": js["m_strStockCode"],
-                "sname": "",
-                "market": "",
-                "operationDirection": "买入" if js["order_type"] == 23 else "卖出",
-                "operationName": g.broker,
-                "tday": tradeTime.strftime("%Y-%m-%d"),
-                "ttime": tradeTime.strftime("%H:%M:%S"),
-                # "tid": js["m_strTradeID"],
-                "tid": js["m_strTradedID"],
-                "tcash": js["traded_amount"],
-                "tamount": js["traded_volume"],
-                "tpair": ""
-            }
-
-            if deal["operationDirection"].find("卖") != -1:
-                deal["tamount"] = -deal["tamount"]
-
-            info(json.dumps(deal, indent=2))
-
-            updateDeal(deal)
-
-            updateActionOrdered(deal["scode"], js["order_type"],
-                                56, deal["tprice"], js["order_sysid"])
-
-            startUpdatePositions()
-        except Exception as e:
-            error("on_stock_trade 出错:", traceback.format_exc())
-
-    # print(trade.account_id, trade.stock_code, trade.order_id)
-
-    def on_order_error(self, order_error):
-        """
-        下单失败信息推送
-        :param order_error:XtOrderError 对象
-        :return:
-        """
-        info("on order_error callback")
-        info(order_error.order_id, order_error.error_id, order_error.error_msg)
-
-    def on_stock_position(self, position):
-        """
-        持仓信息推送  注意，该回调函数目前不生效
-        :param position: XtPosition对象
-        :return:
-        """
-        info("on position callback")
-        info(position.stock_code, position.volume)
-
-    def on_cancel_error(self, cancel_error):
-        """
-        撤单失败信息推送
-        :param cancel_error: XtCancelError 对象
-        :return:
-        """
-        print("on cancel_error callback")
-        print(cancel_error.order_id, cancel_error.error_id, cancel_error.error_msg)
-
-    def on_order_stock_async_response(self, response):
-        """
-        异步下单回报推送
-        :param response: XtOrderResponse 对象
-        :return:
-        """
-        info("on_order_stock_async_response callback")
-        info(response.account_id, response.order_id, response.seq)
-
-    def on_smt_appointment_async_response(self, response):
-        """
-        :param response: XtAppointmentResponse 对象
-        :return:
-        """
-        info("on_smt_appointment_async_response callback")
-        info(response.account_id, response.order_sysid,
-             response.error_id, response.error_msg, response.seq)
-
-
 def updateDeal(deal):
     try:
         info("updateDeal:", deal)
@@ -392,6 +380,7 @@ def saveConfig():
 def init():
     print(sys.version)
     print(sys.executable)
+    test()
 
 
 def getStockList():
@@ -1062,17 +1051,19 @@ def error(*args, **kwargs):
 
 
 def log(*args, **kwargs):
-    """增强版log函数，完全模拟print的参数行为"""
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    # 将时间作为第一个元素插入到输出中
-    if (hasattr(threadLocal, "id")):
-        time_header = f"[{current_time}][{threadLocal.id}]"
-    else:
-        time_header = f"[{current_time}]"
 
-    all_args = (time_header,) + args
+    print(*args, **kwargs)
 
-    g.toPrint.append([all_args, kwargs])
+    # current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # # 将时间作为第一个元素插入到输出中
+    # if (hasattr(threadLocal, "id")):
+    #     time_header = f"[{current_time}][{threadLocal.id}]"
+    # else:
+    #     time_header = f"[{current_time}]"
+
+    # all_args = (time_header,) + args
+
+    # g.toPrint.append([all_args, kwargs])
 
 
 def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
@@ -1110,10 +1101,26 @@ def printTask():
             print(*item[0], **item[1])
 
         time.sleep(0.1)
+
+
 def help():
-    print("gb: getBalance()")
-    print("2.http://192.168.66.205:3001")
-    print("q.退出")
+    print(f"getBalance()")
+    print(f"buy('ETH',1234,300")
+    print(f"buyMarket('DOOD', 100)")
+    print(f"sellAllMarket('DOOD')")
+    print(f"cancelOrder('DOOD', '1234567890')")
+    print(f"getOrderList()")
+    print(f"test()")
+    print(f"prod()")
+    print(f"quit()")
+
+
+def main():
+    # 创建带有历史记录的会话
+    session = PromptSession(history=FileHistory(HISTORY_FILE))
+
+    help()
+
 
 if __name__ == '__main__':
 
@@ -1130,22 +1137,11 @@ if __name__ == '__main__':
     else:
         g.logPathPrefix = r"d:"
 
-    print("configPathPrefix:", configPathPrefix)
-    print("configFile:", g.configFile)
     print("logPathPrefix:", logPathPrefix)
 
     init()
 
-
-    while True:
-        help()
-        ui = input("请选择:")
-        if ui == "gb":
-            getBalance()            
-        if ui == "q":
-            sys.exit(1)            
-        if ui == "h":
-            help()
+    main()
 
     # 阻塞主线程退出
     # xt_trader.run_forever()

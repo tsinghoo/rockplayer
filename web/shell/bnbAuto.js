@@ -371,7 +371,7 @@ async function cancelAll() {
 
 function sellAll() {
   let { min, max } = getMinMaxPriceFromUi();
-  sell(min - window.bnb.delta, 0, 1);
+  sell(min - window.bnb.sellDelta, 0, 1);
 }
 
 function infoRed(info) {
@@ -421,8 +421,8 @@ function getMinMaxPriceFromUi(stopOnLatency) {
   console.log("min:", min);
   console.log("max:", max);
 
-  if (max - min > window.bnb.delta / 10) {
-    infoRed(`价差超过${window.bnb.delta / 10}`);
+  if (max - min > window.bnb.sellDelta / 10) {
+    infoRed(`价差超过${window.bnb.sellDelta / 10}`);
     if (stopOnLatency && 1==0)
       return null;
   }
@@ -584,31 +584,23 @@ function init() {
 
   let headers =
     `baggage
-sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=fba461cc166c44308fec656b375dfde7,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false
-bnc-level
-0
-bnc-location
-CN
-bnc-time-zone
-Asia/Shanghai
+sentry-environment=prod,sentry-release=20251022-1b018171-3173,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=361dae9f62eb45689a47323cdd1262a7,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false
 bnc-uuid
 67e6afe2-047e-4d30-bdc1-19151112790b
 clienttype
 web
 content-length
-31
+162
 content-type
 application/json
 cookie
-bnc-uuid=67e6afe2-047e-4d30-bdc1-19151112790b; BNC_FV_KEY=3305c6443bdca07787f83231ec0fc6da0757b0c6; OptanonAlertBoxClosed=2025-10-03T02:13:21.738Z; _gcl_au=1.1.1685839591.1759457606; _gid=GA1.2.1778629017.1759563539; se_gd=AJXEVDgUEGbCwxbxXUA9gZZCFDQoXBSWlIOVZUkd1hRWwV1NWVBU1; se_gsd=Sjo2GgpVIwAiBjcmJzInIyk9VBMGDgUHUVxBW1ZTVlhXJFNT1; currentAccount=; isAccountsLoggedIn=y; BNC-Location=CN; userPreferredCurrency=USD_USD; forterToken=8bab0270232a41f9a898284c4156659a_1759635706349__UDF43-mnf-a4_21ck_; changeBasisTimeZone=; neo-theme=dark; theme=dark; language=zh-CN; logined=y; _ga_MEG0BSW76K=GS2.1.s1760085488$o2$g1$t1760085502$j46$l0$h0; lang=zh-CN; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2229062185%22%2C%22first_id%22%3A%22199a7d80d15581-0879b6d1278a92-1f525631-1764000-199a7d80d16b7b%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22aws_waf_referrer%22%3A%22%7B%5C%22referrer%5C%22%3A%5C%22https%3A%2F%2Fwww.binance.com%2F%5C%22%7D%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMTk5YTdkODBkMTU1ODEtMDg3OWI2ZDEyNzhhOTItMWY1MjU2MzEtMTc2NDAwMC0xOTlhN2Q4MGQxNmI3YiIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjI5MDYyMTg1In0%3D%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2229062185%22%7D%2C%22%24device_id%22%3A%22199af83906a75-0bf04d3d7a0ff3-1e525631-1764000-199af83906b4da%22%7D; aws-waf-token=b207dc44-2989-45fd-a83f-9edad175c68f:BgoAuBottj0QAAAA:1suhxhvi4jRIl64lg7CI5KShiOed1ytb88smjgX5+KsxUZ1QTL9PlJCWXVC1XaYJb4V99n/yD9wIj29sCJ4EuC/x1lxzZBrlH1rNwEqKDlKNl4bIsLBRbfB93ZBdnEGO/hcPlysJVz694Nk+xGNz7w60qN2fjgSmnfw7LqeFPP7mOdsjEuD7BKhwWRzUQCE/pRU=; BNC_FV_KEY_T=101-0NmVtGme7GAh430dCEyw2xqXwjEsueTD8WpVVSbXCnyjB4u4nX%2BwhWa8Ay5bEv4AIhoS%2FX5wyjtqFlSYKOa3DQ%3D%3D-G9WjvIlfzOZN9Z5t38A2Rg%3D%3D-7f; BNC_FV_KEY_EXPIRE=1760688776024; language=zh-CN; se_sd=hsEVFAgtTDMGFQH0EFFQgZZC1CgYBEWVFsUFdUk5FFSVABVNWVIH1; g_state={"i_l":0,"i_ll":1760676534270,"i_b":"5mPrKXjFikhsdQll4lWC5lqGs3DohOlMe1viG5z0hx0"}; _uetsid=2deb5880ab0011f0a73ef760b35c0f8a; _uetvid=8c9cd7f09ffe11f0bdf9cd4c1d08b540; s9r1=663E12EAA0A3F6E68900F630CDA0BE6E; r20t=web.2C815959E6DFA3BDAE879A1B0F1ABDA1; r30t=1; cr00=263F4992968F078A3E3405A05821EEDD; d1og=web.29062185.211EE1620D149ADD720288B3EDC3A810; r2o1=web.29062185.88480135A4035EEB4DE12B8A7ED63C14; f30l=web.29062185.821DA867FB05DE59FCFA825283E76E34; p20t=web.29062185.7DB948E6970B66FD33B6DBE79C855C92; _gat_UA-162512367-1=1; _ga_3WP50LGEEC=GS2.1.s1760676513$o66$g1$t1760676642$j13$l0$h0; OptanonConsent=isGpcEnabled=0&datestamp=Fri+Oct+17+2025+12%3A50%3A44+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=202506.1.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=6298cb37-9de2-41b1-804b-070908bdd651&interactionCount=2&isAnonUser=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0003%3A1%2CC0004%3A1%2CC0002%3A1&intType=1&geolocation=CN%3BBJ&AwaitingReconsent=false; _ga=GA1.2.1791296862.1759457604; _gat=1
+bnc-uuid=67e6afe2-047e-4d30-bdc1-19151112790b; BNC_FV_KEY=3305c6443bdca07787f83231ec0fc6da0757b0c6; OptanonAlertBoxClosed=2025-10-03T02:13:21.738Z; _gcl_au=1.1.1685839591.1759457606; se_gd=AJXEVDgUEGbCwxbxXUA9gZZCFDQoXBSWlIOVZUkd1hRWwV1NWVBU1; se_gsd=Sjo2GgpVIwAiBjcmJzInIyk9VBMGDgUHUVxBW1ZTVlhXJFNT1; currentAccount=; BNC-Location=CN; userPreferredCurrency=USD_USD; forterToken=8bab0270232a41f9a898284c4156659a_1759635706349__UDF43-mnf-a4_21ck_; changeBasisTimeZone=; neo-theme=dark; theme=dark; logined=y; _ga_MEG0BSW76K=GS2.1.s1760085488$o2$g1$t1760085502$j46$l0$h0; lang=zh-CN; _gid=GA1.2.493797717.1760847799; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2229062185%22%2C%22first_id%22%3A%22199a7d80d15581-0879b6d1278a92-1f525631-1764000-199a7d80d16b7b%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%2C%22%24latest_referrer%22%3A%22%22%2C%22aws_waf_referrer%22%3A%22%7B%5C%22referrer%5C%22%3A%5C%22https%3A%2F%2Fwww.binance.com%2F%5C%22%7D%22%2C%22%24latest_utm_source%22%3A%22copylink%22%2C%22%24latest_utm_campaign%22%3A%22web_square_share_link%22%2C%22%24latest_utm_content%22%3A%22hvFffeYDVM9Tlcb1ofQ9Jg%22%7D%2C%22identities%22%3A%22eyIkaWRlbnRpdHlfY29va2llX2lkIjoiMTk5YTdkODBkMTU1ODEtMDg3OWI2ZDEyNzhhOTItMWY1MjU2MzEtMTc2NDAwMC0xOTlhN2Q4MGQxNmI3YiIsIiRpZGVudGl0eV9sb2dpbl9pZCI6IjI5MDYyMTg1In0%3D%22%2C%22history_login_id%22%3A%7B%22name%22%3A%22%24identity_login_id%22%2C%22value%22%3A%2229062185%22%7D%2C%22%24device_id%22%3A%22199af83906a75-0bf04d3d7a0ff3-1e525631-1764000-199af83906b4da%22%7D; futures-layout=pro; aws-waf-token=88e6aff0-5fe3-45df-bd4a-c174811a35d3:BgoAi7pYIQArAAAA:AhJ2NZMwI7Mm938yTgXVTADdAyB/lNbW3e86MFHwK+366BNr03iGYaA8UmSmK0LJHX5SlZPin+7cnroAmWt6FVrBsKB82gX/kVMiFWpPaqgdb1R3iJGw7D/YWRnmSyn/aVinHyNfGQJ1Sn/dUkaallkMerktpEAvux9KfcskKm89pcJgpePQy2hzq6ceb4mOI+I=; BNC_FV_KEY_T=101-bOL881U25ur17w8DFyGOaEJH%2F7fjUXgkRT8EO5rQoDOfRpnVf4U8w%2B6gzdm0tpimftxMPXU1WPwsFx37goHgfQ%3D%3D-b%2FnjMevCohH9mbBf4Kg1sw%3D%3D-b7; BNC_FV_KEY_EXPIRE=1761158274089; g_state={"i_l":0,"i_ll":1761136669847}; se_sd=xsWVAAQsLBMChIR0bUg8gZZFhVAlXEQUlERFeWkFFBVUAG1NWV9V1; s9r1=CDBDC28D707B1C1607394013F7B3C31C; r20t=web.882836B967F10021D2A4D5C90BD7C82E; r30t=1; cr00=8F6768FA15F8E4781E3CFBCB47F32ED8; d1og=web.29062185.6822CE7FC71DE6280BCE339BA1B57F25; r2o1=web.29062185.EC0841C79A0D73AAFB0410B47C230CAB; f30l=web.29062185.F48EAB2409F0EE381756AAC17B004638; isAccountsLoggedIn=y; p20t=web.29062185.BB0DB0ED19C9A046990093217ECA87FE; _uetsid=ecc5bd30af4311f0a516dd4fab9717c0; _uetvid=8c9cd7f09ffe11f0bdf9cd4c1d08b540; _ga_3WP50LGEEC=GS2.1.s1761182230$o84$g1$t1761182267$j23$l0$h0; OptanonConsent=isGpcEnabled=0&datestamp=Thu+Oct+23+2025+09%3A17%3A49+GMT%2B0800+(%E4%B8%AD%E5%9B%BD%E6%A0%87%E5%87%86%E6%97%B6%E9%97%B4)&version=202506.1.0&browserGpcFlag=0&isIABGlobal=false&hosts=&consentId=6298cb37-9de2-41b1-804b-070908bdd651&interactionCount=2&isAnonUser=1&landingPath=NotLandingPage&groups=C0001%3A1%2CC0003%3A1%2CC0004%3A1%2CC0002%3A1&intType=1&geolocation=CN%3BBJ&AwaitingReconsent=false; _ga=GA1.2.1791296862.1759457604
 csrftoken
-c308cf6ee10c7f645434279240e9998e
+eaf5652dc9f162df52c0f2690d0a5d96
 device-info
 eyJzY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTA1MCIsImF2YWlsYWJsZV9zY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTAyNSIsInN5c3RlbV92ZXJzaW9uIjoibWFjT1MgMTAuMTUuNyIsImJyYW5kX21vZGVsIjoiZGVza3RvcCBBcHBsZSBNYWNpbnRvc2ggIiwic3lzdGVtX2xhbmciOiJ6aC1DTiIsInRpbWV6b25lIjoiR01UKzA4OjAwIiwidGltZXpvbmVPZmZzZXQiOi00ODAsInVzZXJfYWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQxLjAuMC4wIFNhZmFyaS81MzcuMzYiLCJsaXN0X3BsdWdpbiI6IlBERiBWaWV3ZXIsQ2hyb21lIFBERiBWaWV3ZXIsQ2hyb21pdW0gUERGIFZpZXdlcixNaWNyb3NvZnQgRWRnZSBQREYgVmlld2VyLFdlYktpdCBidWlsdC1pbiBQREYiLCJjYW52YXNfY29kZSI6IjNmYTgyM2QxIiwid2ViZ2xfdmVuZG9yIjoiR29vZ2xlIEluYy4gKEludGVsIEluYy4pIiwid2ViZ2xfcmVuZGVyZXIiOiJBTkdMRSAoSW50ZWwgSW5jLiwgSW50ZWwoUikgSXJpcyhUTSkgR3JhcGhpY3MgNjEwMCwgT3BlbkdMIDQuMSkiLCJhdWRpbyI6IjEyNC4wNDM0NzY1NzgwODEwMyIsInBsYXRmb3JtIjoiTWFjSW50ZWwiLCJ3ZWJfdGltZXpvbmUiOiJBc2lhL1NoYW5naGFpIiwiZGV2aWNlX25hbWUiOiJDaHJvbWUgVjE0MS4wLjAuMCAobWFjT1MpIiwiZmluZ2VycHJpbnQiOiIwMGE1MWM1Zjc3ZTkzMjM3YWI0MTRmMTBiMDY0ZTgxZSIsImRldmljZV9pZCI6IiIsInJlbGF0ZWRfZGV2aWNlX2lkcyI6IiJ9
 fvideo-id
 3305c6443bdca07787f83231ec0fc6da0757b0c6
-fvideo-token
-ZTVJQ8vzdq1zUP2UKwMgdiQf/zzc83PiX+8GFVbUu5l8sOTzVptoCR8UfO14wcq862nJlZh+3+pI+4QoR0gcpXsa5hoD+8JxV5qMg3L8dB65QPCyvXy4bH7Ya4+WndzajA8O5bqH6VUNDbs1DY/z1jyt34XixmxEWl9kXoVw/wS0Nv22NrUSH91sedyDS8dXQ=7b
 lang
 zh-CN
 `;
@@ -647,23 +639,19 @@ zh-CN
 }
 window.bnb={
   "lqhHeaders": {
-    "baggage": "sentry-environment=prod,sentry-release=20251007-7bb57518-3018,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=fba461cc166c44308fec656b375dfde7,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false",
+    "baggage": "sentry-environment=prod,sentry-release=20251022-1b018171-3173,sentry-public_key=9445af76b2ba747e7b574485f2c998f7,sentry-trace_id=361dae9f62eb45689a47323cdd1262a7,sentry-sample_rate=0.01,sentry-transaction=%2Falpha%2F%24chainSymbol%2F%24contractAddress,sentry-sampled=false",
     "bnc-uuid": "67e6afe2-047e-4d30-bdc1-19151112790b",
     "clienttype": "web",
     "content-type": "application/json",
-    "csrftoken": "c308cf6ee10c7f645434279240e9998e",
+    "csrftoken": "eaf5652dc9f162df52c0f2690d0a5d96",
     "device-info": "eyJzY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTA1MCIsImF2YWlsYWJsZV9zY3JlZW5fcmVzb2x1dGlvbiI6IjE2ODAsMTAyNSIsInN5c3RlbV92ZXJzaW9uIjoibWFjT1MgMTAuMTUuNyIsImJyYW5kX21vZGVsIjoiZGVza3RvcCBBcHBsZSBNYWNpbnRvc2ggIiwic3lzdGVtX2xhbmciOiJ6aC1DTiIsInRpbWV6b25lIjoiR01UKzA4OjAwIiwidGltZXpvbmVPZmZzZXQiOi00ODAsInVzZXJfYWdlbnQiOiJNb3ppbGxhLzUuMCAoTWFjaW50b3NoOyBJbnRlbCBNYWMgT1MgWCAxMF8xNV83KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvMTQxLjAuMC4wIFNhZmFyaS81MzcuMzYiLCJsaXN0X3BsdWdpbiI6IlBERiBWaWV3ZXIsQ2hyb21lIFBERiBWaWV3ZXIsQ2hyb21pdW0gUERGIFZpZXdlcixNaWNyb3NvZnQgRWRnZSBQREYgVmlld2VyLFdlYktpdCBidWlsdC1pbiBQREYiLCJjYW52YXNfY29kZSI6IjNmYTgyM2QxIiwid2ViZ2xfdmVuZG9yIjoiR29vZ2xlIEluYy4gKEludGVsIEluYy4pIiwid2ViZ2xfcmVuZGVyZXIiOiJBTkdMRSAoSW50ZWwgSW5jLiwgSW50ZWwoUikgSXJpcyhUTSkgR3JhcGhpY3MgNjEwMCwgT3BlbkdMIDQuMSkiLCJhdWRpbyI6IjEyNC4wNDM0NzY1NzgwODEwMyIsInBsYXRmb3JtIjoiTWFjSW50ZWwiLCJ3ZWJfdGltZXpvbmUiOiJBc2lhL1NoYW5naGFpIiwiZGV2aWNlX25hbWUiOiJDaHJvbWUgVjE0MS4wLjAuMCAobWFjT1MpIiwiZmluZ2VycHJpbnQiOiIwMGE1MWM1Zjc3ZTkzMjM3YWI0MTRmMTBiMDY0ZTgxZSIsImRldmljZV9pZCI6IiIsInJlbGF0ZWRfZGV2aWNlX2lkcyI6IiJ9",
     "fvideo-id": "3305c6443bdca07787f83231ec0fc6da0757b0c6"
   },
-  "delta": 0.00001,
-  "orderId": [
-    49324864,
-    49324865
-  ],
-  "maxDelta": 0.0001,
   "buyDelta": 0.00001,
   "sellDelta": 0.00001,
-  "stock": "merl",
+  "orderId": [],
+  "maxDelta": 0.0001,
+  "stock": "numi",
   "stocks": {
     "aop": "ALPHA_382",
     "pingpong": "ALPHA_368",
@@ -672,13 +660,9 @@ window.bnb={
     "btg": "ALPHA_406",
     "hana": "ALPHA_394",
     "koge": "ALPHA_22",
-    "jojo": "ALPHA_383",
-    "merl": "ALPHA_195",
-    "anome": "ALPHA_433"
+    "jojo": "ALPHA_383"
   },
-  "balance": 503.07267524,
-  "balanceStart": 503.07267524,
-  "lastBalance": 503.07267524,
-  "running": true,
-  "quantity": 1172.2
+  "balance": 492.99907299,
+  "balanceStart": 492.99907299,
+  "lastBalance": 492.99907299
 }
