@@ -472,10 +472,12 @@ def resetThreadId(label=""):
 def update1dTask():
     info("update1dTask")
     g.candidates = getCandidates()
+    resetThreadId("u1d")
     # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
     update1d(g.candidates)
 
     g.ruleCodes = getRuleCodes()
+    resetThreadId("u1d")
     update1d(g.ruleCodes)
 
     while True:
@@ -686,7 +688,6 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             else:
                 #把dateStartTime设置为1年前
                 dataStartTime = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime("%Y%m%d")
-                continue
         period = '1d'
         datas = get1dData(stocklist, index, dataStartTime, endTime)
         # print("所有列名:", df.keys())
