@@ -662,7 +662,7 @@ window.bnb={
     "koge": "ALPHA_22",
     "jojo": "ALPHA_383"
   },
-  "balance": 492.99907299,
-  "balanceStart": 492.99907299,
-  "lastBalance": 492.99907299
+  "balance": 479.77520184,
+  "balanceStart": 479.77520184,
+  "lastBalance": 479.77520184
 }

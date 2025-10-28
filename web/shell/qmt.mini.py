@@ -684,6 +684,8 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             if lastDate:
                 dataStartTime = lastDate
             else:
+                #把dateStartTime设置为1年前
+                dataStartTime = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime("%Y%m%d")
                 continue
         period = '1d'
         datas = get1dData(stocklist, index, dataStartTime, endTime)
