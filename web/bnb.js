@@ -10,8 +10,8 @@ let logLevel = INFO;
 
 
 const binance = new Binance({
-  APIKEY: 'zN75a6JuEP3jaffhC3LiCbjsHbMcgrW9MWQX4HqjUXKiVqXt9iRwMYPDfykCUEz1',
-  APISECRET: 'JV3y11RJ6Jgy5S0VPN58neQTD7AlvrVVv12cgsoxmEYwkMXrE9fheibFmryFQ95E',
+  APIKEY: '5tZbH6hW8lHgS6vNm5Dg8BKMYny1kXZDIqvZWZnqJtz2EQXOOSS2w1PADilLFObe',
+  APISECRET: 'Jf8gB0jdZ5A7ACjzqTvxIrj0wvWwjj1scgHsZl8NJpGMFODo0AKv37WNkS1EJ7v3',
   verbose: logLevel <= DEBUG,
   //test: true, // if you want to use the sandbox/testnet
 });
@@ -20,8 +20,8 @@ const binance = new Binance({
 binance.httpsProxy = 'http://192.168.66.205:8080/';
 let g = {};
 g.broker = "BNB";
-g.baseUrl = "http://localhost:3001";
 g.baseUrl = "http://test1.91taogu.com";
+g.baseUrl = "http://localhost:3001";
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'DOGEUSDT'];
@@ -39,13 +39,20 @@ function printObjFunc(obj) {
 }
 
 async function test() {
-  // let ticker = await binance.prices();
-  // console.info(`Price of BNB: ${ticker.BTCUSDT}`);
- let json={"e":"executionReport","E":1760952876443,"s":"DOGEUSDT","c":"x-B3AUXNYVde3392c077544aa19e949a","S":"BUY","o":"LIMIT","f":"GTC","q":"8.00000000","p":"0.20000000","P":"0.00000000","F":"0.00000000","g":-1,"C":"","x":"TRADE","X":"FILLED","r":"NONE","i":12538778774,"l":"8.00000000","z":"8.00000000","L":"0.20000000","n":"0.00000107","N":"BNB","T":1760952876441,"t":1329259740,"I":26704157948,"w":false,"m":true,"M":true,"O":1760951855354,"Z":"1.60000000","Y":"1.60000000","Q":"0.00000000","W":1760951855354,"V":"EXPIRE_MAKER"};
+  binance.futuresChart('BTCUSDT', '1d', console.log);
+  //binance.futuresTickerStream( 'BTCUSDT', console.log );
+  //binance.futuresBookTickerStream( 'BTCUSDT', console.log );
 
- balance_update(json);
+  // console.info(await binance.futuresBalance());
+
 
   return;
+  // let ticker = await binance.prices();
+  // console.info(`Price of BNB: ${ticker.BTCUSDT}`);
+  let json = { "e": "executionReport", "E": 1760952876443, "s": "DOGEUSDT", "c": "x-B3AUXNYVde3392c077544aa19e949a", "S": "BUY", "o": "LIMIT", "f": "GTC", "q": "8.00000000", "p": "0.20000000", "P": "0.00000000", "F": "0.00000000", "g": -1, "C": "", "x": "TRADE", "X": "FILLED", "r": "NONE", "i": 12538778774, "l": "8.00000000", "z": "8.00000000", "L": "0.20000000", "n": "0.00000107", "N": "BNB", "T": 1760952876441, "t": 1329259740, "I": 26704157948, "w": false, "m": true, "M": true, "O": 1760951855354, "Z": "1.60000000", "Y": "1.60000000", "Q": "0.00000000", "W": 1760951855354, "V": "EXPIRE_MAKER" };
+
+  balance_update(json);
+
   let response;
   // response = await binance.balance();
   // Object.keys(response).forEach(key => {
@@ -447,8 +454,25 @@ function execution_update(data) {
   //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
   debug(symbol + "\t" + side + " " + executionType + " " + orderType + " ORDER #" + orderId);
 }
+
+async function startFutureMiniTicket() {
+  g.stocklist.forEach(element => {
+    binance.futuresMiniTickerStream(element, item => {
+      info("futureMiniTicket:", JSON.stringify(item));
+      let { symbol, close, high, low, open, volume, quoteVolume, eventTime } = item;
+
+      get(`${g.baseUrl}/stock/updatePrice/option?scode=${symbol}&price=${close}`)
+        .catch((err) => {
+          error("updatePrice error:", err.toString());
+        });
+
+    });
+  });
+
+}
 async function start() {
   await updatePositions();
+  await updateFuturePositions();
 
   binance.websockets.userData(balance_update, execution_update);
 
@@ -457,6 +481,9 @@ async function start() {
     await updateSticks(scode, "1m", 400);
   }
 
+  startFutureMiniTicket();
+
+  //futuresCandlesticksStream
   binance.websockets.candlesticks(g.stocklist, "1m", (candlesticks) => {
     let { e: type, E: time, s: symbol, k: ticks } = candlesticks;
     let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
@@ -483,6 +510,23 @@ async function start() {
       }
     }
   });
+
+
+  if (1 == 0) {
+    binance.futuresChart(g.stocklist, '1m', (chart) => {
+      let { e: type, E: time, s: symbol, k: ticks } = chart;
+      let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
+
+      info(symbol + "\t" + close + " " + high + " " + low + " " + open + " " + volume + " " + quoteVolume);
+    }, limit = 600);
+
+    binance.futuresChart(g.stocklist, '1d', (chart) => {
+      let { e: type, E: time, s: symbol, k: ticks } = chart;
+      let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
+
+      info(symbol + "\t" + close + " " + high + " " + low + " " + open + " " + volume + " " + quoteVolume);
+    }, limit = 500);
+  }
 
   while (1 == 1) {
     await getActions();
@@ -521,11 +565,62 @@ async function updatePositions() {
   post(`${g.baseUrl}/stock/positions`, body);
 }
 
+async function updateFuturePositions() {
+  info("updateFuturePositions");
+  let response = await binance.futuresBalance();
+  let data = [];
+  response.forEach(item => {
+    info(item);
+    let { balance: available, asset, availableBalance, maxWithdrawAmount, crossUnPnl } = item;
+    available = parseFloat(available);
+    if (available <= 0) return;
+
+    data.push({
+      "broker": g.broker,
+      "account_id": "",
+      "avg_price": 0,
+      "can_use_volume": availableBalance,
+      "frozen_volume": 0,
+      "market_value": 0,
+      "on_road_volume": 0,
+      "open_price": 0,
+      "stock_code": asset,
+      "volume": available
+    });
+  });
+
+  let body = { "data": data, "passcode": "995560" };
+  post(`${g.baseUrl}/stock/positions/options`, body);
+}
+
+async function test1() {
+
+  binance.futuresChart("BTCUSDT", '1m', (stock, period, chart) => {
+    info(stock);
+    info(period);
+    info(chart);
+
+    Object.keys(chart).forEach(key => {
+      let item = chart[key];
+
+    });
+
+    return;
+    let { e: type, E: time, s: symbol, k: ticks } = chart;
+    let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
+
+    info(symbol + "\t" + close + " " + high + " " + low + " " + open + " " + volume + " " + quoteVolume);
+  });
+
+
+  return;
+}
 
 
 start();
 
-//test();
+//test1();
+//startFutureMiniTicket();
 
 
 

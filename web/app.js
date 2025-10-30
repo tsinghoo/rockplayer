@@ -1266,6 +1266,21 @@ app.get('/stock/updatePrice', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/updatePrice/option', async (req, res) => {
+    info("/stock/updatePrice", req)
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let price = req.query.price;
+    let time = Date.now();
+    //updatePriceToRule(scode, price);
+    
+    let sql = `update tStockBasic set optionPrice=?, updateTime=? where id=?`;
+    await db.runSync(sql, [price, time, scode]);
+    //checkRule([scode]);
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
 app.get('/stock/deleteRow', async (req, res) => {
     info("/stock/deleteRow", req)
     let js = req.query.js;
@@ -1431,6 +1446,12 @@ async function upgradeDb(succ, fail) {
         "update config set value='59' where key='dbVersion';",
         `alter table tStock add column deleted int default 0;`,
         "update config set value='61' where key='dbVersion';",
+        `alter table tStockBasic add column optionPrice real;`,
+        "update config set value='63' where key='dbVersion';",
+        `alter table tStock add column type int default 0;`,
+        "update config set value='65' where key='dbVersion';",
+        `alter table tStockBasic add column optionUpdateTime int;`,
+        "update config set value='67' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1759,16 +1780,20 @@ app.get('/stock/trades', async (req, res) => {
     let js = req.query.js;
     let scode = req.query.scode;
     let all = req.query.all;
+    let type = req.query.type;
+    if (type == null) {
+        type = 0;
+    }
     var resp = null;
     if (scode == null) {
         resp = await db.allSync(`select * from tstock`);
         resp = JSON.stringify({ data: resp.rows });
     } else {
-        let sql = `select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc`;
+        let sql = `select * from tstock where scode=? and type=? and deleted=0 order by tday desc, ttime desc`;
         if (all == 1) {
-            sql = `select * from tstock where scode=? order by tday desc, ttime desc`;
+            sql = `select * from tstock where scode=? and type=? order by tday desc, ttime desc`;
         }
-        resp = await db.allSync(sql, [scode]);
+        resp = await db.allSync(sql, [scode, type]);
         resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {

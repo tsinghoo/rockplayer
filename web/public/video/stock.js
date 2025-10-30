@@ -550,6 +550,7 @@ window.feed_list = window.feed_list || (function () {
             table.append(thead);
 
             let lastCode;
+            let lastType = 0;
             let lastBroker;
             for (let i = 0; i < rows.length; i++) {
                 let tr = $("<tr>");
@@ -565,11 +566,12 @@ window.feed_list = window.feed_list || (function () {
                 if (row["代码"] == null) {
                     row["代码"] = "";
                 }
-                if (row["代码"] == lastCode && row["券商"] == lastBroker) {
+                if (row["代码"] == lastCode && row["券商"] == lastBroker && row["type"] == lastType) {
                     firstRow = false;
                 } else {
                     lastCode = row["代码"];
                     lastBroker = row["券商"];
+                    lastType = row["type"];
                 }
 
                 for (let j = 0; j < keys.length; j++) {
@@ -1402,17 +1404,22 @@ window.feed_list = window.feed_list || (function () {
                             let th = $(this);
                             let cpl = th.find(".curPrice");
                             let data = th.attr("data");
+
                             data = JSON.parse(data);
-                            const curPrice = share.convertIfInteger(row.buy);
+                            let curPrice = share.convertIfInteger(row.buy);
+                            let timePassed = share.getTimePassed__(row.updateTime);
+                            if (data.type == 1) {
+                                curPrice = share.convertIfInteger(row.optionPrice);
+                                timePassed = share.getTimePassed__(row.optionUpdateTime);
+                            }
                             data.curPrice = curPrice;
                             th.attr("data", JSON.stringify(data));
                             const price = data["价格"];
-                            let tp = share.getTimePassed__(row.updateTime);
                             if (price == null) {
-                                cpl.text(`${share.convertIfInteger(curPrice)} (${tp})`);
+                                cpl.html(`${curPrice} (${timePassed})`);
                             } else {
                                 let delta = ((curPrice - price) / price * 100).toFixed(1);
-                                cpl.text(`${share.convertIfInteger(curPrice)} (${delta}% ${tp})`);
+                                cpl.html(`${curPrice} (${delta}% ${timePassed})`);
 
                                 if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
                                     if (data["配对"] != "") {
@@ -1448,6 +1455,7 @@ window.feed_list = window.feed_list || (function () {
             self.selectedData = data;
             share.currentTarget = ele;
             let scode = data["代码"];
+            let type = data["type"];
             let tbs = $("#templateBuySell").html();
             let html = `
                     <div class="flexrow">
@@ -1483,7 +1491,7 @@ window.feed_list = window.feed_list || (function () {
 
             let c = $(`#${popup.id}`);
             self.showPosition(null, c.find(".position"), scode);
-            self.showTradeList(c.find(".tradeList"), scode);
+            self.showTradeList(c.find(".tradeList"), scode, 0, type);
             self.toBuySell(null, c);
             let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
             c.find(".rule").click(function (e) {
@@ -1952,12 +1960,16 @@ window.feed_list = window.feed_list || (function () {
                 return "卖出";
             }
         },
-        showTradeList: async function ($c, scode, all) {
+        showTradeList: async function ($c, scode, all, type) {
             if (all == null) {
                 all = 0;
             }
 
-            let res = await share.getSync__(`/stock/trades?scode=${scode}&all=${all}`);
+            if (type == null) {
+                type = 0;
+            }
+
+            let res = await share.getSync__(`/stock/trades?scode=${scode}&all=${all}&type=${type}`);
             let trades = res.data;
             let tr = trades.map(row => {
                 let html = `
@@ -1994,9 +2006,9 @@ window.feed_list = window.feed_list || (function () {
 
             $c.find(".tradeListHeader").on("click", function () {
                 if (all == 0) {
-                    self.showTradeList($c, scode, 1);
+                    self.showTradeList($c, scode, 1, type);
                 } else {
-                    self.showTradeList($c, scode, 0);
+                    self.showTradeList($c, scode, 0, type);
                 }
             });
         },
