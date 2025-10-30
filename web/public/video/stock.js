@@ -1550,7 +1550,7 @@ window.feed_list = window.feed_list || (function () {
 
             self.drawKTickChart(scode, timeData, priceData, volumeData, kTick);
 
-            let rows = await share.getSync__(`/stock/k/1d?scode=${scode}`);
+            let rows = await share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`);
 
             let categoryData = [];
             let values = [];

@@ -2096,6 +2096,7 @@ app.get('/stock/k/1d', async (req, res) => {
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
+    let type = req.query.type;
     let startDay = req.query.startDay;
     let endDay = req.query.endDay;
     if (endDay == null) {
@@ -2118,8 +2119,8 @@ app.get('/stock/k/1d', async (req, res) => {
 
     await wss.callFunc("国金", "forceUpdate1d", { scode: scode });
 
-    let sql = `select * from t1d where scode in ('${scode.split(",").join("','")}') and time >= ? and time <= ? order by scode,time`;
-    let result = await db.allSync(sql, [startDay, endDay]);
+    let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by scode,time`;
+    let result = await db.allSync(sql, [scode, type, startDay, endDay]);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
