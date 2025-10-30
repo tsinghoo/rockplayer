@@ -1267,14 +1267,18 @@ app.get('/stock/updatePrice', async (req, res) => {
 });
 
 app.get('/stock/updatePrice/option', async (req, res) => {
-    info("/stock/updatePrice", req)
+    info("/stock/updatePrice/option", req)
     let js = req.query.js;
     let scode = req.query.scode;
     let price = req.query.price;
-    let time = Date.now();
+    let time = req.query.time;
+    if (time == null) {
+        time = Date.now();
+    }
+
     //updatePriceToRule(scode, price);
-    
-    let sql = `update tStockBasic set optionPrice=?, updateTime=? where id=?`;
+
+    let sql = `update tStockBasic set optionPrice=?, optionUpdateTime=? where id=?`;
     await db.runSync(sql, [price, time, scode]);
     //checkRule([scode]);
     var resp = `${js}({})`;
@@ -1452,6 +1456,10 @@ async function upgradeDb(succ, fail) {
         "update config set value='65' where key='dbVersion';",
         `alter table tStockBasic add column optionUpdateTime int;`,
         "update config set value='67' where key='dbVersion';",
+        `alter table t1m add column type int default 0;`,
+        "update config set value='69' where key='dbVersion';",
+        `alter table t1d add column type int default 0;`,
+        "update config set value='71' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -2014,11 +2022,12 @@ app.get('/stock/rule/create', async (req, res) => {
     res.send(resp);
 });
 
-app.get('/stock/tick', async (req, res) => {
-    info("get /stock/tick", req)
+app.get('/stock/k/1m', async (req, res) => {
+    info("get /stock/k/1m", req)
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
+    let type = req.query.type;
     let day = req.query.day;
     if (day == null) {
         day = new Date();
@@ -2031,8 +2040,8 @@ app.get('/stock/tick', async (req, res) => {
     let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
     day = timeFormat(day, "yyyyMMdd")
     nextDay = timeFormat(nextDay, "yyyyMMdd")
-    let sql = `select * from t1m where scode in ('${scode.split(",").join("','")}') and time > ? and time < ? order by scode, time`;
-    let result = await db.allSync(sql, [day, nextDay]);
+    let sql = `select * from t1m where scode=? and type=? and time > ? and time < ? order by scode, time`;
+    let result = await db.allSync(sql, [scode, type, day, nextDay]);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
@@ -2082,8 +2091,8 @@ app.get('/stock/reload/k1d', async (req, res) => {
     res.send(resp);
 });
 
-app.get('/stock/k1d', async (req, res) => {
-    info("get /stock/k1d", req)
+app.get('/stock/k/1d', async (req, res) => {
+    info("get /stock/k/1d", req)
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
@@ -2532,7 +2541,7 @@ app.get('/stock/1d/lastDate', async (req, res) => {
 });
 
 app.get('/stock/price/current', async (req, res) => {
-    info("/stock/trade/all", req)
+    info("/stock/price/current", req)
     let js = req.query.js;
 
     let sql = `select * from tstockbasic `;

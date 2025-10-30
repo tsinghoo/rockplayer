@@ -396,8 +396,8 @@ window.feed_list = window.feed_list || (function () {
                 // kTick.html("loading kTick");
             });
 
-            //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}`);
+            //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
+            let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
             var timeData = [];
@@ -466,8 +466,8 @@ window.feed_list = window.feed_list || (function () {
 
 
 
-            //let ticks = await share.getSync__(`/stock/tick?scode=${codes.join(",")}&day=${Date.now()}`);
-            let rows = await share.getSync__(`/stock/k1d?scode=${codes.join(",")}`);
+            //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
+            let rows = await share.getSync__(`/stock/k/1d?scode=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
 
@@ -1530,7 +1530,7 @@ window.feed_list = window.feed_list || (function () {
 
             let kTick = c.find(".kTick");
 
-            let ticks = await share.getSync__(`/stock/tick?scode=${scode}&day=${Date.now()}`);
+            let ticks = await share.getSync__(`/stock/k/1m?scode=${scode}&type=${type}&day=${Date.now()}`);
             var timeData = [];
             var priceData = [];
             var volumeData = [];
@@ -1550,7 +1550,7 @@ window.feed_list = window.feed_list || (function () {
 
             self.drawKTickChart(scode, timeData, priceData, volumeData, kTick);
 
-            let rows = await share.getSync__(`/stock/k1d?scode=${scode}`);
+            let rows = await share.getSync__(`/stock/k/1d?scode=${scode}`);
 
             let categoryData = [];
             let values = [];

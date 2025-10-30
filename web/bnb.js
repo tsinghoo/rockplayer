@@ -25,6 +25,7 @@ g.baseUrl = "http://localhost:3001";
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'DOGEUSDT'];
+g.stocklist = ['ETHUSDT'];
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -461,7 +462,7 @@ async function startFutureMiniTicket() {
       info("futureMiniTicket:", JSON.stringify(item));
       let { symbol, close, high, low, open, volume, quoteVolume, eventTime } = item;
 
-      get(`${g.baseUrl}/stock/updatePrice/option?scode=${symbol}&price=${close}`)
+      get(`${g.baseUrl}/stock/updatePrice/option?scode=${symbol}&price=${close}&time=${eventTime}`)
         .catch((err) => {
           error("updatePrice error:", err.toString());
         });
@@ -490,7 +491,7 @@ async function start() {
 
     let data = [[timeFormat(time, "yyyyMMddhhmmss"), open, close, high, low, volume, quoteVolume]];
 
-    get(`${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}`)
+    get(`${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`)
       .catch((err) => {
         error("updatePrice error:", err.toString());
       });
@@ -529,7 +530,7 @@ async function start() {
   }
 
   while (1 == 1) {
-    await getActions();
+    //await getActions();
     await sleep(100);
   }
 
