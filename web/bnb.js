@@ -9,6 +9,10 @@ let ERROR = 4;
 let logLevel = INFO;
 
 
+const args = process.argv;
+let dev = 0;
+
+
 const binance = new Binance({
   APIKEY: '5tZbH6hW8lHgS6vNm5Dg8BKMYny1kXZDIqvZWZnqJtz2EQXOOSS2w1PADilLFObe',
   APISECRET: 'Jf8gB0jdZ5A7ACjzqTvxIrj0wvWwjj1scgHsZl8NJpGMFODo0AKv37WNkS1EJ7v3',
@@ -21,11 +25,9 @@ binance.httpsProxy = 'http://192.168.66.205:8080/';
 let g = {};
 g.broker = "BNB";
 g.baseUrl = "http://test1.91taogu.com";
-g.baseUrl = "http://localhost:3001";
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'DOGEUSDT'];
-g.stocklist = ['ETHUSDT'];
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -605,18 +607,28 @@ async function test1() {
       let item = chart[key];
 
     });
-
-    return;
-    let { e: type, E: time, s: symbol, k: ticks } = chart;
-    let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
-
-    info(symbol + "\t" + close + " " + high + " " + low + " " + open + " " + volume + " " + quoteVolume);
   });
 
 
   return;
 }
 
+function init() {
+  info(`args:${args}`);
+  if (args.length > 2 && args[2] == "dev") {
+    dev = 1;
+  }
+
+  if (dev) {
+    info("env: dev");
+    g.baseUrl = "http://localhost:3001";
+    g.stocklist = ['ETHUSDT'];
+  } else {
+    info("env: prod")
+  }
+}
+
+init();
 
 start();
 

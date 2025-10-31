@@ -603,10 +603,15 @@ window.feed_list = window.feed_list || (function () {
                         tr.attr("code", row[key]);
                         tr.attr("data", JSON.stringify(row));
                     } else if (key == "名称") {
+                        let option = "";
+                        if (row["type"] == 1) {
+                            option = ".o"
+                        }
+
                         if (firstRow) {
-                            td.html(row[key] + `<span class="vote">V</span>`);
+                            td.html(`${row[key]}${option} <span class="vote">V</span>`);
                         } else {
-                            td.html(row[key]);
+                            td.html(`${row[key]}${option}`);
                             td.addClass("almostwhite");
                         }
                     } else if (key == "券商") {
