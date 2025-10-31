@@ -1244,7 +1244,7 @@ app.get('/stock/vote', async (req, res) => {
     let js = req.query.js;
     let code = req.query.code;
     let sql = `update tstock set lastOperationTime=? where scode=? `;
-    let now = timeFormat(new Date(), "yyyyMMdd hhmmss");
+    let now = timeFormat(new Date(), "yyyyMMdd hh:mm:ss");
     await db.runSync(sql, [now, code]);
     await db.runSync(`update tStockBasic set priority=? where scode=?`, [new Date().getTime(), code]);
     await db.runSync(`update tTradeRule set createTime=? where scode=?`, [new Date().getTime(), code]);
@@ -1257,10 +1257,14 @@ app.get('/stock/updatePrice', async (req, res) => {
     let js = req.query.js;
     let scode = req.query.scode;
     let price = req.query.price;
+    let time = req.query.time;
+    if (time == null) {
+        time = Date.now();
+    }
+    
     updatePriceToRule(scode, price);
-    let now = Date.now();
     let sql = `update tStockBasic set buy=?, updateTime=? where id=?`;
-    await db.runSync(sql, [price, now, scode]);
+    await db.runSync(sql, [price, time, scode]);
     checkRule([scode]);
     var resp = `${js}({})`;
     res.send(resp);
