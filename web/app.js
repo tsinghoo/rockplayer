@@ -1261,7 +1261,7 @@ app.get('/stock/updatePrice', async (req, res) => {
     if (time == null) {
         time = Date.now();
     }
-    
+
     updatePriceToRule(scode, price);
     let sql = `update tStockBasic set buy=?, updateTime=? where id=?`;
     await db.runSync(sql, [price, time, scode]);
@@ -1464,6 +1464,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='69' where key='dbVersion';",
         `alter table t1d add column type int default 0;`,
         "update config set value='71' where key='dbVersion';",
+        `alter table tpositions add column type int default 0;`,
+        "update config set value='73' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1751,13 +1753,19 @@ app.post('/stock/positions', async (req, res) => {
     if (positions == null) {
         positions = [];
     }
+
+    let type = req.body.type;
+    if (type == null) {
+        type = 0;
+    }
     for (let i = 0; i < positions.length; i++) {
         let pos = positions[i];
         let now = Date.now();
 
         pos.stock_code = pos.stock_code.split(".")[0]
-        pos.id = `${pos.broker}_${pos.account_id}_${pos.stock_code}`;
+        pos.id = `${pos.broker}_${pos.account_id}_${pos.stock_code}_${type}`;
         pos.updateTime = now;
+        pos.type = type;
         await insertOrReplace("tPositions", pos);
     }
 
@@ -2632,6 +2640,10 @@ app.post('/stock/data/upload', async (req, res) => {
     let data = req.body.data;
     let scode = req.body.scode.split(".")[0];
     let period = req.body.period;
+    let type = req.body.type;
+    if (type == null) {
+        type = 0;
+    }
     info(`scode:${scode},period:${period},len:${data.length}`, req)
     for (var i = 0; i < data.length; ++i) {
         if (period == "tick") {
@@ -2669,7 +2681,8 @@ app.post('/stock/data/upload', async (req, res) => {
                 high: data[i][3],
                 low: data[i][4],
                 volume: data[i][5],
-                amount: data[i][6]
+                amount: data[i][6],
+                type: type
             }
 
             if (row.volume < 0) {

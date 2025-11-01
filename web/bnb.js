@@ -190,7 +190,7 @@ function post(url, body) {
     }
     return response.text();
   }).catch(e => {
-    error('上传失败:', JSON.stringify(body), e.toString());
+    error('上传失败:', `POST ${url}:${JSON.stringify(body)}`, JSON.stringify(body), e.toString());
   });
 
 }
@@ -439,7 +439,7 @@ function balance_update(data) {
       info(asset + "\tavailable: " + available + " (" + onOrder + " on order)");
     }
 
-    updatePositions();
+    updatePositions(0);
 
   }
 }
@@ -474,14 +474,18 @@ async function startFutureMiniTicket() {
 
 }
 async function start() {
-  await updatePositions();
+  await updatePositions(1);
+  await updatePositions(0);
   await updateFuturePositions();
 
   binance.websockets.userData(balance_update, execution_update);
 
   for (let scode of g.stocklist) {
-    await updateSticks(scode, "1d", 400);
-    await updateSticks(scode, "1m", 400);
+    await updateSticks(scode, "1m", 240);
+    await updateSticks(scode, "1d", 30);
+
+    await futureCandles(scode, "1m", 240);
+    await futureCandles(scode, "1d", 30);
   }
 
   startFutureMiniTicket();
@@ -510,26 +514,11 @@ async function start() {
       for (let scode of g.stocklist) {
         updateSticks(scode, "1d", 1);
         updateSticks(scode, "1m", 10);
+        futureCandles(scode, "1m", 2);
+        futureCandles(scode, "1d", 1);
       }
     }
   });
-
-
-  if (1 == 0) {
-    binance.futuresChart(g.stocklist, '1m', (chart) => {
-      let { e: type, E: time, s: symbol, k: ticks } = chart;
-      let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
-
-      info(symbol + "\t" + close + " " + high + " " + low + " " + open + " " + volume + " " + quoteVolume);
-    }, limit = 600);
-
-    binance.futuresChart(g.stocklist, '1d', (chart) => {
-      let { e: type, E: time, s: symbol, k: ticks } = chart;
-      let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
-
-      info(symbol + "\t" + close + " " + high + " " + low + " " + open + " " + volume + " " + quoteVolume);
-    }, limit = 500);
-  }
 
   while (1 == 1) {
     //await getActions();
@@ -541,30 +530,34 @@ async function start() {
 }
 
 
-async function updatePositions() {
-  info("updatePositions");
-  let response = await binance.balance();
-  let data = [];
-  Object.keys(response).forEach(key => {
-    let { available, onOrder } = response[key];
-    available = parseFloat(available);
-    if (available <= 0 && parseFloat(onOrder) <= 0) return;
-    info(key, JSON.stringify(response[key]));
-    data.push({
-      "broker": g.broker,
-      "account_id": "",
-      "avg_price": 0,
-      "can_use_volume": available,
-      "frozen_volume": 0,
-      "market_value": 0,
-      "on_road_volume": 0,
-      "open_price": 0,
-      "stock_code": key + "USDT",
-      "volume": available
-    });
-  });
+async function updatePositions(clean) {
+  info("updatePositions: clean=", clean);
 
-  let body = { "data": data, "passcode": "995560" };
+  let body = { "clean": clean, "passcode": "995560", broker: g.broker };
+  if (clean != 1) {
+    let response = await binance.balance();
+
+    let data = [];
+    Object.keys(response).forEach(key => {
+      let { available, onOrder } = response[key];
+      available = parseFloat(available);
+      if (available <= 0 && parseFloat(onOrder) <= 0) return;
+      info(key, JSON.stringify(response[key]));
+      data.push({
+        "broker": g.broker,
+        "account_id": "",
+        "avg_price": 0,
+        "can_use_volume": available,
+        "frozen_volume": 0,
+        "market_value": 0,
+        "on_road_volume": 0,
+        "open_price": 0,
+        "stock_code": key + "USDT",
+        "volume": available
+      });
+    });
+    body.data = data;
+  }
   post(`${g.baseUrl}/stock/positions`, body);
 }
 
@@ -573,7 +566,7 @@ async function updateFuturePositions() {
   let response = await binance.futuresBalance();
   let data = [];
   response.forEach(item => {
-    info(item);
+    debug(item);
     let { balance: available, asset, availableBalance, maxWithdrawAmount, crossUnPnl } = item;
     available = parseFloat(available);
     if (available <= 0) return;
@@ -592,25 +585,62 @@ async function updateFuturePositions() {
     });
   });
 
-  let body = { "data": data, "passcode": "995560" };
-  post(`${g.baseUrl}/stock/positions/options`, body);
+  let body = { "data": data, "passcode": "995560", type: 1 };
+  post(`${g.baseUrl}/stock/positions`, body);
 }
 
 async function test1() {
+  // await futureCandles("ETHUSDT", "1m", 400);
+  // await futureCandles("ETHUSDT", "1d", 400);
+  //updateOptionSticks("1m", 70);
+}
 
-  binance.futuresChart("BTCUSDT", '1m', (stock, period, chart) => {
-    info(stock);
-    info(period);
-    info(chart);
+async function futureCandles(stock, period, limit) {
+  info(`futureCandles ${stock} ${period} ${limit}`);
+  try {
+    let count = 0;
+    if (period == "1d") {
+      timePatten = "yyyyMMdd";
+    } else if (period == "1m") {
+      timePatten = "yyyyMMddhhmmss";
+    }
 
-    Object.keys(chart).forEach(key => {
-      let item = chart[key];
 
-    });
-  });
+    let response = await binance.futuresCandles(stock, period, { limit });
+    let data = [];
+    for (let i = 0; i < response.length; i++) {
+      let item = response[i];
+      data.push([timeFormat(item.openTime, timePatten), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
+      if (data.length == 50) {
+        let body = {
+          period: period,
+          scode: stock,
+          type: 1,
+          data: data
+        };
+        await post(`${g.baseUrl}/stock/data/upload`, body);
+        count += 50;
+        info(`uploaded:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
+        data = [];
+      }
+    }
 
+    if (data.length > 0) {
+      let body = {
+        period: period,
+        scode: stock,
+        type: 1,
+        data: data
+      };
+      await post(`${g.baseUrl}/stock/data/upload`, body);
+      count += data.length;
+      info(`uploaded:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
+    }
 
-  return;
+  } catch (e) {
+    error("futureCandles failed:", e);
+  }
+
 }
 
 function init() {
@@ -630,10 +660,11 @@ function init() {
 
 init();
 
-start();
-
-//test1();
-//startFutureMiniTicket();
+if (dev == 1) {
+  test1();
+} else {
+  start();
+}
 
 
 
