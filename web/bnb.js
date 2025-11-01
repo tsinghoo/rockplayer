@@ -28,6 +28,7 @@ g.baseUrl = "http://test1.91taogu.com";
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'DOGEUSDT'];
+g.stocklist = ['BTCUSDT'];
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -482,10 +483,10 @@ async function start() {
 
   for (let scode of g.stocklist) {
     await updateSticks(scode, "1m", 240);
-    await updateSticks(scode, "1d", 30);
+    await updateSticks(scode, "1d", 360);
 
     await futureCandles(scode, "1m", 240);
-    await futureCandles(scode, "1d", 30);
+    await futureCandles(scode, "1d", 360);
   }
 
   startFutureMiniTicket();
@@ -590,9 +591,7 @@ async function updateFuturePositions() {
 }
 
 async function test1() {
-  // await futureCandles("ETHUSDT", "1m", 400);
-  // await futureCandles("ETHUSDT", "1d", 400);
-  //updateOptionSticks("1m", 70);
+  start();
 }
 
 async function futureCandles(stock, period, limit) {

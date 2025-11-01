@@ -2658,7 +2658,7 @@ app.post('/stock/data/upload', async (req, res) => {
             if (data[i][3] > 0) {
                 //['Time', 'volume', 'amount', 'lastPrice']
                 let row = {
-                    id: `${scode}-${date.getTime()}`,
+                    id: `${scode}-${type}-${date.getTime()}`,
                     scode: scode,
                     time: date.getTime(),
                     data: JSON.stringify({
@@ -2673,7 +2673,7 @@ app.post('/stock/data/upload', async (req, res) => {
         } else {
             //['Time', 'open', 'close', 'high', 'low', 'volume', 'amount']
             let row = {
-                id: `${scode}-${data[i][0]}`,
+                id: `${scode}-${type}-${data[i][0]}`,
                 scode: scode,
                 time: data[i][0],
                 open: data[i][1],
