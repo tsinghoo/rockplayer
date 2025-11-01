@@ -620,7 +620,7 @@ async function futureCandles(stock, period, limit) {
         };
         await post(`${g.baseUrl}/stock/data/upload`, body);
         count += 50;
-        info(`uploaded:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
+        info(`fc upload:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
         data = [];
       }
     }
@@ -634,7 +634,7 @@ async function futureCandles(stock, period, limit) {
       };
       await post(`${g.baseUrl}/stock/data/upload`, body);
       count += data.length;
-      info(`uploaded:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
+      info(`fc upload last:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
     }
 
   } catch (e) {
