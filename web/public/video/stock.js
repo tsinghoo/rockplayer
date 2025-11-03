@@ -2378,6 +2378,14 @@ window.feed_list = window.feed_list || (function () {
                                     </td>
                                 </tr>
                             `;
+            let expireTime = r.expireTime ? share.timeFormat__(r.expireTime, "失效:yyyy-MM-dd hh:mm") : "";
+            let expire= `
+                                <tr>
+                                    <td colspan="6" class="nowrap red font10 center">
+                                    ${expireTime}
+                                    </td>
+                                </tr>
+                            `;
             let actions = "";
             if (r.actions && r.actions.length > 0) {
                 actions = r.actions.map(a => {
@@ -2401,7 +2409,7 @@ window.feed_list = window.feed_list || (function () {
                 }).join("");
             }
 
-            let html = `<table>${price}${actions}</table>`;
+            let html = `<table>${expire}${price}${actions}</table>`;
             c.html(html);
         },
         showChart: async function (rows) {
