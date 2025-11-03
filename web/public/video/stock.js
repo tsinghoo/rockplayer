@@ -2370,19 +2370,15 @@ window.feed_list = window.feed_list || (function () {
                             <div class="margin4">${rc.broker}<br> : ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip))}</span><br>${rc.sellAmount}</div>
                           </div>`;
             }
+            let expireTime = r.expireTime ? share.timeFormat__(r.expireTime, "失效:yyyy-MM-dd hh:mm") : "";
 
             let price = `
                                 <tr>
                                     <td colspan="6" class="nowrap">
-                                    ${prices}
-                                    </td>
-                                </tr>
-                            `;
-            let expireTime = r.expireTime ? share.timeFormat__(r.expireTime, "失效:yyyy-MM-dd hh:mm") : "";
-            let expire= `
-                                <tr>
-                                    <td colspan="6" class="nowrap red font10 center">
+                                    <div class="nowrap red font10 center">
                                     ${expireTime}
+                                    </div>
+                                    ${prices}
                                     </td>
                                 </tr>
                             `;
@@ -2409,7 +2405,7 @@ window.feed_list = window.feed_list || (function () {
                 }).join("");
             }
 
-            let html = `<table>${expire}${price}${actions}</table>`;
+            let html = `<table>${price}${actions}</table>`;
             c.html(html);
         },
         showChart: async function (rows) {
