@@ -1991,7 +1991,8 @@ app.get('/stock/rule/create', async (req, res) => {
 
     let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?)`;
     let broker = json.broker;
-    let expireHours = parseFloat(json.expireHours);
+    let calc=eval(json.expireHours);
+    let expireHours = parseFloat(calc);
     let expireTime = now + expireHours * 60 * 60 * 1000;
     let id = `${json.scode}.${broker}`;
     let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
