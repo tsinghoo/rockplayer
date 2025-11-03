@@ -1,5 +1,3 @@
-const e = require("express");
-
 window.feed_list = window.feed_list || (function () {
     var share = window.mhgl_share;
     var page = window.mhgl_page;

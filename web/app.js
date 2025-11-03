@@ -1989,7 +1989,7 @@ app.get('/stock/rule/create', async (req, res) => {
     let json = JSON.parse(req.query.json);
     let now = Date.now();
 
-    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?,?)`;
+    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?)`;
     let broker = json.broker;
     let expireHours = parseInt(json.expireHours);
     let expireTime = now + expireHours * 60 * 1000;
