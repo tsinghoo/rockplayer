@@ -1,3 +1,4 @@
+const e = require("express");
 
 window.feed_list = window.feed_list || (function () {
     var share = window.mhgl_share;
@@ -1009,6 +1010,7 @@ window.feed_list = window.feed_list || (function () {
             c.find(".sname").val(`${self.selectedData["名称"]}`);
             c.find(".scode").val(`${self.selectedData["代码"]}`);
             c.find(".operationName").val(`${broker}`);
+            c.find(".expireHours").val("12");
             let np = self.selectedData.curPrice;
             if (np == null || np == 0) {
                 np = self.selectedData["价格"];
@@ -1194,6 +1196,7 @@ window.feed_list = window.feed_list || (function () {
                 let sname = c.find(".sname").val().trim();
                 let sellAmount = c.find(".sellAmount").val().trim();
                 let buyAmount = c.find(".buyAmount").val().trim();
+                let expireHours= c.find(".expireHours").val().trim();
                 let order = "";
                 if (c.find(".buyFirst")[0].checked) {
                     order = "buyFirst";
@@ -1205,7 +1208,7 @@ window.feed_list = window.feed_list || (function () {
 
                 let submit = async function () {
 
-                    let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, broker, order };
+                    let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, broker, order, expireHours };
                     let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                     if (res.error) {
                         share.toastError__(res.error);

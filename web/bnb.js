@@ -28,7 +28,6 @@ g.baseUrl = "http://test1.91taogu.com";
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'DOGEUSDT'];
-g.stocklist = ['BTCUSDT'];
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);

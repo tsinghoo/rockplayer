@@ -455,6 +455,21 @@ async function reloadRule(r, req) {
     }
 
     info("reloadRule:" + r.scode, req);
+
+    let now = Date.now();
+    if (r.expireTime != null && r.expireTime < now) {
+        info("expired rule:" + r.scode, req);
+        if (rules[r.scode] && rules[r.scode][r.broker]) {
+            delete rules[r.scode][r.broker];
+        }
+
+        await db.runSync(`update tRuleAction set done = -1 where ruleId=?`, [r.id]);
+
+        await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
+
+        return;
+    }
+
     if (r.closed != 0) {
         if (rules[r.scode] && rules[r.scode][r.broker]) {
             delete rules[r.scode][r.broker];
@@ -1466,6 +1481,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='71' where key='dbVersion';",
         `alter table tpositions add column type int default 0;`,
         "update config set value='73' where key='dbVersion';",
+        `alter table tTradeRule add column expireTime int;`,
+        "update config set value='75' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -1972,10 +1989,12 @@ app.get('/stock/rule/create', async (req, res) => {
     let json = JSON.parse(req.query.json);
     let now = Date.now();
 
-    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime) values(?,?,?,?,?,?)`;
+    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?,?)`;
     let broker = json.broker;
+    let expireHours = parseInt(json.expireHours);
+    let expireTime = now + expireHours * 60 * 1000;
     let id = `${json.scode}.${broker}`;
-    let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now]);
+    let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
     await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
     if (rules[json.scode] == null) {
         rules[json.scode] = {};
