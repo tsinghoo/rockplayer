@@ -307,21 +307,22 @@ def init():
 
 def getStockList():
     # 从test1获取股票列表
+    info("getStockList")
     try:
         response = requests.get(
             g.baseUrl + "/stock/codes", verify=False, timeout=5)
         if response.status_code != 200:
-            print("请求失败，状态码:", response.status_code)
+            info("getStockList failed:", response.status_code)
             return g.stocklist
         else:
-            print("获取stock codes成功:", response.status_code)
+            info("getStockList success:", response.status_code)
             response.encoding = 'utf-8'
             content = response.text
-            print(content)
+            info("getStockList response:", content)
             return json.loads(content)
 
     except Exception as e:
-        print("获取stockk list失败:", str(e))
+        error("getStockList failed:", str(e))
         return g.stocklist
 
 
@@ -505,6 +506,7 @@ def update1mTask():
 
 
 def updatePriceTask():
+    info("upt")
     while True:
         uploadStockPrice()
         time.sleep(0.1)
@@ -796,7 +798,7 @@ def update1m(stocklist):
             # print("所有列名:", df.keys())
             # info("所有:", df.values())
             columns = ['Time'] + datas.columns.tolist()
-            debug(columns)
+            # debug(columns)
             debug(len(datas), "rows")
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
@@ -1016,7 +1018,7 @@ def python_to_json(obj, indent=4, ensure_ascii=False):
 
 
 def subscribe_whole_callback(data):
-
+    info("subscribe_whole_callback", data)
     for stock in data:
         if stock not in g.stocklist:
             continue
@@ -1132,7 +1134,9 @@ def resubscribe():
     if g.subscribeId != 0:
         info("unsubscribe", g.subscribeId)
         xtdata.unsubscribe_quote(g.subscribeId)
-
+    #将g.stocklist中包含".EC"的元素去除
+    g.stocklist = [x for x in g.stocklist if not x.endswith(".EC")]
+    
     g.subscribeId = xtdata.subscribe_whole_quote(
         g.stocklist, callback=subscribe_whole_callback)
 
@@ -1244,8 +1248,8 @@ if __name__ == '__main__':
     # print("deals:", len(deals))
     # js = python_to_json(deals)
     # print(js)
-    resubscribe()
-    # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
+    # resubscribe()
+    g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
     t1 = Thread(target=update1dTask)
     t1.start()

@@ -613,6 +613,8 @@ window.feed_list = window.feed_list || (function () {
                             td.html(`${row[key]}${option}`);
                             td.addClass("almostwhite");
                         }
+                    } else if (key == "序号") {
+                        td.html(i);
                     } else if (key == "券商") {
                         td.html(row[key]);
                     } else if (key == "tid") {
@@ -1194,7 +1196,7 @@ window.feed_list = window.feed_list || (function () {
                 let sname = c.find(".sname").val().trim();
                 let sellAmount = c.find(".sellAmount").val().trim();
                 let buyAmount = c.find(".buyAmount").val().trim();
-                let expireHours= c.find(".expireHours").val().trim();
+                let expireHours = c.find(".expireHours").val().trim();
                 let order = "";
                 if (c.find(".buyFirst")[0].checked) {
                     order = "buyFirst";

@@ -4,6 +4,7 @@
 '''
 import random
 import os
+import shutil
 import threading
 import time
 import datetime
@@ -47,6 +48,8 @@ runGetActionTask = 1
 baseUrl = "http://192.168.66.205:3001"
 baseUrl = "http://test1.91taogu.com"
 
+g.baseUrl = "http://192.168.66.205:3001"
+g.baseUrl = "http://test1.91taogu.com"
 
 logPathPrefix = os.getenv("logPathPrefix")
 if logPathPrefix:
@@ -56,13 +59,11 @@ else:
 
 #####################################################
 
+g.tick = {}
 g.actions = {}
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
-
-stocks = {}
-# 初始化函数 - 策略运行开始时调用一次
 
 
 def printTask():
@@ -71,16 +72,146 @@ def printTask():
         log2File(toPrint, g.logPathPrefix + "\\qmt.action")
         time.sleep(0.1)
 
+def subscribe_whole_callback(data):
+    for stock in data:
+        if stock not in g.stocklist:
+            continue
+        g.tick[stock] = data[stock]
+
+
+
+def getStockList():
+    # 从test1获取股票列表
+    info("getStockList")
+    try:
+        response = requests.get(
+            g.baseUrl + "/stock/codes", verify=False, timeout=5)
+        if response.status_code != 200:
+            info("getStockList failed:", response.status_code)
+            return g.stocklist
+        else:
+            info("getStockList success:", response.status_code)
+            response.encoding = 'utf-8'
+            content = response.text
+            info("getStockList response:", content)
+            return json.loads(content)
+
+    except Exception as e:
+        error("getStockList failed:", str(e))
+        return g.stocklist
+
+
+def resetThreadId(label=""):
+    threadLocal.id = label + datetime.datetime.now().strftime("%H%M%S") + \
+        str(random.randint(0, 1000))
+
+
+def update1dTask():
+    info("update1dTask")
+    g.candidates = getCandidates()
+    resetThreadId("u1d")
+    # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
+    update1d(g.candidates)
+
+    g.ruleCodes = getRuleCodes()
+    resetThreadId("u1d")
+    update1d(g.ruleCodes)
+
+    while True:
+        time.sleep(1)
+        resetThreadId("u1d")
+        reloadK1d, g.reloadK1d = g.reloadK1d, []
+        if len(reloadK1d) > 0:
+            info("reloading 1d data")
+            for scode in reloadK1d:
+                updateActionOrdered(scode, "", "56", 0, "")
+                update1d([scode.replace(".HGT", ".HK")], "20210101", "")
+        g.stocklist = getStockList()
+        update1d(g.stocklist)
+
+        updateLastStartTime1d()
+        saveConfig()
+
+
+def update1mTask():
+    while True:
+        time.sleep(1)
+        resetThreadId("u1m")
+        update1m(g.stocklist)
+        
+
+def updatePriceTask():
+    info("upt")
+    while True:
+        uploadStockPrice()
+        time.sleep(0.1)
+
+
+
+def uploadStockPrice():
+    # 组装成json对象post到test1.91taogu.com
+    # 为data添加passcode属性
+    sb, g.tick = g.tick, {}  # 这行是原子的
+    if (len(list(sb)) < 1):
+        info("0 stocks, skip upload")
+        return
+    info("上传", len(list(sb)), "个股票价格")
+    # info(sb.keys())
+    try:
+        response = requests.post(g.baseUrl+"/stock/quotes.mini", json={
+            "data": sb, "passcode": "995560"}, verify=False, timeout=5)
+        if response.status_code != 200:
+            error("请求失败，状态码:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            # info("请求test1成功:", response.status_code, response.text)
+    except Exception as e:
+        error("请求失败:", str(e))
+
+
+def loadConfig():
+    if not os.path.exists(g.configFile):
+        g.config = {}
+        with open(g.configFile, 'w') as f:
+            json.dump(g.config, f)
+    else:
+        with open(g.configFile) as f:
+            g.config = json.load(f)
+    info("config:", g.config)
+
+
+def saveConfig():
+    # 备份g.configFile到g.configFile+".bak"
+    shutil.copy(g.configFile, g.configFile+".bak")
+
+    with open(g.configFile, 'w') as f:
+        json.dump(g.config, f)
 
 def init(ContextInfo):
     info(sys.version)
     info(sys.executable)
     ContextInfo.set_account(account)
-    stocklist = ['000300.SH', '000004.SZ']
-    ContextInfo.set_universe(stocklist)
+    
+    g.stocklist = getStockList()
+    ContextInfo.set_universe(g.stocklist)
+
+    g.subID = ContextInfo.subscribe_whole_quote(g.stocklist, callback=subscribe_whole_callback)
+
+
+    # t1 = Thread(target=update1dTask)
+    # t1.start()
+
+    t2 = Thread(target=update1mTask)
+    t2.start()
 
     t3 = Thread(target=printTask)
     t3.start()
+
+    # t5 = Thread(target=updatePriceTask)
+    # t5.start()
+
+    
     if (runGetActionTask == 1):
         info("start getActions task")
         ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
@@ -442,6 +573,85 @@ def orderError_callback(ContextInfo, orderArgs, errMsg):
     error('orderError_callback')
     error(errMsg)
     debug(obj2JsonString(orderArgs))
+
+
+
+def initLastStartTime1d():
+    g.config["lastStartTime1d"] = (datetime.datetime.now() - datetime.timedelta(days=370)).strftime(
+        "%Y%m%d")
+    info("lastStartTime1d:", g.config["lastStartTime1d"])
+
+
+def update1m(stocklist):
+    info("update1m")
+    pds = ["1m"]
+
+    if "lastStartTime1m" not in g.config:
+        initLastStartTime1m()
+        saveConfig()
+    dataStartTime = (datetime.datetime.strptime(
+        g.config["lastStartTime1m"], "%Y%m%d%H%M%S") - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
+    info("dataStartTime:", dataStartTime)
+    g.config["lastStartTime1m"] = datetime.datetime.now().strftime(
+        "%Y%m%d%H%M%S")
+    saveConfig()
+    dataEndTime = ""
+    for index, scode in enumerate(stocklist):
+        for period in pds:
+            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+            if period == "tick":
+                params = ['volume', 'amount', 'lastPrice']
+            # params = []
+            info('downloading', period, 'for', scode, 'from', dataStartTime)
+            xtdata.download_history_data(
+                scode, period, dataStartTime, dataEndTime)
+            info('get', period, 'from', dataStartTime, 'to', dataEndTime,
+                 'for', scode, "(", index, "/", len(stocklist), ")")
+            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
+                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
+            datas = df[scode]
+            # print("所有列名:", df.keys())
+            # info("所有:", df.values())
+            columns = ['Time'] + datas.columns.tolist()
+            # debug(columns)
+            debug(len(datas), "rows")
+            # array_data = [datas.columns.tolist()] + datas.values.tolist()
+
+            # 将datas的数据分批上传，每批100条
+            bsize = 500
+            for i in range(0, len(datas), bsize):
+                batch = datas.iloc[i:i+bsize]
+                info("上传", scode, period,
+                     "[", i, ",", i+bsize, "]", len(batch))
+                batch_data = []
+                for idx, row in batch.iterrows():
+                    batch_data.append([str(idx)] + [row["open"], row["close"],
+                                                    row["high"], row["low"], row["volume"], row["amount"]])
+                # info(obj2JsonString(batch_data, indent=None))
+
+                if (len(batch_data) == 0):
+                    info("no data")
+                    continue
+                body = {"data": obj2Json(
+                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                debug("body:", body)
+                # 上传数据到test1
+                try:
+                    response = requests.post(
+                        g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
+                    if response.status_code != 200:
+                        error("上传失败，状态码:", response.status_code,
+                              "响应内容:", response.text)
+                except Exception as e:
+                    error("上传失败:", str(e))
+
+
+def initLastStartTime1m():
+    today = datetime.datetime.now().date()
+    g.config["lastStartTime1m"] = datetime.datetime.combine(
+        today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
+    info("lastStartTime1m:", g.config["lastStartTime1m"])
+
 
 
 def obj2Json(obj, max_depth=4, current_depth=1):
