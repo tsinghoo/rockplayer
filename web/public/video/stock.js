@@ -614,7 +614,7 @@ window.feed_list = window.feed_list || (function () {
                             td.addClass("almostwhite");
                         }
                     } else if (key == "序号") {
-                        td.html(i);
+                        td.html(i+1);
                     } else if (key == "券商") {
                         td.html(row[key]);
                     } else if (key == "tid") {

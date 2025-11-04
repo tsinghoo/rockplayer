@@ -2465,7 +2465,7 @@ function formatScode(stockCode) {
 app.get('/stock/codes', async (req, res) => {
     info("/stock/codes", req)
     let js = req.query.js;
-    let sql = `select distinct ts.scode from tstock ts where ts.deleted=0 union select distinct scode from tTradeRule;`;
+    let sql = `select scode from tstockbasic;`;
     let r = await db.allSync(sql);
     let scodes = [];
     r.rows.forEach((row) => {
