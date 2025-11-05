@@ -159,7 +159,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         info("on order callback:")
         info(object_to_json(order))
         updateActionOrdered(order.stock_code, order.order_type,
-                            order.order_status, order.traded_price, order.order_sysid)
+                            order.order_status, order.traded_price, order.order_sysid, order.status_msg)
         # print(order.stock_code, order.order_status, order.order_sysid)
 
     def on_stock_trade(self, trade):
@@ -319,8 +319,8 @@ def getStockList():
             response.encoding = 'utf-8'
             content = response.text
             info("getStockList response:", content)
-            stocklist = json.loads(content)            
-            #将g.stocklist中包含".EC"的元素去除
+            stocklist = json.loads(content)
+            # 将g.stocklist中包含".EC"的元素去除
             stocklist = [x for x in stocklist if not x.endswith(".EC")]
             # stocklist=["09926.HK"]
             return stocklist
@@ -647,12 +647,16 @@ def actionDone(id):
         error("action done error:", str(e))
 
 
-def updateActionOrdered(scode, type, status, price, orderId):
+def updateActionOrdered(scode, type, status, price, orderId, statusMessage):
     try:
-        info("updateActionOrdered", scode, type, status, price, orderId)
+        info("updateActionOrdered", scode, type,
+             status, price, orderId, statusMessage)
         # 目标 URL
         url = g.baseUrl+"/stock/rule/action/ordered"
         info("url:", url)
+        if (status == 57):
+            status = status + ":" + statusMessage
+
         # 要发送的 JSON 数据（Python 字典）
         data = {
             "broker": g.broker,
@@ -692,8 +696,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             if lastDate:
                 dataStartTime = lastDate
             else:
-                #把dateStartTime设置为1年前
-                dataStartTime = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime("%Y%m%d")
+                # 把dateStartTime设置为1年前
+                dataStartTime = (datetime.datetime.now() -
+                                 datetime.timedelta(days=365)).strftime("%Y%m%d")
         period = '1d'
         datas = get1dData(stocklist, index, dataStartTime, endTime)
         # print("所有列名:", df.keys())
@@ -952,7 +957,8 @@ def getDeals(stockAccount, start_time, end_time):
     #     stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
     # info(result)
     if (start_time is None):
-        start_time=(datetime.datetime.now() - datetime.timedelta(days=15)).strftime("%Y%m%d")
+        start_time = (datetime.datetime.now() -
+                      datetime.timedelta(days=15)).strftime("%Y%m%d")
 
     deals = xt_trader.query_data(
         stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time=start_time, end_time=end_time)
@@ -1139,7 +1145,7 @@ def resubscribe():
     if g.subscribeId != 0:
         info("unsubscribe", g.subscribeId)
         xtdata.unsubscribe_quote(g.subscribeId)
-    
+
     g.subscribeId = xtdata.subscribe_whole_quote(
         g.stocklist, callback=subscribe_whole_callback)
 
@@ -1219,7 +1225,7 @@ if __name__ == '__main__':
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
 
-    ## 查询当日所有的委托
+    # 查询当日所有的委托
     orders = xt_trader.query_stock_orders(stockAccountHgt, False)
     info("orders:", obj2JsonString(orders))
 
@@ -1252,14 +1258,14 @@ if __name__ == '__main__':
     # info("deals A:", len(deals))
     # js = python_to_json(deals)
     # info("deals:", js)
-    
+
     # deals = getDeals(stockAccountHgt)
     # info("deals HGT:", len(deals))
     # js = python_to_json(deals)
     # info("deals HGT:", js)
-    
+
     resubscribe()
-    #g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
+    # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
     t1 = Thread(target=update1dTask)
     t1.start()

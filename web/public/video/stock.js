@@ -11,8 +11,7 @@ window.feed_list = window.feed_list || (function () {
             "50": "已报",
             "54": "已撤",
             "55": "部成",
-            "56": "已成",
-            "57": "废单"
+            "56": "已成"
         },
         mapping: {
             "toBuy": "待买",
