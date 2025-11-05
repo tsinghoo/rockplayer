@@ -1218,6 +1218,13 @@ window.feed_list = window.feed_list || (function () {
                 let brokerPopup;
                 let buttons = [
                     {
+                        text: "不变",
+                        onTap: function () {
+                            submit();
+                            brokerPopup.close();
+                        }
+                    },
+                    {
                         text: "国信",
                         onTap: function () {
                             broker = "国信";
@@ -1229,13 +1236,6 @@ window.feed_list = window.feed_list || (function () {
                         text: "国金",
                         onTap: function () {
                             broker = "国金";
-                            submit();
-                            brokerPopup.close();
-                        }
-                    },
-                    {
-                        text: "不变",
-                        onTap: function () {
                             submit();
                             brokerPopup.close();
                         }
