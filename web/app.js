@@ -2002,7 +2002,7 @@ app.get('/stock/rule/create', async (req, res) => {
     }
 
     rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker]);
-    reloadRule(rules[json.scode][broker], req);
+    await reloadRule(rules[json.scode][broker], req);
 
     let market = getMarket(json.scode);
     let buy = 0;
