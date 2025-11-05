@@ -35,7 +35,10 @@ const server = http.createServer(app);
 let wss = null;
 
 function initWss() {
-    wss = new WebSocket.Server({ server });
+    wss = new WebSocket.Server({
+        server,
+        path: '/stock/ws'
+    });
     wss.on('connection', async (ws, request) => {
         // 获取客户端 IP
         const clientIP = request.socket.remoteAddress;
