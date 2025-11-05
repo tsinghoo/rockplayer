@@ -2419,7 +2419,7 @@ function getMarket(stockCode) {
     } else if (code.indexOf("USDT") >= 0 || code.indexOf("BTC") >= 0 || code.indexOf("ETH") >= 0) {
         suffix = "EC";
     } else {
-        share.debug__(`未知：${code}`);
+        debug(`未知：${code}`);
     }
 
     // 返回格式化结果（如 600023.SH）

@@ -57,6 +57,14 @@ if logPathPrefix:
 else:
     g.logPathPrefix = r"d:"
 
+
+configPathPrefix = os.getenv("configPathPrefix")
+
+if configPathPrefix:
+    g.configFile = configPathPrefix + r"\qmt.config.json"
+else:
+    g.configFile = r"d:\qmt.config.json"
+
 #####################################################
 
 g.tick = {}
@@ -72,12 +80,12 @@ def printTask():
         log2File(toPrint, g.logPathPrefix + "\\qmt.action")
         time.sleep(0.1)
 
+
 def subscribe_whole_callback(data):
     for stock in data:
         if stock not in g.stocklist:
             continue
         g.tick[stock] = data[stock]
-
 
 
 def getStockList():
@@ -94,7 +102,10 @@ def getStockList():
             response.encoding = 'utf-8'
             content = response.text
             info("getStockList response:", content)
-            return json.loads(content)
+            stocklist = json.loads(content)
+            # 将g.stocklist中包含".EC"的元素去除
+            stocklist = [x for x in stocklist if not x.endswith(".EC")]
+            return stocklist
 
     except Exception as e:
         error("getStockList failed:", str(e))
@@ -137,15 +148,17 @@ def update1mTask():
     while True:
         time.sleep(1)
         resetThreadId("u1m")
-        update1m(g.stocklist)
-        
+        try:
+            update1m(g.ContextInfo)
+        except Exception as e:
+            error("update1m error:", str(e))
+
 
 def updatePriceTask():
     info("upt")
     while True:
         uploadStockPrice()
         time.sleep(0.1)
-
 
 
 def uploadStockPrice():
@@ -188,34 +201,6 @@ def saveConfig():
     with open(g.configFile, 'w') as f:
         json.dump(g.config, f)
 
-def init(ContextInfo):
-    info(sys.version)
-    info(sys.executable)
-    ContextInfo.set_account(account)
-    
-    g.stocklist = getStockList()
-    ContextInfo.set_universe(g.stocklist)
-
-    g.subID = ContextInfo.subscribe_whole_quote(g.stocklist, callback=subscribe_whole_callback)
-
-
-    # t1 = Thread(target=update1dTask)
-    # t1.start()
-
-    t2 = Thread(target=update1mTask)
-    t2.start()
-
-    t3 = Thread(target=printTask)
-    t3.start()
-
-    # t5 = Thread(target=updatePriceTask)
-    # t5.start()
-
-    
-    if (runGetActionTask == 1):
-        info("start getActions task")
-        ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
-
 
 def updateActionOrdered(scode, type, status, price, orderId):
     try:
@@ -246,7 +231,16 @@ def updateActionOrdered(scode, type, status, price, orderId):
         error("updateActionStatus 出错:", traceback.format_exc())
 
 
+def getActionsTask():
+    info("getActionsTask")
+    while True:
+        time.sleep(1)
+        resetThreadId("act")
+        getActions(g.ContextInfo)
+
+
 def getActions(ContextInfo):
+    info("getActions")
     try:
         response = requests.get(
             "http://test1.91taogu.com/stock/rule/actions?broker="+broker, timeout=5)
@@ -321,16 +315,6 @@ def actionDone(id):
                   "响应内容:", response.text)
     except Exception as e:
         error("action done error:", str(e))
-
-
-def after_init(ContextInfo):
-    info('after_init')
-    syncPosition("clean")
-    syncPosition("stock")
-    syncPosition("HUGANGTONG")
-    syncPosition("SHENGANGTONG")
-
-# 行情处理函数 - 每次行情更新时调用
 
 
 def getFloat(a):
@@ -425,11 +409,6 @@ def log2File(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True, mode
                 f.flush()
 
 
-def handlebar(ContextInfo):
-    info("handlebar ", ContextInfo.barpos)
-    pass
-
-
 # 资金账号状态变化主推 account_callback()
 def account_callback(ContextInfo, accountInfo):
     info('account_callback:')  # m_strStatus 为资金账号的属性之一，表示资金账号的状态
@@ -455,12 +434,12 @@ def printObj(data, indent="  "):
 def task_callback(ContextInfo, data):
     info('task_callback')
     debug(obj2JsonString(data))
-    js=obj2Json(data)
+    js = obj2Json(data)
     type = js["m_eOrderType"]
     status = js["m_eStatus"]
     scode = js["m_stockCode"]
     strMsg = js["m_strMsg"]
-    
+
     updateActionOrdered(scode, type, status, 0, strMsg)
 
 # 账号成交状态变化主推
@@ -575,14 +554,21 @@ def orderError_callback(ContextInfo, orderArgs, errMsg):
     debug(obj2JsonString(orderArgs))
 
 
-
 def initLastStartTime1d():
     g.config["lastStartTime1d"] = (datetime.datetime.now() - datetime.timedelta(days=370)).strftime(
         "%Y%m%d")
     info("lastStartTime1d:", g.config["lastStartTime1d"])
 
 
-def update1m(stocklist):
+def update1mTimer(ci):
+    try:
+        resetThreadId("u1m")
+        update1m(ci)
+    except Exception as e:
+        error("update1m error:", str(e))
+    
+
+def update1m(ci):
     info("update1m")
     pds = ["1m"]
 
@@ -596,19 +582,19 @@ def update1m(stocklist):
         "%Y%m%d%H%M%S")
     saveConfig()
     dataEndTime = ""
-    for index, scode in enumerate(stocklist):
+    for index, scode in enumerate(g.stocklist):
         for period in pds:
             params = ['open', 'close', 'high', 'low', 'volume', 'amount']
             if period == "tick":
                 params = ['volume', 'amount', 'lastPrice']
             # params = []
             info('downloading', period, 'for', scode, 'from', dataStartTime)
-            xtdata.download_history_data(
-                scode, period, dataStartTime, dataEndTime)
+            download_history_data(
+                scode, period, dataStartTime, dataEndTime, incrementally=True)
             info('get', period, 'from', dataStartTime, 'to', dataEndTime,
-                 'for', scode, "(", index, "/", len(stocklist), ")")
-            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
+                 'for', scode, "(", index, "/", len(g.stocklist), ")")
+            df = ci.get_market_data_ex(params, [scode], period=period,
+                                       start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
             datas = df[scode]
             # print("所有列名:", df.keys())
             # info("所有:", df.values())
@@ -651,7 +637,6 @@ def initLastStartTime1m():
     g.config["lastStartTime1m"] = datetime.datetime.combine(
         today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
     info("lastStartTime1m:", g.config["lastStartTime1m"])
-
 
 
 def obj2Json(obj, max_depth=4, current_depth=1):
@@ -718,6 +703,52 @@ def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
                     ensure_ascii=ensure_ascii)
     return js
 
+
+def init(ContextInfo):
+    info(sys.version)
+    info(sys.executable)
+    loadConfig()
+    ContextInfo.set_account(account)
+    g.ContextInfo = ContextInfo
+    g.stocklist = getStockList()
+    ContextInfo.set_universe(g.stocklist)
+
+    g.subID = ContextInfo.subscribe_whole_quote(
+        g.stocklist, callback=subscribe_whole_callback)
+
+    # t1 = Thread(target=update1dTask)
+    # t1.start()
+
+    # t2 = Thread(target=update1mTask)
+    # t2.start()
+
+    t3 = Thread(target=printTask)
+    t3.start()
+
+    # t4 = Thread(target=getActionsTask)
+    # t4.start()
+    # t5 = Thread(target=updatePriceTask)
+    # t5.start()
+
+    if (runGetActionTask == 1):
+        info("start getActions task")
+        ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
+    
+
+def after_init(ContextInfo):
+    info('after_init')
+    syncPosition("clean")
+    syncPosition("stock")
+    syncPosition("HUGANGTONG")
+    syncPosition("SHENGANGTONG")
+
+
+
+def handlebar(ContextInfo):
+    info("handlebar ", ContextInfo.barpos)
+    # resetThreadId("hdlbar")
+    # g.ContextInfo = ContextInfo
+    # update1mTimer(ContextInfo)
 
 def stop(ContextInfo):
     error('stop')

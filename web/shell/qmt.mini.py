@@ -319,7 +319,11 @@ def getStockList():
             response.encoding = 'utf-8'
             content = response.text
             info("getStockList response:", content)
-            return json.loads(content)
+            stocklist = json.loads(content)            
+            #将g.stocklist中包含".EC"的元素去除
+            stocklist = [x for x in stocklist if not x.endswith(".EC")]
+            # stocklist=["09926.HK"]
+            return stocklist
 
     except Exception as e:
         error("getStockList failed:", str(e))
@@ -943,14 +947,15 @@ def getPositions():
     return all
 
 
-def getDeals():
-    stockAccount = StockAccount(g.account)
-    result = xt_trader.export_data(
-        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
-    info(result)
+def getDeals(stockAccount, start_time, end_time):
+    # result = xt_trader.export_data(
+    #     stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
+    # info(result)
+    if (start_time is None):
+        start_time=(datetime.datetime.now() - datetime.timedelta(days=15)).strftime("%Y%m%d")
 
     deals = xt_trader.query_data(
-        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
+        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time=start_time, end_time=end_time)
     return deals
 
 
@@ -1130,12 +1135,10 @@ def updatePositions():
 
 
 def resubscribe():
-    info("resubscribe start")
+    info("resubscribe start", g.stocklist)
     if g.subscribeId != 0:
         info("unsubscribe", g.subscribeId)
         xtdata.unsubscribe_quote(g.subscribeId)
-    #将g.stocklist中包含".EC"的元素去除
-    g.stocklist = [x for x in g.stocklist if not x.endswith(".EC")]
     
     g.subscribeId = xtdata.subscribe_whole_quote(
         g.stocklist, callback=subscribe_whole_callback)
@@ -1216,6 +1219,7 @@ if __name__ == '__main__':
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
 
+    ## 查询当日所有的委托
     orders = xt_trader.query_stock_orders(stockAccountHgt, False)
     info("orders:", obj2JsonString(orders))
 
@@ -1244,12 +1248,18 @@ if __name__ == '__main__':
 
     startUpdatePositions()
 
-    # deals = getDeals()
-    # print("deals:", len(deals))
+    # deals = getDeals(stockAccount)
+    # info("deals A:", len(deals))
     # js = python_to_json(deals)
-    # print(js)
-    # resubscribe()
-    g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
+    # info("deals:", js)
+    
+    # deals = getDeals(stockAccountHgt)
+    # info("deals HGT:", len(deals))
+    # js = python_to_json(deals)
+    # info("deals HGT:", js)
+    
+    resubscribe()
+    #g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
     t1 = Thread(target=update1dTask)
     t1.start()
