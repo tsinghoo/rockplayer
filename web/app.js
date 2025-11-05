@@ -2006,8 +2006,8 @@ app.get('/stock/rule/create', async (req, res) => {
 
     let market = getMarket(json.scode);
     let buy = 0;
-    if (rules[json.scode][broker]) {
-        buy = rules[json.scode][broker].currentPrice;
+    if (rules[json.scode][broker] && rules[json.scode][broker].rule) {
+        buy = rules[json.scode][broker].rule.currentPrice;
     }
     await insertOrReplace("tStockBasic", {
         id: json.scode,
