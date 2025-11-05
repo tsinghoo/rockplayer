@@ -655,7 +655,7 @@ def updateActionOrdered(scode, type, status, price, orderId, statusMessage):
         url = g.baseUrl+"/stock/rule/action/ordered"
         info("url:", url)
         if (status == 57):
-            status = status + ":" + statusMessage
+            status = f"{status}:{statusMessage}"
 
         # 要发送的 JSON 数据（Python 字典）
         data = {
