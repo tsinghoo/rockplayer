@@ -1991,7 +1991,7 @@ app.get('/stock/rule/create', async (req, res) => {
 
     let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?)`;
     let broker = json.broker;
-    let calc=eval(json.expireHours);
+    let calc = eval(json.expireHours);
     let expireHours = parseFloat(calc);
     let expireTime = now + expireHours * 60 * 60 * 1000;
     let id = `${json.scode}.${broker}`;
@@ -2005,12 +2005,16 @@ app.get('/stock/rule/create', async (req, res) => {
     reloadRule(rules[json.scode][broker], req);
 
     let market = getMarket(json.scode);
+    let buy = 0;
+    if (rules[json.scode][broker]) {
+        buy = rules[json.scode][broker].currentPrice;
+    }
     await insertOrReplace("tStockBasic", {
         id: json.scode,
         scode: json.scode,
         sname: json.sname,
         market: market,
-        buy: 0,
+        buy: buy,
         priority: now,
         updateTime: now
     });
