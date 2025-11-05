@@ -59,9 +59,11 @@ today = datetime.datetime.now().date()
 threadLocal = threading.local()
 
 
+
 async def websocket_client():
     info("start websocket_client")
     uri = g.baseUrl.replace("http", "ws")
+    uri = f"{uri}/stock/ws"
     info(f"websocket connecting to {uri}")
     try:
         # 连接到 WebSocket 服务器

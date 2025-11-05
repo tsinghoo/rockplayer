@@ -6,7 +6,7 @@ const fileUpload = require('express-fileupload');
 const http = require('http');
 const app = express();
 const WebSocket = require('ws');
-const uuid = import('uuid');
+const { v4: uuid } = require('uuid');
 //引入sqlite库
 const sqlite3 = require('sqlite3').verbose();
 const { spawn, exec } = require('child_process');
