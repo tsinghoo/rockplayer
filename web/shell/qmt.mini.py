@@ -32,7 +32,6 @@ g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
 g.broker = "国金"
 
-g.session_id = random.randint(1000, 10000)
 g.subscribeId = 0
 g.tick = {}
 g.actions = {}
@@ -57,7 +56,6 @@ g.log["level"] = g.log["debug"]
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
-
 
 
 async def websocket_client():
@@ -1194,7 +1192,12 @@ if __name__ == '__main__':
     # 生成session id 整数类型 同时运行的策略不能重复
     stockAccount = StockAccount(g.account)
     stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
-    xt_trader = XtQuantTrader(path, g.session_id)
+    if "sessionId" not in g.config:
+        g.config.sessionId = 0
+    g.config.sessionId = g.config.sessionId+1
+    saveConfig()
+
+    xt_trader = XtQuantTrader(path, g.config.sessionId)
     callback = MyXtQuantTraderCallback()
     xt_trader.register_callback(callback)
     # 启动本地客户端
