@@ -69,8 +69,10 @@ async def websocket_client():
             info(f"websocket connected to {uri}")
 
             while True:
+                
+                resetThreadId("ws")
                 response = await wsc.recv()
-                info(f"ws received: {response}")
+                info(f"websocket received: {response}")
                 # 解析 JSON 消息
                 try:
                     message = json.loads(response)
@@ -84,7 +86,7 @@ async def websocket_client():
                         }
 
                         await wsc.send(json.dumps(response))
-                        info(f"发送消息: {response}")
+                        info(f"websocket发送消息: {response}")
 
                     elif message["func"] == "reloadStockCodes":
                         params = message["params"]
@@ -93,35 +95,46 @@ async def websocket_client():
                         }
 
                         await wsc.send(json.dumps(response))
-                        info(f"发送消息: {response}")
+                        info(f"websocket发送消息: {response}")
 
                         g.stocklist = getStockList()
                         resubscribe()
                     elif message["func"] == "forceUpdate1d":
                         params = message["params"]
                         scode = params["scode"]
-                        startTime = datetime.datetime.now().strftime("%Y%m%d%H")
-                        update1d([scode], startTime)
-
+                        update1d([scode])
+                        info("update1d done")
                         response = {
                             "id": message["id"]
                         }
 
                         await wsc.send(json.dumps(response))
-                        info(f"发送消息: {response}")
+                        info(f"websocket发送消息: {response}")
+                    elif message["func"] == "forceUpdate1m":
+                        params = message["params"]
+                        scode = params["scode"]
+                        update1m([scode])
+                        info("update1m done")
+                        response = {
+                            "id": message["id"]
+                        }
+
+                        await wsc.send(json.dumps(response))
+                        info(f"websocket发送消息: {response}")
                     else:
-                        error(f"未知消息类型")
+                        error(f"websocket未知消息类型")
                 except json.JSONDecodeError:
-                    error(f"ws decode error: {response}")
+                    error(f"websocket decode error: {response}")
                     continue
 
-                await asyncio.sleep(1)
 
-    except websocket.exceptions.ConnectionClosed:
+                await asyncio.sleep(1)
+    except websockets.exceptions.ConnectionClosed:
         error("websocket closed")
+        await websocket_client()
     except Exception as e:
         error(f"websocket connect error: {e}")
-
+        await websocket_client()
 
 class MyXtQuantTraderCallback(XtQuantTraderCallback):
     def on_disconnected(self):
@@ -333,7 +346,6 @@ def getStockList():
 
 
 def get1dLastDate(scode):
-    # 从test1获取股票列表
     try:
         url = g.baseUrl + "/stock/1d/lastDate?scode=" + scode
         debug("get", url)
@@ -349,6 +361,23 @@ def get1dLastDate(scode):
 
     except Exception as e:
         error("getLast1dDate failed:", str(e))
+
+def get1mLastMinute(scode):
+    try:
+        url = g.baseUrl + "/stock/1m/lastMinute?scode=" + scode
+        debug("get", url)
+        response = requests.get(url, verify=False, timeout=5)
+        if response.status_code != 200:
+            error("getLast1dMinute failed:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            content = response.text
+            debug(content)
+            return json.loads(content)["lastMinute"]
+
+    except Exception as e:
+        error("getLast1dMinute failed:", str(e))
 
 
 def getCandidates():
@@ -711,33 +740,33 @@ def update1d(stocklist=None, startTime=None, endTime=None):
         # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
         # 将datas的数据分批上传，每批100条
-        bsize = 500
+        bsize = 50
         for i in range(0, len(datas), bsize):
             batch = datas.iloc[i:i+bsize]
             info("上传", scode, period,
                  "[", i, ",", i+bsize, "]", len(batch))
+            batch_data=[]
             for idx, row in batch.iterrows():
                 # info(row)
-                batch_data = [[str(idx)] + [row["open"], row["close"],
-                                            row["high"], row["low"], row["volume"], row["amount"]]]
-            # print(obj2JsonString(batch_data, indent=None))
-                body = {"data": obj2Json(
-                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                debug("body:", body)
-                # 上传数据到test1
-                try:
-                    response = requests.post(
-                        g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
-                    if response.status_code != 200:
-                        error("上传失败，状态码:", response.status_code,
-                              "响应内容:", response.text)
-                except Exception as e:
-                    error("上传失败:", str(e))
+                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"], row["low"], row["volume"], row["amount"]])
+            body = {"data": obj2Json(
+                batch_data), "scode": scode, "period": period, "passcode": "995560"}
+            debug("body:", body)
+            # 上传数据到test1
+            try:
+                response = requests.post(
+                    g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
+                if response.status_code != 200:
+                    error("上传失败，状态码:", response.status_code,
+                            "响应内容:", response.text)
+            except Exception as e:
+                error("上传失败:", str(e))
 
 
 def get1dData(stocklist, index, startTime, endTime):
+    info("get1dData", stocklist, index, startTime, endTime)
     if (startTime is None):
-        startTime = datetime.datetime.now().strftime("%Y%m%d%H")
+        startTime = datetime.datetime.now().strftime("%Y%m%d")
 
     if (endTime is None):
         endTime = ""
@@ -754,7 +783,7 @@ def get1dData(stocklist, index, startTime, endTime):
     df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                    start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
     datas = df[scode]
-
+    info("get1dData done")
     return datas
 
     # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
@@ -778,21 +807,23 @@ def initLastStartTime1d():
     info("lastStartTime1d:", g.config["lastStartTime1d"])
 
 
-def update1m(stocklist):
+def update1m(stocklist, startTime=None):
     info("update1m")
     pds = ["1m"]
 
-    if "lastStartTime1m" not in g.config:
-        initLastStartTime1m()
-        saveConfig()
-    dataStartTime = (datetime.datetime.strptime(
-        g.config["lastStartTime1m"], "%Y%m%d%H%M%S") - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
-    info("dataStartTime:", dataStartTime)
-    g.config["lastStartTime1m"] = datetime.datetime.now().strftime(
-        "%Y%m%d%H%M%S")
-    saveConfig()
+                
     dataEndTime = ""
     for index, scode in enumerate(stocklist):
+        dataStartTime = startTime
+        if (startTime is None):
+            lastMinute = get1mLastMinute(scode)
+            if lastMinute:
+                dataStartTime = lastMinute
+            else:
+                dataStartTime = (datetime.datetime.now() - datetime.timedelta(hours=7)).strftime("%Y%m%d%H%M%S")
+        
+        info("dataStartTime:", dataStartTime)
+
         for period in pds:
             params = ['open', 'close', 'high', 'low', 'volume', 'amount']
             if period == "tick":
@@ -1116,7 +1147,7 @@ def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='u
 def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
-        log2File(toPrint, g.logPathPrefix + "\\qmt.mini")
+        log2File(toPrint, f"{g.logPathPrefix}\\qmt.mini.{g.config['sessionId']}")
         while len(toPrint) > 0:
             item = toPrint.pop(0)
             print(*item[0], **item[1])
