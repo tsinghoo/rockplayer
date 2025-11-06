@@ -334,13 +334,16 @@ def syncPosition(accountType):
         info('查询持仓结果：')
         positions = []
         for dt in data:
+            marketValue = dt.m_dMarketValue
+            if (float('inf') == marketValue or float('-inf') == marketValue):
+                marketValue = 0
             position = {
                 "broker": broker,
                 "account_id": account,
                 "avg_price": dt.m_dOpenPrice,
                 "can_use_volume": dt.m_nCanUseVolume,
                 "frozen_volume": dt.m_nFrozenVolume,
-                "market_value": dt.m_dMarketValue,
+                "market_value": marketValue,
                 "on_road_volume": dt.m_nOnRoadVolume,
                 "floatProfit": getFloat(dt.m_dFloatProfit),
                 "open_price": dt.m_dOpenPrice,
@@ -351,15 +354,15 @@ def syncPosition(accountType):
             positions.append(position)
 
         body = {"data": positions, "passcode": "995560"}
-    info("body:", json.dumps(body, indent=None))
-    response = requests.post(
-        "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
-    if response.status_code != 200:
-        error("上传持仓失败，状态码:", response.status_code)
-        return
-    else:
-        response.encoding = 'utf-8'
-        info("上传持仓到test1成功:", accountType)
+        info("body:", json.dumps(body, indent=None))
+        response = requests.post(
+            "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
+        if response.status_code != 200:
+            error("上传持仓失败，状态码:", response.status_code, response.content)
+            return
+        else:
+            response.encoding = 'utf-8'
+            info("上传持仓到test1成功:", accountType)
 
 
 def debug(*args, **kwargs):
@@ -566,7 +569,7 @@ def update1mTimer(ci):
         update1m(ci)
     except Exception as e:
         error("update1m error:", str(e))
-    
+
 
 def update1m(ci):
     info("update1m")
@@ -733,7 +736,7 @@ def init(ContextInfo):
     if (runGetActionTask == 1):
         info("start getActions task")
         ContextInfo.run_time("getActions", "1nSecond", "2025-04-09 13:20:00")
-    
+
 
 def after_init(ContextInfo):
     info('after_init')
@@ -743,12 +746,12 @@ def after_init(ContextInfo):
     syncPosition("SHENGANGTONG")
 
 
-
 def handlebar(ContextInfo):
     info("handlebar ", ContextInfo.barpos)
     # resetThreadId("hdlbar")
     # g.ContextInfo = ContextInfo
     # update1mTimer(ContextInfo)
+
 
 def stop(ContextInfo):
     error('stop')

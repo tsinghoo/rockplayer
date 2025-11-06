@@ -21,7 +21,9 @@ const { spawn, exec } = require('child_process');
 let response = [];
 let splitting = 0;
 
-app.use(express.json());
+app.use(express.json({
+    limit: '10mb'
+}));
 app.use(express.static('public'));
 let directoryPath = '/Users/tsinghoo/git/rockplayer/web'; // 替换为你想要列出文件的目录路径
 const args = process.argv;
