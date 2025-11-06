@@ -10,9 +10,9 @@ const WebSocket = require('ws');
 //const uuid = (await import('uuid')).v4;
 let uuid;
 import('uuid').then(module => {
-  uuid = module.v4;
+    uuid = module.v4;
 }).catch(err => {
-  console.error('Failed to load uuid module:', err);
+    console.error('Failed to load uuid module:', err);
 });
 
 //引入sqlite库
@@ -61,6 +61,7 @@ function initWss() {
             if (isBinary) {
                 //todo
             } else {
+                info("websocket rec:", message);
                 let json = null;
                 try {
                     json = JSON.parse(message);
@@ -71,8 +72,11 @@ function initWss() {
                     if (json.func) {
                         let res = wss.funcs[json.func](json.params, ws);
                     } else if (json.id) {
-                        wss.callbacks[json.id](json.result, ws);
-                        delete wss.callbacks[json.id];
+                        let cb = wss.callbacks[json.id];
+                        if (cb) {
+                            cb(json.result, ws);
+                            delete wss.callbacks[json.id];
+                        }
                     }
                 }
             }
@@ -88,7 +92,7 @@ function initWss() {
                 let timer = setTimeout(() => {
                     delete wss.callbacks[id];
                     resolve({ error: `ws.callFunc(${func}) timeout` });
-                }, 3000);
+                }, 5000);
 
                 wss.callbacks[id] = function (res) {
                     clearTimeout(timer);
@@ -109,16 +113,15 @@ function initWss() {
         return new Promise(async (resolve, reject) => {
             let client = null;
 
-            for (let i = 0; i < wss.clients.values().length; ++i) {
-                let c = wss.clients.values()[i];
-                if (c.id === clientId) {
+            for (const c of wss.clients) {
+                if (c.clientId === clientId) {
                     client = c;
                     break;
                 }
             }
 
             if (client) {
-                let result = await ws.callFunc(func, params);
+                let result = await client.callFunc(func, params);
                 resolve(result);
             } else {
                 resolve({ error: `clientId ${clientId} not found` });
@@ -2088,6 +2091,7 @@ app.get('/stock/k/1m', async (req, res) => {
         day = new Date(parseInt(day));
     }
 
+    await wss.callFunc("国金", "forceUpdate1m", { scode: formatScode(scode) });
     day.setHours(0, 0, 0, 0);
     let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
     day = timeFormat(day, "yyyyMMdd")
@@ -2169,7 +2173,7 @@ app.get('/stock/k/1d', async (req, res) => {
     startDay = timeFormat(startDay, "yyyyMMdd");
     endDay = timeFormat(endDay, "yyyyMMdd");
 
-    await wss.callFunc("国金", "forceUpdate1d", { scode: scode });
+    await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
 
     let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by scode,time`;
     let result = await db.allSync(sql, [scode, type, startDay, endDay]);
@@ -2583,6 +2587,22 @@ app.get('/stock/1d/lastDate', async (req, res) => {
     let scode = req.query.scode;
     info("scode:" + scode, req)
     let sql = `select max(time) as lastDate from t1d where scode=?`;
+    let r = await db.getSync(sql, [scode.split(".")[0]]);
+
+    var resp = JSON.stringify(r);
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
+app.get('/stock/1m/lastMinute', async (req, res) => {
+    info("/stock/1d/lastMinute", req)
+    let js = req.query.js;
+    let scode = req.query.scode;
+    info("scode:" + scode, req)
+    let sql = `select max(time) as lastMinute from t1m where scode=?`;
     let r = await db.getSync(sql, [scode.split(".")[0]]);
 
     var resp = JSON.stringify(r);
