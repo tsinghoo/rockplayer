@@ -6,7 +6,15 @@ const fileUpload = require('express-fileupload');
 const http = require('http');
 const app = express();
 const WebSocket = require('ws');
-const { v4: uuid } = require('uuid');
+
+//const uuid = (await import('uuid')).v4;
+let uuid;
+import('uuid').then(module => {
+  uuid = module.v4;
+}).catch(err => {
+  console.error('Failed to load uuid module:', err);
+});
+
 //引入sqlite库
 const sqlite3 = require('sqlite3').verbose();
 const { spawn, exec } = require('child_process');
@@ -39,6 +47,8 @@ function initWss() {
         server,
         path: '/stock/ws'
     });
+    wss.callbacks = {};
+    wss.funcs = {};
     wss.on('connection', async (ws, request) => {
         // 获取客户端 IP
         const clientIP = request.socket.remoteAddress;
@@ -80,6 +90,7 @@ function initWss() {
 
                 wss.callbacks[id] = function (res) {
                     clearTimeout(timer);
+                    info(`${func} result: ${res}`);
                     resolve(res);
                 }
 
@@ -88,7 +99,7 @@ function initWss() {
         }
 
         let result = await ws.callFunc("register");
-        info(`${result.clientId} registerred`);
+        info(`${result} registerred`);
         ws.clientId = result.clientId;
     });
 

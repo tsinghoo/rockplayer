@@ -18,7 +18,7 @@ import sys
 import traceback
 from threading import Thread
 import asyncio
-import websocket
+import websockets
 
 
 class G():
@@ -67,7 +67,7 @@ async def websocket_client():
     info(f"websocket connecting to {uri}")
     try:
         # 连接到 WebSocket 服务器
-        async with websocket.connect(uri) as wsc:
+        async with websockets.connect(uri) as wsc:
             info(f"websocket connected to {uri}")
 
             while True:
@@ -80,7 +80,9 @@ async def websocket_client():
                     if message["func"] == "register":
                         response = {
                             "id": message["id"],
-                            "clientId": g.broker,
+                            "result": {
+                                "clientId": g.broker,
+                            }
                         }
 
                         await wsc.send(json.dumps(response))
