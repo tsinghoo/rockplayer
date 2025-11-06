@@ -1075,6 +1075,55 @@ app.post('/stock/update', async (req, resp) => {
                 buy: fields[6],
                 updateTime: now
             });
+        } else if (broker == "国金港股通历史") {
+            fields = fields.concat([""]);
+            let tday = fields[0];
+            let ttime = fields[2];
+            let sname = fields[5];
+            let scode = fields[4];
+            let operationDirection = fields[7];
+            let operationName = "国金";
+            let market = "HK";
+            let tprice = fields[8];
+            let tamount = fields[11];
+            let tcash = fields[12];
+            let taccount = fields[3];
+            let tpair = "";
+
+            scode = fixScode(scode);
+
+            if (ttime.length == 7) {
+                ttime = "0" + ttime.substring(0, 1) + ":" + ttime.substring(1, 3) + ":" + ttime.substring(3, 5);
+            } else if (ttime.length == 8) {
+                ttime = ttime.substring(0, 2) + ":" + ttime.substring(2, 4) + ":" + ttime.substring(4, 6);
+            }
+
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
+            }
+
+            let tid = `${tday}.${ttime}.${scode}.${tprice}`;
+            let lastOperationTime = tday + " " + ttime;
+
+            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
+                tcash, tid, taccount, tpair, lastOperationTime]);
+            if (res.error) {
+                info(res.error, req)
+                resp.send(res);
+                return;
+            } else {
+            }
+
+            await insertOrIgnore("tStockBasic", {
+                id: fields[2],
+                scode: fields[2],
+                sname: fields[3],
+                buy: fields[6],
+                updateTime: now
+            });
         } else if (broker == "国金当日") {
             //tdx 国金证券
             fields = fields.concat([""]);
