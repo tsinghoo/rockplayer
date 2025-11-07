@@ -613,20 +613,17 @@ window.feed_list = window.feed_list || (function () {
                             td.addClass("almostwhite");
                         }
                     } else if (key == "序号") {
-                        td.html(i+1);
+                        td.html(i + 1);
                     } else if (key == "券商") {
                         td.html(row[key]);
                     } else if (key == "tid") {
 
                         tr.addClass(`tid${row[key].replace(/[\.:]/g, '_')}`);
-                        if (firstRow) {
-                            td.html(`<span class="deleteRow clickable white">X</span>` + row[key]);
+
+                        if (row["配对"] == "") {
+                            td.html(`<span class="deleteRow clickable gray">X</span>` + row[key]);
                         } else {
-                            if (row["配对"] == "") {
-                                td.html(`<span class="deleteRow clickable gray">X</span>` + row[key]);
-                            } else {
-                                td.html(`<span class="deleteRow clickable">X</span>` + row[key]);
-                            }
+                            td.html(`<span class="deleteRow clickable">X</span>` + row[key]);
                         }
                     } else if (key == "id") {
                         td.html(`<span class="deleteRowById clickable gray">X</span>` + row[key]);
@@ -848,12 +845,6 @@ window.feed_list = window.feed_list || (function () {
 
                             if (pairedId == "" || pairedId == null || pairedTr.length == 0) {
                                 share.toastError__("未找到配对行");
-                                return;
-                            }
-
-                            let isFirst = pairedTr.hasClass("firstCode");
-                            if (isFirst) {
-                                share.toastError__("不能删除第一行");
                                 return;
                             }
 
