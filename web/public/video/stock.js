@@ -1440,7 +1440,7 @@ window.feed_list = window.feed_list || (function () {
                                     }
                                 }
 
-                                if (delta < -2 && data["买卖"].indexOf("买") > 0) {
+                                if (delta < -2 && data["买卖"].indexOf("买") >= 0) {
                                     if (data["配对"] != "") {
                                         cpl.addClass("gold");
                                     } else {
@@ -1448,7 +1448,7 @@ window.feed_list = window.feed_list || (function () {
                                     }
                                 }
 
-                                if (delta < 0 && data["买卖"].indexOf("卖") > 0) {
+                                if (delta < 0 && data["买卖"].indexOf("卖") >= 0) {
                                     cpl.addClass("red");
                                 }
                             }
