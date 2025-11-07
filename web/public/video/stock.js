@@ -2125,7 +2125,13 @@ window.feed_list = window.feed_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA30', 'BOLL上轨', 'BOLL中轨', 'BOLL下轨', 'Volume']
+                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA30', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
+                    selected: {
+                        'MA5': false,
+                        'MA10': false,
+                        'MA20': false,
+                        'MA30': false,
+                    }
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -2349,6 +2355,7 @@ window.feed_list = window.feed_list || (function () {
                     {
                         name: 'MA30',
                         type: 'line',
+                        show: false,
                         data: self.calculateMA(30, data),
                         smooth: true,
                         symbol: 'none',
@@ -2357,7 +2364,7 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
-                        name: 'BOLL中轨',
+                        name: 'Boll中',
                         type: 'line',
                         data: bollData.mid,
                         smooth: true,
@@ -2368,7 +2375,7 @@ window.feed_list = window.feed_list || (function () {
                         symbol: 'none'
                     },
                     {
-                        name: 'BOLL上轨',
+                        name: 'Boll上',
                         type: 'line',
                         data: bollData.upper,
                         smooth: true,
@@ -2379,7 +2386,7 @@ window.feed_list = window.feed_list || (function () {
                         symbol: 'none'
                     },
                     {
-                        name: 'BOLL下轨',
+                        name: 'Boll下',
                         type: 'line',
                         data: bollData.lower,
                         smooth: true,
