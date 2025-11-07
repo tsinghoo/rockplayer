@@ -1,4 +1,4 @@
-window.feed_list = window.feed_list || (function () {
+window.stock_list = window.stock_list || (function () {
     var share = window.mhgl_share;
     var page = window.mhgl_page;
     var navbar = parent.navFrame ? parent.navFrame.mhgl_navbar : window.mhgl_navbar;
