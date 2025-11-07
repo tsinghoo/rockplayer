@@ -1429,7 +1429,7 @@ window.feed_list = window.feed_list || (function () {
                             if (price == null) {
                                 cpl.html(`${curPrice} (${timePassed})`);
                             } else {
-                                let delta = ((curPrice - price) / price * 100).toFixed(1);
+                                let delta = parseFloat(((curPrice - price) / price * 100).toFixed(1));
                                 cpl.html(`${curPrice} (${delta}% ${timePassed})`);
 
                                 if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
