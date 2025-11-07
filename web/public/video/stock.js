@@ -288,7 +288,7 @@ window.feed_list = window.feed_list || (function () {
                         share.closePopup__();
                         let rule = self.selectedData["规则"];
                         rule = JSON.parse(rule);
-                        self.toBuySell(rule);
+                        self.showBuySell(rule);
                     }
                 },
                 {
@@ -962,7 +962,7 @@ window.feed_list = window.feed_list || (function () {
             })
         },
 
-        toBuySell: async function (opt, c) {
+        showBuySell: async function (opt, c) {
             let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce, order;
             if (opt) {
                 sell = opt.sell;
@@ -1502,9 +1502,19 @@ window.feed_list = window.feed_list || (function () {
 
             let c = $(`#${popup.id}`);
             self.showPosition(null, c.find(".position"), scode);
-            self.showTradeList(c.find(".tradeList"), scode, 0, type);
-            self.toBuySell(null, c);
+            await self.showTradeList(c.find(".tradeList"), scode, 0, type);
+            self.showBuySell(null, c);
             let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
+
+            $(".tradeHistoryTr", c).click(function () {
+                let data = $(this).attr("data");
+                let js = JSON.parse(data);
+                let buy = js.tprice * (1 - 0.02);
+                let sell = js.tprice * (1 + 0.02);
+                c.find(".buy").val(buy);
+                c.find(".sell").val(sell);
+            });
+
             c.find(".rule").click(function (e) {
                 let rc = r.rule;
                 let buy = share.toFixed(rc.buy, 3);
@@ -1984,7 +1994,7 @@ window.feed_list = window.feed_list || (function () {
             let trades = res.data;
             let tr = trades.map(row => {
                 let html = `
-                    <tr> 
+                    <tr class="tradeHistoryTr clickable" data='${JSON.stringify(row)}'> 
                         <td>${row.tday}</td> 
                         <td>${row.ttime}</td>
                         <td>${self.getBuySellText(row.operationDirection)}</td>
