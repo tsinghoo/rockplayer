@@ -1432,7 +1432,7 @@ window.feed_list = window.feed_list || (function () {
                                 let delta = parseFloat(((curPrice - price) / price * 100).toFixed(1));
                                 cpl.html(`${curPrice} (${delta}% ${timePassed})`);
 
-                                if (delta > 0 && data["买卖"].indexOf("买入") >= 0) {
+                                if (delta > 0 && data["买卖"].indexOf("买") >= 0) {
                                     if (data["配对"] != "") {
                                         cpl.addClass("gold");
                                     } else {
@@ -1440,7 +1440,7 @@ window.feed_list = window.feed_list || (function () {
                                     }
                                 }
 
-                                if (delta < -2 && data["买卖"] == "买入") {
+                                if (delta < -2 && data["买卖"].indexOf("买") > 0) {
                                     if (data["配对"] != "") {
                                         cpl.addClass("gold");
                                     } else {
@@ -1448,7 +1448,7 @@ window.feed_list = window.feed_list || (function () {
                                     }
                                 }
 
-                                if (delta < 0 && data["买卖"] == "卖出") {
+                                if (delta < 0 && data["买卖"].indexOf("卖") > 0) {
                                     cpl.addClass("red");
                                 }
                             }
