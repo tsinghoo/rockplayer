@@ -83,12 +83,6 @@
     opacity: .05;
 }
 
-#leftPanel {
-    position: sticky;
-    top: 0;
-    z-index: 1; /* 确保 leftPanel 在内容之上 */
-}
-
 .kLine{
     padding:0 0 0 2;
     color:gray;
@@ -105,15 +99,13 @@
     </head>
     <body>
         <div class="flexrow relative">
-            <div>
-                <div id="leftPanel" class="flexcolumn paddinglr4">
-                    <div class="addButton width100p center clickable padding4">
-                        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                    </div>
-                    <div id="sqls" class="flexcolumn paddinglr4"></div>
+            <div id="leftPanel" class="flexcolumn paddinglr4" style="position:fixed;top:0;">
+                <div class="addButton width100p center clickable padding4">
+                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
                 </div>
+                <div id="sqls" class="flexcolumn paddinglr4"></div>
             </div>
-            <div id="stockTableContainer" class="flexcolumn" style="flex: 1;">
+            <div id="stockTableContainer" class="flexcolumn" style="flex: 1;position:absolute;left:100px;">
                 <table id="stockTable" class="table table-striped">
                     <!-- 表格内容 --></table>
             </div>

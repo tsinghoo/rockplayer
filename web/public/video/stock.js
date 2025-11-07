@@ -829,6 +829,19 @@ window.feed_list = window.feed_list || (function () {
                         }
                     },
                     {
+                        text: "彻底删除本行",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}&force=1`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.remove();
+                            }
+                        }
+                    },
+                    {
                         text: "删除本行及关联",
                         onTap: async function () {
                             popup.close();

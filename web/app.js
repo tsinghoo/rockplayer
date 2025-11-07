@@ -635,7 +635,7 @@ async function tryToBuy(r) {
 
         if (r.actions.length > 0) {
             let oc = r.actions[r.actions.length - 1].createTime;
-            let n = Date().now();
+            let n = Date.now();
             if (n - oc < 1000) {
                 return false;
             }
@@ -1377,10 +1377,14 @@ app.get('/stock/deleteRow', async (req, res) => {
     let js = req.query.js;
     let tid = req.query.tid;
     let id = req.query.id;
+    let force = req.query.force;
     let table = req.query.table;
     if (id && table) {
         let sql = `delete from ${table} where id=? `;
         await db.runSync(sql, [id]);
+    } else if (force) {
+        let sql = `delete from tstock where tid=? `;
+        await db.runSync(sql, [tid]);
     } else {
         let sql = `update tstock set deleted=1 where tid=? `;
         await db.runSync(sql, [tid]);
