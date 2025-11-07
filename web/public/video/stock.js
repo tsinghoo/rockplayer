@@ -2062,7 +2062,44 @@ window.feed_list = window.feed_list || (function () {
                 share.toastSuccess__("reloading", 1000);
             }
         },
+        calculateBOLL: function (data, period = 20, k = 2) {
+            const bollData = {
+                mid: [], // 中轨
+                upper: [], // 上轨
+                lower: []  // 下轨
+            };
 
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    // 前period-1个数据点无法计算BOLL
+                    bollData.mid.push('-');
+                    bollData.upper.push('-');
+                    bollData.lower.push('-');
+                    continue;
+                }
+
+                // 计算中轨（移动平均）
+                let sum = 0;
+                for (let j = i - period + 1; j <= i; j++) {
+                    sum += data[j][1]; // 收盘价
+                }
+                const ma = sum / period;
+                bollData.mid.push(ma);
+
+                // 计算标准差
+                let varianceSum = 0;
+                for (let j = i - period + 1; j <= i; j++) {
+                    varianceSum += Math.pow(data[j][1] - ma, 2);
+                }
+                const std = Math.sqrt(varianceSum / period);
+
+                // 计算上轨和下轨
+                bollData.upper.push(ma + k * std);
+                bollData.lower.push(ma - k * std);
+            }
+
+            return bollData;
+        },
         drawK1dChart: function (scode, categoryData, values, volumes, k1d) {
             if (k1d == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
@@ -2080,13 +2117,15 @@ window.feed_list = window.feed_list || (function () {
             var chartDom = k1d[0];
             var chart = echarts.init(chartDom);
             let data = { categoryData, values, volumes };
+
+            const bollData = self.calculateBOLL(values);
             // 配置项
             var option = {
                 animation: false,
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA30', 'Volume']
+                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA30', 'BOLL上轨', 'BOLL中轨', 'BOLL下轨', 'Volume']
                 },
                 tooltip: {
                     trigger: 'axis',
@@ -2184,7 +2223,7 @@ window.feed_list = window.feed_list || (function () {
                         left: '30px',
                         right: '4px',
                         top: '180px',
-                        height: '60px'
+                        height: '20px'
                     }
                 ],
                 dataZoom: [
@@ -2198,7 +2237,7 @@ window.feed_list = window.feed_list || (function () {
                         show: true,
                         xAxisIndex: [0, 1],
                         type: 'slider',
-                        top: '245px',
+                        top: '200px',
                         start: 92,
                         end: 100
                     }
@@ -2316,6 +2355,39 @@ window.feed_list = window.feed_list || (function () {
                         lineStyle: {
                             opacity: 0.5
                         }
+                    },
+                    {
+                        name: 'BOLL中轨',
+                        type: 'line',
+                        data: bollData.mid,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                            color: '#333333'
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'BOLL上轨',
+                        type: 'line',
+                        data: bollData.upper,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                            color: '#ff7f50'
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'BOLL下轨',
+                        type: 'line',
+                        data: bollData.lower,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                            color: '#87cefa'
+                        },
+                        symbol: 'none'
                     },
                     {
                         name: 'Volume',
