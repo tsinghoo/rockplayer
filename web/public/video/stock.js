@@ -408,7 +408,7 @@ window.stock_list = window.stock_list || (function () {
                     lastCode = tick.scode;
                 } else if (lastCode != tick.scode) {
 
-                    self.drawKTickChart(lastCode, timeData, priceData, volumeData);
+                    self.drawK1mChart(lastCode, timeData, priceData, volumeData);
                     lastCode = tick.scode;
                     timeData = [];
                     priceData = [];
@@ -430,7 +430,7 @@ window.stock_list = window.stock_list || (function () {
             }
 
             if (priceData.length > 0) {
-                self.drawKTickChart(lastCode, timeData, priceData, volumeData);
+                self.drawK1mChart(lastCode, timeData, priceData, volumeData);
             }
         },
         showK1d: async function (codes) {
@@ -962,7 +962,8 @@ window.stock_list = window.stock_list || (function () {
             })
         },
 
-        showBuySell: async function (opt, c) {
+        showBuySell: async function (opt, popup) {
+            let c = $(`#${popup.id}`);
             let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce, order;
             if (opt) {
                 sell = opt.sell;
@@ -1226,6 +1227,7 @@ window.stock_list = window.stock_list || (function () {
                         onTap: function () {
                             submit();
                             brokerPopup.close();
+                            popup.close();
                         }
                     },
                     {
@@ -1234,6 +1236,7 @@ window.stock_list = window.stock_list || (function () {
                             broker = "国信";
                             submit();
                             brokerPopup.close();
+                            popup.close();
                         }
                     },
                     {
@@ -1242,12 +1245,14 @@ window.stock_list = window.stock_list || (function () {
                             broker = "国金";
                             submit();
                             brokerPopup.close();
+                            popup.close();
                         }
                     },
                     {
                         text: "关闭",
                         onTap: function () {
                             brokerPopup.close();
+                            popup.close();
                         }
                     }
                 ];
@@ -1431,9 +1436,9 @@ window.stock_list = window.stock_list || (function () {
                             } else {
                                 let delta = parseFloat(((curPrice - price) / price * 100).toFixed(1));
                                 cpl.html(`${curPrice} (${delta}% ${timePassed})`);
-                                cp.removeClass("red");
-                                cp.removeClass("green");
-                                cp.removeClass("gold");
+                                cpl.removeClass("red");
+                                cpl.removeClass("green");
+                                cpl.removeClass("gold");
                                 if (delta > 0 && data["买卖"].indexOf("买") >= 0) {
                                     if (data["配对"] != "") {
                                         cpl.addClass("gold");
@@ -1484,7 +1489,7 @@ window.stock_list = window.stock_list || (function () {
                             </div>
                        </div>
                        <div class="flexcolumn">
-                            <div class="kTick border margin4">loading 1m</div>
+                            <div class="kTick border margin4" style="width:480px; height:140px;">loading 1m</div>
                             <div class="flexrow margin4">
                                 <div class="day0Status flexrow width100p margin4 hide">
                                     <div class="day0"></div>
@@ -1496,7 +1501,7 @@ window.stock_list = window.stock_list || (function () {
                                     <div class="priceHigh"></div>                
                                 </div>
                             </div>
-                            <div class="k1d border margin4">loading 1d</div>
+                            <div class="k1d border margin4" style="width:480px;height:300px;">loading 1d</div>
                        </div>
                     </div>
                             `;
@@ -1505,7 +1510,7 @@ window.stock_list = window.stock_list || (function () {
             let c = $(`#${popup.id}`);
             self.showPosition(null, c.find(".position"), scode);
             await self.showTradeList(c.find(".tradeList"), scode, 0, type);
-            self.showBuySell(null, c);
+            self.showBuySell(null, popup);
             let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
 
             $(".tradeHistoryTr", c).click(function () {
@@ -1545,7 +1550,6 @@ window.stock_list = window.stock_list || (function () {
                     share.toastError__(res.error);
                 } else {
                     share.toastSuccess__("canceled", 1000);
-                    popup.close();
                 }
             })
 
@@ -1571,7 +1575,7 @@ window.stock_list = window.stock_list || (function () {
                 volumeData.push(tick.volume);
             });
 
-            self.drawKTickChart(scode, timeData, priceData, volumeData, kTick);
+            self.drawK1mChart(scode, timeData, priceData, volumeData, kTick);
 
             let rows = await share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`);
 
@@ -1621,7 +1625,7 @@ window.stock_list = window.stock_list || (function () {
                 c.find(".progressBar").text(`${d0close}`);
             }
 
-            popup.setPosition();
+            //popup.setPosition();
         },
         splitData: function (rawData) {
             let categoryData = [];
@@ -1753,7 +1757,7 @@ window.stock_list = window.stock_list || (function () {
             });
         },
 
-        drawKTickChart: function (scode, categoryData, values, volumes, $c) {
+        drawK1mChart: function (scode, categoryData, values, volumes, $c) {
             if ($c == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
