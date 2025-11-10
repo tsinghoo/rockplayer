@@ -1431,7 +1431,9 @@ window.stock_list = window.stock_list || (function () {
                             } else {
                                 let delta = parseFloat(((curPrice - price) / price * 100).toFixed(1));
                                 cpl.html(`${curPrice} (${delta}% ${timePassed})`);
-
+                                cp.removeClass("red");
+                                cp.removeClass("green");
+                                cp.removeClass("gold");
                                 if (delta > 0 && data["买卖"].indexOf("买") >= 0) {
                                     if (data["配对"] != "") {
                                         cpl.addClass("gold");
