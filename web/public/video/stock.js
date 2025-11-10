@@ -963,7 +963,11 @@ window.stock_list = window.stock_list || (function () {
         },
 
         showBuySell: async function (opt, popup) {
-            let c = $(`#${popup.id}`);
+            let c = null;
+            if (popup != null) { 
+                c = $(`#${popup.id}`); 
+            }
+            
             let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce, order;
             if (opt) {
                 sell = opt.sell;
