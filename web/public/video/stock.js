@@ -1556,76 +1556,82 @@ window.stock_list = window.stock_list || (function () {
 
 
             let kTick = c.find(".kTick");
+            share.getSync__(`/stock/k/1m?scode=${scode}&type=${type}&day=${Date.now()}`)
+                .then((ticks) => {
+                    var timeData = [];
+                    var priceData = [];
+                    var volumeData = [];
+                    ticks.forEach(function (tick) {
+                        let dateStr = (tick.time);
+                        const year = dateStr.substring(0, 4);
+                        const month = dateStr.substring(4, 6);
+                        const day = dateStr.substring(6, 8);
+                        const hours = dateStr.substring(8, 10);
+                        const minutes = dateStr.substring(10, 12);
+                        const seconds = dateStr.substring(12, 14);
 
-            let ticks = await share.getSync__(`/stock/k/1m?scode=${scode}&type=${type}&day=${Date.now()}`);
-            var timeData = [];
-            var priceData = [];
-            var volumeData = [];
-            ticks.forEach(function (tick) {
-                let dateStr = (tick.time);
-                const year = dateStr.substring(0, 4);
-                const month = dateStr.substring(4, 6);
-                const day = dateStr.substring(6, 8);
-                const hours = dateStr.substring(8, 10);
-                const minutes = dateStr.substring(10, 12);
-                const seconds = dateStr.substring(12, 14);
+                        timeData.push(`${hours}:${minutes}`);
+                        priceData.push(tick.close);
+                        volumeData.push(tick.volume);
+                    });
 
-                timeData.push(`${hours}:${minutes}`);
-                priceData.push(tick.close);
-                volumeData.push(tick.volume);
-            });
+                    self.drawK1mChart(scode, timeData, priceData, volumeData, kTick);
+                }).catch(function (err) {
+                    kTick.text(err);
+                });
 
-            self.drawK1mChart(scode, timeData, priceData, volumeData, kTick);
+            let k1d = c.find(".k1d");
+            share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`)
+                .then((rows) => {
+                    let categoryData = [];
+                    let values = [];
+                    let volumes = [];
 
-            let rows = await share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`);
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
+                        categoryData.push(row.time);
+                        values.push([row.open, row.close, row.high, row.low]);
+                        volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
+                    }
 
-            let categoryData = [];
-            let values = [];
-            let volumes = [];
+                    if (values.length > 0) {
+                        self.drawK1dChart(scode, categoryData, values, volumes, k1d);
+                    }
 
-            for (let i = 0; i < rows.length; i++) {
-                let row = rows[i];
-                categoryData.push(row.time);
-                values.push([row.open, row.close, row.high, row.low]);
-                volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
-            }
+                    let lastDay = categoryData[categoryData.length - 1];
+                    let d0v = values[values.length - 1];
+                    let d0low = share.toFixed(d0v[3]);
+                    let d0high = share.toFixed(d0v[2]);
+                    let d0close = share.toFixed(d0v[1]);
+                    c.find(".day0").text(`${lastDay}`);
 
-            if (values.length > 0) {
-                let k1d = c.find(".k1d");
-                self.drawK1dChart(scode, categoryData, values, volumes, k1d);
-            }
+                    let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
+                    if (todayStr != lastDay) {
+                        c.find(".day0").addClass("bg_purple gray");
+                    }
 
-            let lastDay = categoryData[categoryData.length - 1];
-            let d0v = values[values.length - 1];
-            let d0low = share.toFixed(d0v[3]);
-            let d0high = share.toFixed(d0v[2]);
-            let d0close = share.toFixed(d0v[1]);
-            c.find(".day0").text(`${lastDay}`);
-
-            let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
-            if (todayStr != lastDay) {
-                c.find(".day0").addClass("bg_purple gray");
-            }
-
-            c.find(".day0Status").removeClass("hide");
-            c.find(".priceLow").text(`${d0low}`);
-            c.find(".priceHigh").text(`${d0high}`);
-            //获取progressContainer的实际宽度
-            let totalWidth = c.find(".progressContainer").width();
-            if (d0high == d0low) {
-                c.find(".progressBar").width(totalWidth);
-                c.find(".progressBar").text(`|---|`);
-            } else if (d0close == d0low) {
-                c.find(".progressBar").width(0);
-                c.find(".progressBar").text(`|---`);
-            } else {
-                let lw = 4;
-                let w = lw + (totalWidth - lw) * (d0close - d0low) / (d0high - d0low);
-                c.find(".progressBar").width(w);
-                c.find(".progressBar").text(`${d0close}`);
-            }
-
-            //popup.setPosition();
+                    c.find(".day0Status").removeClass("hide");
+                    c.find(".priceLow").text(`${d0low}`);
+                    c.find(".priceHigh").text(`${d0high}`);
+                    //获取progressContainer的实际宽度
+                    let totalWidth = c.find(".progressContainer").width();
+                    if (d0high == d0low) {
+                        c.find(".progressBar").width(totalWidth);
+                        c.find(".progressBar").text(`|---|`);
+                    } else if (d0close == d0low) {
+                        c.find(".progressBar").width(0);
+                        c.find(".progressBar").text(`|---`);
+                    } else {
+                        let lw = 4;
+                        let w = lw + (totalWidth - lw) * (d0close - d0low) / (d0high - d0low);
+                        c.find(".progressBar").width(w);
+                        c.find(".progressBar").text(`${d0close}`);
+                    }
+                }).catch(
+                    function (err) {
+                        k1d.text(err);
+                    }
+                )
         },
         splitData: function (rawData) {
             let categoryData = [];
