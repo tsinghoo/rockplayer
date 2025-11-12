@@ -642,7 +642,8 @@ window.stock_list = window.stock_list || (function () {
 
                         }
                         if (rc != null) {
-                            self.showRule({ rule: rc }, td);
+                            let closed = row["已关闭"];
+                            self.showRule({ rule: rc, closed }, td);
                             if (rc.order == "") {
                                 td.find("table").css({
                                     border: "1px solid gray",
@@ -964,10 +965,10 @@ window.stock_list = window.stock_list || (function () {
 
         showBuySell: async function (opt, popup) {
             let c = null;
-            if (popup != null) { 
-                c = $(`#${popup.id}`); 
+            if (popup != null) {
+                c = $(`#${popup.id}`);
             }
-            
+
             let sell, buy, delta, broker, sellAmount, buyAmount, dip, bounce, order;
             if (opt) {
                 sell = opt.sell;
@@ -1554,6 +1555,9 @@ window.stock_list = window.stock_list || (function () {
                     share.toastError__(res.error);
                 } else {
                     share.toastSuccess__("canceled", 1000);
+                    c.find(".rule").html("");
+                    c.find(".ruleStatus").html("");
+                    let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
                 }
             })
 
@@ -2481,11 +2485,14 @@ window.stock_list = window.stock_list || (function () {
                           </div>`;
             }
             let expireTime = r.expireTime ? share.timeFormat__(r.expireTime, "失效:yyyy-MM-dd hh:mm") : "";
-
+            let color = "red";
+            if (r.expireTime < Date.now()) {
+                color = "gray";
+            }
             let price = `
                                 <tr>
                                     <td colspan="6" class="nowrap">
-                                    <div class="nowrap red font10 center">
+                                    <div class="nowrap ${color} font10 center">
                                     ${expireTime}
                                     </div>
                                     ${prices}
@@ -2515,7 +2522,12 @@ window.stock_list = window.stock_list || (function () {
                 }).join("");
             }
 
-            let html = `<table>${price}${actions}</table>`;
+            color = "";
+            if (r.expireTime < Date.now() || r.closed) {
+                color = "gray";
+            }
+
+            let html = `<table class="${color}">${price}${actions}</table>`;
             c.html(html);
         },
         showChart: async function (rows) {
