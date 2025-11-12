@@ -369,24 +369,7 @@ window.stock_list = window.stock_list || (function () {
                 await self.getRuleStatus();
             }
         },
-        updateKLine: async function (codes) {
-            if (codes == null) {
-                let vtr = $('.firstCode').filter(function () {
-                    let res = share.isInViewport($(this));
-                    if (res) {
-                        let hide = $(this).find(".k1d").hasClass("hide");
-                        return !hide
-                    }
-
-                    return res;
-                });
-
-                codes = vtr.toArray().map(function (item) {
-                    let code = $(item).attr("code");
-                    return code;
-                });
-            }
-            codes = codes.slice(0, 3);
+        updateK1ms: async function (codes) {
             codes.forEach(function (scode) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
@@ -395,7 +378,7 @@ window.stock_list = window.stock_list || (function () {
             });
 
             //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
-            let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}`);
+            let ticks = await share.getSync__(`/stock/k/1ms?scodes=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
             var timeData = [];
@@ -433,28 +416,7 @@ window.stock_list = window.stock_list || (function () {
                 self.drawK1mChart(lastCode, timeData, priceData, volumeData);
             }
         },
-        showK1d: async function (codes) {
-            if (codes == null) {
-                let vtr = $('.firstCode').filter(function () {
-                    let tr = $(this);
-
-                    let res = share.isInViewport($(this));
-                    if (res) {
-                        let hide = $(this).find(".k1d").hasClass("hide");
-                        return !hide
-                    }
-
-                    return res;
-                });
-
-                codes = vtr.toArray().map(function (item) {
-                    let code = $(item).attr("code");
-                    return code;
-                });
-            }
-
-            codes = codes.slice(0, 3);
-
+        showK1ds: async function (codes) {
             codes.forEach(function (scode) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
@@ -462,10 +424,8 @@ window.stock_list = window.stock_list || (function () {
                 // k1d.html("loading k1d");
             });
 
-
-
             //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
-            let rows = await share.getSync__(`/stock/k/1d?scode=${codes.join(",")}`);
+            let rows = await share.getSync__(`/stock/k/1ds?type=0&scodes=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
 
@@ -479,7 +439,7 @@ window.stock_list = window.stock_list || (function () {
                     lastCode = row.scode;
                 } else if (lastCode != row.scode) {
 
-                    self.drawK1dChart(lastCode, categoryData, values, volumes);
+                    self.drawK1dChartSmall(lastCode, categoryData, values, volumes);
                     lastCode = row.scode;
                     categoryData = [];
                     values = [];
@@ -492,7 +452,7 @@ window.stock_list = window.stock_list || (function () {
             }
 
             if (values.length > 0) {
-                self.drawK1dChart(lastCode, categoryData, values, volumes);
+                self.drawK1dChartSmall(lastCode, categoryData, values, volumes);
             }
 
         },
@@ -527,19 +487,19 @@ window.stock_list = window.stock_list || (function () {
                     th.addClass("tdRule");
                 } else if (keys[i] == "状态") {
                     th.addClass("tdStatus");
-                } else if (keys[i] == "K线") {
+                } else if (keys[i] == "K1d") {
                     th.addClass("tdKLine");
                     th.addClass("thKLine");
                     th.addClass("clickable");
                 }
             }
 
-            if (keys.includes("K线")) {
+            if (keys.includes("K1d")) {
                 window.addEventListener('scroll', function () {
                     clearTimeout(self.scrollTimer);
                     self.scrollTimer = setTimeout(function () {
-                        self.updateKLine();
-                        self.showK1d();
+                        self.updateK1ms();
+                        self.showK1ds();
                     }, 250);
                 });
             }
@@ -661,7 +621,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("ruleStatus");
                             // td.removeClass("nowrap"); 
                         }
-                    } else if (key == "K线") {
+                    } else if (key == "K1d") {
                         if (firstRow) {
                             td.addClass("tdKLine");
                             let html = `
@@ -700,7 +660,7 @@ window.stock_list = window.stock_list || (function () {
                 $(".repeatCode").hide();
             }
 
-            if (keys.includes("K线")) {
+            if (keys.includes("K1d")) {
                 // self.showK1d();
             }
 
@@ -713,8 +673,6 @@ window.stock_list = window.stock_list || (function () {
                 if ($($(".k1d")[0]).hasClass("hide")) {
                     $(".k1d").removeClass("hide");
                     $(".kTick").removeClass("hide");
-                    self.showK1d();
-                    self.updateKLine();
                 } else {
                     $(".k1d").addClass("hide");
                     $(".kTick").addClass("hide");
@@ -755,8 +713,8 @@ window.stock_list = window.stock_list || (function () {
                     k1d.removeClass("hide");
                     kTick.removeClass("hide");
 
-                    self.showK1d([scode]);
-                    self.updateKLine([scode]);
+                    self.showK1ds([scode]);
+                    self.updateK1ms([scode]);
                 } else {
                     k1d.addClass("hide");
                     kTick.addClass("hide");
@@ -2432,6 +2390,114 @@ window.stock_list = window.stock_list || (function () {
 
                                 return '#ef232a';
                             }
+                        }
+                    }
+                ]
+            };
+
+            // 使用配置项显示图表
+            chart.setOption(option);
+
+            // 响应式调整
+            window.addEventListener('resize', function () {
+                chart.resize();
+            });
+        },
+        drawK1dChartSmall: function (scode, categoryData, values, volumes, k1d) {
+            if (k1d == null) {
+                let tr = $(`.firstCode[code="${scode}"]`);
+                let td = tr.find(".tdKLine");
+                k1d = td.find(".k1d");
+            }
+            const upColor = '#00da3c';
+            const downColor = '#ec0000';
+            k1d.css({
+                width: "100px",
+                height: "60px"
+            });
+            k1d.removeAttr("_echarts_instance_");
+            // k1d.html("loading k1d");
+            var chartDom = k1d[0];
+            var chart = echarts.init(chartDom);
+            // 配置项
+            var option = {
+                animation: false,
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                    formatter: function (params) {
+                        var result = params[0].axisValue + '<br/>';
+                        params.forEach(function (item) {
+                            if (item.seriesName === '1d') {
+                                result += '开盘: ' + parseFloat(item.value[1]).toFixed(3) + '<br/>';
+                                result += '收盘: ' + parseFloat(item.value[2]).toFixed(3) + '<br/>';
+                                result += '最高: ' + parseFloat(item.value[3]).toFixed(3) + '<br/>';
+                                result += '最低: ' + parseFloat(item.value[4]).toFixed(3) + '<br/>';
+                                result += '成交量: ' + volumes[params[0].dataIndex][1] + '<br/>';
+                            } else {
+                                result += item.seriesName + ': ' + item.value + '<br/>';
+                            }
+                        });
+                        return result;
+                    },
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    padding: 2,
+                    textStyle: {
+                        color: '#000'
+                    },
+                    position: function (pos, params, el, elRect, size) {
+                        const obj = {
+                            top: 2
+                        };
+                        obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                        return obj;
+                    }
+                    // extraCssText: 'width: 170px'
+                },
+                grid: {
+                    left: 0,
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    containLabel: false
+                },
+                xAxis:
+                {
+                    type: 'category',
+                    data: categoryData,
+                    boundaryGap: false,
+                    axisLine: { onZero: false },
+                    axisTick: { show: false },
+                    splitLine: { show: false },
+                    axisLabel: { show: false },
+                    min: 'dataMin',
+                    max: 'dataMax',
+                    axisPointer: {
+                        z: 100
+                    }
+                },
+                yAxis:
+                {
+                    scale: true,
+                    splitNumber: 2,
+                    axisLabel: { show: false },
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                    splitLine: { show: true }
+                },
+                series: [
+                    {
+                        name: '1d',
+                        type: 'candlestick',
+                        data: values,
+                        itemStyle: {
+                            color: downColor,
+                            color0: upColor,
+                            borderColor: undefined,
+                            borderColor0: undefined
                         }
                     }
                 ]

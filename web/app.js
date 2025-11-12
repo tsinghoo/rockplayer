@@ -2243,6 +2243,46 @@ app.get('/stock/k/1d', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/k/1ds', async (req, res) => {
+    info("get /stock/k/1ds", req)
+    let js = req.query.js;
+    info(JSON.stringify(req.query), req)
+    let scodes = req.query.scodes;
+    let type = req.query.type;
+    let startDay = req.query.startDay;
+    let endDay = req.query.endDay;
+    if (endDay == null) {
+        endDay = new Date();
+        //day.setMonth(4, 30);
+    } else {
+        endDay = new Date(parseInt(endDay));
+    }
+
+    if (startDay == null) {
+        startDay = new Date(endDay.getTime() - 30 * 24 * 60 * 60 * 1000);
+        //day.setMonth(4, 30);
+    } else {
+        startDay = new Date(parseInt(startDay));
+    }
+
+    startDay = timeFormat(startDay, "yyyyMMdd");
+    endDay = timeFormat(endDay, "yyyyMMdd");
+
+    let sql = `select * from t1d where scode in ('${scodes.split(',').join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
+    let result = await db.allSync(sql, [type, startDay, endDay]);
+
+    var resp = JSON.stringify(result.rows);
+    if (result.error) {
+        resp = JSON.stringify(result);
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/rule/cancel', async (req, res) => {
     info("get /stock/rule/cancel", req)
     info(JSON.stringify(req.query), req)
