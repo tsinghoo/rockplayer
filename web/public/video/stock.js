@@ -498,9 +498,10 @@ window.stock_list = window.stock_list || (function () {
                 window.addEventListener('scroll', function () {
                     clearTimeout(self.scrollTimer);
                     self.scrollTimer = setTimeout(function () {
-                        self.updateK1ms();
+                        console.log("scrolling");
+                        //self.updateK1ms();
                         self.showK1ds();
-                    }, 250);
+                    }, 100);
                 });
             }
 
@@ -626,16 +627,16 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdKLine");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-minus kLineCollapse clickable"/>
+                                <span class = "glyphicon glyphicon-minus kLineCollapse hide clickable"/>
                                 <div class="flexcolumn">
                                     <div class="kTick hide"></div>
-                                    <div class="k1d hide"></div>
+                                    <div class="k1d"></div>
                                 </div>
                             </div>
                             `;
                             td.html(html);
 
-
+                            self.showK1ds([row["代码"]]);
                             // td.removeClass("nowrap"); 
                         }
                     } else {
@@ -715,6 +716,7 @@ window.stock_list = window.stock_list || (function () {
 
                     self.showK1ds([scode]);
                     self.updateK1ms([scode]);
+                    $(this).addClass("hide");
                 } else {
                     k1d.addClass("hide");
                     kTick.addClass("hide");
@@ -2032,13 +2034,13 @@ window.stock_list = window.stock_list || (function () {
             return r;
         },
 
-        toReloadK1d: async function (scode) {
-            let res = await share.getSync__("/stock/reload/k1d", { scode, broker: "国金" });
-            if (res.error) {
-                share.toastError__(res.error);
-            } else {
-                share.toastSuccess__("reloading", 1000);
-            }
+        toCloseK1d: async function (scode) {
+            let tr = $(`.firstCode[code="${scode}"]`);
+            let td = tr.find(".tdKLine");
+            k1d = td.find(".k1d");
+            k1d.html("");
+            k1d.addClass("hide");
+            td.find(".kLineCollapse").removeClass("hide");
         },
         calculateBOLL: function (data, period = 20, k = 2) {
             const bollData = {
@@ -2163,7 +2165,7 @@ window.stock_list = window.stock_list || (function () {
                             title: '重载',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
                             onclick: function () {
-                                self.toReloadK1d(scode);
+                                self.toCloseK1d(scode);
                             }
                         },
                         dataZoom: {
@@ -2412,8 +2414,8 @@ window.stock_list = window.stock_list || (function () {
             const upColor = '#00da3c';
             const downColor = '#ec0000';
             k1d.css({
-                width: "100px",
-                height: "60px"
+                width: "160px",
+                height: "90px"
             });
             k1d.removeAttr("_echarts_instance_");
             // k1d.html("loading k1d");
@@ -2446,11 +2448,12 @@ window.stock_list = window.stock_list || (function () {
                     borderColor: '#ccc',
                     padding: 2,
                     textStyle: {
-                        color: '#000'
+                        color: '#000',
+                        fontSize: 8
                     },
                     position: function (pos, params, el, elRect, size) {
                         const obj = {
-                            top: 2
+                            top: 0
                         };
                         obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
                         return obj;
@@ -2463,6 +2466,18 @@ window.stock_list = window.stock_list || (function () {
                     top: 0,
                     bottom: 0,
                     containLabel: false
+                },
+                toolbox: {
+                    feature: {
+                        myCustomTool: {
+                            show: true,
+                            title: '关闭',
+                            icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
+                            onclick: function () {
+                                self.toCloseK1d(scode);
+                            }
+                        }
+                    }
                 },
                 xAxis:
                 {
