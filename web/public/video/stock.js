@@ -5,6 +5,8 @@ window.stock_list = window.stock_list || (function () {
     var self = {
         data: {},
         rows: [],
+        showK1d: 1,
+        showK1m: 1,
         statusMapping: {
             "10": "出错",
             "49": "待报",
@@ -375,6 +377,7 @@ window.stock_list = window.stock_list || (function () {
                 let td = tr.find(".tdK1m");
                 let k1m = td.find(".k1m");
                 k1m.html("loading k1m");
+                k1m.removeClass("hide");
             });
 
             let ticks = await share.getSync__(`/stock/k/1ms?type=0&scodes=${codes.join(",")}`);
@@ -411,11 +414,16 @@ window.stock_list = window.stock_list || (function () {
             }
 
             if (priceData.length > 0) {
-                self.drawK1mChart(lastCode, timeData, priceData, volumeData);
+                self.drawK1mChartSmall(lastCode, timeData, priceData, volumeData);
             }
         },
         showK1dsInView: async function () {
             let vtr = $('.firstCode').map(function (i, item) {
+                let k1d = $(item).find(".k1d");
+                if (!k1d.hasClass("hide")) {
+                    return;
+                }
+
                 let res = share.isInViewport($(item));
                 if (res) {
                     let data = $(this).attr("data");
@@ -427,6 +435,11 @@ window.stock_list = window.stock_list || (function () {
         },
         showK1msInView: async function () {
             let vtr = $('.firstCode').map(function (i, item) {
+                let k1m = $(item).find(".k1m");
+                if (!k1m.hasClass("hide")) {
+                    return;
+                }
+
                 let res = share.isInViewport($(item));
                 if (res) {
                     let data = $(this).attr("data");
@@ -442,6 +455,7 @@ window.stock_list = window.stock_list || (function () {
                 let td = tr.find(".tdK1d");
                 k1d = td.find(".k1d");
                 k1d.html("loading k1d");
+                k1d.removeClass("hide");
             });
 
             //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
@@ -659,7 +673,7 @@ window.stock_list = window.stock_list || (function () {
                             <div class="flexrow">
                                 <span class = "glyphicon glyphicon-minus k1dCollapse clickable"/>
                                 <div class="flexcolumn">
-                                    <div class="k1d"></div>
+                                    <div class="k1d hide"></div>
                                 </div>
                             </div>
                             `;
@@ -675,7 +689,7 @@ window.stock_list = window.stock_list || (function () {
                             <div class="flexrow">
                                 <span class = "glyphicon glyphicon-minus k1mCollapse clickable"/>
                                 <div class="flexcolumn">
-                                    <div class="k1m"></div>
+                                    <div class="k1m hide"></div>
                                 </div>
                             </div>
                             `;
@@ -716,10 +730,10 @@ window.stock_list = window.stock_list || (function () {
                 self.showK1d = !self.showK1d;
                 if (self.showK1d) {
                     $(".k1d").removeClass("hide");
-                    $(".kTick").removeClass("hide");
+                    $(".k1dCollapse").removeClass("gray");
                 } else {
                     $(".k1d").addClass("hide");
-                    $(".kTick").addClass("hide");
+                    $(".k1dCollapse").addClass("gray");
                 }
             })
 
@@ -727,8 +741,10 @@ window.stock_list = window.stock_list || (function () {
                 self.showK1m = !self.showK1m;
                 if (self.showK1m) {
                     $(".k1m").removeClass("hide");
+                    $(".k1mCollapse").removeClass("gray");
                 } else {
                     $(".k1m").addClass("hide");
+                    $(".k1mCollapse").addClass("gray");
                 }
             })
 
@@ -782,8 +798,6 @@ window.stock_list = window.stock_list || (function () {
                 }
             })
 
-
-            //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
             $(".code").click(async function (e) {
                 e.stopPropagation();
                 let code = $(this).parents("tr").attr("code");
@@ -796,7 +810,6 @@ window.stock_list = window.stock_list || (function () {
                 //self.showChart(rows);
             })
 
-            //鼠标在firstCode那些行之上时，显示一个弹出框，显示该股票的历史交易价格
             $(".kLine").click(async function (e) {
                 e.stopPropagation();
                 let code = $(this).parents("tr").attr("code");
@@ -1990,12 +2003,13 @@ window.stock_list = window.stock_list || (function () {
             if ($c == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdK1m");
+                td.find(".k1mCollapse").addClass("hide");
                 $c = td.find(".k1m");
             }
 
             $c.css({
-                width: "480px",
-                height: "140px"
+                width: "160px",
+                height: "90px"
             });
 
             $c.removeAttr("_echarts_instance_");
@@ -2044,22 +2058,56 @@ window.stock_list = window.stock_list || (function () {
                 legend: {
                     show: false,
                 },
+                toolbox: {
+                    feature: {
+                        myCustomTool: {
+                            show: true,
+                            title: '关闭',
+                            icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
+                            onclick: function (e, i, name, event) {
+                                self.toCloseK1m(scode);
+                                event.event.stopPropagation();
+                            }
+                        }
+                    }
+                },
                 tooltip: {
                     trigger: 'axis',
                     axisPointer: {
                         type: 'cross'
+                    },
+                    borderWidth: 1,
+                    borderColor: '#ccc',
+                    padding: 2,
+                    textStyle: {
+                        color: '#000',
+                        fontSize: 8
+                    },
+                    formatter: function (params) {
+                        var result = params[0].axisValue + '<br/>';
+                        params.forEach(function (item) {
+                            result += item.seriesName + ': ' + item.value + '<br/>';
+                        });
+                        return result;
+                    },
+                    position: function (pos, params, el, elRect, size) {
+                        const obj = {
+                            top: 0
+                        };
+                        obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
+                        return obj;
                     }
                 },
                 grid: [
                     {
-                        top: '6px',
-                        left: '35px',
-                        right: '10px',
+                        bottom: '0px',
+                        left: '0px',
+                        right: '0px',
                         height: '84px',
                     },
                     {
-                        left: '35px',
-                        right: '10px',
+                        left: '0px',
+                        right: '0px',
                         bottom: '0px',
                         height: '50px'
                     }
@@ -2098,7 +2146,11 @@ window.stock_list = window.stock_list || (function () {
                         scale: true,
                         splitArea: {
                             show: true
-                        }
+                        },
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
                     },
                     {
                         scale: true,
@@ -2297,6 +2349,15 @@ window.stock_list = window.stock_list || (function () {
             k1d.addClass("hide");
             td.find(".k1dCollapse").removeClass("hide");
         },
+
+        toCloseK1m: async function (scode) {
+            let tr = $(`.firstCode[code="${scode}"]`);
+            let td = tr.find(".tdK1m");
+            k1d = td.find(".k1m");
+            k1d.html("");
+            k1d.addClass("hide");
+            td.find(".k1mCollapse").removeClass("hide");
+        },
         calculateBOLL: function (data, period = 20, k = 2) {
             const bollData = {
                 mid: [], // 中轨
@@ -2419,8 +2480,9 @@ window.stock_list = window.stock_list || (function () {
                             show: true,
                             title: '重载',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
-                            onclick: function () {
+                            onclick: function (e, i, name, event) {
                                 self.toCloseK1d(scode);
+                                event.event.stopPropagation();
                             }
                         },
                         dataZoom: {
@@ -2729,8 +2791,9 @@ window.stock_list = window.stock_list || (function () {
                             show: true,
                             title: '关闭',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
-                            onclick: function () {
+                            onclick: function (e, i, name, event) {
                                 self.toCloseK1d(scode);
+                                event.event.stopPropagation();
                             }
                         }
                     }
