@@ -416,12 +416,23 @@ window.stock_list = window.stock_list || (function () {
                 self.drawK1mChart(lastCode, timeData, priceData, volumeData);
             }
         },
+        showK1dsInView: async function () {
+            let vtr = $('.firstCode').map(function (i,item) {
+                let res = share.isInViewport($(item));
+                if (res) {
+                    let data = $(this).attr("data");
+                    let row = JSON.parse(data);
+                    self.showK1ds([row["代码"]]);
+                }
+            });
+
+        },
         showK1ds: async function (codes) {
             codes.forEach(function (scode) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
                 k1d = td.find(".k1d");
-                // k1d.html("loading k1d");
+                k1d.html("loading k1d");
             });
 
             //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
@@ -453,6 +464,7 @@ window.stock_list = window.stock_list || (function () {
 
             if (values.length > 0) {
                 self.drawK1dChartSmall(lastCode, categoryData, values, volumes);
+
             }
 
         },
@@ -500,8 +512,8 @@ window.stock_list = window.stock_list || (function () {
                     self.scrollTimer = setTimeout(function () {
                         console.log("scrolling");
                         //self.updateK1ms();
-                        self.showK1ds();
-                    }, 100);
+                        self.showK1dsInView();
+                    }, 1000);
                 });
             }
 
@@ -627,7 +639,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdKLine");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-minus kLineCollapse hide clickable"/>
+                                <span class = "glyphicon glyphicon-minus kLineCollapse clickable"/>
                                 <div class="flexcolumn">
                                     <div class="kTick hide"></div>
                                     <div class="k1d"></div>
@@ -636,7 +648,7 @@ window.stock_list = window.stock_list || (function () {
                             `;
                             td.html(html);
 
-                            self.showK1ds([row["代码"]]);
+                            // self.showK1ds([row["代码"]]);
                             // td.removeClass("nowrap"); 
                         }
                     } else {
@@ -671,7 +683,8 @@ window.stock_list = window.stock_list || (function () {
             })
 
             $(".thKLine").click(function (e) {
-                if ($($(".k1d")[0]).hasClass("hide")) {
+                self.showK1d = !self.showK1d;
+                if (self.showK1d) {
                     $(".k1d").removeClass("hide");
                     $(".kTick").removeClass("hide");
                 } else {
@@ -2409,6 +2422,7 @@ window.stock_list = window.stock_list || (function () {
             if (k1d == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdKLine");
+                td.find(".kLineCollapse").addClass("hide");
                 k1d = td.find(".k1d");
             }
             const upColor = '#00da3c';
