@@ -176,7 +176,7 @@ window.stock_list = window.stock_list || (function () {
                 {
                     text: "现价",
                     onTap: function () {
-                        let tds = $(`.curPrice, .tdRule,.tdStatus, .tdKLine`);
+                        let tds = $(`.curPrice, .tdRule,.tdStatus, .tdK1d`);
                         if (tds.is(":visible")) {
                             tds.hide();
                         } else {
@@ -369,16 +369,15 @@ window.stock_list = window.stock_list || (function () {
                 await self.getRuleStatus();
             }
         },
-        updateK1ms: async function (codes) {
+        showK1ms: async function (codes) {
             codes.forEach(function (scode) {
                 let tr = $(`.firstCode[code="${scode}"]`);
-                let td = tr.find(".tdKLine");
-                kTick = td.find(".kTick");
-                // kTick.html("loading kTick");
+                let td = tr.find(".tdK1m");
+                let k1m = td.find(".k1m");
+                k1m.html("loading k1m");
             });
 
-            //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
-            let ticks = await share.getSync__(`/stock/k/1ms?scodes=${codes.join(",")}`);
+            let ticks = await share.getSync__(`/stock/k/1ms?type=0&scodes=${codes.join(",")}`);
             let lastCode = null;
             let lastVolume = 0;
             var timeData = [];
@@ -390,8 +389,7 @@ window.stock_list = window.stock_list || (function () {
                 if (lastCode == null) {
                     lastCode = tick.scode;
                 } else if (lastCode != tick.scode) {
-
-                    self.drawK1mChart(lastCode, timeData, priceData, volumeData);
+                    self.drawK1mChartSmall(lastCode, timeData, priceData, volumeData);
                     lastCode = tick.scode;
                     timeData = [];
                     priceData = [];
@@ -417,7 +415,7 @@ window.stock_list = window.stock_list || (function () {
             }
         },
         showK1dsInView: async function () {
-            let vtr = $('.firstCode').map(function (i,item) {
+            let vtr = $('.firstCode').map(function (i, item) {
                 let res = share.isInViewport($(item));
                 if (res) {
                     let data = $(this).attr("data");
@@ -427,10 +425,21 @@ window.stock_list = window.stock_list || (function () {
             });
 
         },
+        showK1msInView: async function () {
+            let vtr = $('.firstCode').map(function (i, item) {
+                let res = share.isInViewport($(item));
+                if (res) {
+                    let data = $(this).attr("data");
+                    let row = JSON.parse(data);
+                    self.showK1ms([row["代码"]]);
+                }
+            });
+
+        },
         showK1ds: async function (codes) {
             codes.forEach(function (scode) {
                 let tr = $(`.firstCode[code="${scode}"]`);
-                let td = tr.find(".tdKLine");
+                let td = tr.find(".tdK1d");
                 k1d = td.find(".k1d");
                 k1d.html("loading k1d");
             });
@@ -500,22 +509,31 @@ window.stock_list = window.stock_list || (function () {
                 } else if (keys[i] == "状态") {
                     th.addClass("tdStatus");
                 } else if (keys[i] == "K1d") {
-                    th.addClass("tdKLine");
-                    th.addClass("thKLine");
+                    th.addClass("tdK1d");
+                    th.addClass("thK1d");
+                    th.addClass("clickable");
+                } else if (keys[i] == "K1m") {
+                    th.addClass("tdK1m");
+                    th.addClass("thK1m");
                     th.addClass("clickable");
                 }
             }
 
-            if (keys.includes("K1d")) {
-                window.addEventListener('scroll', function () {
-                    clearTimeout(self.scrollTimer);
-                    self.scrollTimer = setTimeout(function () {
-                        console.log("scrolling");
-                        //self.updateK1ms();
+            window.addEventListener('scroll', function () {
+                clearTimeout(self.scrollTimer);
+                self.scrollTimer = setTimeout(function () {
+                    console.log("scrolling");
+
+                    if (self.showK1d) {
                         self.showK1dsInView();
-                    }, 1000);
-                });
-            }
+                    }
+
+                    if (self.showK1m) {
+                        self.showK1msInView();
+                    }
+                }, 1000);
+            });
+
 
             thead.append(tr);
             table.append(thead);
@@ -636,12 +654,11 @@ window.stock_list = window.stock_list || (function () {
                         }
                     } else if (key == "K1d") {
                         if (firstRow) {
-                            td.addClass("tdKLine");
+                            td.addClass("tdK1d");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-minus kLineCollapse clickable"/>
+                                <span class = "glyphicon glyphicon-minus k1dCollapse clickable"/>
                                 <div class="flexcolumn">
-                                    <div class="kTick hide"></div>
                                     <div class="k1d"></div>
                                 </div>
                             </div>
@@ -650,6 +667,19 @@ window.stock_list = window.stock_list || (function () {
 
                             // self.showK1ds([row["代码"]]);
                             // td.removeClass("nowrap"); 
+                        }
+                    } else if (key == "K1m") {
+                        if (firstRow) {
+                            td.addClass("tdK1m");
+                            let html = `
+                            <div class="flexrow">
+                                <span class = "glyphicon glyphicon-minus k1mCollapse clickable"/>
+                                <div class="flexcolumn">
+                                    <div class="k1m"></div>
+                                </div>
+                            </div>
+                            `;
+                            td.html(html);
                         }
                     } else {
                         td.text(share.convertIfInteger(row[key]));
@@ -682,7 +712,7 @@ window.stock_list = window.stock_list || (function () {
                 self.toUpdateRuleStatus();
             })
 
-            $(".thKLine").click(function (e) {
+            $(".thK1d").click(function (e) {
                 self.showK1d = !self.showK1d;
                 if (self.showK1d) {
                     $(".k1d").removeClass("hide");
@@ -690,6 +720,15 @@ window.stock_list = window.stock_list || (function () {
                 } else {
                     $(".k1d").addClass("hide");
                     $(".kTick").addClass("hide");
+                }
+            })
+
+            $(".thK1m").click(function (e) {
+                self.showK1m = !self.showK1m;
+                if (self.showK1m) {
+                    $(".k1m").removeClass("hide");
+                } else {
+                    $(".k1m").addClass("hide");
                 }
             })
 
@@ -717,22 +756,29 @@ window.stock_list = window.stock_list || (function () {
                 self.showMenu4RuleContent();
             })
 
-            $(".kLineCollapse").click(function (e) {
+            $(".k1dCollapse").click(function (e) {
                 e.stopPropagation();
                 let k1d = $(this).parents("tr").find(".k1d");
-                let kTick = $(this).parents("tr").find(".kTick");
                 if (k1d.hasClass("hide")) {
                     let scode = $(this).parents("tr").attr("code");
-
                     k1d.removeClass("hide");
-                    kTick.removeClass("hide");
-
                     self.showK1ds([scode]);
-                    self.updateK1ms([scode]);
                     $(this).addClass("hide");
                 } else {
                     k1d.addClass("hide");
-                    kTick.addClass("hide");
+                }
+            })
+
+            $(".k1mCollapse").click(function (e) {
+                e.stopPropagation();
+                let k1m = $(this).parents("tr").find(".k1m");
+                if (k1m.hasClass("hide")) {
+                    let scode = $(this).parents("tr").attr("code");
+                    k1m.removeClass("hide");
+                    self.showK1ms([scode]);
+                    $(this).addClass("hide");
+                } else {
+                    k1m.addClass("hide");
                 }
             })
 
@@ -1747,8 +1793,204 @@ window.stock_list = window.stock_list || (function () {
         drawK1mChart: function (scode, categoryData, values, volumes, $c) {
             if ($c == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
-                let td = tr.find(".tdKLine");
+                let td = tr.find(".tdK1d");
                 $c = td.find(".kTick");
+            }
+
+            $c.css({
+                width: "480px",
+                height: "140px"
+            });
+
+            $c.removeAttr("_echarts_instance_");
+            // $c.html("loading kTick");
+
+            var chartDom = $c[0];
+            var chart = echarts.init(chartDom);
+            let finalTime = 15 * 60;
+            if (self.formatScode(scode).indexOf("HK") >= 0) {
+                finalTime = 16 * 60 + 10;
+            }
+
+            let lastTime = 9 * 60 + 9;
+            if (categoryData.length > 0) {
+                lastTime = categoryData[categoryData.length - 1].split(":");
+                lastTime = parseInt(lastTime[0]) * 60 + parseInt(lastTime[1]);
+            }
+
+            if (self.formatScode(scode).indexOf("EC") >= 0) {
+                finalTime = lastTime + 30;
+            }
+
+            for (let i = lastTime + 1; i <= finalTime; i++) {
+                //将i转换成 01:01 这种"时:分"格式，不足两位的前面补0
+                let h = Math.floor(i / 60);
+                let m = i % 60;
+                if (h < 10) {
+                    h = "0" + h;
+                }
+
+                if (m < 10) {
+                    m = "0" + m;
+                }
+
+                categoryData.push(h + ":" + m);
+                values.push(null);
+                volumes.push(null);
+            }
+
+
+            // 配置项
+            var option = {
+                title: {
+                    show: false,
+                },
+                legend: {
+                    show: false,
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    }
+                },
+                grid: [
+                    {
+                        top: '6px',
+                        left: '35px',
+                        right: '10px',
+                        height: '84px',
+                    },
+                    {
+                        left: '35px',
+                        right: '10px',
+                        bottom: '0px',
+                        height: '50px'
+                    }
+                ],
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: categoryData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        splitNumber: 20,
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 1,
+                        data: categoryData,
+                        scale: true,
+                        boundaryGap: false,
+                        axisLine: { onZero: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        splitNumber: 20,
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    }
+                ],
+                yAxis: [
+                    {
+                        scale: true,
+                        splitArea: {
+                            show: true
+                        }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 1,
+                        splitNumber: 2,
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    }
+                ],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: [0, 1],
+                        start: 0,
+                        end: 100
+                    }
+                ],
+                series: [
+                    {
+                        name: '价格',
+                        type: 'line',
+                        data: values,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1
+                        },
+                        symbol: 'none',
+                        areaStyle: {
+                            opacity: 0.8,
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                    offset: 0,
+                                    color: 'rgba(58,77,233,0.8)'
+                                },
+                                {
+                                    offset: 1,
+                                    color: 'rgba(58,77,233,0.1)'
+                                }
+                            ])
+                        }
+                    },
+                    {
+                        name: 'MA',
+                        type: 'line',
+                        data: self.calculateTickMA({ categoryData, values, volumes }),
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            color: "red",
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: '成交量',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: volumes,
+                        itemStyle: {
+                            color: function (params) {
+                                var colorList = values.map((price, index) => {
+                                    return index === 0 ? '#aaa' :
+                                        price > values[index - 1] ? '#f00' : '#0f0';
+                                });
+                                return colorList[params.dataIndex];
+                            },
+                            width: 2
+                        }
+                    }
+                ]
+            };
+
+            // 使用配置项显示图表
+            chart.setOption(option);
+
+            // 响应式调整
+            window.addEventListener('resize', function () {
+                chart.resize();
+            });
+        },
+
+        drawK1mChartSmall: function (scode, categoryData, values, volumes, $c) {
+            if ($c == null) {
+                let tr = $(`.firstCode[code="${scode}"]`);
+                let td = tr.find(".tdK1m");
+                $c = td.find(".k1m");
             }
 
             $c.css({
@@ -2049,11 +2291,11 @@ window.stock_list = window.stock_list || (function () {
 
         toCloseK1d: async function (scode) {
             let tr = $(`.firstCode[code="${scode}"]`);
-            let td = tr.find(".tdKLine");
+            let td = tr.find(".tdK1d");
             k1d = td.find(".k1d");
             k1d.html("");
             k1d.addClass("hide");
-            td.find(".kLineCollapse").removeClass("hide");
+            td.find(".k1dCollapse").removeClass("hide");
         },
         calculateBOLL: function (data, period = 20, k = 2) {
             const bollData = {
@@ -2096,7 +2338,7 @@ window.stock_list = window.stock_list || (function () {
         drawK1dChart: function (scode, categoryData, values, volumes, k1d) {
             if (k1d == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
-                let td = tr.find(".tdKLine");
+                let td = tr.find(".tdK1d");
                 k1d = td.find(".k1d");
             }
             const upColor = '#00da3c';
@@ -2421,8 +2663,8 @@ window.stock_list = window.stock_list || (function () {
         drawK1dChartSmall: function (scode, categoryData, values, volumes, k1d) {
             if (k1d == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
-                let td = tr.find(".tdKLine");
-                td.find(".kLineCollapse").addClass("hide");
+                let td = tr.find(".tdK1d");
+                td.find(".k1dCollapse").addClass("hide");
                 k1d = td.find(".k1d");
             }
             const upColor = '#00da3c';

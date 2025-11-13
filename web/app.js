@@ -2283,6 +2283,40 @@ app.get('/stock/k/1ds', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/k/1ms', async (req, res) => {
+    info("get /stock/k/1ms", req)
+    let js = req.query.js;
+    info(JSON.stringify(req.query), req)
+    let scodes = req.query.scodes;
+    let type = req.query.type;
+    let day = req.query.day;
+    if (day == null) {
+        day = new Date();
+        //day.setMonth(4, 30);
+    } else {
+        day = new Date(parseInt(day));
+    }
+
+    day.setHours(0, 0, 0, 0);
+    let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
+    day = timeFormat(day, "yyyyMMdd")
+    nextDay = timeFormat(nextDay, "yyyyMMdd")
+
+    let sql = `select * from t1m where scode in ('${scodes.split(',').join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
+    let result = await db.allSync(sql, [type, day, nextDay]);
+
+    var resp = JSON.stringify(result.rows);
+    if (result.error) {
+        resp = JSON.stringify(result);
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/rule/cancel', async (req, res) => {
     info("get /stock/rule/cancel", req)
     info(JSON.stringify(req.query), req)
