@@ -2101,13 +2101,13 @@ window.stock_list = window.stock_list || (function () {
                 grid: [
                     {
                         bottom: '0px',
-                        left: '0px',
-                        right: '0px',
+                        left: '1px',
+                        right: '1px',
                         height: '84px',
                     },
                     {
-                        left: '0px',
-                        right: '0px',
+                        left: '1px',
+                        right: '1px',
                         bottom: '0px',
                         height: '50px'
                     }
