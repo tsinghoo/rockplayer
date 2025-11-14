@@ -551,7 +551,7 @@ ul.pagination li span input {
 }
 
 .gray {
-	color: #9e9e9e;
+	color: #9e9e9e !important;
 }
 
 .almostWhite  {
