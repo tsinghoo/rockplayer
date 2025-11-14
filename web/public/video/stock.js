@@ -491,6 +491,7 @@ window.stock_list = window.stock_list || (function () {
             }
 
         },
+        
         showRows: function (expanded) {
             let table = $("#stockTable");
             let rows = self.rows;
@@ -502,6 +503,14 @@ window.stock_list = window.stock_list || (function () {
             let kvs = params.keys;
             let showAll = params.showAll;
             let keys = [];
+            if (kvs == null) {
+                if (rows.length > 0) {
+                    kvs = Object.keys(rows[0]);
+                } else {
+                    kvs = ["id", "tid"];
+                }
+            }
+
             kvs.forEach(ele => {
                 if (typeof ele == "string") {
                     keys.push(ele);
