@@ -860,7 +860,6 @@ app.get('/video/i', (req, res) => {
     res.render('fileList', { files: files, tags: tags, remove: remove });
 });
 app.post('/video/tag', (req, res) => {
-    info("video/tag", req)
     info("files=" + req.body.files, req)
     info("tags=" + req.body.tags, req)
     const files = JSON.parse(req.body.files);
@@ -912,7 +911,6 @@ app.post('/video/tag', (req, res) => {
     res.send(resp);
 });
 app.post('/video/cookies', (req, res) => {
-    info("video/cookies", req)
     let cookies = req.body.cookies;
     info(req.body.cookies, req)
 
@@ -1659,7 +1657,6 @@ async function insertOrIgnore(table, row) {
 }
 
 app.post('/stock/screen/nodes', async (req, res) => {
-    info("post /stock/screen/nodes", req)
 
     let root = req.body;
     let children = root.children;
@@ -1760,7 +1757,6 @@ app.post('/stock/screen/nodes', async (req, res) => {
 });
 
 app.post('/stock/prices', async (req, res) => {
-    info("post /stock/prices", req)
 
     let prices = req.body;
     for (let i = 0; i < prices.length; i++) {
@@ -1784,7 +1780,6 @@ app.post('/stock/prices', async (req, res) => {
 });
 
 app.post('/stock/basic/update', async (req, res) => {
-    info("post /stock/basic/update", req)
     let sector = req.sector;
     let stocks = req.data;
     for (let i = 0; i < stocks.length; i++) {
@@ -1800,7 +1795,6 @@ app.post('/stock/basic/update', async (req, res) => {
 });
 
 app.post('/stock/candidates', async (req, res) => {
-    info("post /stock/candidates", req)
     let stocks = req.body.data;
     if (stocks.length == 0) {
         await dbCall([`delete from tcandidate`]);
@@ -1824,7 +1818,6 @@ app.post('/stock/candidates', async (req, res) => {
 });
 
 app.post('/stock/positions', async (req, res) => {
-    info("post /stock/positions", req)
 
     info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
@@ -1865,7 +1858,6 @@ app.post('/stock/positions', async (req, res) => {
 });
 
 app.get('/stock/positions', async (req, res) => {
-    info("get /stock/position", req)
 
     let js = req.query.js;
     let scode = req.query.scode;
@@ -1886,7 +1878,6 @@ app.get('/stock/positions', async (req, res) => {
 });
 
 app.get('/stock/trades', async (req, res) => {
-    info("get /stock/trades", req)
 
     let js = req.query.js;
     let scode = req.query.scode;
@@ -1930,7 +1921,6 @@ function parseTime(str) {
 }
 
 app.post('/stock/quotes', async (req, res) => {
-    info("post /stock/quotes", req)
     //{"data":{"837092.BJ":{"20250523101631.000":{"amount":10865500,"askPrice":[42.86,42.87,42.88,42.9,42.92],"askVol":[59,4,20,1,30],"bidPrice":[42.66,42.65,42.64,42.63,42.62],"bidVol":[2,2,10,32,26],"high":43.24,"lastClose":42.76,"lastPrice":42.65,"lastSettlementPrice":0,"low":42.41,"open":42.41,"openInt":13,"pvolume":253700,"settlementPrice":0,"stime":"20250523101631.000","stockStatus":1,"time":1747966591000,"transactionNum":0,"volume":2537}}}}
     info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
@@ -1978,7 +1968,6 @@ app.post('/stock/quotes', async (req, res) => {
 });
 
 app.post('/stock/quotes.mini', async (req, res) => {
-    info("post /stock/quotes.mini", req)
 
     info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
@@ -2012,7 +2001,6 @@ app.post('/stock/quotes.mini', async (req, res) => {
 });
 
 app.post('/stock/details', async (req, res) => {
-    info("post /stock/details", req)
 
     info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
@@ -2039,7 +2027,6 @@ app.post('/stock/details', async (req, res) => {
 });
 
 app.get('/stock/screen/nodes', async (req, res) => {
-    info("get /stock/screen/nodes", req)
     let js = req.query.js;
     let log = req.query.log;
     if (log) {
@@ -2058,7 +2045,6 @@ app.get('/stock/screen/nodes', async (req, res) => {
 });
 
 app.get('/stock/rule/create', async (req, res) => {
-    info("get /stock/rule/create", req)
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
     let now = Date.now();
@@ -2134,7 +2120,6 @@ app.get('/stock/rule/create', async (req, res) => {
 
 
 app.get('/stock/rule/create/auto', async (req, res) => {
-    info("get /stock/rule/create/auto", req)
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
     let now = Date.now();
@@ -2209,7 +2194,6 @@ app.get('/stock/rule/create/auto', async (req, res) => {
 });
 
 app.get('/stock/k/1m', async (req, res) => {
-    info("get /stock/k/1m", req)
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
@@ -2243,7 +2227,6 @@ app.get('/stock/k/1m', async (req, res) => {
 });
 
 app.get('/stock/reload/k1d', async (req, res) => {
-    info("get /stock/reload/k1d", req)
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
@@ -2279,7 +2262,6 @@ app.get('/stock/reload/k1d', async (req, res) => {
 });
 
 app.get('/stock/k/1d', async (req, res) => {
-    info("get /stock/k/1d", req)
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scode = req.query.scode;
@@ -2322,7 +2304,6 @@ app.get('/stock/k/1d', async (req, res) => {
 });
 
 app.get('/stock/k/1ds', async (req, res) => {
-    info("get /stock/k/1ds", req)
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scodes = req.query.scodes;
@@ -2362,7 +2343,6 @@ app.get('/stock/k/1ds', async (req, res) => {
 });
 
 app.get('/stock/k/1ms', async (req, res) => {
-    info("get /stock/k/1ms", req)
     let js = req.query.js;
     info(JSON.stringify(req.query), req)
     let scodes = req.query.scodes;
@@ -2396,7 +2376,6 @@ app.get('/stock/k/1ms', async (req, res) => {
 });
 
 app.get('/stock/rule/cancel', async (req, res) => {
-    info("get /stock/rule/cancel", req)
     info(JSON.stringify(req.query), req)
     let js = req.query.js;
     let scode = req.query.scode;
@@ -2492,7 +2471,6 @@ app.get('/stock/rule/cancel', async (req, res) => {
 });
 
 app.get('/stock/rule/delete', async (req, res) => {
-    info("get /stock/rule/delete", req)
     let js = req.query.js;
     let id = req.query.id;
     let scode = req.query.scode;
@@ -2524,7 +2502,6 @@ app.get('/stock/rule/delete', async (req, res) => {
 });
 
 app.get('/stock/rule/actions', async (req, res) => {
-    info("get /stock/rule/actions", req)
     let js = req.query.js;
     let broker = req.query.broker;
     let sql = `select * from tRuleAction where (broker=?) and orderNo='' and done=0`;
@@ -2553,7 +2530,6 @@ app.get('/stock/rule/actions', async (req, res) => {
 });
 
 app.get('/stock/action/done', async (req, res) => {
-    info("get /stock/action/done", req)
     let js = req.query.js;
     let id = req.query.id;
     let sql = `update tRuleAction set done=1 where id=?`;
@@ -2574,7 +2550,6 @@ app.get('/stock/action/done', async (req, res) => {
 });
 
 app.get('/stock/rule/status', async (req, res) => {
-    info("get /stock/rule/status", req)
     let js = req.query.js;
     let scode = req.query.scode;
     var resp = null;
