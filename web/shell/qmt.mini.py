@@ -459,6 +459,9 @@ def getStockDetail(scode):
         "VolumeMultiple": si["VolumeMultiple"]
     }
 
+    # data = xtdata.get_financial_data([scode])
+    # info(data)
+    
     return detail
 
 

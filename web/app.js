@@ -825,6 +825,15 @@ async function doSplit() {
 // 对所有请求进行预处理
 app.use((req, res, next) => {
     req.threadId = Date.now() + "" + Math.floor(Math.random() * 10000);
+    const method = req.method;
+    const url = req.url;
+    const queryParams = JSON.stringify(req.query);
+    const bodyParams = JSON.stringify(req.body);
+    info(`${method} ${url}`, req)
+    if (method.toLowerCase() == "post") {
+        info(`body:${bodyParams}`, req);
+    }
+
     next();
 });
 
@@ -913,7 +922,6 @@ app.post('/video/cookies', (req, res) => {
 });
 
 app.post('/stock/update', async (req, resp) => {
-    info("/stock/update", req)
     let broker = req.body.broker;
     if (broker == null) {
         if (fields.length == 12) {
@@ -1312,7 +1320,6 @@ app.post('/stock/update', async (req, resp) => {
 });
 
 app.get('/stock/account', async (req, res) => {
-    info("/stock/account", req)
     let js = req.query.js;
 
     let sql = `select * from config where key='stockAccount' `;
@@ -1323,7 +1330,6 @@ app.get('/stock/account', async (req, res) => {
 });
 
 app.get('/stock/vote', async (req, res) => {
-    info("/stock/vote", req)
     let js = req.query.js;
     let code = req.query.code;
     let sql = `update tstock set lastOperationTime=? where scode=? `;
@@ -1335,8 +1341,8 @@ app.get('/stock/vote', async (req, res) => {
     res.send(resp);
 });
 
+
 app.get('/stock/updatePrice', async (req, res) => {
-    info("/stock/updatePrice", req)
     let js = req.query.js;
     let scode = req.query.scode;
     let price = req.query.price;
@@ -1354,7 +1360,6 @@ app.get('/stock/updatePrice', async (req, res) => {
 });
 
 app.get('/stock/updatePrice/option', async (req, res) => {
-    info("/stock/updatePrice/option", req)
     let js = req.query.js;
     let scode = req.query.scode;
     let price = req.query.price;
@@ -1373,7 +1378,6 @@ app.get('/stock/updatePrice/option', async (req, res) => {
 });
 
 app.get('/stock/deleteRow', async (req, res) => {
-    info("/stock/deleteRow", req)
     let js = req.query.js;
     let tid = req.query.tid;
     let id = req.query.id;
@@ -1395,7 +1399,6 @@ app.get('/stock/deleteRow', async (req, res) => {
 });
 
 app.get('/stock/undeleteRow', async (req, res) => {
-    info("/stock/deleteRow", req)
     let js = req.query.js;
     let tid = req.query.tid;
     let id = req.query.id;
@@ -1408,7 +1411,6 @@ app.get('/stock/undeleteRow', async (req, res) => {
 });
 
 app.post('/stock/account', async (req, res) => {
-    info("/stock/account", req)
     info(JSON.stringify(req.body), req)
     let passcode = req.body.passcode;
     if (passcode != "995560") {
@@ -2130,6 +2132,82 @@ app.get('/stock/rule/create', async (req, res) => {
     res.send(resp);
 });
 
+
+app.get('/stock/rule/create/auto', async (req, res) => {
+    info("get /stock/rule/create/auto", req)
+    let js = req.query.js;
+    let json = JSON.parse(req.query.json);
+    let now = Date.now();
+
+    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?)`;
+    let broker = json.broker;
+    let calc = eval(json.expireHours);
+    let expireHours = parseFloat(calc);
+    let expireTime = now + expireHours * 60 * 60 * 1000;
+    let id = `${json.scode}.${broker}`;
+    let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
+    await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
+    if (rules[json.scode] == null) {
+        rules[json.scode] = {};
+    }
+
+    rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker]);
+    await reloadRule(rules[json.scode][broker], req);
+
+    let market = getMarket(json.scode);
+    let buy = 0;
+    if (rules[json.scode][broker] && rules[json.scode][broker].rule) {
+        buy = rules[json.scode][broker].rule.currentPrice;
+    }
+    await insertOrReplace("tStockBasic", {
+        id: json.scode,
+        scode: json.scode,
+        sname: json.sname,
+        market: market,
+        buy: buy,
+        priority: now,
+        updateTime: now
+    });
+
+    if (json.order == "buyFirst") {
+        let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode]);
+        if (r.rows.length == 0) {
+            let tday = timeFormat(now, "yyyyMMdd");
+            let ttime = timeFormat(now, "hh:mm:ss");
+            let obj = {
+                tday,
+                ttime,
+                sname: json.sname,
+                scode: json.scode,
+                operationDirection: "买入",
+                operationName: broker,
+                market: market,
+                tamount: 0,
+                tprice: json.buy,
+                tcash: 0,
+                tid: `${json.scode}.${json.sname}`,
+                taccount: "",
+                tpair: "",
+                deleted: 0,
+                lastOperationTime: tday + " " + ttime
+            }
+            await insertOrReplace("tstock", obj);
+            await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
+        }
+    }
+
+    var resp = JSON.stringify({});
+    if (result.error) {
+        resp = JSON.stringify(result);
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+});
+
 app.get('/stock/k/1m', async (req, res) => {
     info("get /stock/k/1m", req)
     let js = req.query.js;
@@ -2522,7 +2600,6 @@ app.get('/stock/rule/status', async (req, res) => {
 
 
 app.get('/stock/fe/user/login', async (req, res) => {
-    info("/stock/fe/user/login", req)
     let js = req.query.js;
     let login = req.query.login;
     let password = req.query.password;
@@ -2614,7 +2691,6 @@ function formatScode(stockCode) {
 
 
 app.get('/stock/codes', async (req, res) => {
-    info("/stock/codes", req)
     let js = req.query.js;
     let sql = `select scode from tstockbasic;`;
     let r = await db.allSync(sql);
@@ -2638,7 +2714,6 @@ app.get('/stock/codes', async (req, res) => {
 
 
 app.get('/stock/rule/codes', async (req, res) => {
-    info("/stock/rule/codes", req)
     let js = req.query.js;
     let sql = `select distinct scode from tTradeRule`;
     let r = await db.allSync(sql);
@@ -2661,7 +2736,6 @@ app.get('/stock/rule/codes', async (req, res) => {
 });
 
 app.get('/stock/rule/codes/active', async (req, res) => {
-    info("/stock/rule/codes", req)
     let js = req.query.js;
     let sql = `select distinct scode from tTradeRule where closed=0;`;
     let r = await db.allSync(sql);
@@ -2685,7 +2759,6 @@ app.get('/stock/rule/codes/active', async (req, res) => {
 
 
 app.get('/stock/candidates', async (req, res) => {
-    info("/stock/candidates", req)
     let js = req.query.js;
     let sql = `select scode from tcandidate order by priority desc`;
     let r = await db.allSync(sql);
@@ -2709,7 +2782,6 @@ app.get('/stock/candidates', async (req, res) => {
 
 
 app.get('/stock/1d/lastDate', async (req, res) => {
-    info("/stock/1d/lastDate", req)
     let js = req.query.js;
     let scode = req.query.scode;
     info("scode:" + scode, req)
@@ -2725,7 +2797,6 @@ app.get('/stock/1d/lastDate', async (req, res) => {
 });
 
 app.get('/stock/1m/lastMinute', async (req, res) => {
-    info("/stock/1d/lastMinute", req)
     let js = req.query.js;
     let scode = req.query.scode;
     info("scode:" + scode, req)
@@ -2741,7 +2812,6 @@ app.get('/stock/1m/lastMinute', async (req, res) => {
 });
 
 app.get('/stock/price/current', async (req, res) => {
-    info("/stock/price/current", req)
     let js = req.query.js;
 
     let sql = `select * from tstockbasic `;
@@ -2756,7 +2826,6 @@ app.get('/stock/price/current', async (req, res) => {
 });
 
 app.get('/stock/pair', async (req, res) => {
-    info("/stock/pair", req)
     let js = req.query.js;
     let reset = req.query.reset;
 
