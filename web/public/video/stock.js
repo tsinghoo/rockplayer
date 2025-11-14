@@ -491,7 +491,7 @@ window.stock_list = window.stock_list || (function () {
             }
 
         },
-        
+
         showRows: function (expanded) {
             let table = $("#stockTable");
             let rows = self.rows;
@@ -2622,8 +2622,8 @@ window.stock_list = window.stock_list || (function () {
                         type: 'candlestick',
                         data: values,
                         itemStyle: {
-                            color: upColor,
-                            color0: downColor,
+                            color0: upColor,
+                            color: downColor,
                             borderColor: undefined,
                             borderColor0: undefined
                         }
