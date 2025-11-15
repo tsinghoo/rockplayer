@@ -185,6 +185,17 @@ window.stock_list = window.stock_list || (function () {
                             tds.show();
                         }
                     }
+                },
+                {
+                    text: "自建规则",
+                    onTap: async function () {
+                        let res = await share.getSync__("/stock/rule/create/auto");
+                        if (res.error) {
+                            share.toastError__(res.error);
+                        } else {
+                            share.toastSuccess__(res.logs.join("<br>"), 3000);
+                        }
+                    }
                 }
             ];
 

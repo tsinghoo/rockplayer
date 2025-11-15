@@ -43,7 +43,10 @@ app.use(fileUpload({
 
 const server = http.createServer(app);
 let wss = null;
-
+let workerCreateRule = {
+    id: 0,
+    logs: []
+};
 function initWss() {
     wss = new WebSocket.Server({
         server,
@@ -209,12 +212,23 @@ function getRuleId(scode, broker) {
     return `${scode}.${broker}`;
 }
 
-function info(msg, req) {
+function info(msg, req, logs, maxLogSize) {
     if (logLevel > INFO) {
         return;
     }
+
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    console.log(`${time}[${req ? req.threadId : ""}]:${msg}`);
+    let text = `${time}[${req ? req.threadId : ""}]:${msg}`;
+    if (logs) {
+        logs.push(text);
+        if (!maxLogSize) {
+            maxLogSize = 10;
+        }
+
+        logs.splice(0, logs.length - maxLogSize);
+    }
+
+    console.log(text);
 }
 function debug(msg, req) {
     if (logLevel > DEBUG) {
@@ -2118,74 +2132,126 @@ app.get('/stock/rule/create', async (req, res) => {
     res.send(resp);
 });
 
+async function autoCreateRule() {
+    let threadId = Date.now();
+    try {
+        //对每一个scode自动创建rule
+        let res = await db.allSync(`select * from tStockBasic`);
+        for (let i = 0; i < res.rows.length; ++i) {
+            let row = res.rows[i];
+            let scode = row.scode;
+
+            info(`auto creating rule for ${scode}`, { threadId }, workerCreateRule.logs, 5);
+
+            //获取tstock里对应scode的最后一条记录
+            let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
+            if (r == null) {
+                info(`no trade history for ${row.sname}`, { threadId }, workerCreateRule.logs, 5);
+                continue;
+            }
+
+            //如果已经存在rule,则跳过
+            let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
+            if (oldRule != null && oldRule.closed == 0) {
+                info(`rule already active for ${row.sname}`, { threadId }, workerCreateRule.logs, 5);
+                continue;
+            }
+
+            //获取scode对应的当前价格
+            if (1 == 0 && row.updateTime < Date.now() - 1000 * 60) {
+                info(`price for ${row.sname} is old`, { threadId }, workerCreateRule.logs, 5);
+                continue;
+            }
+
+            let currentPrice = row.buy;
+            let lastPrice = r.tprice;
+            let buyPrice = lastPrice * (1 - 0.02);
+            let sellPrice = lastPrice * (1 + 0.02);
+            let amount = Math.abs(r.tamount);
+            if (amount < row.volumeMultiple) {
+                amount = row.volumeMultiple;
+            }
+
+            let rc = null;
+
+            //如果r的operationDirection是买入，那么就创建一个先卖后买的rule
+            if (r.operationDirection.indexOf("卖") >= 0) {
+                rc = {
+                    buy: buyPrice,
+                    bounce: "0.02",
+                    buyAmount: amount,
+                    sell: lastPrice,
+                    dip: "0.02",
+                    sellAmount: amount,
+                    scode: scode,
+                    sname: r.sname,
+                    broker: r.operationName,
+                    order: "buyFirst",
+                    expireHours: 12
+                }
+
+                if (currentPrice < buyPrice) {
+                    rc.buy = currentPrice * (1 - 0.001);
+                    rc.sell = rc.buy * (1 + 0.02);
+                }
+
+            } else if (r.operationDirection.indexOf("买") >= 0) {
+                rc = {
+                    buy: lastPrice,
+                    bounce: "0.02",
+                    buyAmount: amount,
+                    sell: sellPrice,
+                    dip: "0.02",
+                    sellAmount: amount,
+                    scode: scode,
+                    sname: r.sname,
+                    broker: r.operationName,
+                    order: "sellFirst",
+                    expireHours: 12
+                }
+
+                if (currentPrice > rc.sell) {
+                    rc.sell = currentPrice * (1 + 0.001);
+                    rc.buy = rc.sell * (1 - 0.02);
+                }
+
+            } else {
+                info(`bad trade direction for ${row.sname}:${r.operationDirection}`, { threadId }, workerCreateRule.logs, 5);
+                continue;
+            }
+
+            let broker = rc.broker;
+            let now = Date.now();
+            let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, closed, expireTime) values(?,?,?,?,?,?,?,?)`;
+            let expireHours = 12;
+            let expireTime = now + expireHours * 60 * 60 * 1000;
+            let id = `${scode}.${broker}`;
+            let result = await db.runSync(sql, [id, broker, scode, scode, JSON.stringify(rc), now, 0, expireTime]);
+            await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [scode, broker]);
+        }
+    } catch (e) {
+        info(`auto create rule failed:${e}`, { threadId }, workerCreateRule.logs, 5);
+    }
+
+    reloadRules();
+
+    workerCreateRule.id = 0;
+}
 
 app.get('/stock/rule/create/auto', async (req, res) => {
     let js = req.query.js;
-    let json = JSON.parse(req.query.json);
-    let now = Date.now();
-
-    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?)`;
-    let broker = json.broker;
-    let calc = eval(json.expireHours);
-    let expireHours = parseFloat(calc);
-    let expireTime = now + expireHours * 60 * 60 * 1000;
-    let id = `${json.scode}.${broker}`;
-    let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
-    await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
-    if (rules[json.scode] == null) {
-        rules[json.scode] = {};
-    }
-
-    rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker]);
-    await reloadRule(rules[json.scode][broker], req);
-
-    let market = getMarket(json.scode);
-    let buy = 0;
-    if (rules[json.scode][broker] && rules[json.scode][broker].rule) {
-        buy = rules[json.scode][broker].rule.currentPrice;
-    }
-    await insertOrReplace("tStockBasic", {
-        id: json.scode,
-        scode: json.scode,
-        sname: json.sname,
-        market: market,
-        buy: buy,
-        priority: now,
-        updateTime: now
-    });
-
-    if (json.order == "buyFirst") {
-        let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode]);
-        if (r.rows.length == 0) {
-            let tday = timeFormat(now, "yyyyMMdd");
-            let ttime = timeFormat(now, "hh:mm:ss");
-            let obj = {
-                tday,
-                ttime,
-                sname: json.sname,
-                scode: json.scode,
-                operationDirection: "买入",
-                operationName: broker,
-                market: market,
-                tamount: 0,
-                tprice: json.buy,
-                tcash: 0,
-                tid: `${json.scode}.${json.sname}`,
-                taccount: "",
-                tpair: "",
-                deleted: 0,
-                lastOperationTime: tday + " " + ttime
-            }
-            await insertOrReplace("tstock", obj);
-            await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
+    let logs = [];
+    if (workerCreateRule.id == 0) {
+        if (workerCreateRule.logs.length == 0) {
+            workerCreateRule.id = setTimeout(autoCreateRule, 100);
+            logs = ["autoCreateRule started"];
+        } else {
+            logs = workerCreateRule.logs;
+            workerCreateRule.logs = [];
         }
     }
 
-    var resp = JSON.stringify({});
-    if (result.error) {
-        resp = JSON.stringify(result);
-    }
-
+    var resp = JSON.stringify({ logs });
     if (js) {
         resp = `${js}(${resp})`;
     }
