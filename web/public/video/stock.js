@@ -691,7 +691,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdK1d");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-minus k1dCollapse clickable"/>
+                                <span class = "glyphicon glyphicon-plus k1dCollapse clickable"/>
                                 <div class="flexcolumn">
                                     <div class="k1d hide"></div>
                                 </div>
@@ -707,7 +707,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdK1m");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-minus k1mCollapse clickable"/>
+                                <span class = "glyphicon glyphicon-plus k1mCollapse clickable"/>
                                 <div class="flexcolumn">
                                     <div class="k1m hide"></div>
                                 </div>
@@ -749,9 +749,11 @@ window.stock_list = window.stock_list || (function () {
             $(".thK1d").click(function (e) {
                 self.showK1d = !self.showK1d;
                 if (self.showK1d) {
+                    $(".thK1d").removeClass("gray");
                     $(".k1d").removeClass("hide");
                     $(".k1dCollapse").removeClass("gray");
                 } else {
+                    $(".thK1d").addClass("gray");
                     $(".k1d").addClass("hide");
                     $(".k1dCollapse").addClass("gray");
                 }
@@ -760,9 +762,11 @@ window.stock_list = window.stock_list || (function () {
             $(".thK1m").click(function (e) {
                 self.showK1m = !self.showK1m;
                 if (self.showK1m) {
+                    $(".thK1m").removeClass("gray");
                     $(".k1m").removeClass("hide");
                     $(".k1mCollapse").removeClass("gray");
                 } else {
+                    $(".thK1m").addClass("gray");   
                     $(".k1m").addClass("hide");
                     $(".k1mCollapse").addClass("gray");
                 }
@@ -2083,7 +2087,7 @@ window.stock_list = window.stock_list || (function () {
                         myCustomTool: {
                             show: true,
                             title: '关闭',
-                            icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
+                            icon: 'path://M15 15 L25 25 M25 15 L15 25',
                             onclick: function (e, i, name, event) {
                                 self.toCloseK1m(scode);
                                 event.event.stopPropagation();
@@ -2810,7 +2814,7 @@ window.stock_list = window.stock_list || (function () {
                         myCustomTool: {
                             show: true,
                             title: '关闭',
-                            icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
+                            icon: 'path://M15 15 L25 25 M25 15 L15 25',
                             onclick: function (e, i, name, event) {
                                 self.toCloseK1d(scode);
                                 event.event.stopPropagation();
