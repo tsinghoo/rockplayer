@@ -2226,7 +2226,7 @@ async function autoCreateRule() {
             let expireHours = 12;
             let expireTime = now + expireHours * 60 * 60 * 1000;
             let id = `${scode}.${broker}`;
-            let result = await db.runSync(sql, [id, broker, scode, scode, JSON.stringify(rc), now, 0, expireTime]);
+            let result = await db.runSync(sql, [id, broker, scode, r.sname, JSON.stringify(rc), now, 0, expireTime]);
             await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [scode, broker]);
         }
     } catch (e) {
