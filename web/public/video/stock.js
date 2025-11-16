@@ -691,7 +691,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdK1d");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-plus k1dCollapse clickable"/>
+                                <span class = "k1dCollapse clickable">+</span>
                                 <div class="flexcolumn">
                                     <div class="k1d hide"></div>
                                 </div>
@@ -707,7 +707,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdK1m");
                             let html = `
                             <div class="flexrow">
-                                <span class = "glyphicon glyphicon-plus k1mCollapse clickable"/>
+                                <span class = "k1mCollapse clickable">+</span>
                                 <div class="flexcolumn">
                                     <div class="k1m hide"></div>
                                 </div>
