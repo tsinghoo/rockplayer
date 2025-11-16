@@ -2172,6 +2172,10 @@ async function autoCreateRule() {
                 amount = row.volumeMultiple;
             }
 
+            if (amount < 100) {
+                amount = 100;
+            }
+
             let rc = null;
 
             //如果r的operationDirection是买入，那么就创建一个先卖后买的rule
