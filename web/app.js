@@ -2137,7 +2137,12 @@ async function autoCreateRule() {
     try {
         //对每一个scode自动创建rule
         let res = await db.allSync(`select * from tStockBasic`);
+        let total = 0;
         for (let i = 0; i < res.rows.length; ++i) {
+            if (total >= workerCreateRule.max) {
+                break;
+            }
+
             let row = res.rows[i];
             let scode = row.scode;
 
@@ -2158,7 +2163,7 @@ async function autoCreateRule() {
             }
 
             //获取scode对应的当前价格
-            if (row.updateTime < Date.now() - 1000 * 60) {
+            if (1==0 && row.updateTime < Date.now() - 1000 * 60) {
                 info(`price for ${row.sname} is old`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
@@ -2247,7 +2252,10 @@ async function autoCreateRule() {
             let id = `${scode}.${broker}`;
             let result = await db.runSync(sql, [id, broker, scode, r.sname, JSON.stringify(rc), now, 0, expireTime]);
             await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [scode, broker]);
+            total++;
         }
+
+        info(`auto create rule succeeded`, { threadId }, workerCreateRule.logs, 5);
     } catch (e) {
         info(`auto create rule failed:${e}`, { threadId }, workerCreateRule.logs, 5);
     }
@@ -2259,9 +2267,14 @@ async function autoCreateRule() {
 
 app.get('/stock/rule/create/auto', async (req, res) => {
     let js = req.query.js;
+    let max = req.query.max;
+    if (!max) {
+        max = 1;
+    }
     let logs = [];
     if (workerCreateRule.id == 0) {
         if (workerCreateRule.logs.length == 0) {
+            workerCreateRule.max = max;
             workerCreateRule.id = setTimeout(autoCreateRule, 100);
             logs = ["autoCreateRule started"];
         } else {
