@@ -2132,10 +2132,10 @@ app.get('/stock/rule/create', async (req, res) => {
     res.send(resp);
 });
 
-function setBuyPriceBySell(rc) {
+function setBuyPriceBySell(rc, maxDelta) {
     rc.buy = rc.sell * (1 - 0.02);
-    if (rc.sell - rc.buy > 2) {
-        rc.buy = rc.sell - 2;
+    if (rc.sell - rc.buy > maxDelta) {
+        rc.buy = rc.sell - maxDelta;
     }
 
     //rc.buy取小数点后3位
@@ -2144,10 +2144,10 @@ function setBuyPriceBySell(rc) {
     rc.sell = parseFloat(rc.sell.toFixed(3));
 }
 
-function setSellPriceByBuy(rc) {
+function setSellPriceByBuy(rc, maxDelta) {
     rc.sell = rc.buy * (1 + 0.02);
-    if (rc.sell - rc.buy > 2) {
-        rc.sell = rc.buy + 2;
+    if (rc.sell - rc.buy > maxDelta) {
+        rc.sell = rc.buy + maxDelta;
     }
     //rc.buy取小数点后3位
     rc.buy = parseFloat(rc.buy.toFixed(3));
@@ -2191,29 +2191,6 @@ async function autoCreateRule() {
                 continue;
             }
 
-            let currentPrice = row.buy;
-            let lastPrice = r.tprice;
-            let buyPrice = lastPrice * (1 - 0.02);
-            if (lastPrice - buyPrice < 1) {
-                buyPrice = lastPrice * (1 - 0.1);
-            }
-
-            if (lastPrice - buyPrice > 2) {
-                buyPrice = lastPrice - 2;
-            }
-
-            buyPrice = parseFloat(buyPrice.toFixed(3));
-
-            let sellPrice = lastPrice * (1 + 0.02);
-            if (sellPrice - lastPrice < 1) {
-                sellPrice = lastPrice * (1 + 0.1);
-            }
-
-            if (sellPrice - lastPrice > 2) {
-                sellPrice = lastPrice + 2;
-            }
-            sellPrice = parseFloat(sellPrice.toFixed(3));
-
             let amount = Math.abs(r.tamount);
             if (amount < row.volumeMultiple) {
                 amount = row.volumeMultiple;
@@ -2222,6 +2199,33 @@ async function autoCreateRule() {
             if (amount < 100) {
                 amount = 100;
             }
+
+            let minDelta = 0.5;
+            let maxDelta = 2;
+
+            let currentPrice = row.buy;
+            let lastPrice = r.tprice;
+            let buyPrice = lastPrice * (1 - 0.02);
+            if (lastPrice - buyPrice < minDelta) {
+                buyPrice = lastPrice - minDelta;
+            }
+
+            if (lastPrice - buyPrice > maxDelta) {
+                buyPrice = lastPrice - maxDelta;
+            }
+
+            buyPrice = parseFloat(buyPrice.toFixed(3));
+
+            let sellPrice = lastPrice * (1 + 0.02);
+            if (sellPrice - lastPrice < minDelta) {
+                sellPrice = lastPrice + minDelta;
+            }
+
+            if (sellPrice - lastPrice > maxDelta) {
+                sellPrice = lastPrice + maxDelta;
+            }
+            sellPrice = parseFloat(sellPrice.toFixed(3));
+
 
             let rc = null;
 
@@ -2243,12 +2247,12 @@ async function autoCreateRule() {
 
                 if (currentPrice < buyPrice) {
                     rc.buy = currentPrice * (1 - 0.01);
-                    if (currentPrice - rc.buy > 1) {
-                        rc.buy = currentPrice - 1;
+                    if (currentPrice - rc.buy > minDelta) {
+                        rc.buy = currentPrice - minDelta;
                     }
                 }
 
-                setSellPriceByBuy(rc);
+                setSellPriceByBuy(rc, maxDelta);
 
             } else if (r.tamount == 0) {
                 buyPrice = currentPrice * (1 - 0.02);
@@ -2266,11 +2270,11 @@ async function autoCreateRule() {
                     expireHours: 12
                 }
 
-                if (currentPrice - rc.buy > 1) {
-                    rc.buy = currentPrice - 1;
+                if (currentPrice - rc.buy > minDelta) {
+                    rc.buy = currentPrice - minDelta;
                 }
 
-                setSellPriceByBuy(rc);
+                setSellPriceByBuy(rc, maxDelta);
 
             } else if (r.operationDirection.indexOf("买") >= 0) {
                 rc = {
@@ -2290,11 +2294,11 @@ async function autoCreateRule() {
                 if (currentPrice > rc.sell) {
                     rc.sell = currentPrice * (1 + 0.001);
 
-                    if (rc.sell - currentPrice > 1) {
-                        rc.sell = currentPrice + 1;
+                    if (rc.sell - currentPrice > minDelta) {
+                        rc.sell = currentPrice + minDelta;
                     }
 
-                    setBuyPriceBySell(rc);
+                    setBuyPriceBySell(rc, maxDelta);
                 }
 
             } else {
