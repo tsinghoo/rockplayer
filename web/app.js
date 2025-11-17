@@ -2158,7 +2158,7 @@ async function autoCreateRule() {
             }
 
             //获取scode对应的当前价格
-            if (1 == 0 && row.updateTime < Date.now() - 1000 * 60) {
+            if (row.updateTime < Date.now() - 1000 * 60) {
                 info(`price for ${row.sname} is old`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
@@ -2199,6 +2199,21 @@ async function autoCreateRule() {
                     rc.sell = rc.buy * (1 + 0.02);
                 }
 
+            } else if (r.tamount == 0) {
+                buyPrice = currentPrice * (1 - 0.02);
+                rc = {
+                    buy: buyPrice,
+                    bounce: "0.02",
+                    buyAmount: amount,
+                    sell: currentPrice,
+                    dip: "0.02",
+                    sellAmount: amount,
+                    scode: scode,
+                    sname: r.sname,
+                    broker: r.operationName,
+                    order: "buyFirst",
+                    expireHours: 12
+                }
             } else if (r.operationDirection.indexOf("买") >= 0) {
                 rc = {
                     buy: lastPrice,
