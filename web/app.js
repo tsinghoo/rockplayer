@@ -188,7 +188,6 @@ db.getSync = db.getSync || function (sql, params) {
             if (err != null) {
                 error(err);
                 resolve({ error: err });
-                //return;
             } else {
                 resolve(row);
             }
@@ -2169,25 +2168,25 @@ async function autoCreateRule() {
             let row = res.rows[i];
             let scode = row.scode;
 
-            info(`${row.sname}:auto creating rule`, { threadId }, workerCreateRule.logs, 5);
+            info(`${row.sname}: auto creating rule`, { threadId }, workerCreateRule.logs, 5);
 
             //获取tstock里对应scode的最后一条记录
             let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
             if (r == null) {
-                info(`${row.sname}:no trade history`, { threadId }, workerCreateRule.logs, 5);
+                info(`${row.sname}: no trade history`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
             //如果已经存在rule,则跳过
             let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
             if (oldRule != null && oldRule.closed == 0) {
-                info(`${row.sname}:rule already active`, { threadId }, workerCreateRule.logs, 5);
+                info(`${row.sname}: rule already active`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
             //获取scode对应的当前价格
             if (1 == 0 && row.updateTime < Date.now() - 1000 * 60) {
-                info(`${row.sname}:price is old`, { threadId }, workerCreateRule.logs, 5);
+                info(`${row.sname}: price is old`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
@@ -2238,38 +2237,38 @@ async function autoCreateRule() {
 
             let rc = null;
 
-            let rows = db.getAllSync(`select * from tPositions where scode=? and broker=?`, [scode, r.operationName]);
+            let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, r.operationName]);
             let position = 0;
-            if (rows.length > 0) {
-                position = rows[0].volume;
+            if (all.rows && all.rows.length > 0) {
+                position = all.rows[0].volume;
             }
 
             if (position == 0) { //如果已经清仓
                 //获取最近3天的日线数据
-                let rows = db.getAllSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
-                if (rows.length < 3) {
+                let all = await db.allSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
+                if (all.rows == null || all.rows.length < 3) {
                     info(`${row.sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
                     continue;
                 }
 
-                let lastDay = rows[0].time;
+                let lastDay = all.rows[0].time;
                 let todayStr = timeFormat(new Date(), "yyyyMMdd");
                 if (todayStr != lastDay) {
                     info(`${row.sname}:no today 1d`, { threadId }, workerCreateRule.logs, 5);
                     continue;
                 }
 
-                if (rows[0].low < rows[1].low || rows[1].low < rows[2].low) { //如果不是最近2天连涨
+                if (all.rows[0].low < all.rows[1].low || all.rows[1].low < all.rows[2].low) { //如果不是最近2天连涨
                     info(`${row.sname}:recent 3 days are not up:low`, { threadId }, workerCreateRule.logs, 5);
                     continue;
                 }
 
-                if (rows[0].high < rows[1].high || rows[1].high < rows[2].high) { //如果不是最近2天连涨
+                if (all.rows[0].high < all.rows[1].high || all.rows[1].high < all.rows[2].high) { //如果不是最近2天连涨
                     info(`${row.sname}:recent 3 days are not up:high`, { threadId }, workerCreateRule.logs, 5);
                     continue;
                 }
 
-                buyPrice = (currentPrice + rows[0].low) / 2;
+                buyPrice = (currentPrice + all.rows[0].low) / 2;
 
                 rc = {
                     buy: buyPrice,
@@ -2352,6 +2351,7 @@ async function autoCreateRule() {
 
         info(`auto create rule succeeded`, { threadId }, workerCreateRule.logs, 5);
     } catch (e) {
+        error(e, { threadId });
         info(`auto create rule failed:${e}`, { threadId }, workerCreateRule.logs, 5);
     }
 
