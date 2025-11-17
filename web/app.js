@@ -2169,25 +2169,25 @@ async function autoCreateRule() {
             let row = res.rows[i];
             let scode = row.scode;
 
-            info(`auto creating rule for ${scode}`, { threadId }, workerCreateRule.logs, 5);
+            info(`${row.sname}:auto creating rule`, { threadId }, workerCreateRule.logs, 5);
 
             //获取tstock里对应scode的最后一条记录
             let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
             if (r == null) {
-                info(`no trade history for ${row.sname}`, { threadId }, workerCreateRule.logs, 5);
+                info(`${row.sname}:no trade history`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
             //如果已经存在rule,则跳过
             let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
             if (oldRule != null && oldRule.closed == 0) {
-                info(`rule already active for ${row.sname}`, { threadId }, workerCreateRule.logs, 5);
+                info(`${row.sname}:rule already active`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
             //获取scode对应的当前价格
             if (1 == 0 && row.updateTime < Date.now() - 1000 * 60) {
-                info(`price for ${row.sname} is old`, { threadId }, workerCreateRule.logs, 5);
+                info(`${row.sname}:price is old`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
@@ -2202,13 +2202,23 @@ async function autoCreateRule() {
 
             let minDelta = 0.5;
             let maxDelta = 2;
+            let dip = 0.02;
 
             let currentPrice = row.buy;
+            if (currentPrice < 30) {
+                dip = 0.005
+            } else if (currentPrice < 300) {
+                dip = 0.02
+            } else {
+                dip = 0.1
+            }
+
             let lastPrice = r.tprice;
             let buyPrice = lastPrice * (1 - 0.02);
             if (lastPrice - buyPrice < minDelta) {
                 buyPrice = lastPrice - minDelta;
             }
+
 
             if (lastPrice - buyPrice > maxDelta) {
                 buyPrice = lastPrice - maxDelta;
@@ -2226,17 +2236,63 @@ async function autoCreateRule() {
             }
             sellPrice = parseFloat(sellPrice.toFixed(3));
 
-
             let rc = null;
 
-            //如果r的operationDirection是买入，那么就创建一个先卖后买的rule
-            if (r.operationDirection.indexOf("卖") >= 0) {
+            let rows = db.getAllSync(`select * from tPositions where scode=? and broker=?`, [scode, r.operationName]);
+            let position = 0;
+            if (rows.length > 0) {
+                position = rows[0].volume;
+            }
+
+            if (position == 0) { //如果已经清仓
+                //获取最近3天的日线数据
+                let rows = db.getAllSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
+                if (rows.length < 3) {
+                    info(`${row.sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
+                    continue;
+                }
+
+                let lastDay = rows[0].time;
+                let todayStr = timeFormat(new Date(), "yyyyMMdd");
+                if (todayStr != lastDay) {
+                    info(`${row.sname}:no today 1d`, { threadId }, workerCreateRule.logs, 5);
+                    continue;
+                }
+
+                if (rows[0].low < rows[1].low || rows[1].low < rows[2].low) { //如果不是最近2天连涨
+                    info(`${row.sname}:recent 3 days are not up:low`, { threadId }, workerCreateRule.logs, 5);
+                    continue;
+                }
+
+                if (rows[0].high < rows[1].high || rows[1].high < rows[2].high) { //如果不是最近2天连涨
+                    info(`${row.sname}:recent 3 days are not up:high`, { threadId }, workerCreateRule.logs, 5);
+                    continue;
+                }
+
+                buyPrice = (currentPrice + rows[0].low) / 2;
+
                 rc = {
                     buy: buyPrice,
-                    bounce: "0.02",
+                    bounce: dip,
+                    buyAmount: amount,
+                    sell: currentPrice,
+                    dip: dip,
+                    sellAmount: amount,
+                    scode: scode,
+                    sname: r.sname,
+                    broker: r.operationName,
+                    order: "buyFirst",
+                    expireHours: 12
+                }
+
+                setSellPriceByBuy(rc, maxDelta);
+            } else if (r.operationDirection.indexOf("卖") >= 0) {
+                rc = {
+                    buy: buyPrice,
+                    bounce: dip,
                     buyAmount: amount,
                     sell: lastPrice,
-                    dip: "0.02",
+                    dip: dip,
                     sellAmount: amount,
                     scode: scode,
                     sname: r.sname,
@@ -2253,29 +2309,6 @@ async function autoCreateRule() {
                 }
 
                 setSellPriceByBuy(rc, maxDelta);
-
-            } else if (r.tamount == 0) {
-                buyPrice = currentPrice * (1 - 0.02);
-                rc = {
-                    buy: buyPrice,
-                    bounce: "0.02",
-                    buyAmount: amount,
-                    sell: currentPrice,
-                    dip: "0.02",
-                    sellAmount: amount,
-                    scode: scode,
-                    sname: r.sname,
-                    broker: r.operationName,
-                    order: "buyFirst",
-                    expireHours: 12
-                }
-
-                if (currentPrice - rc.buy > minDelta) {
-                    rc.buy = currentPrice - minDelta;
-                }
-
-                setSellPriceByBuy(rc, maxDelta);
-
             } else if (r.operationDirection.indexOf("买") >= 0) {
                 rc = {
                     buy: lastPrice,
