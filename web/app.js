@@ -2163,7 +2163,7 @@ async function autoCreateRule() {
             }
 
             //获取scode对应的当前价格
-            if (1==0 && row.updateTime < Date.now() - 1000 * 60) {
+            if (1 == 0 && row.updateTime < Date.now() - 1000 * 60) {
                 info(`price for ${row.sname} is old`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
@@ -2171,7 +2171,21 @@ async function autoCreateRule() {
             let currentPrice = row.buy;
             let lastPrice = r.tprice;
             let buyPrice = lastPrice * (1 - 0.02);
+            if (lastPrice - buyPrice < 1) {
+                buyPrice = lastPrice * (1 - 0.1);
+            }
+
+            //buyPrice取小数点后3位
+            buyPrice = parseFloat(buyPrice.toFixed(3));
+
             let sellPrice = lastPrice * (1 + 0.02);
+            if (sellPrice - lastPrice < 1) {
+                sellPrice = lastPrice * (1 + 0.1);
+            }
+
+            //sellPrice取小数点后3位
+            sellPrice = parseFloat(sellPrice.toFixed(3));
+
             let amount = Math.abs(r.tamount);
             if (amount < row.volumeMultiple) {
                 amount = row.volumeMultiple;
@@ -2200,8 +2214,12 @@ async function autoCreateRule() {
                 }
 
                 if (currentPrice < buyPrice) {
-                    rc.buy = currentPrice * (1 - 0.001);
+                    rc.buy = currentPrice * (1 - 0.01);
                     rc.sell = rc.buy * (1 + 0.02);
+                    //rc.buy取小数点后3位
+                    rc.buy = parseFloat(rc.buy.toFixed(3));
+                    //rc.sell取小数点后3位
+                    rc.sell = parseFloat(rc.sell.toFixed(3));
                 }
 
             } else if (r.tamount == 0) {
@@ -2237,6 +2255,10 @@ async function autoCreateRule() {
                 if (currentPrice > rc.sell) {
                     rc.sell = currentPrice * (1 + 0.001);
                     rc.buy = rc.sell * (1 - 0.02);
+                    //rc.buy取小数点后3位
+                    rc.buy = parseFloat(rc.buy.toFixed(3));
+                    //rc.sell取小数点后3位
+                    rc.sell = parseFloat(rc.sell.toFixed(3));
                 }
 
             } else {
