@@ -2132,6 +2132,29 @@ app.get('/stock/rule/create', async (req, res) => {
     res.send(resp);
 });
 
+function setBuyPriceBySell(rc) {
+    rc.buy = rc.sell * (1 - 0.02);
+    if (rc.sell - rc.buy > 2) {
+        rc.buy = rc.sell - 2;
+    }
+
+    //rc.buy取小数点后3位
+    rc.buy = parseFloat(rc.buy.toFixed(3));
+    //rc.sell取小数点后3位
+    rc.sell = parseFloat(rc.sell.toFixed(3));
+}
+
+function setSellPriceByBuy(rc) {
+    rc.sell = rc.buy * (1 + 0.02);
+    if (rc.sell - rc.buy > 2) {
+        rc.sell = rc.buy + 2;
+    }
+    //rc.buy取小数点后3位
+    rc.buy = parseFloat(rc.buy.toFixed(3));
+    //rc.sell取小数点后3位
+    rc.sell = parseFloat(rc.sell.toFixed(3));
+}
+
 async function autoCreateRule() {
     let threadId = Date.now();
     try {
@@ -2175,7 +2198,10 @@ async function autoCreateRule() {
                 buyPrice = lastPrice * (1 - 0.1);
             }
 
-            //buyPrice取小数点后3位
+            if (lastPrice - buyPrice > 2) {
+                buyPrice = lastPrice - 2;
+            }
+
             buyPrice = parseFloat(buyPrice.toFixed(3));
 
             let sellPrice = lastPrice * (1 + 0.02);
@@ -2183,7 +2209,9 @@ async function autoCreateRule() {
                 sellPrice = lastPrice * (1 + 0.1);
             }
 
-            //sellPrice取小数点后3位
+            if (sellPrice - lastPrice > 2) {
+                sellPrice = lastPrice + 2;
+            }
             sellPrice = parseFloat(sellPrice.toFixed(3));
 
             let amount = Math.abs(r.tamount);
@@ -2215,12 +2243,12 @@ async function autoCreateRule() {
 
                 if (currentPrice < buyPrice) {
                     rc.buy = currentPrice * (1 - 0.01);
-                    rc.sell = rc.buy * (1 + 0.02);
-                    //rc.buy取小数点后3位
-                    rc.buy = parseFloat(rc.buy.toFixed(3));
-                    //rc.sell取小数点后3位
-                    rc.sell = parseFloat(rc.sell.toFixed(3));
+                    if (currentPrice - rc.buy > 1) {
+                        rc.buy = currentPrice - 1;
+                    }
                 }
+
+                setSellPriceByBuy(rc);
 
             } else if (r.tamount == 0) {
                 buyPrice = currentPrice * (1 - 0.02);
@@ -2237,6 +2265,13 @@ async function autoCreateRule() {
                     order: "buyFirst",
                     expireHours: 12
                 }
+
+                if (currentPrice - rc.buy > 1) {
+                    rc.buy = currentPrice - 1;
+                }
+
+                setSellPriceByBuy(rc);
+
             } else if (r.operationDirection.indexOf("买") >= 0) {
                 rc = {
                     buy: lastPrice,
@@ -2254,11 +2289,12 @@ async function autoCreateRule() {
 
                 if (currentPrice > rc.sell) {
                     rc.sell = currentPrice * (1 + 0.001);
-                    rc.buy = rc.sell * (1 - 0.02);
-                    //rc.buy取小数点后3位
-                    rc.buy = parseFloat(rc.buy.toFixed(3));
-                    //rc.sell取小数点后3位
-                    rc.sell = parseFloat(rc.sell.toFixed(3));
+
+                    if (rc.sell - currentPrice > 1) {
+                        rc.sell = currentPrice + 1;
+                    }
+
+                    setBuyPriceBySell(rc);
                 }
 
             } else {
