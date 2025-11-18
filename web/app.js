@@ -2342,7 +2342,8 @@ async function autoCreateRule() {
 
         info(`auto create rule succeeded`, { threadId }, workerCreateRule.logs, 5);
     } catch (e) {
-        error(e, { threadId });
+        error(e.message, { threadId });
+        error(e.stack, { threadId });
         info(`auto create rule failed:${e}`, { threadId }, workerCreateRule.logs, 5);
     }
 
