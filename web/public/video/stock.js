@@ -2463,12 +2463,11 @@ window.stock_list = window.stock_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA30', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
+                    data: ['1d', 'MA5', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
                     selected: {
                         'MA5': false,
-                        'MA10': false,
                         'MA20': false,
-                        'MA30': false,
+                        'MA60': false,
                     }
                 },
                 tooltip: {
@@ -2672,16 +2671,6 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        name: 'MA10',
-                        type: 'line',
-                        data: self.calculateMA(10, data),
-                        smooth: true,
-                        symbol: 'none',
-                        lineStyle: {
-                            opacity: 0.5
-                        }
-                    },
-                    {
                         name: 'MA20',
                         type: 'line',
                         data: self.calculateMA(20, data),
@@ -2692,10 +2681,10 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        name: 'MA30',
+                        name: 'MA60',
                         type: 'line',
                         show: false,
-                        data: self.calculateMA(30, data),
+                        data: self.calculateMA(60, data),
                         smooth: true,
                         symbol: 'none',
                         lineStyle: {
