@@ -45,6 +45,8 @@ const server = http.createServer(app);
 let wss = null;
 let workerCreateRule = {
     id: 0,
+    succeeded: [],
+    failed: [],
     logs: []
 };
 function initWss() {
@@ -2167,26 +2169,28 @@ async function autoCreateRule() {
 
             let row = res.rows[i];
             let scode = row.scode;
+            let sname = row.sname;
 
-            info(`${row.sname}: auto creating rule`, { threadId }, workerCreateRule.logs, 5);
+            info(`${sname}: auto creating rule`, { threadId }, workerCreateRule.logs, 5);
 
             //获取tstock里对应scode的最后一条记录
             let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
             if (r == null) {
-                info(`${row.sname}: no trade history`, { threadId }, workerCreateRule.logs, 5);
+                info(`${sname}: no trade history`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
             //如果已经存在rule,则跳过
             let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
             if (oldRule != null && oldRule.closed == 0) {
-                info(`${row.sname}: rule already active`, { threadId }, workerCreateRule.logs, 5);
+                info(`${sname}: rule already active`, { threadId }, workerCreateRule.logs, 5);
                 continue;
             }
 
             //获取scode对应的当前价格
-            if (1 == 0 && row.updateTime < Date.now() - 1000 * 60) {
-                info(`${row.sname}: price is old`, { threadId }, workerCreateRule.logs, 5);
+            if (row.updateTime < Date.now() - 1000 * workerCreateRule.priceDelay) {
+                info(`${sname}: price is old`, { threadId }, workerCreateRule.logs, 5);
+                workerCreateRule.failed.push({ scode, sname, reason: "price is old" });
                 continue;
             }
 
@@ -2245,26 +2249,11 @@ async function autoCreateRule() {
 
             if (position == 0) { //如果已经清仓
                 //获取最近3天的日线数据
-                let all = await db.allSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
-                if (all.rows == null || all.rows.length < 3) {
-                    info(`${row.sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
-                    continue;
-                }
+                let all = await getAndcheck1dDataBeforeBuy(scode, sname, threadId);
 
-                let lastDay = all.rows[0].time;
-                let todayStr = timeFormat(new Date(), "yyyyMMdd");
-                if (todayStr != lastDay) {
-                    info(`${row.sname}:no today 1d`, { threadId }, workerCreateRule.logs, 5);
-                    continue;
-                }
-
-                if (all.rows[0].low < all.rows[1].low || all.rows[1].low < all.rows[2].low) { //如果不是最近2天连涨
-                    info(`${row.sname}:recent 3 days are not up:low`, { threadId }, workerCreateRule.logs, 5);
-                    continue;
-                }
-
-                if (all.rows[0].high < all.rows[1].high || all.rows[1].high < all.rows[2].high) { //如果不是最近2天连涨
-                    info(`${row.sname}:recent 3 days are not up:high`, { threadId }, workerCreateRule.logs, 5);
+                if (all.reason) {
+                    info(`${sname}: ${all.reason}`, { threadId }, workerCreateRule.logs, 5);
+                    workerCreateRule.failed.push({ scode, sname, reason: all.reason });
                     continue;
                 }
 
@@ -2334,7 +2323,8 @@ async function autoCreateRule() {
                 }
 
             } else {
-                info(`bad trade direction for ${row.sname}:${r.operationDirection}`, { threadId }, workerCreateRule.logs, 5);
+                info(`bad trade direction for ${sname}:${r.operationDirection}`, { threadId }, workerCreateRule.logs, 5);
+                workerCreateRule.failed.push({ scode, sname, reason: "bad trade direction" });
                 continue;
             }
 
@@ -2346,6 +2336,7 @@ async function autoCreateRule() {
             let id = `${scode}.${broker}`;
             let result = await db.runSync(sql, [id, broker, scode, r.sname, JSON.stringify(rc), now, 0, expireTime]);
             await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [scode, broker]);
+            workerCreateRule.succeeded.push({ scode, sname });
             total++;
         }
 
@@ -2363,22 +2354,42 @@ async function autoCreateRule() {
 app.get('/stock/rule/create/auto', async (req, res) => {
     let js = req.query.js;
     let max = req.query.max;
+    let priceDelay = req.query.priceDelay;
     if (!max) {
         max = 1;
     }
+    if (!priceDelay) {
+        priceDelay = 30;
+    }
     let logs = [];
+    let succeeded = [];
+    let failed = [];
     if (workerCreateRule.id == 0) {
-        if (workerCreateRule.logs.length == 0) {
+        if (workerCreateRule.succeeded.length + workerCreateRule.failed.length == 0) {
             workerCreateRule.max = max;
+            workerCreateRule.priceDelay = priceDelay;
             workerCreateRule.id = setTimeout(autoCreateRule, 100);
             logs = ["autoCreateRule started"];
+
         } else {
             logs = workerCreateRule.logs;
             workerCreateRule.logs = [];
+            succeeded = workerCreateRule.succeeded;
+            workerCreateRule.succeeded = [];
+            failed = workerCreateRule.failed;
+            workerCreateRule.failed = [];
         }
+    } else {
+        logs = workerCreateRule.logs;
+        succeeded = workerCreateRule.succeeded;
+        failed = workerCreateRule.failed;
     }
 
-    var resp = JSON.stringify({ logs });
+    var resp = JSON.stringify({
+        succeeded: succeeded,
+        failed: failed,
+        logs
+    });
     if (js) {
         resp = `${js}(${resp})`;
     }
@@ -2775,6 +2786,43 @@ app.get('/stock/fe/user/login', async (req, res) => {
     var resp = `${js}(${JSON.stringify({ login: login })})`;
     res.send(resp);
 });
+
+async function getAndcheck1dDataBeforeBuy(scode, sname, threadId) {
+    let all = await db.allSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
+    if (all.rows == null || all.rows.length < 3) {
+        info(`${sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "no 1d data";
+    }
+
+    let lastDay = all.rows[0].time;
+    let todayStr = timeFormat(new Date(), "yyyyMMdd");
+    if (todayStr != lastDay) {
+        info(`${sname}:no today 1d`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "no today 1d";
+    }
+
+    if (all.rows[0].low < all.rows[1].low) { //如果不是最近2天连涨
+        info(`${sname}:0.low < 1.low`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "0.low < 1.low";
+    }
+
+    if (all.rows[1].low < all.rows[2].low) { //如果不是最近2天连涨
+        info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "1.low < 2.low";
+    }
+
+    if (all.rows[0].open < all.rows[1].open) { //如果不是最近2天连涨
+        info(`${sname}:0.open < 1.open`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "0.open < 1.open";
+    }
+
+    if (all.rows[1].high < all.rows[2].high) { //如果不是最近2天连涨
+        info(`${sname}:1.high < 2.high`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "1.high < 2.high";
+    }
+
+    return all;
+}
 
 function updatePriceToRule(scode, price) {
     let rs = rules[scode];

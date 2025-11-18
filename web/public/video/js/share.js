@@ -1028,6 +1028,7 @@ window.mhgl_share =
               $("#actionSheetButton" + (item.id ? item.id : i), $(`#${popupId}`, document)).on(
                 "click",
                 function (e) {
+                  share.currentTarget = $(this)[0];
                   item.onTap(e);
                 }
               );

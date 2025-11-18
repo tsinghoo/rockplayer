@@ -317,5 +317,38 @@
                 </button>
             </div>
         </div>
+        <div id="autoCreateRule" class="hide">
+            <div class="flexrow width100p center">
+                <div class="form-floating widthauto margin4">
+                    <input
+                        type="text"
+                        value="5"
+                        class="form-control maxCount h20"
+                        placeholder=" "
+                        style="width:60px;"
+                    >
+                    <label class="floating-label">最大数目</label>
+                </div>
+                <div class="form-floating widthauto margin4">
+                    <input
+                        type="text"
+                        value="10"
+                        class="form-control priceDelay h20"
+                        name="priceDelay"
+                        placeholder=""
+                        style="width:100px;"
+                    >
+                    <label class="floating-label">价格延迟(s)</label>
+                </div>
+            </div>
+            <div class="flexrow width100p center">
+                <button type="button" class="btn btn-primary widthAuto margin4 buttonConfirm">
+                    确认
+                </button>
+            </div>
+            <div class="succeededRules green"></div>
+            <div class="logs red"></div>
+            <div class="failedRules red"></div>
+        </div>
     </div>
 </html>

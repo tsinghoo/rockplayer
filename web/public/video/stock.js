@@ -5,8 +5,8 @@ window.stock_list = window.stock_list || (function () {
     var self = {
         data: {},
         rows: [],
-        showK1d: 1,
-        showK1m: 1,
+        showK1d: 0,
+        showK1m: 0,
         statusMapping: {
             "10": "出错",
             "49": "待报",
@@ -146,6 +146,7 @@ window.stock_list = window.stock_list || (function () {
             }
         },
         addButtonClicked__: async function () {
+            let popup;
             let buttons = [
                 {
                     text: "新交易记录",
@@ -153,7 +154,10 @@ window.stock_list = window.stock_list || (function () {
                 },
                 {
                     text: "新sql",
-                    onTap: function () { self.toEditSql({ name: "", sql: "" }); }
+                    onTap: function () {
+                        self.toEditSql({ name: "", sql: "" });
+                        popup.close();
+                    }
                 },
                 {
                     text: "增量配对",
@@ -189,17 +193,31 @@ window.stock_list = window.stock_list || (function () {
                 {
                     text: "自建规则",
                     onTap: async function () {
-                        let res = await share.getSync__("/stock/rule/create/auto");
-                        if (res.error) {
-                            share.toastError__(res.error);
-                        } else {
-                            share.toastSuccess__(res.logs.join("<br>"), 3000);
-                        }
+                        popup.close();
+                        let autoResult = $("#autoCreateRule").html();
+                        popup = await share.popup__(null, autoResult);
+                        let c = $(`#${popup.id}`);
+                        c.find(".buttonConfirm").on("click", async function () {
+                            let maxCount = $(".maxCount", c).val().trim();
+                            let priceDelay = $(".priceDelay", c).val().trim();
+
+                            let res = await share.getSync__(`/stock/rule/create/auto?max=${maxCount}&priceDelay=${priceDelay}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                let succeeded = res.succeeded.map((item) => `${item.scode}.${item.sname}`).join("<br/>");
+                                let failed = res.failed.map((item) => `${item.scode}.${item.sname}:${item.reason}`).join("<br/>");
+                                let logs=res.logs.join("<br/>");
+                                c.find(".succeededRules").html(succeeded);
+                                c.find(".failedRules").html(failed);
+                                c.find(".logs").html(logs);
+                            }
+                        });
                     }
                 }
             ];
 
-            let popup = await share.popupAction__("", buttons);
+            popup = await share.popupAction__("", buttons);
 
         },
         toPair: async function (reset) {
@@ -543,11 +561,11 @@ window.stock_list = window.stock_list || (function () {
                 } else if (keys[i] == "状态") {
                     th.addClass("tdStatus");
                 } else if (keys[i] == "K1d") {
-                    th.addClass("tdK1d");
-                    th.addClass("thK1d");
+                    th.addClass("tdK1d gray");
+                    th.addClass("thK1d gray");
                     th.addClass("clickable");
                 } else if (keys[i] == "K1m") {
-                    th.addClass("tdK1m");
+                    th.addClass("tdK1m gray");
                     th.addClass("thK1m");
                     th.addClass("clickable");
                 }
@@ -691,7 +709,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdK1d");
                             let html = `
                             <div class="flexrow">
-                                <span class = "k1dCollapse clickable">+</span>
+                                <span class = "k1dCollapse gray clickable">+</span>
                                 <div class="flexcolumn">
                                     <div class="k1d hide"></div>
                                 </div>
@@ -707,7 +725,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("tdK1m");
                             let html = `
                             <div class="flexrow">
-                                <span class = "k1mCollapse clickable">+</span>
+                                <span class = "k1mCollapse gray clickable">+</span>
                                 <div class="flexcolumn">
                                     <div class="k1m hide"></div>
                                 </div>
@@ -766,7 +784,7 @@ window.stock_list = window.stock_list || (function () {
                     $(".k1m").removeClass("hide");
                     $(".k1mCollapse").removeClass("gray");
                 } else {
-                    $(".thK1m").addClass("gray");   
+                    $(".thK1m").addClass("gray");
                     $(".k1m").addClass("hide");
                     $(".k1mCollapse").addClass("gray");
                 }
