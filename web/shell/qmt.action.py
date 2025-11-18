@@ -627,7 +627,7 @@ def update1m(ci):
                 # 上传数据到test1
                 try:
                     response = requests.post(
-                        g.baseUrl+"/stock/data/upload", json=body, verify=False, timeout=20)
+                        g.baseUrl+"/stock/k/upload", json=body, verify=False, timeout=20)
                     if response.status_code != 200:
                         error("上传失败，状态码:", response.status_code,
                               "响应内容:", response.text)

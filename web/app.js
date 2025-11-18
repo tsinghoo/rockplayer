@@ -3107,8 +3107,8 @@ app.post('/stock/query', async (req, res) => {
     res.send(resp);
 });
 
-app.post('/stock/data/upload', async (req, res) => {
-    info(`/stock/data/upload`, req)
+app.post('/stock/k/upload', async (req, res) => {
+    info(`/stock/k/upload`, req)
     let data = req.body.data;
     let scode = req.body.scode.split(".")[0];
     let period = req.body.period;

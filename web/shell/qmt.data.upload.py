@@ -115,7 +115,7 @@ def after_init(ContextInfo):
                 # 上传数据到test1
                 try:
                     response = requests.post(
-                        baseUrl+"/stock/data/upload", json=body, timeout=5)
+                        baseUrl+"/stock/k/upload", json=body, timeout=5)
                     if response.status_code != 200:
                         print("上传失败，状态码:", response.status_code,
                               "响应内容:", response.text)

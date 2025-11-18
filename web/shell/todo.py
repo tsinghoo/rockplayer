@@ -1,1 +1,0 @@
-/stock/data/upload 改成 /stock/k/upload

@@ -250,7 +250,7 @@ async function updateSticks(stock, period, limit) {
           scode: stock,
           data: data
         };
-        post(`${g.baseUrl}/stock/data/upload`, body);
+        post(`${g.baseUrl}/stock/k/upload`, body);
         data = [];
       }
     }
@@ -261,7 +261,7 @@ async function updateSticks(stock, period, limit) {
       data: data
     };
 
-    post(`${g.baseUrl}/stock/data/upload`, body);
+    post(`${g.baseUrl}/stock/k/upload`, body);
     data = [];
 
   } catch (e) {
@@ -509,7 +509,7 @@ async function start() {
         data: data
       }
 
-      post(`${g.baseUrl}/stock/data/upload`, body);
+      post(`${g.baseUrl}/stock/k/upload`, body);
 
       for (let scode of g.stocklist) {
         updateSticks(scode, "1d", 1);
@@ -616,7 +616,7 @@ async function futureCandles(stock, period, limit) {
           type: 1,
           data: data
         };
-        await post(`${g.baseUrl}/stock/data/upload`, body);
+        await post(`${g.baseUrl}/stock/k/upload`, body);
         count += 50;
         info(`fc upload:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
         data = [];
@@ -630,7 +630,7 @@ async function futureCandles(stock, period, limit) {
         type: 1,
         data: data
       };
-      await post(`${g.baseUrl}/stock/data/upload`, body);
+      await post(`${g.baseUrl}/stock/k/upload`, body);
       count += data.length;
       info(`fc upload last:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
     }
