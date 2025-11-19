@@ -552,6 +552,7 @@ async function reloadRule(r, req) {
                 setTimeout(async () => {
                     let res = await autoCreateRule(r.scode, req.threadId);
                     if (res.error == null) {
+                        await saveCreateRuleFailure(r.scode, "");
                         reloadRule(res.rule, req);
                     } else {
                         error(res.error, req);
@@ -2183,6 +2184,7 @@ async function autoCreateRules() {
 
             let result = await autoCreateRule(scode, threadId, stockBasicInfo);
             if (result.error == null) {
+                await saveCreateRuleFailure(scode, "");
                 workerCreateRule.succeeded.push({ scode, sname });
                 total++;
             } else {
@@ -2616,7 +2618,10 @@ app.get('/stock/rule/status', async (req, res) => {
         let res = await db.allSync(`select * from tTradeRule where scode=?`, [scode]);
 
         if (res.rows.length > 0) {
-            resp = JSON.stringify({ data: res.rows[0] });
+            let tsb = await db.getSync(`select * from tStockBasic where scode=?`, [scode]);
+            let data = res.rows[0];
+            data.autoCreateRuleFail = tsb.autoCreateRuleFail;
+            resp = JSON.stringify({ data });
         } else {
             resp = JSON.stringify({ data: null });
         }

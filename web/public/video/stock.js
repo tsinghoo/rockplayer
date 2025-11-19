@@ -207,7 +207,7 @@ window.stock_list = window.stock_list || (function () {
                             } else {
                                 let succeeded = res.succeeded.map((item) => `${item.scode}.${item.sname}`).join("<br/>");
                                 let failed = res.failed.map((item) => `${item.scode}.${item.sname}:${item.reason}`).join("<br/>");
-                                let logs=res.logs.join("<br/>");
+                                let logs = res.logs.join("<br/>");
                                 c.find(".succeededRules").html(succeeded);
                                 c.find(".failedRules").html(failed);
                                 c.find(".logs").html(logs);
@@ -2916,6 +2916,9 @@ window.stock_list = window.stock_list || (function () {
                           </div>`;
             }
             let expireTime = r.expireTime ? share.timeFormat__(r.expireTime, "失效:yyyy-MM-dd hh:mm") : "";
+            if (r.autoCreateRuleFail && r.autoCreateRuleFail != "") {
+                expireTime = `${r.autoCreateRuleFail}`;
+            }
             let color = "red";
             if (r.expireTime < Date.now()) {
                 color = "gray";
@@ -2958,7 +2961,8 @@ window.stock_list = window.stock_list || (function () {
                 color = "gray";
             }
 
-            let html = `<table class="${color}">${price}${actions}</table>`;
+            let html = `<table class="${color}">${price}${actions}</table>
+            `;
             c.html(html);
         },
         showChart: async function (rows) {
