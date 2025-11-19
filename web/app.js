@@ -2300,28 +2300,36 @@ async function autoCreateRule() {
                     setSellPriceByBuy(rc, maxDelta);
                 }
             } else if (r.operationDirection.indexOf("买") >= 0) {
-                rc = {
-                    buy: lastPrice,
-                    bounce: "0.02",
-                    buyAmount: amount,
-                    sell: sellPrice,
-                    dip: "0.02",
-                    sellAmount: amount,
-                    scode: scode,
-                    sname: r.sname,
-                    broker: r.operationName,
-                    order: "sellFirst",
-                    expireHours: 12
-                }
+                if (position == 0) {
+                    //如果是第一次买。。。。
 
-                if (currentPrice > rc.sell) {
-                    rc.sell = currentPrice * (1 + 0.001);
-
-                    if (rc.sell - currentPrice > minDelta) {
-                        rc.sell = currentPrice + minDelta;
+                    info(`${sname}: open, todo`, { threadId }, workerCreateRule.logs, 5);
+                    workerCreateRule.failed.push({ scode, sname, reason: all.reason });
+                    continue;
+                } else {
+                    rc = {
+                        buy: lastPrice,
+                        bounce: "0.02",
+                        buyAmount: amount,
+                        sell: sellPrice,
+                        dip: "0.02",
+                        sellAmount: amount,
+                        scode: scode,
+                        sname: r.sname,
+                        broker: r.operationName,
+                        order: "sellFirst",
+                        expireHours: 12
                     }
 
-                    setBuyPriceBySell(rc, maxDelta);
+                    if (currentPrice > rc.sell) {
+                        rc.sell = currentPrice * (1 + 0.001);
+
+                        if (rc.sell - currentPrice > minDelta) {
+                            rc.sell = currentPrice + minDelta;
+                        }
+
+                        setBuyPriceBySell(rc, maxDelta);
+                    }
                 }
             } else {
                 info(`bad trade direction for ${sname}:${r.operationDirection}`, { threadId }, workerCreateRule.logs, 5);
