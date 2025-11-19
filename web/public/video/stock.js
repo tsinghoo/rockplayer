@@ -1553,6 +1553,9 @@ window.stock_list = window.stock_list || (function () {
             share.currentTarget = ele;
             let scode = data["代码"];
             let type = data["type"];
+            if (type == null) {
+                type = 0;
+            }
             let tbs = $("#templateBuySell").html();
             let html = `
                     <div class="flexrow">
@@ -1711,7 +1714,7 @@ window.stock_list = window.stock_list || (function () {
                     }
                 }).catch(
                     function (err) {
-                        k1d.text(err);
+                        k1d.text(err.stack);
                     }
                 )
         },
