@@ -2247,81 +2247,110 @@ async function autoCreateRule() {
                 position = all.rows[0].volume;
             }
 
-            if (position == 0) { //如果已经清仓
-                //获取最近3天的日线数据
-                let all = await getAndcheck1dDataBeforeBuy(scode, sname, threadId);
+            if (r.operationDirection.indexOf("卖") >= 0) {
+                if (position == 0) { //如果已经清仓
+                    //获取最近3天的日线数据
+                    let all = await ensure3DaysUp(scode, sname, threadId);
 
-                if (all.reason) {
-                    info(`${sname}: ${all.reason}`, { threadId }, workerCreateRule.logs, 5);
-                    workerCreateRule.failed.push({ scode, sname, reason: all.reason });
-                    continue;
-                }
-
-                buyPrice = (currentPrice + all.rows[0].low) / 2;
-
-                rc = {
-                    buy: buyPrice,
-                    bounce: dip,
-                    buyAmount: amount,
-                    sell: currentPrice,
-                    dip: dip,
-                    sellAmount: amount,
-                    scode: scode,
-                    sname: r.sname,
-                    broker: r.operationName,
-                    order: "buyFirst",
-                    expireHours: 12
-                }
-
-                setSellPriceByBuy(rc, maxDelta);
-            } else if (r.operationDirection.indexOf("卖") >= 0) {
-                rc = {
-                    buy: buyPrice,
-                    bounce: dip,
-                    buyAmount: amount,
-                    sell: lastPrice,
-                    dip: dip,
-                    sellAmount: amount,
-                    scode: scode,
-                    sname: r.sname,
-                    broker: r.operationName,
-                    order: "buyFirst",
-                    expireHours: 12
-                }
-
-                if (currentPrice < buyPrice) {
-                    rc.buy = currentPrice * (1 - 0.01);
-                    if (currentPrice - rc.buy > minDelta) {
-                        rc.buy = currentPrice - minDelta;
+                    if (all.reason) {
+                        info(`${sname}: ${all.reason}`, { threadId }, workerCreateRule.logs, 5);
+                        workerCreateRule.failed.push({ scode, sname, reason: all.reason });
+                        continue;
                     }
-                }
 
-                setSellPriceByBuy(rc, maxDelta);
+                    buyPrice = (currentPrice + all.rows[0].low) / 2;
+
+                    rc = {
+                        buy: buyPrice,
+                        bounce: dip,
+                        buyAmount: amount,
+                        sell: currentPrice,
+                        dip: dip,
+                        sellAmount: amount,
+                        scode: scode,
+                        sname: r.sname,
+                        broker: r.operationName,
+                        order: "buyFirst",
+                        expireHours: 12
+                    }
+
+                    setSellPriceByBuy(rc, maxDelta);
+                } else {
+                    rc = {
+                        buy: buyPrice,
+                        bounce: dip,
+                        buyAmount: amount,
+                        sell: lastPrice,
+                        dip: dip,
+                        sellAmount: amount,
+                        scode: scode,
+                        sname: r.sname,
+                        broker: r.operationName,
+                        order: "buyFirst",
+                        expireHours: 12
+                    }
+
+                    if (currentPrice < buyPrice) {
+                        rc.buy = currentPrice * (1 - 0.01);
+                        if (currentPrice - rc.buy > minDelta) {
+                            rc.buy = currentPrice - minDelta;
+                        }
+                    }
+
+                    setSellPriceByBuy(rc, maxDelta);
+                }
             } else if (r.operationDirection.indexOf("买") >= 0) {
-                rc = {
-                    buy: lastPrice,
-                    bounce: "0.02",
-                    buyAmount: amount,
-                    sell: sellPrice,
-                    dip: "0.02",
-                    sellAmount: amount,
-                    scode: scode,
-                    sname: r.sname,
-                    broker: r.operationName,
-                    order: "sellFirst",
-                    expireHours: 12
-                }
+                if (position == 0) { 
+                    let all = await ensure3DaysUp(scode, sname, threadId);
 
-                if (currentPrice > rc.sell) {
-                    rc.sell = currentPrice * (1 + 0.001);
-
-                    if (rc.sell - currentPrice > minDelta) {
-                        rc.sell = currentPrice + minDelta;
+                    if (all.reason) {
+                        info(`${sname}: ${all.reason}`, { threadId }, workerCreateRule.logs, 5);
+                        workerCreateRule.failed.push({ scode, sname, reason: all.reason });
+                        continue;
                     }
 
-                    setBuyPriceBySell(rc, maxDelta);
-                }
+                    buyPrice = (currentPrice + all.rows[0].low) / 2;
 
+                    rc = {
+                        buy: buyPrice,
+                        bounce: dip,
+                        buyAmount: amount,
+                        sell: currentPrice,
+                        dip: dip,
+                        sellAmount: amount,
+                        scode: scode,
+                        sname: r.sname,
+                        broker: r.operationName,
+                        order: "buyFirst",
+                        expireHours: 12
+                    }
+
+                    setSellPriceByBuy(rc, maxDelta);
+                } else {
+                    rc = {
+                        buy: lastPrice,
+                        bounce: "0.02",
+                        buyAmount: amount,
+                        sell: sellPrice,
+                        dip: "0.02",
+                        sellAmount: amount,
+                        scode: scode,
+                        sname: r.sname,
+                        broker: r.operationName,
+                        order: "sellFirst",
+                        expireHours: 12
+                    }
+
+                    if (currentPrice > rc.sell) {
+                        rc.sell = currentPrice * (1 + 0.001);
+
+                        if (rc.sell - currentPrice > minDelta) {
+                            rc.sell = currentPrice + minDelta;
+                        }
+
+                        setBuyPriceBySell(rc, maxDelta);
+                    }
+                }
             } else {
                 info(`bad trade direction for ${sname}:${r.operationDirection}`, { threadId }, workerCreateRule.logs, 5);
                 workerCreateRule.failed.push({ scode, sname, reason: "bad trade direction" });
@@ -2788,7 +2817,7 @@ app.get('/stock/fe/user/login', async (req, res) => {
     res.send(resp);
 });
 
-async function getAndcheck1dDataBeforeBuy(scode, sname, threadId) {
+async function ensure3DaysUp(scode, sname, threadId) {
     let all = await db.allSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
     if (all.rows == null || all.rows.length < 3) {
         info(`${sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
@@ -2802,24 +2831,34 @@ async function getAndcheck1dDataBeforeBuy(scode, sname, threadId) {
         all.reason = "no today 1d";
     }
 
-    if (all.rows[0].low < all.rows[1].low) { //如果不是最近2天连涨
+    if (all.rows[0].low < all.rows[1].low) { 
         info(`${sname}:0.low < 1.low`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "0.low < 1.low";
     }
 
-    if (all.rows[1].low < all.rows[2].low) { //如果不是最近2天连涨
-        info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "1.low < 2.low";
-    }
-
-    if (all.rows[0].open < all.rows[1].open) { //如果不是最近2天连涨
+    if (all.rows[0].open < all.rows[1].open) { 
         info(`${sname}:0.open < 1.open`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "0.open < 1.open";
     }
 
-    if (all.rows[1].high < all.rows[2].high) { //如果不是最近2天连涨
+    if (all.rows[0].open < all.rows[1].close) { 
+        info(`${sname}:0.open < 1.close`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "0.open < 1.close";
+    }
+
+    if (all.rows[1].low < all.rows[2].low) { 
+        info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "1.low < 2.low";
+    }
+
+    if (all.rows[1].high < all.rows[2].high) { 
         info(`${sname}:1.high < 2.high`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "1.high < 2.high";
+    }
+
+    if (all.rows[1].close < all.rows[2].close) { 
+        info(`${sname}:1.close < 2.close`, { threadId }, workerCreateRule.logs, 5);
+        all.reason = "1.close < 2.close";
     }
 
     return all;
