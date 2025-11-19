@@ -2465,9 +2465,9 @@ window.stock_list = window.stock_list || (function () {
                     left: 'center',
                     data: ['1d', 'MA5', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
                     selected: {
-                        'MA5': false,
-                        'MA20': false,
-                        'MA60': false,
+                        'Boll上': false,
+                        'Boll中': false,
+                        'Boll下': false,
                     }
                 },
                 tooltip: {
@@ -2574,7 +2574,7 @@ window.stock_list = window.stock_list || (function () {
                     {
                         type: 'inside',
                         xAxisIndex: [0, 1],
-                        start: 92,
+                        start: 60,
                         end: 100
                     },
                     {
@@ -2582,7 +2582,7 @@ window.stock_list = window.stock_list || (function () {
                         xAxisIndex: [0, 1],
                         type: 'slider',
                         top: '200px',
-                        start: 92,
+                        start: 60,
                         end: 100
                     }
                 ],

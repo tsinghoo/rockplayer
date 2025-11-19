@@ -1,0 +1,5 @@
+- auto create rule 错误显示
+- 淳中科技这种不能随便买
+- 五粮液这种
+- 买卖后刷新position
+- 

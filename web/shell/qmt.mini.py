@@ -216,9 +216,9 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
             updateDeal(deal)
 
             updateActionOrdered(deal["scode"], js["order_type"],
-                                56, deal["tprice"], js["order_sysid"])
+                                56, deal["tprice"], js["order_sysid"], "")
 
-            startUpdatePositions()
+            updatePositions()
         except Exception as e:
             error("on_stock_trade 出错:", traceback.format_exc())
 
@@ -681,7 +681,7 @@ def actionDone(id):
         error("action done error:", str(e))
 
 
-def updateActionOrdered(scode, type, status, price, orderId, statusMessage):
+def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
     try:
         info("updateActionOrdered", scode, type,
              status, price, orderId, statusMessage)
@@ -1159,22 +1159,24 @@ def printTask():
 
 
 def startUpdatePositions():
-    t1 = Thread(target=updatePositions)
+    t1 = Thread(target=refreshPositions)
     t1.start()
 
 
-def updatePositions():
+def refreshPositions():
     resetThreadId("utp")
     info("updatePositions")
     uploadPosition()
 
+    updatePositions()
+
+def updatePositions():
     positions = getPositions()
 
     info("positions:", len(positions))
     js = object_to_json(positions)
 
     uploadPosition(js)
-
 
 def resubscribe():
     info("resubscribe start", g.stocklist)
