@@ -2250,7 +2250,7 @@ async function autoCreateRule() {
             if (r.operationDirection.indexOf("卖") >= 0) {
                 if (position == 0) { //如果已经清仓
                     //获取最近3天的日线数据
-                    let all = await ensure3DaysUp(scode, sname, threadId);
+                    let all = await ensureDayDayUp(scode, sname, threadId);
 
                     if (all.reason) {
                         info(`${sname}: ${all.reason}`, { threadId }, workerCreateRule.logs, 5);
@@ -2301,7 +2301,7 @@ async function autoCreateRule() {
                 }
             } else if (r.operationDirection.indexOf("买") >= 0) {
                 if (position == 0) { 
-                    let all = await ensure3DaysUp(scode, sname, threadId);
+                    let all = await ensureDayDayUp(scode, sname, threadId);
 
                     if (all.reason) {
                         info(`${sname}: ${all.reason}`, { threadId }, workerCreateRule.logs, 5);
@@ -2817,7 +2817,7 @@ app.get('/stock/fe/user/login', async (req, res) => {
     res.send(resp);
 });
 
-async function ensure3DaysUp(scode, sname, threadId) {
+async function ensureDayDayUp(scode, sname, threadId) {
     let all = await db.allSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
     if (all.rows == null || all.rows.length < 3) {
         info(`${sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
