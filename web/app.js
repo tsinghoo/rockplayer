@@ -517,6 +517,7 @@ async function reloadRule(r, req) {
         r.rule = JSON.parse(r.rule);
     } catch (e) {
         info(e.message, req);
+        info(e.stack, req);
     }
 
     if (rules[r.scode] == null) {
@@ -547,10 +548,15 @@ async function reloadRule(r, req) {
                 info("rule done", req);
                 r.status = "done";
                 await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
-
-                setTimeout(() => {
-                    delete rules[r.scode][r.broker];
-                }, 1000 * 3);
+                delete rules[r.scode][r.broker];
+                setTimeout(async () => {
+                    let res = await autoCreateRule(r.scode, req.threadId);
+                    if (res.error == null) {
+                        reloadRule(res.rule, req);
+                    }else{
+                        error(res.error, req);
+                    }
+                }, 100);
             }
         }
 
@@ -565,6 +571,7 @@ async function reloadRule(r, req) {
         } else {
             r.status = "todo";
         }
+
         info(`set r.status=${r.status}`, req);
     }
 }
@@ -2156,7 +2163,7 @@ function setSellPriceByBuy(rc, maxDelta) {
     rc.sell = parseFloat(rc.sell.toFixed(3));
 }
 
-async function autoCreateRule() {
+async function autoCreateRules() {
     let threadId = Date.now();
     try {
         //对每一个scode自动创建rule
@@ -2167,186 +2174,18 @@ async function autoCreateRule() {
                 break;
             }
 
-            let row = res.rows[i];
-            let scode = row.scode;
-            let sname = row.sname;
+            let stockBasicInfo = res.rows[i];
+            let scode = stockBasicInfo.scode;
+            let sname = stockBasicInfo.sname;
 
-            info(`${sname}: auto creating rule`, { threadId }, workerCreateRule.logs, 5);
-
-            //获取tstock里对应scode的最后一条记录
-            let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
-            if (r == null) {
-                info(`${sname}: no trade history`, { threadId }, workerCreateRule.logs, 5);
-                continue;
-            }
-
-            //如果已经存在rule,则跳过
-            let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
-            if (oldRule != null && oldRule.closed == 0) {
-                info(`${sname}: rule already active`, { threadId }, workerCreateRule.logs, 5);
-                continue;
-            }
-
-            //获取scode对应的当前价格
-            if (row.updateTime < Date.now() - 1000 * workerCreateRule.priceDelay) {
-                info(`${sname}: price is old`, { threadId }, workerCreateRule.logs, 5);
-                workerCreateRule.failed.push({ scode, sname, reason: "price is old" });
-                continue;
-            }
-
-            let amount = Math.abs(r.tamount);
-            if (amount < row.volumeMultiple) {
-                amount = row.volumeMultiple;
-            }
-
-            if (amount < 100) {
-                amount = 100;
-            }
-
-            let minDelta = 0.5;
-            let maxDelta = 2;
-            let dip = 0.02;
-
-            let currentPrice = row.buy;
-            if (currentPrice < 30) {
-                dip = 0.005
-            } else if (currentPrice < 300) {
-                dip = 0.02
+            let result = await autoCreateRule(scode, threadId, stockBasicInfo);
+            if (result.error == null) {
+                workerCreateRule.succeeded.push({ scode, sname });
+                total++;
             } else {
-                dip = 0.1
+                info(result.error, { threadId }, workerCreateRule.logs, 5);
+                workerCreateRule.failed.push({ scode, sname, reason: result.error });
             }
-
-            let lastPrice = r.tprice;
-            let buyPrice = lastPrice * (1 - 0.02);
-            if (lastPrice - buyPrice < minDelta) {
-                buyPrice = lastPrice - minDelta;
-            }
-
-
-            if (lastPrice - buyPrice > maxDelta) {
-                buyPrice = lastPrice - maxDelta;
-            }
-
-            buyPrice = parseFloat(buyPrice.toFixed(3));
-
-            let sellPrice = lastPrice * (1 + 0.02);
-            if (sellPrice - lastPrice < minDelta) {
-                sellPrice = lastPrice + minDelta;
-            }
-
-            if (sellPrice - lastPrice > maxDelta) {
-                sellPrice = lastPrice + maxDelta;
-            }
-            sellPrice = parseFloat(sellPrice.toFixed(3));
-
-            let rc = null;
-
-            let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, r.operationName]);
-            let position = 0;
-            if (all.rows && all.rows.length > 0) {
-                position = all.rows[0].volume;
-            }
-
-            if (r.operationDirection.indexOf("卖") >= 0) {
-                if (position == 0) { //如果已经清仓
-                    //获取最近3天的日线数据
-                    let all = await ensureDayDayUp(scode, sname, threadId);
-
-                    if (all.reason) {
-                        info(`${sname}: ${all.reason}`, { threadId }, workerCreateRule.logs, 5);
-                        workerCreateRule.failed.push({ scode, sname, reason: all.reason });
-                        continue;
-                    }
-
-                    buyPrice = (currentPrice + all.rows[0].low) / 2;
-
-                    rc = {
-                        buy: buyPrice,
-                        bounce: dip,
-                        buyAmount: amount,
-                        sell: currentPrice,
-                        dip: dip,
-                        sellAmount: amount,
-                        scode: scode,
-                        sname: r.sname,
-                        broker: r.operationName,
-                        order: "buyFirst",
-                        expireHours: 12
-                    }
-
-                    setSellPriceByBuy(rc, maxDelta);
-                } else {
-                    rc = {
-                        buy: buyPrice,
-                        bounce: dip,
-                        buyAmount: amount,
-                        sell: lastPrice,
-                        dip: dip,
-                        sellAmount: amount,
-                        scode: scode,
-                        sname: r.sname,
-                        broker: r.operationName,
-                        order: "buyFirst",
-                        expireHours: 12
-                    }
-
-                    if (currentPrice < buyPrice) {
-                        rc.buy = currentPrice * (1 - 0.01);
-                        if (currentPrice - rc.buy > minDelta) {
-                            rc.buy = currentPrice - minDelta;
-                        }
-                    }
-
-                    setSellPriceByBuy(rc, maxDelta);
-                }
-            } else if (r.operationDirection.indexOf("买") >= 0) {
-                if (position == 0) {
-                    //如果是第一次买。。。。
-
-                    info(`${sname}: open, todo`, { threadId }, workerCreateRule.logs, 5);
-                    workerCreateRule.failed.push({ scode, sname, reason: all.reason });
-                    continue;
-                } else {
-                    rc = {
-                        buy: lastPrice,
-                        bounce: "0.02",
-                        buyAmount: amount,
-                        sell: sellPrice,
-                        dip: "0.02",
-                        sellAmount: amount,
-                        scode: scode,
-                        sname: r.sname,
-                        broker: r.operationName,
-                        order: "sellFirst",
-                        expireHours: 12
-                    }
-
-                    if (currentPrice > rc.sell) {
-                        rc.sell = currentPrice * (1 + 0.001);
-
-                        if (rc.sell - currentPrice > minDelta) {
-                            rc.sell = currentPrice + minDelta;
-                        }
-
-                        setBuyPriceBySell(rc, maxDelta);
-                    }
-                }
-            } else {
-                info(`bad trade direction for ${sname}:${r.operationDirection}`, { threadId }, workerCreateRule.logs, 5);
-                workerCreateRule.failed.push({ scode, sname, reason: "bad trade direction" });
-                continue;
-            }
-
-            let broker = rc.broker;
-            let now = Date.now();
-            let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, closed, expireTime) values(?,?,?,?,?,?,?,?)`;
-            let expireHours = 12;
-            let expireTime = now + expireHours * 60 * 60 * 1000;
-            let id = `${scode}.${broker}`;
-            let result = await db.runSync(sql, [id, broker, scode, r.sname, JSON.stringify(rc), now, 0, expireTime]);
-            await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [scode, broker]);
-            workerCreateRule.succeeded.push({ scode, sname });
-            total++;
         }
 
         info(`auto create rule succeeded`, { threadId }, workerCreateRule.logs, 5);
@@ -2378,7 +2217,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
         if (workerCreateRule.succeeded.length + workerCreateRule.failed.length == 0) {
             workerCreateRule.max = max;
             workerCreateRule.priceDelay = priceDelay;
-            workerCreateRule.id = setTimeout(autoCreateRule, 100);
+            workerCreateRule.id = setTimeout(autoCreateRules, 100);
             logs = ["autoCreateRule started"];
 
         } else {
@@ -2796,6 +2635,180 @@ app.get('/stock/fe/user/login', async (req, res) => {
     var resp = `${js}(${JSON.stringify({ login: login })})`;
     res.send(resp);
 });
+
+async function autoCreateRule(scode, threadId, stockBasicInfo) {
+    if (stockBasicInfo == null) {
+        stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [scode]);
+    }
+
+    let sname = stockBasicInfo.sname;
+    info(`${sname}: auto creating rule`, { threadId }, workerCreateRule.logs, 5);
+    let failed = 0;
+    //获取tstock里对应scode的最后一条记录
+    let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
+    if (r == null) {
+        return { error: `${sname}: no trade history` };
+    }
+
+    //如果已经存在rule,则跳过
+    let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
+    if (oldRule != null && oldRule.closed == 0) {
+        return `${sname}: rule already active`;
+    }
+
+    //获取scode对应的当前价格
+    if (stockBasicInfo.updateTime < Date.now() - 1000 * workerCreateRule.priceDelay) {
+        return { error: `${sname}: price is old` };
+    }
+
+    let amount = Math.abs(r.tamount);
+    if (amount < stockBasicInfo.volumeMultiple) {
+        amount = stockBasicInfo.volumeMultiple;
+    }
+
+    if (amount < 100) {
+        amount = 100;
+    }
+
+    let minDelta = 0.5;
+    let maxDelta = 2;
+    let dip = 0.02;
+
+    let currentPrice = stockBasicInfo.buy;
+    if (currentPrice < 30) {
+        dip = 0.005;
+    } else if (currentPrice < 300) {
+        dip = 0.02;
+    } else {
+        dip = 0.1;
+    }
+
+    let lastPrice = r.tprice;
+    let buyPrice = lastPrice * (1 - 0.02);
+    if (lastPrice - buyPrice < minDelta) {
+        buyPrice = lastPrice - minDelta;
+    }
+
+
+    if (lastPrice - buyPrice > maxDelta) {
+        buyPrice = lastPrice - maxDelta;
+    }
+
+    buyPrice = parseFloat(buyPrice.toFixed(3));
+
+    let sellPrice = lastPrice * (1 + 0.02);
+    if (sellPrice - lastPrice < minDelta) {
+        sellPrice = lastPrice + minDelta;
+    }
+
+    if (sellPrice - lastPrice > maxDelta) {
+        sellPrice = lastPrice + maxDelta;
+    }
+    sellPrice = parseFloat(sellPrice.toFixed(3));
+
+    let rc = null;
+
+    let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, r.operationName]);
+    let position = 0;
+    if (all.rows && all.rows.length > 0) {
+        position = all.rows[0].volume;
+    }
+
+    if (r.operationDirection.indexOf("卖") >= 0) {
+        if (position == 0) { //如果已经清仓
+            //获取最近3天的日线数据
+            let all = await ensureDayDayUp(scode, sname, threadId);
+
+            if (all.reason) {
+                return { error: `${sname}: ${all.reason}` };
+            }
+
+            buyPrice = (currentPrice + all.rows[0].low) / 2;
+
+            rc = {
+                buy: buyPrice,
+                bounce: dip,
+                buyAmount: amount,
+                sell: currentPrice,
+                dip: dip,
+                sellAmount: amount,
+                scode: scode,
+                sname: r.sname,
+                broker: r.operationName,
+                order: "buyFirst",
+                expireHours: 12
+            };
+
+            setSellPriceByBuy(rc, maxDelta);
+        } else {
+            rc = {
+                buy: buyPrice,
+                bounce: dip,
+                buyAmount: amount,
+                sell: lastPrice,
+                dip: dip,
+                sellAmount: amount,
+                scode: scode,
+                sname: r.sname,
+                broker: r.operationName,
+                order: "buyFirst",
+                expireHours: 12
+            };
+
+            if (currentPrice < buyPrice) {
+                rc.buy = currentPrice * (1 - 0.01);
+                if (currentPrice - rc.buy > minDelta) {
+                    rc.buy = currentPrice - minDelta;
+                }
+            }
+
+            setSellPriceByBuy(rc, maxDelta);
+        }
+    } else if (r.operationDirection.indexOf("买") >= 0) {
+        if (position == 0) {
+            return { error: `${sname}: open, todo` };
+        } else {
+            rc = {
+                buy: lastPrice,
+                bounce: "0.02",
+                buyAmount: amount,
+                sell: sellPrice,
+                dip: "0.02",
+                sellAmount: amount,
+                scode: scode,
+                sname: r.sname,
+                broker: r.operationName,
+                order: "sellFirst",
+                expireHours: 12
+            };
+
+            if (currentPrice > rc.sell) {
+                rc.sell = currentPrice * (1 + 0.001);
+
+                if (rc.sell - currentPrice > minDelta) {
+                    rc.sell = currentPrice + minDelta;
+                }
+
+                setBuyPriceBySell(rc, maxDelta);
+            }
+        }
+    } else {
+        return { error: `${sname}: bad trade direction` };
+    }
+
+    let broker = rc.broker;
+    let now = Date.now();
+    let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, closed, expireTime) values(?,?,?,?,?,?,?,?)`;
+    let expireHours = 12;
+    let expireTime = now + expireHours * 60 * 60 * 1000;
+    let id = `${scode}.${broker}`;
+    let rule = { id, broker, scode, sname, rule: JSON.stringify(rc), createTime: now, closed: 0, expireTime };
+    await insertOrReplace("tTradeRule", rule);
+    await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [scode, broker]);
+    return {
+        rule
+    };
+}
 
 async function ensureDayDayUp(scode, sname, threadId) {
     let all = await db.allSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
@@ -3352,6 +3365,7 @@ app.get('/video/metadata', (req, res) => {
 });
 const multer = require('multer');
 const { CLIENT_RENEG_WINDOW } = require('tls');
+const { runBytecodeFile } = require('bytenode');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // 指定文件存储的目录
