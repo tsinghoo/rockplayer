@@ -553,8 +553,9 @@ async function reloadRule(r, req) {
                     let res = await autoCreateRule(r.scode, req.threadId);
                     if (res.error == null) {
                         reloadRule(res.rule, req);
-                    }else{
+                    } else {
                         error(res.error, req);
+                        await saveCreateRuleFailure(r.scode, res.error);
                     }
                 }, 100);
             }
@@ -1577,6 +1578,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='73' where key='dbVersion';",
         `alter table tTradeRule add column expireTime int;`,
         "update config set value='75' where key='dbVersion';",
+        `alter table tStockBasic add column autoCreateRuleFail text;`,
+        "update config set value='77' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -2184,6 +2187,7 @@ async function autoCreateRules() {
                 total++;
             } else {
                 info(result.error, { threadId }, workerCreateRule.logs, 5);
+                await saveCreateRuleFailure(scode, result.error);
                 workerCreateRule.failed.push({ scode, sname, reason: result.error });
             }
         }
@@ -2636,6 +2640,9 @@ app.get('/stock/fe/user/login', async (req, res) => {
     res.send(resp);
 });
 
+async function saveCreateRuleFailure(scode, error) {
+    await db.runSync(`update tStockBasic set autoCreateRuleFail=? where scode=?`, [error, scode]);
+}
 async function autoCreateRule(scode, threadId, stockBasicInfo) {
     if (stockBasicInfo == null) {
         stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [scode]);
@@ -2647,18 +2654,18 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     //获取tstock里对应scode的最后一条记录
     let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
     if (r == null) {
-        return { error: `${sname}: no trade history` };
+        return { error: `no trade history` };
     }
 
     //如果已经存在rule,则跳过
     let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
     if (oldRule != null && oldRule.closed == 0) {
-        return `${sname}: rule already active`;
+        return `rule already active`;
     }
 
     //获取scode对应的当前价格
     if (stockBasicInfo.updateTime < Date.now() - 1000 * workerCreateRule.priceDelay) {
-        return { error: `${sname}: price is old` };
+        return { error: `price is old` };
     }
 
     let amount = Math.abs(r.tamount);
@@ -2720,10 +2727,12 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             let all = await ensureDayDayUp(scode, sname, threadId);
 
             if (all.reason) {
-                return { error: `${sname}: ${all.reason}` };
+                return { error: `${all.reason}` };
             }
-
-            buyPrice = (currentPrice + all.rows[0].low) / 2;
+            let avgPrice = (currentPrice + all.rows[0].low) / 2;
+            if (buyPrice > avgPrice) {
+                buyPrice = avgPrice;
+            }
 
             rc = {
                 buy: buyPrice,
@@ -2766,7 +2775,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         }
     } else if (r.operationDirection.indexOf("买") >= 0) {
         if (position == 0) {
-            return { error: `${sname}: open, todo` };
+            return { error: `open, todo` };
         } else {
             rc = {
                 buy: lastPrice,
@@ -2793,7 +2802,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             }
         }
     } else {
-        return { error: `${sname}: bad trade direction` };
+        return { error: `bad trade direction` };
     }
 
     let broker = rc.broker;
