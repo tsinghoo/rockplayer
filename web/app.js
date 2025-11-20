@@ -2780,7 +2780,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         }
     } else if (r.operationDirection.indexOf("买") >= 0) {
         if (position == 0) {
-            return { error: `open, todo` };
+            return { error: `need 1st buy by hand` };
         } else {
             rc = {
                 buy: lastPrice,
