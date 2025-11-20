@@ -2829,6 +2829,7 @@ async function ensureDayDayUp(scode, sname, threadId) {
     if (all.rows == null || all.rows.length < 3) {
         info(`${sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "no 1d data";
+        return all;
     }
 
     let lastDay = all.rows[0].time;
@@ -2836,36 +2837,43 @@ async function ensureDayDayUp(scode, sname, threadId) {
     if (todayStr != lastDay) {
         info(`${sname}:no today 1d`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "no today 1d";
+        return all;
     }
 
     if (all.rows[0].low < all.rows[1].low) {
         info(`${sname}:0.low < 1.low`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "0.low < 1.low";
+        return all;
     }
 
     if (all.rows[0].open < all.rows[1].open) {
         info(`${sname}:0.open < 1.open`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "0.open < 1.open";
+        return all;
     }
 
     if (all.rows[0].open < all.rows[1].close) {
         info(`${sname}:0.open < 1.close`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "0.open < 1.close";
+        return all;
     }
 
     if (all.rows[1].low < all.rows[2].low) {
         info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "1.low < 2.low";
+        return all;
     }
 
     if (all.rows[1].high < all.rows[2].high) {
         info(`${sname}:1.high < 2.high`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "1.high < 2.high";
+        return all;
     }
 
     if (all.rows[1].close < all.rows[2].close) {
         info(`${sname}:1.close < 2.close`, { threadId }, workerCreateRule.logs, 5);
         all.reason = "1.close < 2.close";
+        return all;
     }
 
     return all;
