@@ -768,7 +768,6 @@ window.stock_list = window.stock_list || (function () {
                 self.showK1d = !self.showK1d;
                 if (self.showK1d) {
                     $(".thK1d").removeClass("gray");
-                    $(".k1d").removeClass("hide");
                     $(".k1dCollapse").removeClass("gray");
                 } else {
                     $(".thK1d").addClass("gray");
@@ -781,7 +780,6 @@ window.stock_list = window.stock_list || (function () {
                 self.showK1m = !self.showK1m;
                 if (self.showK1m) {
                     $(".thK1m").removeClass("gray");
-                    $(".k1m").removeClass("hide");
                     $(".k1mCollapse").removeClass("gray");
                 } else {
                     $(".thK1m").addClass("gray");
