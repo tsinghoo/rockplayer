@@ -2701,8 +2701,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         buyPrice = lastPrice - minDelta;
     }
 
+    if (r.operationName == "BNB") {
 
-    if (lastPrice - buyPrice > maxDelta) {
+    } else if (lastPrice - buyPrice > maxDelta) {
         buyPrice = lastPrice - maxDelta;
     }
 
@@ -2712,8 +2713,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     if (sellPrice - lastPrice < minDelta) {
         sellPrice = lastPrice + minDelta;
     }
+    
+    if (r.operationName == "BNB") {
 
-    if (sellPrice - lastPrice > maxDelta) {
+    } else if (sellPrice - lastPrice > maxDelta) {
         sellPrice = lastPrice + maxDelta;
     }
     sellPrice = parseFloat(sellPrice.toFixed(3));
