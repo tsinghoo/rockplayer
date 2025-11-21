@@ -2697,7 +2697,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
     if (r.operationName == "BNB") {
         minDelta = 1;
-        maxDelta = 100;
+        maxDelta = 20000;
         dip = 10;
     }
 
