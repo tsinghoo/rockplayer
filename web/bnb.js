@@ -2,7 +2,7 @@
 // import Binance from "node-binance-api";
 const { json } = require("express");
 const Binance = require("node-binance-api");
-
+const fs = require("fs");
 let DEBUG = 2;
 let INFO = 3;
 let ERROR = 4;
@@ -201,10 +201,32 @@ function get(url) {
     method: "GET"
   });
 }
+
+g.logs = [];
+async function log2File() {
+  return new Promise(async (resolve, reject) => {
+    while (1 == 1) {
+      if (g.logs.length > 0) {
+        let toWrite = g.logs.join("\n");
+        g.logs = [];
+        //将toWrite同步写入当前目录的日志文件里,文件名是yyyyMMdd格式
+        let logFile = `${__dirname}/bnb${timeFormat(new Date(), "yyMMdd")}.log`;
+        fs.writeFileSync(logFile, toWrite + "\n", { flag: "a" });
+      } else {
+        await sleep(100);
+      }
+    }
+  });
+}
+
 function log() {
 
   let now = timeFormat(new Date(), "yy-MM-dd hh:mm:ss");
   console.log(now, ...arguments);
+
+  let msg = [now, ...arguments].join(" ");
+  g.logs.push(msg);
+
 }
 function info() {
 
@@ -472,10 +494,10 @@ function execution_update(data) {
 async function startFutureMiniTicket() {
   g.stocklist.forEach(element => {
     binance.futuresMiniTickerStream(element, item => {
-      info("futureMiniTicket:", JSON.stringify(item));
       let { symbol, close, high, low, open, volume, quoteVolume, eventTime } = item;
-
-      get(`${g.baseUrl}/stock/updatePrice/option?scode=${symbol}&price=${close}&time=${eventTime}`)
+      let url = `${g.baseUrl}/stock/updatePrice/option?scode=${symbol}&price=${close}&time=${eventTime}`;
+      info(`GET ${url}`);
+      get(url)
         .catch((err) => {
           error("updatePrice error:", err.toString());
         });
@@ -485,6 +507,7 @@ async function startFutureMiniTicket() {
 
 }
 async function start() {
+  log2File();
   await updatePositions(1);
   await updatePositions(0);
   await updateFuturePositions();
@@ -507,8 +530,9 @@ async function start() {
     let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
 
     let data = [[timeFormat(time, "yyyyMMddhhmmss"), open, close, high, low, volume, quoteVolume]];
-
-    get(`${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`)
+    let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`;
+    info(`GET ${url}`);
+    get(url)
       .catch((err) => {
         error("updatePrice error:", err.toString());
       });
@@ -519,7 +543,7 @@ async function start() {
         scode: symbol,
         data: data
       }
-
+      info(`POST ${g.baseUrl}/stock/k/upload`, JSON.stringify(body));
       post(`${g.baseUrl}/stock/k/upload`, body);
 
       for (let scode of g.stocklist) {
@@ -530,6 +554,7 @@ async function start() {
       }
     }
   });
+
 
   while (1 == 1) {
     await getActions();
@@ -667,9 +692,9 @@ function init() {
   }
 
   if (args.length > 3) {
-    if (args[3].startsWith("socks")){
+    if (args[3].startsWith("socks")) {
       binance.socksProxy = args[3];
-    }else if (args[3].startsWith("http")){
+    } else if (args[3].startsWith("http")) {
       binance.httpsProxy = args[3];
     }
   }

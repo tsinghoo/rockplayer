@@ -197,11 +197,12 @@ window.stock_list = window.stock_list || (function () {
                         let autoResult = $("#autoCreateRule").html();
                         popup = await share.popup__(null, autoResult);
                         let c = $(`#${popup.id}`);
-                        c.find(".buttonConfirm").on("click", async function () {
+
+                        async function toCreateRule(type) {
                             let maxCount = $(".maxCount", c).val().trim();
                             let priceDelay = $(".priceDelay", c).val().trim();
 
-                            let res = await share.getSync__(`/stock/rule/create/auto?max=${maxCount}&priceDelay=${priceDelay}`);
+                            let res = await share.getSync__(`/stock/rule/create/auto?type=${type}&max=${maxCount}&priceDelay=${priceDelay}`);
                             if (res.error) {
                                 share.toastError__(res.error);
                             } else {
@@ -212,6 +213,18 @@ window.stock_list = window.stock_list || (function () {
                                 c.find(".failedRules").html(failed);
                                 c.find(".logs").html(logs);
                             }
+                        }
+
+                        c.find(".buttonToBuySell").on("click", async function () {
+                            await toCreateRule("toBuySell");
+                        });
+
+                        c.find(".buttonToBuy").on("click", async function () {
+                            await toCreateRule("toBuy");
+                        });
+                        
+                        c.find(".buttonToSell").on("click", async function () {
+                            await toCreateRule("toSell");
                         });
                     }
                 }
