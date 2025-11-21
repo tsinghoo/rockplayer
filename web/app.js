@@ -2674,12 +2674,16 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     let amount = Math.abs(r.tamount);
-    if (amount < stockBasicInfo.volumeMultiple) {
-        amount = stockBasicInfo.volumeMultiple;
-    }
+    if (r.operationName == "BNB") {
 
-    if (amount < 100) {
-        amount = 100;
+    } else {
+        if (amount < stockBasicInfo.volumeMultiple) {
+            amount = stockBasicInfo.volumeMultiple;
+        }
+
+        if (amount < 100) {
+            amount = 100;
+        }
     }
 
     let minDelta = 0.5;
@@ -2713,7 +2717,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     if (sellPrice - lastPrice < minDelta) {
         sellPrice = lastPrice + minDelta;
     }
-    
+
     if (r.operationName == "BNB") {
 
     } else if (sellPrice - lastPrice > maxDelta) {
