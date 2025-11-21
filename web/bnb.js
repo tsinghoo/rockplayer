@@ -406,7 +406,18 @@ function balance_update(data) {
 
       let orderId = data.c;
       let time = data.O;
-      let url = g.baseUrl + "/stock/deal/update"
+
+
+      let url = g.baseUrl + "/stock/rule/action/ordered"
+      let body = {
+        "broker": g.broker,
+        "scode": scode.split(".")[0],
+        "status": 56,
+        "orderNo": orderId
+      }
+      post(url, body);
+
+      url = g.baseUrl + "/stock/deal/update"
 
       // 25-10-20 15:51:10 Balance Update {"e":"executionReport","E":1760946670457,"s":"BNBUSDT","c":"x-B3AUXNYV827cefbc0c9748448b195b","S":"BUY","o":"LIMIT","f":"GTC","q":"0.00700000","p":"1125.22000000","P":"0.00000000","F":"0.00000000","g":-1,"C":"","x":"TRADE","X":"FILLED","r":"NONE","i":9639329831,"l":"0.00700000","z":"0.00700000","L":"1125.22000000","n":"0.00000525","N":"BNB","T":1760946670456,"t":1251701408,"I":20702626656,"w":false,"m":true,"M":true,"O":1760946669042,"Z":"7.87654000","Y":"7.87654000","Q":"0.00000000","W":1760946669042,"V":"EXPIRE_MAKER"}
       deal = {
@@ -424,7 +435,7 @@ function balance_update(data) {
         "tpair": ""
       }
 
-      let body = deal;
+      body = deal;
       post(url, body);
     }
 
@@ -521,7 +532,7 @@ async function start() {
   });
 
   while (1 == 1) {
-    //await getActions();
+    await getActions();
     await sleep(100);
   }
 
@@ -653,6 +664,14 @@ function init() {
     g.stocklist = ['ETHUSDT'];
   } else {
     info("env: prod")
+  }
+
+  if (args.length > 3) {
+    if (args[3].startsWith("socks")){
+      binance.socksProxy = args[3];
+    }else if (args[3].startsWith("http")){
+      binance.httpsProxy = args[3];
+    }
   }
 }
 

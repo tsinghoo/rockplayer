@@ -1589,29 +1589,20 @@ window.stock_list = window.stock_list || (function () {
 
             let c = $(`#${popup.id}`);
             self.showPosition(null, c.find(".position"), scode);
-            await self.showTradeList(c.find(".tradeList"), scode, 0, type);
+            await self.showTradeList(c, scode, 0, type);
             self.showBuySell(null, popup);
             let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
 
-            $(".tradeHistoryTr", c).click(function () {
-                let data = $(this).attr("data");
-                let js = JSON.parse(data);
-                let buy = js.tprice * (1 - 0.02);
-                let sell = js.tprice * (1 + 0.02);
-                c.find(".buy").val(buy);
-                c.find(".sell").val(sell);
-            });
-
             c.find(".rule").click(function (e) {
                 let rc = r.rule;
-                let buy = share.toFixed(rc.buy, 3);
-                let sell = share.toFixed(rc.sell, 3);
+                let buy = share.convertIfInteger(rc.buy);
+                let sell = share.convertIfInteger(rc.sell);
                 c.find(".sell").val(sell);
                 c.find(".buy").val(buy);
                 c.find(".buyAmount").val(rc.buyAmount);
                 c.find(".sellAmount").val(rc.sellAmount);
-                c.find(".dip").val(share.toFixed(rc.dip, 3));
-                c.find(".bounce").val(share.toFixed(rc.bounce, 3));
+                c.find(".dip").val(share.convertIfInteger(rc.dip));
+                c.find(".bounce").val(share.convertIfInteger(rc.bounce));
                 if (rc.order == "sellFirst") {
                     c.find(".sellFirst").prop("checked", true);
                     c.find(".buyFirst").prop("checked", false);
@@ -2311,7 +2302,7 @@ window.stock_list = window.stock_list || (function () {
                 return "卖出";
             }
         },
-        showTradeList: async function ($c, scode, all, type) {
+        showTradeList: async function (c, scode, all, type) {
             if (all == null) {
                 all = 0;
             }
@@ -2353,15 +2344,25 @@ window.stock_list = window.stock_list || (function () {
                             </tbody>
                         </table>
                                `;
-            $c.html(html);
+            c.find(".tradeList").html(html);
 
-            $c.find(".tradeListHeader").on("click", function () {
+            c.find(".tradeList").find(".tradeListHeader").on("click", function () {
                 if (all == 0) {
-                    self.showTradeList($c, scode, 1, type);
+                    self.showTradeList(c, scode, 1, type);
                 } else {
-                    self.showTradeList($c, scode, 0, type);
+                    self.showTradeList(c, scode, 0, type);
                 }
             });
+
+            $(".tradeHistoryTr", c).click(function () {
+                let data = $(this).attr("data");
+                let js = JSON.parse(data);
+                let buy = js.tprice * (1 - 0.02);
+                let sell = js.tprice * (1 + 0.02);
+                c.find(".buy").val(buy);
+                c.find(".sell").val(sell);
+            });
+
         },
         showRule: async function (r, c, scode, statusContainer) {
             if (r == null) {
@@ -2994,40 +2995,40 @@ window.stock_list = window.stock_list || (function () {
                                     <input type="text" id="ratio" style="width:25px;" value="${ratio}">%
                                 </div>
                                 <div class="marginlr10 col-xs-4 left">最近: <input style="width:60px;" type="text" id="last" value="${recent}"></div>
-                                <div class="marginlr10 col-xs-3 recentUp">+${ratio}%: ${share.toFixed((recent * (1 + ratio / 100)), 4)}</div>
-                                <div class="marginlr10 col-xs-3 recentDown">-${ratio}%: ${share.toFixed((recent * (1 - ratio / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3 recentUp">+${ratio}%: ${share.convertIfInteger((recent * (1 + ratio / 100)))}</div>
+                                <div class="marginlr10 col-xs-3 recentDown">-${ratio}%: ${share.convertIfInteger((recent * (1 - ratio / 100)))}</div>
                             </div>
 
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">${recent}</div>
-                                <div class="marginlr10 col-xs-3">+3%: ${share.toFixed((recent * (1 + 3 / 100)), 4)}</div>
-                                <div class="marginlr10 col-xs-3">-3%: ${share.toFixed((recent * (1 - 3 / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3">+3%: ${share.convertIfInteger((recent * (1 + 3 / 100)))}</div>
+                                <div class="marginlr10 col-xs-3">-3%: ${share.convertIfInteger((recent * (1 - 3 / 100)))}</div>
                             </div>
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">${recent}</div>
-                                <div class="marginlr10 col-xs-3">+5%: ${share.toFixed((recent * (1 + 5 / 100)), 4)}</div>
-                                <div class="marginlr10 col-xs-3">-5%: ${share.toFixed((recent * (1 - 5 / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3">+5%: ${share.convertIfInteger((recent * (1 + 5 / 100)))}</div>
+                                <div class="marginlr10 col-xs-3">-5%: ${share.convertIfInteger((recent * (1 - 5 / 100)))}</div>
                             </div>
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">${recent}</div>
-                                <div class="marginlr10 col-xs-3">+10%: ${share.toFixed((recent * (1 + 10 / 100)), 4)}</div>
-                                <div class="marginlr10 col-xs-3">-10%: ${share.toFixed((recent * (1 - 10 / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-3">+10%: ${share.convertIfInteger((recent * (1 + 10 / 100)))}</div>
+                                <div class="marginlr10 col-xs-3">-10%: ${share.convertIfInteger((recent * (1 - 10 / 100)))}</div>
                             </div>
 
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">最大: ${max}</div>
-                                <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${share.toFixed((max * (1 + ratio / 100)), 4)}</div>
-                                <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${share.toFixed((max * (1 - ratio / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-4 maxUp">+${ratio}%: ${share.convertIfInteger((max * (1 + ratio / 100)))}</div>
+                                <div class="marginlr10 col-xs-4 maxDown">-${ratio}%: ${share.convertIfInteger((max * (1 - ratio / 100)))}</div>
                             </div>
                             <div class="flexrow width100p">
                                 <div class="flexrow col-xs-2"></div>
                                 <div class="marginlr10 col-xs-4 left">最小: ${min}</div>
-                                <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${share.toFixed((min * (1 + ratio / 100)), 4)}</div>
-                                <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${share.toFixed((min * (1 - ratio / 100)), 4)}</div>
+                                <div class="marginlr10 col-xs-4 minUp">+${ratio}%: ${share.convertIfInteger((min * (1 + ratio / 100)))}</div>
+                                <div class="marginlr10 col-xs-4 minDown">-${ratio}%: ${share.convertIfInteger((min * (1 - ratio / 100)))}</div>
                             </div>
                         </div>
                     </div>
@@ -3044,12 +3045,12 @@ window.stock_list = window.stock_list || (function () {
             function calc() {
                 let r = input.val().trim();
                 let l = $('#last', c).val().trim();
-                $(".recentUp", c).text(`+${r}%: ${share.toFixed((l * (1 + r / 100)), 4)}`);
-                $(".recentDown", c).text(`-${r}%: ${share.toFixed((l * (1 - r / 100)), 4)}`);
-                $(".maxUp", c).text(`+${r}%: ${share.toFixed((max * (1 + r / 100)), 4)}`);
-                $(".maxDown", c).text(`-${r}%: ${share.toFixed((max * (1 - r / 100)), 4)}`);
-                $(".minUp", c).text(`+${r}%: ${share.toFixed((min * (1 + r / 100)), 4)}`);
-                $(".minDown", c).text(`-${r}%: ${share.toFixed((min * (1 - r / 100)), 4)}`);
+                $(".recentUp", c).text(`+${r}%: ${share.convertIfInteger((l * (1 + r / 100)))}`);
+                $(".recentDown", c).text(`-${r}%: ${share.convertIfInteger((l * (1 - r / 100)))}`);
+                $(".maxUp", c).text(`+${r}%: ${share.convertIfInteger((max * (1 + r / 100)))}`);
+                $(".maxDown", c).text(`-${r}%: ${share.convertIfInteger((max * (1 - r / 100)))}`);
+                $(".minUp", c).text(`+${r}%: ${share.convertIfInteger((min * (1 + r / 100)))}`);
+                $(".minDown", c).text(`-${r}%: ${share.convertIfInteger((min * (1 - r / 100)))}`);
             }
             input.change(function () {
                 calc();
