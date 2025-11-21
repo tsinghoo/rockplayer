@@ -1514,19 +1514,17 @@ window.stock_list = window.stock_list || (function () {
                                 cpl.removeClass("red");
                                 cpl.removeClass("green");
                                 cpl.removeClass("gold");
-                                if (delta > 0 && data["买卖"].indexOf("买") >= 0) {
-                                    if (data["配对"] != "") {
-                                        cpl.addClass("gold");
-                                    } else {
+                                if (data["买卖"].indexOf("买") >= 0) {
+                                    if (delta > 0) {
                                         cpl.addClass("red");
                                     }
-                                }
 
-                                if (delta < -2 && data["买卖"].indexOf("买") >= 0) {
-                                    if (data["配对"] != "") {
-                                        cpl.addClass("gold");
-                                    } else {
+                                    if (delta < -2) {
                                         cpl.addClass("green");
+                                    }
+
+                                    if (delta < -5) {
+                                        cpl.addClass("gold");
                                     }
                                 }
 
