@@ -578,25 +578,25 @@ async function reloadRule(r, req) {
     }
 }
 
-async function tryToSell(r) {
-    debug("tryToSell:" + JSON.stringify(r));
+async function tryToSell(r, req) {
+    debug("tryToSell:" + JSON.stringify(r), req);
     let rule = r.rule;
     let now = Date.now();
     let price = 0;
     if (rule.dip < 0) {
         price = rule.sell;
     } else if (rule.currentPrice >= parseFloat(rule.sell)) {
-        debug(`currentPrice > sell`);
+        debug(`currentPrice > sell`, req);
         if (rule.maxPrice >= parseFloat(rule.sell)) {
-            debug(`maxPrice > sell`);
+            debug(`maxPrice > sell`, req);
             let delta = rule.maxPrice - rule.currentPrice;
-            debug(`delta=${delta}`);
+            debug(`delta=${delta}`, req);
             if (delta >= parseFloat(rule.dip)) {
                 price = rule.currentPrice;
             }
         }
     }
-    debug(`price=${price}`);
+    debug(`price=${price}`, req);
     if (price > 0) {
         //卖出
         let action = {
@@ -617,31 +617,31 @@ async function tryToSell(r) {
         r.status = "ordered";
 
         r.actions.push(action);
-        debug(`rules:${JSON.stringify(rules)}`);
+        debug(`rules:${JSON.stringify(rules)}`, req);
         return true;
     }
 
     return false;
 }
-async function tryToBuy(r) {
-    debug("tryToBuy:" + JSON.stringify(r));
+async function tryToBuy(r, req) {
+    debug("tryToBuy:" + JSON.stringify(r), req);
     let rule = r.rule;
     let now = Date.now();
     let buy = 0;
     if (rule.bounce < 0) {
         buy = rule.buy;
     } else if (rule.currentPrice <= parseFloat(rule.buy)) {
-        debug(`currentPrice < buy`);
+        debug(`currentPrice < buy`, req);
         if (rule.minPrice <= parseFloat(rule.buy)) {
             let delta = rule.currentPrice - rule.minPrice;
-            debug(`delta=${delta}`);
+            debug(`delta=${delta}`, req);
             if (delta >= parseFloat(rule.bounce)) {
                 //买入
                 buy = rule.currentPrice;
             }
         }
     }
-    debug(`buy=${buy}`);
+    debug(`buy=${buy}`, req);
     if (buy > 0) {
         let action = {
             id: `${r.id}-${now}`,
@@ -677,41 +677,46 @@ async function tryToBuy(r) {
 
 
 let checkingRule = 0;
-async function checkRule(scodes) {
+async function checkRule(scodes, req) {
+    if (req == null) {
+        req = {
+            threadId: Date.now()
+        }
+    }
     if (checkingRule == 1) {
-        console.log("checking");
+        error("checking", req);
         return;
     }
 
     checkingRule = 1;
-    debug("checkRule start");
+    debug("checkRule start", req);
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
         let scode = scodes[i].split(".")[0];
         let rs = rules[scode];
         if (rs != null) {
             Object.values(rs).forEach(async (r) => {
-                debug(`checking rule: scode=${scode} status=${r.status}`);
+                debug(`checking rule: scode=${scode} status=${r.status}`, req);
                 switch (r.status) {
                     case "todo":
                         //检查是否满足条件
-                        let succ = await tryToBuy(r);
+                        let succ = await tryToBuy(r, req);
                         if (!succ) {
-                            succ = await tryToSell(r);
+                            succ = await tryToSell(r, req);
                         }
                         break;
                     case "toBuy":
-                        await tryToBuy(r);
+                        await tryToBuy(r, req);
                         break;
                     case "toSell":
-                        await tryToSell(r);
+                        await tryToSell(r, req);
                         break;
                 }
             });
         }
     }
 
-    debug("checkRule end");
+    debug("checkRule end", req);
     checkingRule = 0;
 }
 
@@ -1376,7 +1381,7 @@ app.get('/stock/updatePrice', async (req, res) => {
     updatePriceToRule(scode, price);
     let sql = `update tStockBasic set buy=?, updateTime=? where id=?`;
     await db.runSync(sql, [price, time, scode]);
-    checkRule([scode]);
+    checkRule([scode], req);
     var resp = `${js}({})`;
     res.send(resp);
 });
@@ -2690,6 +2695,12 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     let maxDelta = 2;
     let dip = 0.02;
 
+    if (r.operationName == "BNB") {
+        minDelta = 1;
+        maxDelta = 100;
+        dip = 10;
+    }
+
     let currentPrice = stockBasicInfo.buy;
     if (currentPrice < 30) {
         dip = 0.005;
@@ -2704,10 +2715,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     if (lastPrice - buyPrice < minDelta) {
         buyPrice = lastPrice - minDelta;
     }
-
-    if (r.operationName == "BNB") {
-
-    } else if (lastPrice - buyPrice > maxDelta) {
+    if (lastPrice - buyPrice > maxDelta) {
         buyPrice = lastPrice - maxDelta;
     }
 
@@ -2718,11 +2726,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         sellPrice = lastPrice + minDelta;
     }
 
-    if (r.operationName == "BNB") {
-
-    } else if (sellPrice - lastPrice > maxDelta) {
+    if (sellPrice - lastPrice > maxDelta) {
         sellPrice = lastPrice + maxDelta;
     }
+
     sellPrice = parseFloat(sellPrice.toFixed(3));
 
     let rc = null;
