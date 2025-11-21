@@ -2277,8 +2277,8 @@ window.stock_list = window.stock_list || (function () {
                     <tr> 
                         <td>${row.broker}</td> 
                         <td>${row.can_use_volume}/${row.volume}</td>
-                        <td>${row.avg_price}</td>
-                        <td>${row.market_value}</td>
+                        <td>${share.convertIfInteger(row.avg_price)}</td>
+                        <td>${share.convertIfInteger(row.market_value)}</td>
                     </tr>
                  `;
                 return html;

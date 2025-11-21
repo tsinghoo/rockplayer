@@ -711,10 +711,14 @@ window.mhgl_share =
 
         if (fixed == null) {
           fixed = 3;
-          if (number < 1) {
-            fixed = 5;
+          for (let i = 0; i < 5; ++i) {
+            if (number < Math.pow(10, -i)) {
+              fixed = i + 3;
+              break;
+            }
           }
         }
+
         number = parseFloat(parseFloat(number).toFixed(fixed));
         if (Number.isInteger(number)) {
           return parseInt(number); // 或者 Math.trunc(number)
