@@ -1223,8 +1223,6 @@ window.stock_list = window.stock_list || (function () {
                     if (parseFloat(buy) > parseFloat(sell) * (1 - 0.02))
                         c.find(".buy").val(parseFloat(sell) * (1 - 0.02));
                 }
-
-                autoDelta();
             }
 
             $('.buy', c).change(function () {
