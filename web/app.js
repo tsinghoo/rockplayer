@@ -2695,12 +2695,6 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     let maxDelta = 2;
     let dip = 0.02;
 
-    if (r.operationName == "BNB") {
-        minDelta = 1;
-        maxDelta = 20000;
-        dip = 10;
-    }
-
     let currentPrice = stockBasicInfo.buy;
     if (currentPrice < 30) {
         dip = 0.005;
@@ -2708,6 +2702,12 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         dip = 0.02;
     } else {
         dip = 0.1;
+    }
+
+    if (r.operationName == "BNB") {
+        minDelta = 1;
+        maxDelta = 20000;
+        dip = 10;
     }
 
     let lastPrice = r.tprice;
