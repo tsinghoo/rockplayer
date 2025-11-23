@@ -2229,6 +2229,7 @@ async function autoCreateRules() {
 app.get('/stock/rule/create/auto', async (req, res) => {
     let js = req.query.js;
     let max = req.query.max;
+    let type = req.query.type;
     let priceDelay = req.query.priceDelay;
     if (!max) {
         max = 1;
@@ -2242,6 +2243,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
     if (workerCreateRule.id == 0) {
         if (workerCreateRule.succeeded.length + workerCreateRule.failed.length == 0) {
             workerCreateRule.max = max;
+            workerCreateRule.type = type;
             workerCreateRule.priceDelay = priceDelay;
             workerCreateRule.id = setTimeout(autoCreateRules, 100);
             logs = ["autoCreateRule started"];
@@ -2756,6 +2758,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     if (r.operationDirection.indexOf("卖") >= 0) {
+        if (workerCreateRule.type == "toSell") {
+            return { error: `toSell` };
+        }
+
         if (position == 0) { //如果已经清仓
             //获取最近3天的日线数据
             let all = await ensureDayDayUp(scode, sname, threadId);
@@ -2808,6 +2814,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             setSellPriceByBuy(rc, maxDelta);
         }
     } else if (r.operationDirection.indexOf("买") >= 0) {
+        if (workerCreateRule.type == "toBuy") {
+            return { error: `toBuy` };
+        }
         if (position == 0) {
             return { error: `need 1st buy by hand` };
         } else {
