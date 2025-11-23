@@ -690,6 +690,7 @@ async function checkRule(scodes, req) {
 
     checkingRule = 1;
     debug("checkRule start", req);
+    let now = Date.now();
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
         let scode = scodes[i].split(".")[0];
@@ -697,6 +698,20 @@ async function checkRule(scodes, req) {
         if (rs != null) {
             Object.values(rs).forEach(async (r) => {
                 debug(`checking rule: scode=${scode} status=${r.status}`, req);
+
+                if (r.expireTime != null && r.expireTime < now) {
+                    info("expired rule:" + r.scode, req);
+                    if (rules[r.scode] && rules[r.scode][r.broker]) {
+                        delete rules[r.scode][r.broker];
+                    }
+
+                    await db.runSync(`update tRuleAction set done = -1 where ruleId=?`, [r.id]);
+
+                    await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
+
+                    return;
+                }
+
                 switch (r.status) {
                     case "todo":
                         //检查是否满足条件
