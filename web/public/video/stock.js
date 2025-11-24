@@ -1337,6 +1337,27 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
+                        text: "自动",
+                        onTap: async function () {
+                            brokerPopup.close();
+                            let type = 0;
+                            let maxCount = 5;
+                            let priceDelay = 10000000;
+                            let res = await share.getSync__(`/stock/rule/create/auto?scode=${scode}&type=${type}&max=${maxCount}&priceDelay=${priceDelay}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                if (res.failed.length > 0) {
+                                    share.toastError__(res.failed[0].reason);
+                                } else {
+                                    c.find(".rule").html("");
+                                    c.find(".ruleStatus").html("");
+                                    let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
+                                }
+                            }
+                        }
+                    },
+                    {
                         text: "关闭",
                         onTap: function () {
                             brokerPopup.close();

@@ -2190,9 +2190,14 @@ function setSellPriceByBuy(rc, maxDelta) {
 async function autoCreateRules() {
     let threadId = Date.now();
     try {
-        //对每一个scode自动创建rule
-        let res = await db.allSync(`select * from tStockBasic`);
+        let sql = `select * from tStockBasic`;
+        if (workerCreateRule.scode) {
+            sql = `select * from tStockBasic where scode='${workerCreateRule.scode}'`;
+        }
+
+        let res = await db.allSync(sql);
         let total = 0;
+
         for (let i = 0; i < res.rows.length; ++i) {
             if (total >= workerCreateRule.max) {
                 break;
@@ -2224,12 +2229,14 @@ async function autoCreateRules() {
     reloadRules();
 
     workerCreateRule.id = 0;
+    workerCreateRule.scode = null;
 }
 
 app.get('/stock/rule/create/auto', async (req, res) => {
     let js = req.query.js;
     let max = req.query.max;
     let type = req.query.type;
+    let scode = req.query.scode;
     let priceDelay = req.query.priceDelay;
     if (!max) {
         max = 1;
@@ -2245,9 +2252,18 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             workerCreateRule.max = max;
             workerCreateRule.type = type;
             workerCreateRule.priceDelay = priceDelay;
-            workerCreateRule.id = setTimeout(autoCreateRules, 100);
-            logs = ["autoCreateRule started"];
-
+            if (scode == null) {
+                workerCreateRule.id = setTimeout(autoCreateRules, 100);
+                logs = ["autoCreateRule started"];
+            } else {
+                workerCreateRule.scode = scode;
+                await autoCreateRules();
+                workerCreateRule.scode = null;
+                succeeded = workerCreateRule.succeeded;
+                workerCreateRule.succeeded = [];
+                failed = workerCreateRule.failed;
+                workerCreateRule.failed = [];
+            }
         } else {
             logs = workerCreateRule.logs;
             workerCreateRule.logs = [];
@@ -2767,7 +2783,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             let all = await ensureDayDayUp(scode, sname, threadId);
             all = await ensureAboveMa5(scode, sname, threadId, all);
             all = await ensureMa5Increasing(scode, sname, threadId, all);
-            
+
             if (all.reason) {
                 return { error: `${all.reason}` };
             }
@@ -2792,6 +2808,13 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
             setSellPriceByBuy(rc, maxDelta);
         } else {
+            let all;
+            all = await ensureAboveMa5(scode, sname, threadId, all);
+
+            if (all.reason) {
+                return { error: `${all.reason}` };
+            }
+
             rc = {
                 buy: buyPrice,
                 bounce: dip,
@@ -2916,7 +2939,7 @@ async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
     let days = getIncreaseDays(ma5, start, end);
     if (days < end - start) {
         info(`${sname}: ma5 increasing ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.error = `ma5 increasing ${days}/${end - start} days`;
+        prevRes.reason = `ma5 increasing ${days}/${end - start} days`;
         return prevRes;
     }
 
@@ -2950,12 +2973,12 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes) {
         }
     }
 
-    start = ma5.length - 3;
-    end = ma5.length;
+    start = upMa5.length - 3;
+    end = upMa5.length;
     days = getIncreaseDays(upMa5, start, end);
     if (days < end - start) {
         info(`${sname}: larger than ma5 ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.error = `larger than ma5 ${days}/${end - start} days`;
+        prevRes.reason = `larger than ma5 ${days}/${end - start} days`;
         return prevRes;
     }
 
