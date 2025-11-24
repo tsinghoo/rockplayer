@@ -2765,7 +2765,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         if (position == 0) { //如果已经清仓
             //获取最近3天的日线数据
             let all = await ensureDayDayUp(scode, sname, threadId);
-
+            all = await ensureAboveMa5(scode, sname, threadId, all);
+            all = await ensureMa5Increasing(scode, sname, threadId, all);
+            
             if (all.reason) {
                 return { error: `${all.reason}` };
             }
@@ -2862,59 +2864,170 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     };
 }
 
-async function ensureDayDayUp(scode, sname, threadId) {
-    let all = await db.allSync(`select * from t1d where scode=? order by time desc limit 3`, [scode]);
-    if (all.rows == null || all.rows.length < 3) {
-        info(`${sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "no 1d data";
-        return all;
+function getMA(dayCount, rows1d) {
+    var result = [];
+    for (var i = 0; i < rows1d.length; i++) {
+        if (i < dayCount) {
+            result.push(0);
+            continue;
+        }
+        var sum = 0;
+        for (var j = 0; j < dayCount; j++) {
+            let d = rows1d[i - j];
+            if (d == null) {
+                result.push(0);
+                continue;
+            }
+            sum += d.close;
+        }
+
+        result.push(+(sum / dayCount).toFixed(3));
     }
 
-    let lastDay = all.rows[0].time;
+    return result;
+}
+function getIncreaseDays(values, start, end) {
+    let days = 0;
+    for (let i = start; i < end; i++) {
+        if (values[i] > values[i - 1]) {
+            days++;
+        }
+    }
+
+    return days;
+}
+
+async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
+    if (prevRes == null) {
+        prevRes = await get1dData(prevRes, scode);
+    }
+
+    if (prevRes.reason) {
+        return prevRes;
+    }
+
+    if (prevRes.ma5 == null) {
+        prevRes.ma5 = getMA(5, prevRes.rows);
+    }
+
+    let ma5 = prevRes.ma5;
+    let start = ma5.length - 3;
+    let end = ma5.length;
+    let days = getIncreaseDays(ma5, start, end);
+    if (days < end - start) {
+        info(`${sname}: ma5 increasing ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.error = `ma5 increasing ${days}/${end - start} days`;
+        return prevRes;
+    }
+
+    return prevRes;
+}
+
+async function ensureAboveMa5(scode, sname, threadId, prevRes) {
+    if (prevRes == null) {
+        prevRes = await get1dData(prevRes, scode);
+    }
+
+    if (prevRes.reason) {
+        return prevRes;
+    }
+
+    if (prevRes.ma5 == null) {
+        prevRes.ma5 = getMA(5, prevRes.rows);
+    }
+
+    let ma5 = prevRes.ma5;
+    let start = ma5.length - 3;
+    let end = ma5.length;
+    let upMa5 = [0];
+
+    for (let i = start; i < end; ++i) {
+        let last = upMa5[upMa5.length - 1];
+        if (ma5[i] > (prevRes.rows[i].high + prevRes.rows[i].low) / 2) {
+            upMa5.push(last + 1);
+        } else {
+            upMa5.push(last - 1);
+        }
+    }
+
+    start = ma5.length - 3;
+    end = ma5.length;
+    days = getIncreaseDays(upMa5, start, end);
+    if (days < end - start) {
+        info(`${sname}: larger than ma5 ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.error = `larger than ma5 ${days}/${end - start} days`;
+        return prevRes;
+    }
+
+    return prevRes;
+}
+
+
+async function get1dData(prevRes, scode) {
+    prevRes = await db.allSync(`select * from t1d where scode=? order by time desc limit 30`, [scode]);
+    return prevRes;
+}
+
+async function ensureDayDayUp(scode, sname, threadId, prevRes) {
+    if (prevRes == null) {
+        prevRes = await get1dData(prevRes, scode);
+    }
+
+    if (prevRes.reason) {
+        return prevRes;
+    }
+
+    if (prevRes.rows == null || prevRes.rows.length < 3) {
+        info(`${sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.reason = "no 1d data";
+        return prevRes;
+    }
+
+    let lastDay = prevRes.rows[0].time;
     let todayStr = timeFormat(new Date(), "yyyyMMdd");
     if (todayStr != lastDay) {
         info(`${sname}:no today 1d`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "no today 1d";
-        return all;
+        prevRes.reason = "no today 1d";
+        return prevRes;
     }
 
-    if (all.rows[0].low < all.rows[1].low) {
+    if (prevRes.rows[0].low < prevRes.rows[1].low) {
         info(`${sname}:0.low < 1.low`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "0.low < 1.low";
-        return all;
+        prevRes.reason = "0.low < 1.low";
+        return prevRes;
     }
 
-    if (all.rows[0].open < all.rows[1].open) {
+    if (prevRes.rows[0].open < prevRes.rows[1].open) {
         info(`${sname}:0.open < 1.open`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "0.open < 1.open";
-        return all;
+        prevRes.reason = "0.open < 1.open";
+        return prevRes;
     }
 
-    if (all.rows[0].open < all.rows[1].close) {
+    if (prevRes.rows[0].open < prevRes.rows[1].close) {
         info(`${sname}:0.open < 1.close`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "0.open < 1.close";
-        return all;
+        prevRes.reason = "0.open < 1.close";
+        return prevRes;
     }
 
-    if (all.rows[1].low < all.rows[2].low) {
+    if (prevRes.rows[1].low < prevRes.rows[2].low) {
         info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "1.low < 2.low";
-        return all;
+        prevRes.reason = "1.low < 2.low";
+        return prevRes;
     }
 
-    if (all.rows[1].high < all.rows[2].high) {
+    if (prevRes.rows[1].high < prevRes.rows[2].high) {
         info(`${sname}:1.high < 2.high`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "1.high < 2.high";
-        return all;
+        prevRes.reason = "1.high < 2.high";
+        return prevRes;
     }
 
-    if (all.rows[1].close < all.rows[2].close) {
+    if (prevRes.rows[1].close < prevRes.rows[2].close) {
         info(`${sname}:1.close < 2.close`, { threadId }, workerCreateRule.logs, 5);
-        all.reason = "1.close < 2.close";
-        return all;
+        prevRes.reason = "1.close < 2.close";
+        return prevRes;
     }
 
-    return all;
+    return prevRes;
 }
 
 function updatePriceToRule(scode, price) {
