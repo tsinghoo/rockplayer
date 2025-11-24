@@ -222,7 +222,7 @@ window.stock_list = window.stock_list || (function () {
                         c.find(".buttonToBuy").on("click", async function () {
                             await toCreateRule("toBuy");
                         });
-                        
+
                         c.find(".buttonToSell").on("click", async function () {
                             await toCreateRule("toSell");
                         });
@@ -1673,7 +1673,7 @@ window.stock_list = window.stock_list || (function () {
                     for (let i = 0; i < rows.length; i++) {
                         let row = rows[i];
                         categoryData.push(row.time);
-                        values.push([row.open, row.close, row.high, row.low]);
+                        values.push([row.open, row.close, row.high, row.low, row.volume, row.amount]);
                         volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
                     }
 
@@ -1746,6 +1746,31 @@ window.stock_list = window.stock_list || (function () {
                         continue;
                     }
                     sum += d[1];
+                }
+                result.push(+(sum / dayCount).toFixed(3));
+            }
+            return result;
+        },
+        calculateMAn: function (dayCount, data) {
+            var result = [];
+            for (var i = 0, len = data.values.length; i < len; i++) {
+                if (i < dayCount) {
+                    result.push('-');
+                    continue;
+                }
+                var sum = 0;
+                for (var j = 0; j < dayCount; j++) {
+                    let d = data.values[i - j];
+                    if (d == null) {
+                        result.push('-');
+                        continue;
+                    }
+                    let avg = d[5] / d[4];
+                    while (avg / d[3] > 2) {
+                        avg = avg / 10;
+                    }
+
+                    sum += avg;
                 }
                 result.push(+(sum / dayCount).toFixed(3));
             }
@@ -2474,8 +2499,10 @@ window.stock_list = window.stock_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'MA5', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
+                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
                     selected: {
+                        "MA20": false,
+                        "MA60": false,
                         'Boll上': false,
                         'Boll中': false,
                         'Boll下': false,
@@ -2494,7 +2521,7 @@ window.stock_list = window.stock_list || (function () {
                                 result += '收盘: ' + parseFloat(item.value[2]).toFixed(3) + '<br/>';
                                 result += '最高: ' + parseFloat(item.value[3]).toFixed(3) + '<br/>';
                                 result += '最低: ' + parseFloat(item.value[4]).toFixed(3) + '<br/>';
-                                result += '成交量: ' + volumes[params[0].dataIndex][1] + '<br/>';
+                                result += '成交额: ' + parseFloat(item.value[6]) + '<br/>';
                             } else {
                                 result += item.seriesName + ': ' + item.value + '<br/>';
                             }
@@ -2675,6 +2702,16 @@ window.stock_list = window.stock_list || (function () {
                         name: 'MA5',
                         type: 'line',
                         data: self.calculateMA(5, data),
+                        smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'MA10',
+                        type: 'line',
+                        data: self.calculateMA(10, data),
                         smooth: true,
                         symbol: 'none',
                         lineStyle: {
