@@ -3069,7 +3069,7 @@ async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes) {
 
     if (prevRes.rows[1].high < prevRes.rows[3].high) {
         info(`${sname}:1.high < 3.high`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.reason = "1.high < 2.high";
+        prevRes.reason = "1.high < 3.high";
         return prevRes;
     }
 
