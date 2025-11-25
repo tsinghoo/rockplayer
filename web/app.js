@@ -2780,7 +2780,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
         if (position == 0) { //如果已经清仓
             //获取最近3天的日线数据
-            let all = await ensureLowPriceIncreasing(scode, sname, threadId);
+            let all = await ensureHighPriceIncreasing(scode, sname, threadId);
             all = await ensureAboveMa5(scode, sname, threadId, all);
             all = await ensureMa5Increasing(scode, sname, threadId, all);
 
@@ -2809,7 +2809,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             setSellPriceByBuy(rc, maxDelta);
         } else {
             let all;
-            all = await ensureAboveMa5(scode, sname, threadId, all);
+            all = await ensureHighPriceIncreasing(scode, sname, threadId, all);
+            all = await ensureLowPriceIncreasing(scode, sname, threadId, all);
 
             if (all.reason) {
                 return { error: `${all.reason}` };
@@ -3006,9 +3007,9 @@ async function ensureLowPriceIncreasing(scode, sname, threadId, prevRes) {
         return prevRes;
     }
 
-    if (prevRes.rows[1].low < prevRes.rows[2].low) {
-        info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.reason = "1.low < 2.low";
+    if (prevRes.rows[0].low < prevRes.rows[2].low) {
+        info(`${sname}:0.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.reason = "0.low < 2.low";
         return prevRes;
     }
 
@@ -3062,6 +3063,12 @@ async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes) {
 
     if (prevRes.rows[1].high < prevRes.rows[2].high) {
         info(`${sname}:1.high < 2.high`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.reason = "1.high < 2.high";
+        return prevRes;
+    }
+
+    if (prevRes.rows[1].high < prevRes.rows[3].high) {
+        info(`${sname}:1.high < 3.high`, { threadId }, workerCreateRule.logs, 5);
         prevRes.reason = "1.high < 2.high";
         return prevRes;
     }
