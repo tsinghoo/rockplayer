@@ -2780,7 +2780,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
         if (position == 0) { //如果已经清仓
             //获取最近3天的日线数据
-            let all = await ensureDayDayUp(scode, sname, threadId);
+            let all = await ensureLowPriceIncreasing(scode, sname, threadId);
             all = await ensureAboveMa5(scode, sname, threadId, all);
             all = await ensureMa5Increasing(scode, sname, threadId, all);
 
@@ -2920,10 +2920,8 @@ function getIncreaseDays(values, start, end) {
     return days;
 }
 
-async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
-    if (prevRes == null) {
-        prevRes = await get1dData(prevRes, scode);
-    }
+async function ensureMa5Exist(scode, sname, threadId, prevRes) {
+    prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
 
     if (prevRes.reason) {
         return prevRes;
@@ -2931,6 +2929,16 @@ async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
 
     if (prevRes.ma5 == null) {
         prevRes.ma5 = getMA(5, prevRes.rows);
+    }
+
+    return prevRes;
+}
+
+async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
+    prevRes = await ensureMa5Exist(scode, sname, threadId, prevRes);
+
+    if (prevRes.reason) {
+        return prevRes;
     }
 
     let ma5 = prevRes.ma5;
@@ -2947,16 +2955,10 @@ async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
 }
 
 async function ensureAboveMa5(scode, sname, threadId, prevRes) {
-    if (prevRes == null) {
-        prevRes = await get1dData(prevRes, scode);
-    }
+    prevRes = await ensureMa5Exist(scode, sname, threadId, prevRes);
 
     if (prevRes.reason) {
         return prevRes;
-    }
-
-    if (prevRes.ma5 == null) {
-        prevRes.ma5 = getMA(5, prevRes.rows);
     }
 
     let ma5 = prevRes.ma5;
@@ -2966,7 +2968,7 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes) {
 
     for (let i = start; i < end; ++i) {
         let last = upMa5[upMa5.length - 1];
-        if (ma5[i] > (prevRes.rows[i].high + prevRes.rows[i].low) / 2) {
+        if (ma5[i] < (prevRes.rows[i].high + prevRes.rows[i].low) / 2) {
             upMa5.push(last + 1);
         } else {
             upMa5.push(last - 1);
@@ -2991,13 +2993,47 @@ async function get1dData(prevRes, scode) {
     return prevRes;
 }
 
-async function ensureDayDayUp(scode, sname, threadId, prevRes) {
-    if (prevRes == null) {
-        prevRes = await get1dData(prevRes, scode);
-    }
+async function ensureLowPriceIncreasing(scode, sname, threadId, prevRes) {
+    prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
 
     if (prevRes.reason) {
         return prevRes;
+    }
+
+    if (prevRes.rows[0].low < prevRes.rows[1].low) {
+        info(`${sname}:0.low < 1.low`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.reason = "0.low < 1.low";
+        return prevRes;
+    }
+
+    if (prevRes.rows[1].low < prevRes.rows[2].low) {
+        info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.reason = "1.low < 2.low";
+        return prevRes;
+    }
+
+    return prevRes;
+}
+
+async function ensureTodayHighOpen(scode, sname, threadId, prevRes) {
+    prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
+
+    if (prevRes.reason) {
+        return prevRes;
+    }
+
+    if (prevRes.rows[0].open < prevRes.rows[1].close) {
+        info(`${sname}:0.open < 1.close`, { threadId }, workerCreateRule.logs, 5);
+        prevRes.reason = "0.open < 1.close";
+        return prevRes;
+    }
+
+    return prevRes;
+}
+
+async function ensureData1dIsEnough(scode, sname, threadId, prevRes) {
+    if (prevRes == null) {
+        prevRes = await get1dData(prevRes, scode);
     }
 
     if (prevRes.rows == null || prevRes.rows.length < 3) {
@@ -3014,39 +3050,19 @@ async function ensureDayDayUp(scode, sname, threadId, prevRes) {
         return prevRes;
     }
 
-    if (prevRes.rows[0].low < prevRes.rows[1].low) {
-        info(`${sname}:0.low < 1.low`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.reason = "0.low < 1.low";
-        return prevRes;
-    }
+    return prevRes;
+}
 
-    if (prevRes.rows[0].open < prevRes.rows[1].open) {
-        info(`${sname}:0.open < 1.open`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.reason = "0.open < 1.open";
-        return prevRes;
-    }
+async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes) {
+    prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
 
-    if (prevRes.rows[0].open < prevRes.rows[1].close) {
-        info(`${sname}:0.open < 1.close`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.reason = "0.open < 1.close";
-        return prevRes;
-    }
-
-    if (prevRes.rows[1].low < prevRes.rows[2].low) {
-        info(`${sname}:1.low < 2.low`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.reason = "1.low < 2.low";
+    if (prevRes.reason) {
         return prevRes;
     }
 
     if (prevRes.rows[1].high < prevRes.rows[2].high) {
         info(`${sname}:1.high < 2.high`, { threadId }, workerCreateRule.logs, 5);
         prevRes.reason = "1.high < 2.high";
-        return prevRes;
-    }
-
-    if (prevRes.rows[1].close < prevRes.rows[2].close) {
-        info(`${sname}:1.close < 2.close`, { threadId }, workerCreateRule.logs, 5);
-        prevRes.reason = "1.close < 2.close";
         return prevRes;
     }
 
