@@ -2781,9 +2781,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         if (position == 0) { //如果已经清仓
             let all;
             all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
-            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 3);
-            all = await ensureMa5Increasing(scode, sname, threadId, all, 0, 3);
-            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 3);
+            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
+            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
 
             if (all.reason) {
                 return { error: `${all.reason}` };
