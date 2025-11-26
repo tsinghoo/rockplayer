@@ -2779,9 +2779,11 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         }
 
         if (position == 0) { //如果已经清仓
-            let all = await ensureHighPriceIncreasing(scode, sname, threadId, null, 1, 3);
-            all = await ensureAboveMa5(scode, sname, threadId, all);
-            all = await ensureMa5Increasing(scode, sname, threadId, all);
+            let all;
+            all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
+            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 3);
+            all = await ensureMa5Increasing(scode, sname, threadId, all, 0, 3);
+            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 3);
 
             if (all.reason) {
                 return { error: `${all.reason}` };
@@ -2808,7 +2810,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             setSellPriceByBuy(rc, maxDelta);
         } else {
             let all;
-            all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 0, 2);
+            all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 3);
 
             if (all.reason) {
@@ -2865,9 +2867,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
                 if (rc.sell - currentPrice > minDelta) {
                     rc.sell = currentPrice + minDelta;
                 }
-
-                setBuyPriceBySell(rc, maxDelta);
             }
+
+            setBuyPriceBySell(rc, maxDelta);
         }
     } else {
         return { error: `bad trade direction` };
@@ -2889,18 +2891,11 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
 function getMA(dayCount, rows1d) {
     var result = [];
-    for (var i = 0; i < rows1d.length; i++) {
-        if (i < dayCount) {
-            result.push(0);
-            continue;
-        }
+    for (var i = 0; i < rows1d.length - dayCount; i++) {
+
         var sum = 0;
-        for (var j = 0; j < dayCount; j++) {
-            let d = rows1d[i - j];
-            if (d == null) {
-                result.push(0);
-                continue;
-            }
+        for (var j = i; j < i + dayCount && j < rows1d.length; j++) {
+            let d = rows1d[j];
             sum += d.close;
         }
 
@@ -2913,6 +2908,16 @@ function getIncreaseDays(values, start, end) {
     let days = 0;
     for (let i = start; i < end; i++) {
         if (values[i] > values[i - 1]) {
+            days++;
+        }
+    }
+
+    return days;
+}
+function getDecreaseDays(values, start, end) {
+    let days = 0;
+    for (let i = start; i < end; i++) {
+        if (values[i] > values[i + 1]) {
             days++;
         }
     }
@@ -2934,7 +2939,7 @@ async function ensureMa5Exist(scode, sname, threadId, prevRes) {
     return prevRes;
 }
 
-async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
+async function ensureMa5Increasing(scode, sname, threadId, prevRes, start, end) {
     prevRes = await ensureMa5Exist(scode, sname, threadId, prevRes);
 
     if (prevRes.reason) {
@@ -2942,9 +2947,7 @@ async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
     }
 
     let ma5 = prevRes.ma5;
-    let start = ma5.length - 3;
-    let end = ma5.length;
-    let days = getIncreaseDays(ma5, start, end);
+    let days = getDecreaseDays(ma5, start, end);
     if (days < end - start) {
         info(`${sname}: ma5 increasing ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
         prevRes.reason = `ma5 increasing ${days}/${end - start} days`;
@@ -2954,7 +2957,7 @@ async function ensureMa5Increasing(scode, sname, threadId, prevRes) {
     return prevRes;
 }
 
-async function ensureAboveMa5(scode, sname, threadId, prevRes) {
+async function ensureAboveMa5(scode, sname, threadId, prevRes, start, end) {
     prevRes = await ensureMa5Exist(scode, sname, threadId, prevRes);
 
     if (prevRes.reason) {
@@ -2962,22 +2965,13 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes) {
     }
 
     let ma5 = prevRes.ma5;
-    let start = ma5.length - 3;
-    let end = ma5.length;
-    let upMa5 = [0];
-
+    let days = 0;
     for (let i = start; i < end; ++i) {
-        let last = upMa5[upMa5.length - 1];
         if (ma5[i] < (prevRes.rows[i].high + prevRes.rows[i].low) / 2) {
-            upMa5.push(last + 1);
-        } else {
-            upMa5.push(last - 1);
+            days++;
         }
     }
 
-    start = upMa5.length - 3;
-    end = upMa5.length;
-    days = getIncreaseDays(upMa5, start, end);
     if (days < end - start) {
         info(`${sname}: larger than ma5 ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
         prevRes.reason = `larger than ma5 ${days}/${end - start} days`;
