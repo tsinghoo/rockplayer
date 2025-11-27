@@ -2125,7 +2125,7 @@ app.get('/stock/rule/create', async (req, res) => {
         updateTime: now
     });
 
-    if (json.order == "buyFirst") {
+    if (json.order == "sellFirst") {
         let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode]);
         if (r.rows.length == 0) {
             let tday = timeFormat(now, "yyyyMMdd");
@@ -2135,11 +2135,11 @@ app.get('/stock/rule/create', async (req, res) => {
                 ttime,
                 sname: json.sname,
                 scode: json.scode,
-                operationDirection: "买入",
+                operationDirection: "卖出",
                 operationName: broker,
                 market: market,
                 tamount: 0,
-                tprice: json.buy,
+                tprice: json.sell,
                 tcash: 0,
                 tid: `${json.scode}.${json.sname}`,
                 taccount: "",
@@ -2778,7 +2778,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             return { error: `toSell` };
         }
 
-        if (position == 0) { //如果已经清仓
+        if (currentPrice < buyPrice) { //如果已经清仓
             let all;
             all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
