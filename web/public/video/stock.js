@@ -2417,13 +2417,65 @@ window.stock_list = window.stock_list || (function () {
                 }
             });
 
-            $(".tradeHistoryTr", c).click(function () {
-                let data = $(this).attr("data");
-                let js = JSON.parse(data);
-                let buy = js.tprice * (1 - 0.02);
-                let sell = js.tprice * (1 + 0.02);
-                c.find(".buy").val(buy);
-                c.find(".sell").val(sell);
+            $(".tradeHistoryTr", c).click(async function () {
+                share.currentTarget = this;
+                let tr = $(this);
+                let dataStr = $(this).attr("data");
+                let data = JSON.parse(dataStr);
+                let popup;
+                let buttons = [
+                    {
+                        text: "设置价格",
+                        onTap: function () {
+                            popup.close();
+                            let buy = data.tprice * (1 - 0.02);
+                            let sell = data.tprice * (1 + 0.02);
+                            c.find(".buy").val(buy);
+                            c.find(".sell").val(sell);
+                        }
+                    },
+                    {
+                        text: "删除本行",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.remove();
+                            }
+                        }
+                    },
+                    {
+                        text: "彻底删除本行",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}&force=1`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.remove();
+                            }
+                        }
+                    },
+                    {
+                        text: "取消删除",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/undeleteRow?tid=${data.tid}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            }
+                        }
+                    }
+                ];
+
+                popup = await share.popupAction__("", buttons);
+
+
             });
 
         },
