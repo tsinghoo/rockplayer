@@ -315,7 +315,7 @@ def getActions():
                              act["price"], act["amount"])
                         order_id = xt_trader.order_stock(
                             stockAccount, act["scode"], xtconstant.STOCK_SELL, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
-                        print(order_id)
+                        info("卖出",order_id)
                         info("已卖出", act["sname"], act["scode"],
                              act["price"], act["amount"])
                     elif act["action"] == "reloadK1d":

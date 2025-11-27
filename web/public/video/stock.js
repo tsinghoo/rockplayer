@@ -1603,13 +1603,14 @@ window.stock_list = window.stock_list || (function () {
                             <div class="flexrow margin4">
                                 <div class="day0Status flexrow width100p margin4 hide">
                                     <div class="day0"></div>
-                                    <div style="width:10px;"></div>
+                                    <div style="width:10px;"></div> 
+                                    <div class="downStopPrice"></div>
                                     <div class="priceLow"></div>
                                     <div class="progressContainer separator flexcolumn widthauto height20">
                                         <div class="progressBar center"></div>
                                     </div>               
-                                    <div class="priceHigh"></div>               
-                                    <div class="priceLimit"></div>    
+                                    <div class="priceHigh"></div>
+                                    <div class="upStopPrice"></div>
                                 </div>
                             </div>
                             <div class="k1d border margin4" style="width:480px;height:300px;">loading 1d</div>
@@ -1710,7 +1711,7 @@ window.stock_list = window.stock_list || (function () {
                     let d0low = share.toFixed(d0v[3]);
                     let d0high = share.toFixed(d0v[2]);
                     let d0close = share.toFixed(d0v[1]);
-                    c.find(".day0").text(`${lastDay}`);
+                    c.find(".day0").text(`${lastDay}:`);
 
                     let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
                     if (todayStr != lastDay) {
@@ -1720,7 +1721,10 @@ window.stock_list = window.stock_list || (function () {
                     c.find(".day0Status").removeClass("hide");
                     c.find(".priceLow").text(`${d0low}`);
                     c.find(".priceHigh").text(`${d0high}`);
-                    c.find(".priceLimit").text(`${sb.downStopPrice},${sb.upStopPrice}`);
+                    if (sb.downStopPrice > 0) {
+                        c.find(".downStopPrice").text(`${sb.downStopPrice}<`);
+                        c.find(".upStopPrice").text(`<${sb.upStopPrice}`);
+                    }
                     //获取progressContainer的实际宽度
                     let totalWidth = c.find(".progressContainer").width();
                     if (d0high == d0low) {
