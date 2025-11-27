@@ -1608,7 +1608,8 @@ window.stock_list = window.stock_list || (function () {
                                     <div class="progressContainer separator flexcolumn widthauto height20">
                                         <div class="progressBar center"></div>
                                     </div>               
-                                    <div class="priceHigh"></div>                
+                                    <div class="priceHigh"></div>               
+                                    <div class="priceLimit"></div>    
                                 </div>
                             </div>
                             <div class="k1d border margin4" style="width:480px;height:300px;">loading 1d</div>
@@ -1686,7 +1687,9 @@ window.stock_list = window.stock_list || (function () {
 
             let k1d = c.find(".k1d");
             share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`)
-                .then((rows) => {
+                .then((data) => {
+                    let rows = data.rows;
+                    let sb = data.stockBasic;
                     let categoryData = [];
                     let values = [];
                     let volumes = [];
@@ -1717,6 +1720,7 @@ window.stock_list = window.stock_list || (function () {
                     c.find(".day0Status").removeClass("hide");
                     c.find(".priceLow").text(`${d0low}`);
                     c.find(".priceHigh").text(`${d0high}`);
+                    c.find(".priceLimit").text(`${sb.downStopPrice},${sb.upStopPrice}`);
                     //获取progressContainer的实际宽度
                     let totalWidth = c.find(".progressContainer").width();
                     if (d0high == d0low) {

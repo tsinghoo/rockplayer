@@ -2387,10 +2387,14 @@ app.get('/stock/k/1d', async (req, res) => {
 
     let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by scode,time`;
     let result = await db.allSync(sql, [scode, type, startDay, endDay]);
-
-    var resp = JSON.stringify(result.rows);
     if (result.error) {
         resp = JSON.stringify(result);
+    } else {
+        let sb = await db.getSync("select * from tStockBasic where scode=?", [scode]);
+        resp = JSON.stringify({
+            stockBasic: sb,
+            rows: result.rows
+        });
     }
 
     if (js) {
