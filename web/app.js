@@ -2985,6 +2985,7 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes, start, end) {
 
 
 async function get1dData(prevRes, scode) {
+    await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
     prevRes = await db.allSync(`select * from t1d where scode=? order by time desc limit 30`, [scode]);
     return prevRes;
 }
