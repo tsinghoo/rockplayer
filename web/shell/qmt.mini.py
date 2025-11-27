@@ -1318,11 +1318,11 @@ if __name__ == '__main__':
     resubscribe()
     # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
-    t1 = Thread(target=update1dTask)
-    t1.start()
+    # t1 = Thread(target=update1dTask)
+    # t1.start()
 
-    t2 = Thread(target=update1mTask)
-    t2.start()
+    # t2 = Thread(target=update1mTask)
+    # t2.start()
 
     t4 = Thread(target=getActionsTask)
     t4.start()

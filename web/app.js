@@ -2778,7 +2778,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     if (trade.tamount == 0) {
-        return { error: `need by hand` };
+        return { error: `need buy by hand` };
     } else if (trade.operationDirection.indexOf("卖") >= 0) {
         if (workerCreateRule.type == "toSell") {
             return { error: `toSell` };
