@@ -567,6 +567,13 @@ def uploadDetail(details):
 
 def updateDetailTask():
     resetThreadId("udt")
+    # 判断是否9:30以后
+    now = datetime.datetime.now()
+    while (now.hour < 9 or (now.hour == 9 and now.minute < 31)):
+        info("9:30以后，再更新详情")
+        time.sleep(60)
+        now = datetime.datetime.now()
+    
     info("updateDetailTask start")
     details = []
     for index, scode in enumerate(g.stocklist):
