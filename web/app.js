@@ -2699,13 +2699,13 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     info(`${sname}: auto creating rule`, { threadId }, workerCreateRule.logs, 5);
     let failed = 0;
     //获取tstock里对应scode的最后一条记录
-    let r = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
-    if (r == null) {
+    let trade = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
+    if (trade == null) {
         return { error: `no trade history` };
     }
 
     //如果已经存在rule,则跳过
-    let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, r.operationName]);
+    let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName]);
     if (oldRule != null && oldRule.closed == 0) {
         return `rule already active`;
     }
@@ -2715,8 +2715,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         return { error: `price is old` };
     }
 
-    let amount = Math.abs(r.tamount);
-    if (r.operationName == "BNB") {
+    let amount = Math.abs(trade.tamount);
+    if (trade.operationName == "BNB") {
 
     } else {
         if (amount < stockBasicInfo.volumeMultiple) {
@@ -2741,13 +2741,13 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         dip = 0.1;
     }
 
-    if (r.operationName == "BNB") {
+    if (trade.operationName == "BNB") {
         minDelta = 1;
         maxDelta = 20000;
         dip = 10;
     }
 
-    let lastPrice = r.tprice;
+    let lastPrice = trade.tprice;
     let buyPrice = lastPrice * (1 - 0.02);
     if (lastPrice - buyPrice < minDelta) {
         buyPrice = lastPrice - minDelta;
@@ -2771,13 +2771,15 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
     let rc = null;
 
-    let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, r.operationName]);
+    let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, trade.operationName]);
     let position = 0;
     if (all.rows && all.rows.length > 0) {
         position = all.rows[0].volume;
     }
 
-    if (r.operationDirection.indexOf("卖") >= 0) {
+    if (trade.tamount == 0) {
+        return { error: `need by hand` };
+    } else if (trade.operationDirection.indexOf("卖") >= 0) {
         if (workerCreateRule.type == "toSell") {
             return { error: `toSell` };
         }
@@ -2804,8 +2806,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
                 dip: dip,
                 sellAmount: amount,
                 scode: scode,
-                sname: r.sname,
-                broker: r.operationName,
+                sname: trade.sname,
+                broker: trade.operationName,
                 order: "buyFirst",
                 expireHours: 12
             };
@@ -2828,8 +2830,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
                 dip: dip,
                 sellAmount: amount,
                 scode: scode,
-                sname: r.sname,
-                broker: r.operationName,
+                sname: trade.sname,
+                broker: trade.operationName,
                 order: "buyFirst",
                 expireHours: 12
             };
@@ -2843,37 +2845,34 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
             setSellPriceByBuy(rc, maxDelta);
         }
-    } else if (r.operationDirection.indexOf("买") >= 0) {
+    } else if (trade.operationDirection.indexOf("买") >= 0) {
         if (workerCreateRule.type == "toBuy") {
             return { error: `toBuy` };
         }
-        if (position == 0) {
-            return { error: `need 1st buy by hand` };
-        } else {
-            rc = {
-                buy: lastPrice,
-                bounce: "0.02",
-                buyAmount: amount,
-                sell: sellPrice,
-                dip: "0.02",
-                sellAmount: amount,
-                scode: scode,
-                sname: r.sname,
-                broker: r.operationName,
-                order: "sellFirst",
-                expireHours: 12
-            };
 
-            if (currentPrice > rc.sell) {
-                rc.sell = currentPrice * (1 + 0.001);
+        rc = {
+            buy: lastPrice,
+            bounce: "0.02",
+            buyAmount: amount,
+            sell: sellPrice,
+            dip: "0.02",
+            sellAmount: amount,
+            scode: scode,
+            sname: trade.sname,
+            broker: trade.operationName,
+            order: "sellFirst",
+            expireHours: 12
+        };
 
-                if (rc.sell - currentPrice > minDelta) {
-                    rc.sell = currentPrice + minDelta;
-                }
+        if (currentPrice > rc.sell) {
+            rc.sell = currentPrice * (1 + 0.001);
+
+            if (rc.sell - currentPrice > minDelta) {
+                rc.sell = currentPrice + minDelta;
             }
-
-            setBuyPriceBySell(rc, maxDelta);
         }
+
+        setBuyPriceBySell(rc, maxDelta);
     } else {
         return { error: `bad trade direction` };
     }
