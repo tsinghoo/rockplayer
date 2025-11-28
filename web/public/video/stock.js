@@ -7,6 +7,7 @@ window.stock_list = window.stock_list || (function () {
         rows: [],
         showK1d: 0,
         showK1m: 0,
+        showingRule: 0,
         statusMapping: {
             "10": "出错",
             "49": "待报",
@@ -409,7 +410,7 @@ window.stock_list = window.stock_list || (function () {
                 await self.getCurrentPrices();
             }
 
-            if (self.sql.params.includes("规则")) {
+            if (self.showRule && self.sql.params.includes("规则")) {
                 await self.getRuleStatus();
             }
         },
@@ -570,7 +571,7 @@ window.stock_list = window.stock_list || (function () {
                 if (keys[i] == "现价") {
                     th.addClass("curPrice");
                 } else if (keys[i] == "规则") {
-                    th.addClass("tdRule");
+                    th.addClass("thRule gray");
                 } else if (keys[i] == "状态") {
                     th.addClass("tdStatus");
                 } else if (keys[i] == "K1d") {
@@ -775,6 +776,18 @@ window.stock_list = window.stock_list || (function () {
             $(".ruleStatus").click(function (e) {
                 self.onTdClicked(this);
                 self.toUpdateRuleStatus();
+            })
+
+            $(".thRule").click(function (e) {
+                self.showingRule = !self.showingRule;
+                if (self.showingRule) {
+                    $(".thRule").removeClass("gray");
+                    $(".tdRule table").removeClass("hide");
+                } else {
+                    $(".thRule").addClass("gray");
+                    $(".tdRule table").addClass("hide");
+
+                }
             })
 
             $(".thK1d").click(function (e) {
@@ -1019,33 +1032,35 @@ window.stock_list = window.stock_list || (function () {
 
         getRuleStatus: async function () {
             let res = await share.getSync__("/stock/rule/status");
-            $(".ruleStatus").each(function () {
-                let td = $(this);
-                let scode = td.parents("tr").attr("code").trim();
-                let r = res.data[scode];
-                if (r) {
-                    self.showRuleStatus(r, td);
-                }
-            })
-            $(".tdRule").each(function () {
-                let td = $(this);
-                let data = td.parents("tr").attr("data");
-                if (data == null) {
-                    return;
-                }
-
-                data = JSON.parse(data);
-
-                let scode = data["代码"];
-                let broker = data["券商"];
-
-                if (res.data[scode]) {
-                    let r = res.data[scode][broker];
+            if (self.showingRule) {
+                $(".ruleStatus").each(function () {
+                    let td = $(this);
+                    let scode = td.parents("tr").attr("code").trim();
+                    let r = res.data[scode];
                     if (r) {
                         self.showRuleStatus(r, td);
                     }
-                }
-            })
+                })
+                $(".tdRule").each(function () {
+                    let td = $(this);
+                    let data = td.parents("tr").attr("data");
+                    if (data == null) {
+                        return;
+                    }
+
+                    data = JSON.parse(data);
+
+                    let scode = data["代码"];
+                    let broker = data["券商"];
+
+                    if (res.data[scode]) {
+                        let r = res.data[scode][broker];
+                        if (r) {
+                            self.showRuleStatus(r, td);
+                        }
+                    }
+                })
+            }
         },
 
         showBuySell: async function (opt, popup) {
