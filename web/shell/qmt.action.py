@@ -202,11 +202,13 @@ def saveConfig():
         json.dump(g.config, f)
 
 
-def updateActionOrdered(scode, type, status, price, orderId):
+def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
     try:
         # 目标 URL
         url = "http://test1.91taogu.com/stock/rule/action/ordered"
 
+        if (status == 57):
+            status = f"{status}:{statusMessage}"
         # 要发送的 JSON 数据（Python 字典）
         data = {
             "broker": broker,
@@ -459,7 +461,8 @@ def order_callback(ContextInfo, data):
     scode = js["m_strInstrumentID"]
     amount = js["m_nVolumeTotalOriginal"]
     orderId = js["m_strOrderSysID"]
-    updateActionOrdered(scode, type, status, price, orderId)
+    cancelInfo = js["m_strCancelInfo"]
+    updateActionOrdered(scode, type, status, price, orderId, cancelInfo)
 
 
 def orderError_callback(ContextInfo, orderArgs, errMsg):

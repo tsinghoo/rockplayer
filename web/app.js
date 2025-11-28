@@ -3479,7 +3479,7 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
     if (r.error) {
         info(r.error, req)
         resp = { error: r.error };
-    } else {
+    } else if (status == 56) {
         if (rules[scode]) {
             reloadRule(rules[scode][broker], req);
         }
