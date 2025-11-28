@@ -1736,7 +1736,7 @@ window.stock_list = window.stock_list || (function () {
                     c.find(".day0Status").removeClass("hide");
                     c.find(".priceLow").text(`${d0low}`);
                     c.find(".priceHigh").text(`${d0high}`);
-                    if (sb.downStopPrice > 0) {
+                    if (sb && sb.downStopPrice > 0) {
                         c.find(".downStopPrice").text(`${sb.downStopPrice}<`);
                         c.find(".upStopPrice").text(`<${sb.upStopPrice}`);
                     }
