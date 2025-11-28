@@ -2815,7 +2815,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             setSellPriceByBuy(rc, maxDelta);
         } else {
             let all;
-            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
+            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
 
             if (all.reason) {
                 return { error: `${all.reason}` };
