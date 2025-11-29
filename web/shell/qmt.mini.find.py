@@ -73,150 +73,6 @@ today = datetime.datetime.now().date()
 threadLocal = threading.local()
 
 
-class MyXtQuantTraderCallback(XtQuantTraderCallback):
-    def on_disconnected(self):
-        """
-        连接状态回调
-        :return:
-        """
-        info("connection lost callback")
-
-    def on_account_status(self, status):
-        """
-        账号状态信息推送
-        :param response: XtAccountStatus 对象
-        :return:
-        """
-        info("on_account_status callback")
-        info(status.account_id, status.account_type, status.status)
-
-    def on_stock_asset(self, asset):
-        """
-        资金信息推送  注意，该回调函数目前不生效
-        :param asset: XtAsset对象
-        :return:
-        """
-        info("on asset callback")
-        info(object_to_json(asset))
-        info(asset.account_id, asset.cash, asset.total_asset)
-
-    def on_stock_order(self, order):
-        """
-        委托信息推送
-        :param order: XtOrder对象
-        :return:
-        """
-        info("on order callback:")
-        info(object_to_json(order))
-        updateActionOrdered(order.stock_code, order.order_type,
-                            order.order_status, order.traded_price, order.order_sysid)
-        # print(order.stock_code, order.order_status, order.order_sysid)
-
-    def on_stock_trade(self, trade):
-        """
-        成交信息推送
-        :param trade: XtTrade对象
-        :return:
-        """
-
-        info("on_stock_trade callback:")
-
-        js = obj2Json(trade, 1)
-        # js["traded_time"]是时间戳，将它转换成时间字符串
-        tradeTime = datetime.datetime.fromtimestamp(js["traded_time"])
-
-        deal = {
-            "tprice": js["traded_price"],
-            "scode": js["m_strStockCode"],
-            "sname": js["m_strStockCode"],
-            "market": js["m_strExchangeName"],
-            "operationDirection": "买入" if js["direction"] == 48 else "卖出",
-            "operationName": g.broker,
-            "tday": tradeTime.strftime("%Y-%m-%d"),
-            "ttime": tradeTime.strftime("%H:%M:%S"),
-            # "tid": js["m_strTradeID"],
-            "tid": js["m_strTradedID"],
-            "tcash": js["traded_amount"],
-            "tamount": js["traded_volume"],
-            "tpair": ""
-        }
-
-        if deal["operationDirection"].find("卖") != -1:
-            deal["tamount"] = -deal["tamount"]
-
-        info(json.dumps(deal, indent=2))
-
-        updateDeal(deal)
-
-    # print(trade.account_id, trade.stock_code, trade.order_id)
-
-    def on_order_error(self, order_error):
-        """
-        下单失败信息推送
-        :param order_error:XtOrderError 对象
-        :return:
-        """
-        info("on order_error callback")
-        info(order_error.order_id, order_error.error_id, order_error.error_msg)
-
-    def on_stock_position(self, position):
-        """
-        持仓信息推送  注意，该回调函数目前不生效
-        :param position: XtPosition对象
-        :return:
-        """
-        print("on position callback")
-        print(position.stock_code, position.volume)
-
-    def on_cancel_error(self, cancel_error):
-        """
-        撤单失败信息推送
-        :param cancel_error: XtCancelError 对象
-        :return:
-        """
-        print("on cancel_error callback")
-        print(cancel_error.order_id, cancel_error.error_id, cancel_error.error_msg)
-
-    def on_order_stock_async_response(self, response):
-        """
-        异步下单回报推送
-        :param response: XtOrderResponse 对象
-        :return:
-        """
-        info("on_order_stock_async_response callback")
-        info(response.account_id, response.order_id, response.seq)
-
-    def on_smt_appointment_async_response(self, response):
-        """
-        :param response: XtAppointmentResponse 对象
-        :return:
-        """
-        info("on_smt_appointment_async_response callback")
-        info(response.account_id, response.order_sysid,
-             response.error_id, response.error_msg, response.seq)
-
-
-def updateDeal(deal):
-    try:
-        # 目标 URL
-        url = "http://test1.91taogu.com/stock/deal/update"
-
-        # 设置请求头（声明内容类型为 JSON）
-        headers = {
-            "Content-Type": "application/json"
-        }
-
-        # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(deal), headers=headers)
-
-        # 输出响应
-        debug("updateDeal:", response.status_code)
-        debug("response:", response.text)
-
-    except Exception as e:
-        error("updateDeal 出错:", traceback.format_exc())
-
-
 def loadConfig():
     if not os.path.exists(g.configFile):
         g.config = {}
@@ -242,117 +98,6 @@ def init():
 def resetThreadId(label=""):
     threadLocal.id = label + datetime.datetime.now().strftime("%H%M%S") + \
         str(random.randint(0, 1000))
-
-
-def update1dTask():
-    while True:
-        time.sleep(1)
-        resetThreadId("u1d")
-        reloadK1d, g.reloadK1d = g.reloadK1d, []
-        if len(reloadK1d) > 0:
-            info("reloading 1d data")
-            for scode in reloadK1d:
-                updateActionOrdered(scode, "", "56", 0, "")
-                update1d([scode.replace(".HGT", ".HK")], "20210101", "")
-
-        update1d()
-
-
-def update1mTask():
-    while True:
-        time.sleep(1)
-        resetThreadId("u1m")
-        update1m()
-
-
-def getActionsTask():
-    while True:
-        time.sleep(1)
-        resetThreadId("act")
-        getActions()
-
-
-def getActions():
-    try:
-        response = requests.get(
-            "http://test1.91taogu.com/stock/rule/actions?broker="+g.broker, timeout=5)
-        if response.status_code != 200:
-            error("getActions失败，状态码:", response.status_code)
-            return
-        else:
-            response.encoding = 'utf-8'
-            content = response.text
-            debug("getActions成功:", response.status_code, content)
-            jso = json.loads(content)
-            for act in jso["data"]:
-                act["scode"] = act["scode"].replace(".HK", ".HGT")
-                # 如果act["scode"]里包含".HK",则用新的stockAccount
-                if act["scode"] in g.actions:
-                    info("已存在", act["scode"], "的action")
-                else:
-
-                    if ".HGT" in act["scode"]:
-                        stockAccount = StockAccount(g.account, "HUGANGTONG")
-                    else:
-                        stockAccount = StockAccount(g.account)
-                    if act["action"] == "buy":
-                        info("买入", act["sname"], act["scode"],
-                             act["price"], act["amount"])
-
-                        oper = xtconstant.STOCK_BUY
-                        if act["scode"][:3] in {"028", "030", "031"}:
-                            oper = xtconstant.ETF_PURCHASE
-                            info("ETF", act["scode"])
-                        order_id = xt_trader.order_stock(
-                            stockAccount, act["scode"], oper, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
-                        info("order_id:", order_id)
-
-                        info("已买入", act["sname"], act["scode"],
-                             act["price"], act["amount"])
-
-                    elif act["action"] == "sell":
-                        info("卖出", act["sname"], act["scode"],
-                             act["price"], act["amount"])
-                        order_id = xt_trader.order_stock(
-                            stockAccount, act["scode"], xtconstant.STOCK_SELL, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
-                        info("卖出",order_id)
-                        info("已卖出", act["sname"], act["scode"],
-                             act["price"], act["amount"])
-                    elif act["action"] == "reloadK1d":
-                        info("reloadK1d action for", act["scode"])
-                        g.reloadK1d.append(act["scode"])
-                    g.actions[act["scode"]] = act
-    except Exception as e:
-        error("getActions出错:", traceback.format_exc())
-
-
-def updateActionOrdered(scode, type, status, price, orderId):
-    try:
-        # 目标 URL
-        url = "http://test1.91taogu.com/stock/rule/action/ordered"
-
-        # 要发送的 JSON 数据（Python 字典）
-        data = {
-            "broker": g.broker,
-            "scode": scode.split(".")[0],
-            "status": status,
-            "orderNo": orderId
-        }
-
-        # 设置请求头（声明内容类型为 JSON）
-        headers = {
-            "Content-Type": "application/json"
-        }
-
-        # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(data), headers=headers)
-
-        # 输出响应
-        debug("updateActionStatus:", response.status_code)
-        debug("response:", response.text)
-
-    except Exception as e:
-        error("updateActionStatus 出错:", traceback.format_exc())
 
 
 def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
@@ -566,47 +311,9 @@ def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
     return js
 
 
-def buy(scode, price, volume):
-    stockAccount = StockAccount(g.account)
-
-    order_id = xt_trader.order_stock(
-        stockAccount, scode, xtconstant.STOCK_BUY, volume, xtconstant.FIX_PRICE, price, 'strategy1', '')
-    return order_id
-
-
-def sell(scode, price, volume):
-    stockAccount = StockAccount(g.account)
-    order_id = xt_trader.order_stock(
-        stockAccount, scode, xtconstant.STOCK_SELL, volume, xtconstant.FIX_PRICE, price, 'strategy1', '')
-    return order_id
-
-
 def cancel(order_id):
     stockAccount = StockAccount(g.account)
     return xt_trader.cancel_order_stock(stockAccount, order_id)
-
-
-def getOrders(cancelable_only):
-    stockAccount = StockAccount(g.account)
-    orders = xt_trader.query_stock_orders(stockAccount, cancelable_only)
-    return orders
-
-
-def getPositions():
-    stockAccount = StockAccount(g.account)
-    positions = xt_trader.query_stock_positions(stockAccount)
-    return positions
-
-
-def getDeals():
-    stockAccount = StockAccount(g.account)
-    result = xt_trader.export_data(
-        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
-    info(result)
-
-    deals = xt_trader.query_data(
-        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
-    return deals
 
 
 def object_to_json(obj, max_depth=3, current_depth=0):
@@ -662,22 +369,6 @@ def object_to_json(obj, max_depth=3, current_depth=0):
 
     return result
 
-
-def python_to_json(obj, indent=4, ensure_ascii=False):
-    """
-    最终转换为 JSON 字符串
-    """
-    data = object_to_json(obj)
-    js = json.dumps(data, indent=indent, ensure_ascii=ensure_ascii)
-    return js
-
-
-def subscribe_whole_callback(data):
-
-    for stock in data:
-        if stock not in g.stocklist:
-            continue
-        g.tick[stock] = data[stock]
 
 
 def printObj(data, indent):
@@ -983,8 +674,6 @@ if __name__ == '__main__':
     stockAccount = StockAccount(g.account)
     stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
     xt_trader = XtQuantTrader(path, g.session_id)
-    callback = MyXtQuantTraderCallback()
-    xt_trader.register_callback(callback)
     # 启动本地客户端
     xt_trader.start()
 
