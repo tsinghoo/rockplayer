@@ -2613,19 +2613,19 @@ window.stock_list = window.stock_list || (function () {
                         },
                     },
                     formatter: function (params) {
-                        var result = params[0].axisValue + '<br/>';
+                        var result = [params[0].axisValue];
                         params.forEach(function (item) {
                             if (item.seriesName === '1d') {
-                                result += '开盘: ' + parseFloat(item.value[1]).toFixed(3) + '<br/>';
-                                result += '收盘: ' + parseFloat(item.value[2]).toFixed(3) + '<br/>';
-                                result += '最高: ' + parseFloat(item.value[3]).toFixed(3) + '<br/>';
-                                result += '最低: ' + parseFloat(item.value[4]).toFixed(3) + '<br/>';
-                                result += '成交额: ' + parseFloat(item.value[6]) + '<br/>';
+                                result.push('开盘: ' + parseFloat(item.value[1]).toFixed(3));
+                                result.push('收盘: ' + parseFloat(item.value[2]).toFixed(3));
+                                result.push('最高: ' + parseFloat(item.value[3]).toFixed(3));
+                                result.push('最低: ' + parseFloat(item.value[4]).toFixed(3));
+                                result.push('成交额: ' + parseFloat(item.value[6]));
                             } else {
-                                result += item.seriesName + ': ' + item.value + '<br/>';
+                                result.push(item.seriesName + ': ' + item.value);
                             }
                         });
-                        return result;
+                        return `<div class="flexcolumn font10"><div class="height10">${result.join('</div><div class="height10">')}</div></div>`;
                     },
                     borderWidth: 1,
                     borderColor: '#ccc',
@@ -2710,7 +2710,7 @@ window.stock_list = window.stock_list || (function () {
                         left: '30px',
                         right: '4px',
                         top: '200px',
-                        height: '20px'
+                        height: '40px'
                     }
                 ],
                 dataZoom: [
@@ -2724,7 +2724,7 @@ window.stock_list = window.stock_list || (function () {
                         show: true,
                         xAxisIndex: [0, 1],
                         type: 'slider',
-                        top: '220px',
+                        top: '240px',
                         start: 60,
                         end: 100
                     }
