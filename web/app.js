@@ -3367,10 +3367,10 @@ async function genCci(scode, req, all) {
     const cciValues = [];
     let data = r.rows;
     const typicalPrices = [];
-    for (let j = 0; j < data.length; j++) {
-        const high = data[j].high;
-        const low = data[j].low;
-        const close = data[j].close;
+    for (let i = 0; i < data.length; i++) {
+        const high = data[i].high;
+        const low = data[i].low;
+        const close = data[i].close;
         const typicalPrice = (high + low + close) / 3;
         typicalPrices.push(typicalPrice);
     }
@@ -3383,13 +3383,12 @@ async function genCci(scode, req, all) {
         const tps = typicalPrices.slice(i, i + period);
         // 2. 计算典型价格的简单移动平均(SMA)
         const sma = tps.reduce((sum, price) => sum + price, 0) / period;
-
-        // 3. 计算平均绝对偏差(MAD)
+        // 3. 计算平均绝对偏差(MAD) 
         const absoluteDeviations = tps.map(tp => Math.abs(tp - sma));
         const mad = absoluteDeviations.reduce((sum, dev) => sum + dev, 0) / period;
 
         // 4. 计算CCI值
-        const ctp = typicalPrices[0];
+        const ctp = typicalPrices[i];
         let cci;
 
         if (mad === 0) {
@@ -3464,7 +3463,7 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             await insertOrReplace(`t${period}`, row);
-            
+
         }
     }
 
