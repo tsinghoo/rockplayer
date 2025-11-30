@@ -1601,6 +1601,8 @@ async function upgradeDb(succ, fail) {
         "update config set value='75' where key='dbVersion';",
         `alter table tStockBasic add column autoCreateRuleFail text;`,
         "update config set value='77' where key='dbVersion';",
+        `alter table t1d add column cci int default -10000;`,
+        "update config set value='79' where key='dbVersion';",
     ];
 
     if (res == null || res.error) {
@@ -2382,8 +2384,11 @@ app.get('/stock/k/1d', async (req, res) => {
 
     startDay = timeFormat(startDay, "yyyyMMdd");
     endDay = timeFormat(endDay, "yyyyMMdd");
-
-    await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
+    try {
+        await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
+    } catch (e) {
+        error(e.stack, req);
+    }
 
     let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by scode,time`;
     let result = await db.allSync(sql, [scode, type, startDay, endDay]);
@@ -3330,6 +3335,76 @@ app.post('/stock/query', async (req, res) => {
     res.send(resp);
 });
 
+async function genCci(scode, req, period) {
+    if (req == null) {
+        req = {
+            threadId:
+                Date.now() + "" + Math.floor(Math.random() * 10000)
+        }
+    }
+
+    info(`genCicc:${scode}`, req)
+    if (period == null) {
+        period = 14;
+    }
+
+    let sql = `select * from t1d where scode=? order by time desc limit ${period}`;
+    let r = await db.allSync(sql, [scode]);
+    if (r.error) {
+        error(r.error, req)
+        return;
+    }
+
+    if (r.rows.length < period) {
+        error(`${r.rows.length} < ${period} 1d data`, req);
+        return;
+    }
+    if (r.rows[0].cci == -10000 && r.rows[1].cci == -10000) {
+        info(`need recalc all cci`, req);
+        await genCci(scode, req, 360);
+        return;
+    }
+
+    const cciValues = [];
+    let data = r.rows;
+    const typicalPrices = [];
+    for (let i = 0; i <= data.length - period; i++) {
+        if (data[i].cci != -10000) {
+            continue;
+        }
+
+        for (let j = i; j < i + period; j++) {
+            const high = data[j].high;
+            const low = data[j].low;
+            const close = data[j].close;
+            const typicalPrice = (high + low + close) / 3;
+            typicalPrices.push(typicalPrice);
+        }
+
+        // 2. 计算典型价格的简单移动平均(SMA)
+        const sma = typicalPrices.reduce((sum, price) => sum + price, 0) / period;
+
+        // 3. 计算平均绝对偏差(MAD)
+        const absoluteDeviations = typicalPrices.map(tp => Math.abs(tp - sma));
+        const mad = absoluteDeviations.reduce((sum, dev) => sum + dev, 0) / period;
+
+        // 4. 计算CCI值
+        const currentTypicalPrice = typicalPrices[0];
+        let cci;
+
+        if (mad === 0) {
+            // 避免除以零的情况，当市场完全没有波动时
+            cci = 0;
+        } else {
+            cci = (currentTypicalPrice - sma) / (0.015 * mad);
+        }
+
+        await db.runSync(`update t1d set cci=? where id=?`,
+            [cci, data[i].id]);
+    }
+
+}
+
 app.post('/stock/k/upload', async (req, res) => {
     info(`/stock/k/upload`, req)
     let data = req.body.data;
@@ -3389,6 +3464,9 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             await insertOrReplace(`t${period}`, row);
+            setTimeout(() => {
+                genCci(scode, req);
+            }, 10);
         }
     }
 

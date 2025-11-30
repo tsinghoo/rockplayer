@@ -1713,7 +1713,7 @@ window.stock_list = window.stock_list || (function () {
                     for (let i = 0; i < rows.length; i++) {
                         let row = rows[i];
                         categoryData.push(row.time);
-                        values.push([row.open, row.close, row.high, row.low, row.volume, row.amount]);
+                        values.push([row.open, row.close, row.high, row.low, row.volume, row.amount, row.cci]);
                         volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
                     }
 
@@ -2799,6 +2799,16 @@ window.stock_list = window.stock_list || (function () {
                         type: 'line',
                         data: self.calculateMA(5, data),
                         smooth: true,
+                        symbol: 'none',
+                        lineStyle: {
+                            opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'cci',
+                        type: 'line',
+                        data: values.map((item) => item[6]),
+                        smooth: false,
                         symbol: 'none',
                         lineStyle: {
                             opacity: 0.5
