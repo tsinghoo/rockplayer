@@ -3335,7 +3335,7 @@ app.post('/stock/query', async (req, res) => {
     res.send(resp);
 });
 
-async function genCci(scode, req, period) {
+async function genCci(scode, req, all) {
     if (req == null) {
         req = {
             threadId:
@@ -3344,11 +3344,9 @@ async function genCci(scode, req, period) {
     }
 
     info(`genCicc:${scode}`, req)
-    if (period == null) {
-        period = 14;
-    }
+    let period = 14;
 
-    let sql = `select * from t1d where scode=? order by time desc limit ${period}`;
+    let sql = `select * from t1d where scode=? order by time desc ${all? "" : "limit " + period}`;
     let r = await db.allSync(sql, [scode]);
     if (r.error) {
         error(r.error, req)
@@ -3359,9 +3357,9 @@ async function genCci(scode, req, period) {
         error(`${r.rows.length} < ${period} 1d data`, req);
         return;
     }
-    if (r.rows[0].cci == -10000 && r.rows[1].cci == -10000) {
+    if (r.rows[0].cci == -10000 && r.rows[1].cci == -10000 && !all) {
         info(`need recalc all cci`, req);
-        await genCci(scode, req, 360);
+        await genCci(scode, req, 1);
         return;
     }
 

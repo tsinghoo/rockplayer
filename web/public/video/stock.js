@@ -2702,6 +2702,12 @@ window.stock_list = window.stock_list || (function () {
                         right: '4px',
                         top: '180px',
                         height: '20px'
+                    },
+                    {
+                        left: '30px',
+                        right: '4px',
+                        top: '200px',
+                        height: '20px'
                     }
                 ],
                 dataZoom: [
@@ -2758,6 +2764,15 @@ window.stock_list = window.stock_list || (function () {
                     {
                         scale: true,
                         gridIndex: 1,
+                        splitNumber: 2,
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 2,
                         splitNumber: 2,
                         axisLabel: { show: false },
                         axisLine: { show: false },
