@@ -2716,13 +2716,13 @@ window.stock_list = window.stock_list || (function () {
                 dataZoom: [
                     {
                         type: 'inside',
-                        xAxisIndex: [0, 1],
+                        xAxisIndex: [0, 1, 2],
                         start: 60,
                         end: 100
                     },
                     {
                         show: true,
-                        xAxisIndex: [0, 1],
+                        xAxisIndex: [0, 1, 2],
                         type: 'slider',
                         top: '240px',
                         start: 60,
@@ -2917,6 +2917,56 @@ window.stock_list = window.stock_list || (function () {
                         yAxisIndex: 2,
                         lineStyle: {
                             opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'cci+100',
+                        type: 'line',
+                        xAxisIndex: 2,
+                        yAxisIndex: 2,
+                        markLine: {
+                            data: [
+                                {
+                                    yAxis: 100,
+                                    lineStyle: {
+                                        color: '#e74c3c',
+                                        width: 1,
+                                        type: 'solid'
+                                    },
+                                    label: {
+                                        show: true,
+                                        position: 'end',
+                                        formatter: '100',
+                                        color: '#e74c3c'
+                                    }
+                                }
+                            ],
+                            symbol: 'none'
+                        }
+                    },
+                    {
+                        name: 'cci-100',
+                        type: 'line',
+                        xAxisIndex: 2,
+                        yAxisIndex: 2,
+                        markLine: {
+                            data: [
+                                {
+                                    yAxis: -100,
+                                    lineStyle: {
+                                        color: '#e74c3c',
+                                        width: 1,
+                                        type: 'solid'
+                                    },
+                                    label: {
+                                        show: true,
+                                        position: 'end',
+                                        formatter: '100',
+                                        color: '#e74c3c'
+                                    }
+                                }
+                            ],
+                            symbol: 'none'
                         }
                     },
                     {
