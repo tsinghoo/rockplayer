@@ -1601,7 +1601,7 @@ async function upgradeDb(succ, fail) {
         "update config set value='75' where key='dbVersion';",
         `alter table tStockBasic add column autoCreateRuleFail text;`,
         "update config set value='77' where key='dbVersion';",
-        `alter table t1d add column cci int default -10000;`,
+        `alter table t1d add column cci int default -200;`,
         "update config set value='79' where key='dbVersion';",
     ];
 
@@ -3357,7 +3357,7 @@ async function genCci(scode, req, all) {
         error(`${r.rows.length} < ${period} 1d data`, req);
         return;
     }
-    if (r.rows[0].cci == -10000 && r.rows[1].cci == -10000 && !all) {
+    if (r.rows[0].cci == -200 && r.rows[1].cci == -200 && !all) {
         info(`need recalc all cci`, req);
         await genCci(scode, req, 1);
         return;
@@ -3367,7 +3367,7 @@ async function genCci(scode, req, all) {
     let data = r.rows;
     const typicalPrices = [];
     for (let i = 0; i <= data.length - period; i++) {
-        if (data[i].cci != -10000) {
+        if (data[i].cci != -200) {
             continue;
         }
 

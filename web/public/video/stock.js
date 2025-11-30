@@ -2595,7 +2595,7 @@ window.stock_list = window.stock_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
+                    data: ['1d', 'cci', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
                     selected: {
                         "MA20": false,
                         "MA60": false,
@@ -2769,15 +2769,6 @@ window.stock_list = window.stock_list || (function () {
                         axisLine: { show: false },
                         axisTick: { show: false },
                         splitLine: { show: false }
-                    },
-                    {
-                        scale: true,
-                        gridIndex: 2,
-                        splitNumber: 2,
-                        axisLabel: { show: false },
-                        axisLine: { show: false },
-                        axisTick: { show: false },
-                        splitLine: { show: false }
                     }
                 ],
                 graphic: [
@@ -2810,20 +2801,22 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        name: 'MA5',
+                        name: 'cci',
                         type: 'line',
-                        data: self.calculateMA(5, data),
-                        smooth: true,
+                        data: values.map((item) => item[6]),
+                        smooth: false,
                         symbol: 'none',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
                         lineStyle: {
                             opacity: 0.5
                         }
                     },
                     {
-                        name: 'cci',
+                        name: 'MA5',
                         type: 'line',
-                        data: values.map((item) => item[6]),
-                        smooth: false,
+                        data: self.calculateMA(5, data),
+                        smooth: true,
                         symbol: 'none',
                         lineStyle: {
                             opacity: 0.5
