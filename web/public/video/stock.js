@@ -2580,7 +2580,7 @@ window.stock_list = window.stock_list || (function () {
             const downColor = '#ec0000';
             k1d.css({
                 width: "480px",
-                height: "300px"
+                height: "320px"
             });
             k1d.removeAttr("_echarts_instance_");
             // k1d.html("loading k1d");
@@ -2595,7 +2595,7 @@ window.stock_list = window.stock_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'cci', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'Volume'],
+                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'cci', 'Volume'],
                     selected: {
                         "MA20": false,
                         "MA60": false,
@@ -2607,7 +2607,10 @@ window.stock_list = window.stock_list || (function () {
                 tooltip: {
                     trigger: 'axis',
                     axisPointer: {
-                        type: 'cross'
+                        type: 'line',
+                        label: {
+                            show: false
+                        },
                     },
                     formatter: function (params) {
                         var result = params[0].axisValue + '<br/>';
@@ -2721,7 +2724,7 @@ window.stock_list = window.stock_list || (function () {
                         show: true,
                         xAxisIndex: [0, 1],
                         type: 'slider',
-                        top: '200px',
+                        top: '220px',
                         start: 60,
                         end: 100
                     }
@@ -2731,7 +2734,10 @@ window.stock_list = window.stock_list || (function () {
                         type: 'category',
                         data: categoryData,
                         boundaryGap: false,
-                        axisLine: { onZero: false },
+                        axisLine: {
+                            onZero: false,
+                            show: false
+                        },
                         axisTick: { show: false },
                         splitLine: { show: false },
                         axisLabel: { show: false },
@@ -2746,7 +2752,25 @@ window.stock_list = window.stock_list || (function () {
                         gridIndex: 1,
                         data: categoryData,
                         boundaryGap: false,
-                        axisLine: { onZero: false },
+                        axisLine: {
+                            onZero: false,
+                            show: false
+                        },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        min: 'dataMin',
+                        max: 'dataMax'
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 2,
+                        data: categoryData,
+                        boundaryGap: false,
+                        axisLine: {
+                            onZero: false,
+                            show: false
+                        },
                         axisTick: { show: false },
                         splitLine: { show: false },
                         axisLabel: { show: false },
@@ -2764,6 +2788,15 @@ window.stock_list = window.stock_list || (function () {
                     {
                         scale: true,
                         gridIndex: 1,
+                        splitNumber: 2,
+                        axisLabel: { show: false },
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 2,
                         splitNumber: 2,
                         axisLabel: { show: false },
                         axisLine: { show: false },
@@ -2798,18 +2831,6 @@ window.stock_list = window.stock_list || (function () {
                             color: downColor,
                             borderColor: undefined,
                             borderColor0: undefined
-                        }
-                    },
-                    {
-                        name: 'cci',
-                        type: 'line',
-                        data: values.map((item) => item[6]),
-                        smooth: false,
-                        symbol: 'none',
-                        xAxisIndex: 1,
-                        yAxisIndex: 1,
-                        lineStyle: {
-                            opacity: 0.5
                         }
                     },
                     {
@@ -2885,6 +2906,18 @@ window.stock_list = window.stock_list || (function () {
                             color: '#87cefa'
                         },
                         symbol: 'none'
+                    },
+                    {
+                        name: 'cci',
+                        type: 'line',
+                        data: values.map((item) => item[6]),
+                        smooth: false,
+                        symbol: 'none',
+                        xAxisIndex: 2,
+                        yAxisIndex: 2,
+                        lineStyle: {
+                            opacity: 0.5
+                        }
                     },
                     {
                         name: 'Volume',
