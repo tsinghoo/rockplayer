@@ -2717,7 +2717,7 @@ window.stock_list = window.stock_list || (function () {
                     {
                         type: 'inside',
                         xAxisIndex: [0, 1, 2],
-                        start: 60,
+                        start: 85,
                         end: 100
                     },
                     {
@@ -2725,7 +2725,7 @@ window.stock_list = window.stock_list || (function () {
                         xAxisIndex: [0, 1, 2],
                         type: 'slider',
                         top: '240px',
-                        start: 60,
+                        start: 85,
                         end: 100
                     }
                 ],
