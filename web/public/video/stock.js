@@ -3163,6 +3163,10 @@ window.stock_list = window.stock_list || (function () {
                     let categoryData = [];
                     let values = [];
                     let volumes = [];
+                    if (rows.length < 1) {
+                        k1d.html(`${rows.length} rows`);
+                        return;
+                    }
 
                     for (let i = 0; i < rows.length; i++) {
                         let row = rows[i];
