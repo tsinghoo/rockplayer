@@ -2790,8 +2790,11 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             return { error: `toSell` };
         }
 
-        if (currentPrice < buyPrice) { //如果已经清仓
-            let all;
+        let all;
+
+        all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
+
+        if (currentPrice < buyPrice) {
             all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
             all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
@@ -2820,7 +2823,6 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
             setSellPriceByBuy(rc, maxDelta);
         } else {
-            let all;
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
 
             if (all.reason) {
@@ -3046,6 +3048,30 @@ async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes, start,
         if (prevRes.rows[i].high < prevRes.rows[i + 1].high) {
             info(`${sname}:${i}.high < ${i + 1}.high`, { threadId }, workerCreateRule.logs, 5);
             prevRes.reason = `${i}.high < ${i + 1}.high`;
+            return prevRes;
+        }
+    }
+
+    return prevRes;
+}
+
+async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
+    prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
+
+    if (prevRes.reason) {
+        return prevRes;
+    }
+
+    if (prevRes.rows[0].cci == -200 && prevRes.rows[1].cci == -200) {
+        genCci(scode, { threadId }, 1);
+        prevRes.reason = `no cci`;
+        return prevRes;
+    }
+
+    for (let i = 0; i < 3; ++i) {
+        if (prevRes.rows[i].cci <= 100 && prevRes.rows[i + 1].cci >= 100) {
+            info(`${sname}:${i}.cci <=100<=${i + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
+            prevRes.reason = `${i}.cci<=100<=${i + 1}.cci`;
             return prevRes;
         }
     }

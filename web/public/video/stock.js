@@ -1701,64 +1701,7 @@ window.stock_list = window.stock_list || (function () {
                     kTick.text(err);
                 });
 
-            let k1d = c.find(".k1d");
-            share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`)
-                .then((data) => {
-                    let rows = data.rows;
-                    let sb = data.stockBasic;
-                    let categoryData = [];
-                    let values = [];
-                    let volumes = [];
-
-                    for (let i = 0; i < rows.length; i++) {
-                        let row = rows[i];
-                        categoryData.push(row.time);
-                        values.push([row.open, row.close, row.high, row.low, row.volume, row.amount, row.cci]);
-                        volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
-                    }
-
-                    if (values.length > 0) {
-                        self.drawK1dChart(scode, categoryData, values, volumes, k1d);
-                    }
-
-                    let lastDay = categoryData[categoryData.length - 1];
-                    let d0v = values[values.length - 1];
-                    let d0low = share.toFixed(d0v[3]);
-                    let d0high = share.toFixed(d0v[2]);
-                    let d0close = share.toFixed(d0v[1]);
-                    c.find(".day0").text(`${lastDay}:`);
-
-                    let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
-                    if (todayStr != lastDay) {
-                        c.find(".day0").addClass("bg_purple gray");
-                    }
-
-                    c.find(".day0Status").removeClass("hide");
-                    c.find(".priceLow").text(`${d0low}`);
-                    c.find(".priceHigh").text(`${d0high}`);
-                    if (sb && sb.downStopPrice > 0) {
-                        c.find(".downStopPrice").text(`${sb.downStopPrice}<`);
-                        c.find(".upStopPrice").text(`<${sb.upStopPrice}`);
-                    }
-                    //获取progressContainer的实际宽度
-                    let totalWidth = c.find(".progressContainer").width();
-                    if (d0high == d0low) {
-                        c.find(".progressBar").width(totalWidth);
-                        c.find(".progressBar").text(`|---|`);
-                    } else if (d0close == d0low) {
-                        c.find(".progressBar").width(0);
-                        c.find(".progressBar").text(`|---`);
-                    } else {
-                        let lw = 4;
-                        let w = lw + (totalWidth - lw) * (d0close - d0low) / (d0high - d0low);
-                        c.find(".progressBar").width(w);
-                        c.find(".progressBar").text(`${d0close}`);
-                    }
-                }).catch(
-                    function (err) {
-                        k1d.text(err.stack);
-                    }
-                )
+            self.toDrawK1dChart(scode, type, c);
         },
         splitData: function (rawData) {
             let categoryData = [];
@@ -2570,7 +2513,8 @@ window.stock_list = window.stock_list || (function () {
 
             return bollData;
         },
-        drawK1dChart: function (scode, categoryData, values, volumes, k1d) {
+        drawK1dChart: function (scode, type, categoryData, values, volumes, c) {
+            let k1d = c.find(".k1d");
             if (k1d == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdK1d");
@@ -2659,7 +2603,7 @@ window.stock_list = window.stock_list || (function () {
                             title: '重载',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
                             onclick: function (e, i, name, event) {
-                                self.toCloseK1d(scode);
+                                self.toDrawK1dChart(scode, type, c);
                                 event.event.stopPropagation();
                             }
                         },
@@ -2929,7 +2873,7 @@ window.stock_list = window.stock_list || (function () {
                                 {
                                     yAxis: 100,
                                     lineStyle: {
-                                        color: '#e74c3c',
+                                        color: '#0cc039ff',
                                         width: 1,
                                         type: 'solid'
                                     },
@@ -2937,7 +2881,7 @@ window.stock_list = window.stock_list || (function () {
                                         show: true,
                                         position: 'end',
                                         formatter: '100',
-                                        color: '#e74c3c'
+                                        color: '#0cc039ff'
                                     }
                                 }
                             ],
@@ -3210,6 +3154,66 @@ window.stock_list = window.stock_list || (function () {
             `;
             c.html(html);
         },
+        toDrawK1dChart: function (scode, type, c) {
+            let k1d = c.find(".k1d");
+            share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`)
+                .then((data) => {
+                    let rows = data.rows;
+                    let sb = data.stockBasic;
+                    let categoryData = [];
+                    let values = [];
+                    let volumes = [];
+
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
+                        categoryData.push(row.time);
+                        values.push([row.open, row.close, row.high, row.low, row.volume, row.amount, row.cci]);
+                        volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
+                    }
+
+                    if (values.length > 0) {
+                        self.drawK1dChart(scode, type, categoryData, values, volumes, c);
+                    }
+
+                    let lastDay = categoryData[categoryData.length - 1];
+                    let d0v = values[values.length - 1];
+                    let d0low = share.toFixed(d0v[3]);
+                    let d0high = share.toFixed(d0v[2]);
+                    let d0close = share.toFixed(d0v[1]);
+                    c.find(".day0").text(`${lastDay}:`);
+
+                    let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
+                    if (todayStr != lastDay) {
+                        c.find(".day0").addClass("bg_purple gray");
+                    }
+
+                    c.find(".day0Status").removeClass("hide");
+                    c.find(".priceLow").text(`${d0low}`);
+                    c.find(".priceHigh").text(`${d0high}`);
+                    if (sb && sb.downStopPrice > 0) {
+                        c.find(".downStopPrice").text(`${sb.downStopPrice}<`);
+                        c.find(".upStopPrice").text(`<${sb.upStopPrice}`);
+                    }
+                    //获取progressContainer的实际宽度
+                    let totalWidth = c.find(".progressContainer").width();
+                    if (d0high == d0low) {
+                        c.find(".progressBar").width(totalWidth);
+                        c.find(".progressBar").text(`|---|`);
+                    } else if (d0close == d0low) {
+                        c.find(".progressBar").width(0);
+                        c.find(".progressBar").text(`|---`);
+                    } else {
+                        let lw = 4;
+                        let w = lw + (totalWidth - lw) * (d0close - d0low) / (d0high - d0low);
+                        c.find(".progressBar").width(w);
+                        c.find(".progressBar").text(`${d0close}`);
+                    }
+                }).catch(
+                    function (err) {
+                        k1d.text(err.stack);
+                    }
+                );
+        },
         showChart: async function (rows) {
             let max = 0;
             let min = 100000;
@@ -3380,6 +3384,7 @@ window.stock_list = window.stock_list || (function () {
 
     return self;
 })();
+
 
 
 
