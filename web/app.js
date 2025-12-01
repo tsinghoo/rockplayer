@@ -3057,21 +3057,20 @@ async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes, start,
 
 async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
     prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
-
     if (prevRes.reason) {
         return prevRes;
     }
+    let period = 14;
+    await calcCci(prevRes.rows, period);
 
-    if (prevRes.rows[0].cci == -200 && prevRes.rows[1].cci == -200) {
-        genCci(scode, { threadId }, 1);
-        prevRes.reason = `no cci`;
+    if (prevRes.rows[i].cci <= -100) {
         return prevRes;
     }
 
-    for (let i = 0; i < 3; ++i) {
+    for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci <= 100 && prevRes.rows[i + 1].cci >= 100) {
             info(`${sname}:${i}.cci <=100<=${i + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
-            prevRes.reason = `${i}.cci<=100<=${i + 1}.cci`;
+            prevRes.reason = `${i}.cci(${prevRes.rows[i].cci})<=100<=${i + 1}.cci(${prevRes.rows[i + 1].cci})`;
             return prevRes;
         }
     }
@@ -3390,44 +3389,10 @@ async function genCci(scode, req, all) {
         return;
     }
 
-    const cciValues = [];
     let data = r.rows;
-    const typicalPrices = [];
-    for (let i = 0; i < data.length; i++) {
-        const high = data[i].high;
-        const low = data[i].low;
-        const close = data[i].close;
-        const typicalPrice = (high + low + close) / 3;
-        typicalPrices.push(typicalPrice);
-    }
-
-    for (let i = 0; i <= data.length - period; i++) {
-        if (data[i].cci != -200) {
-            continue;
-        }
-
-        const tps = typicalPrices.slice(i, i + period);
-        // 2. 计算典型价格的简单移动平均(SMA)
-        const sma = tps.reduce((sum, price) => sum + price, 0) / period;
-        // 3. 计算平均绝对偏差(MAD) 
-        const absoluteDeviations = tps.map(tp => Math.abs(tp - sma));
-        const mad = absoluteDeviations.reduce((sum, dev) => sum + dev, 0) / period;
-
-        // 4. 计算CCI值
-        const ctp = typicalPrices[i];
-        let cci;
-
-        if (mad === 0) {
-            // 避免除以零的情况，当市场完全没有波动时
-            cci = 0;
-        } else {
-            cci = (ctp - sma) / (0.015 * mad);
-        }
-
-        await db.runSync(`update t1d set cci=? where id=?`,
-            [cci, data[i].id]);
-    }
-
+    await calcCci(data, period, async function (row) {
+        db.runSync(`update t1d set cci=? where id=?`, [row.cci, row.id]);
+    });
 }
 
 app.post('/stock/k/upload', async (req, res) => {
@@ -3496,6 +3461,44 @@ app.post('/stock/k/upload', async (req, res) => {
     var resp = JSON.stringify({});
     res.send(resp);
 });
+
+async function calcCci(data, period, onCalced) {
+    const typicalPrices = [];
+    for (let i = 0; i < data.length; i++) {
+        const high = data[i].high;
+        const low = data[i].low;
+        const close = data[i].close;
+        const typicalPrice = (high + low + close) / 3;
+        typicalPrices.push(typicalPrice);
+    }
+
+    for (let i = 0; i <= data.length - period; i++) {
+        if (data[i].cci != -200) {
+            continue;
+        }
+
+        const tps = typicalPrices.slice(i, i + period);
+        // 2. 计算典型价格的简单移动平均(SMA)
+        const sma = tps.reduce((sum, price) => sum + price, 0) / period;
+        // 3. 计算平均绝对偏差(MAD) 
+        const absoluteDeviations = tps.map(tp => Math.abs(tp - sma));
+        const mad = absoluteDeviations.reduce((sum, dev) => sum + dev, 0) / period;
+
+        // 4. 计算CCI值
+        const ctp = typicalPrices[i];
+        let cci;
+
+        if (mad === 0) {
+            cci = 0;
+        } else {
+            cci = (ctp - sma) / (0.015 * mad);
+        }
+
+        data[i].cci = cci;
+
+        onCalced && await onCalced(data[i]);
+    }
+}
 
 async function getDealName(scode) {
     let name = scode;
