@@ -3494,7 +3494,7 @@ async function calcCci(data, period, onCalced) {
             cci = (ctp - sma) / (0.015 * mad);
         }
 
-        data[i].cci = cci;
+        data[i].cci = parseFloat(cci.toFixed(2));
 
         onCalced && await onCalced(data[i]);
     }
