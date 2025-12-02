@@ -2515,11 +2515,13 @@ app.get('/stock/rule/cancel', async (req, res) => {
         cancelled = "";
         params = [];
     } else if (all == "待买") {
-        sql = `update tTradeRule set closed = 1 where rule like '%toBuy%'`;
-        result = await db.runSync(sql, []);
+        sql = `update tTradeRule set closed = 1 where rule like '%buyFirst%'`;
+        cancelled = "";
+        params = [];
     } else if (all == "待卖") {
-        sql = `update tTradeRule set closed = 1 where rule like '%toSell%'`;
-        result = await db.runSync(sql, []);
+        sql = `update tTradeRule set closed = 1 where rule like '%sellFirst%'`;
+        cancelled = "";
+        params = [];
     }
 
     let result = await db.runSync(sql, params);
