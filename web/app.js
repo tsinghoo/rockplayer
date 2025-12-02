@@ -3442,10 +3442,13 @@ app.post('/stock/k/upload', async (req, res) => {
                 low: data[i][4],
                 volume: data[i][5],
                 amount: data[i][6],
-                cci: data[i][7],
                 type: type
             }
 
+            if (period == "1d") {
+                row.cci = data[i][7];
+            }
+            
             if (row.volume < 0) {
                 if (period == "1m") {
                     row.volume = 0;

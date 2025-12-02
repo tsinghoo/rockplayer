@@ -737,9 +737,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             lastDate = get1dLastDate(scode)
             if lastDate:
                 dataStartTime = lastDate
-                # 把dateStartTime设置为14天前
+                # 把dateStartTime设置为30天前
                 dataStartTime = (datetime.datetime.strptime(
-                    lastDate, "%Y%m%d") - datetime.timedelta(days=14)).strftime("%Y%m%d")
+                    lastDate, "%Y%m%d") - datetime.timedelta(days=30)).strftime("%Y%m%d")
             else:
                 # 把dateStartTime设置为1年前
                 dataStartTime = (datetime.datetime.now() -
@@ -761,8 +761,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             batch_data = []
             for idx, row in batch.iterrows():
                 # info(row)
-                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                  row["low"], row["volume"], row["amount"], row["cci"]])
+                if (row["cci"] is not None):
+                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
+                                                    row["low"], row["volume"], row["amount"], row["cci"]])
             body = {"data": obj2Json(
                 batch_data), "scode": scode, "period": period, "passcode": "995560"}
             debug("body:", body)
@@ -778,15 +779,17 @@ def update1d(stocklist=None, startTime=None, endTime=None):
 
 
 def CCI(table):
-    table["cci"] = 0.0
-    for i in range(14, len(table)):
-        high = table["high"].values[i-14:i]
-        low = table["low"].values[i-14:i]
-        close = table["close"].values[i-14:i]
+    table["cci"] = None
+    for i in range(13, len(table)):
+        high = table["high"].values[i-13:i+1]
+        low = table["low"].values[i-13:i+1]
+        close = table["close"].values[i-13:i+1]
         tp = (high + low + close) / 3
         sma = tp.mean()
-        mad = (tp - sma).abs().mean()
+        mad = np.abs(tp - sma).mean()
         table["cci"].values[i] = (tp[-1] - sma) / (0.015 * mad)
+        #将cci的值保留小数点后2位
+        table["cci"].values[i] = round(table["cci"].values[i], 2)
 
 
 def get1dData(stocklist, index, startTime, endTime):
