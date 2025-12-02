@@ -788,7 +788,7 @@ def CCI(table):
         sma = tp.mean()
         mad = np.abs(tp - sma).mean()
         table["cci"].values[i] = (tp[-1] - sma) / (0.015 * mad)
-        #将cci的值保留小数点后2位
+        # 将cci的值保留小数点后2位
         table["cci"].values[i] = round(table["cci"].values[i], 2)
 
 
@@ -1164,7 +1164,7 @@ def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='u
         encoding: 文件编码(默认'utf-8')
     """
     # 在file文件名后边加上当天日期
-    file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
+    file = f"{file}.{datetime.datetime.now().strftime('%Y%m%d')}.log.{g.config['sessionId']}"
 
     with open(file, mode=mode, encoding=encoding) as f:
         for item in toPrint:
@@ -1180,7 +1180,7 @@ def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
         log2File(
-            toPrint, f"{g.logPathPrefix}\\qmt.mini.{g.config['sessionId']}")
+            toPrint, f"{g.logPathPrefix}\\qmt.mini")
         while len(toPrint) > 0:
             item = toPrint.pop(0)
             print(*item[0], **item[1])
