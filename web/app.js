@@ -2783,6 +2783,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         position = all.rows[0].volume;
     }
 
+    if (trade.operationName == "广发") {
+        return { error: `need buy by hand` };
+    }
+
     if (trade.tamount == 0) {
         return { error: `need buy by hand` };
     } else if (trade.operationDirection.indexOf("卖") >= 0) {
