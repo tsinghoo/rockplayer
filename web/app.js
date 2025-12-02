@@ -2514,6 +2514,12 @@ app.get('/stock/rule/cancel', async (req, res) => {
         sql = `update tTradeRule set closed = 1 where scode in (select scode from tstockbasic where market in ('EC'))`;
         cancelled = "";
         params = [];
+    } else if (all == "待买") {
+        sql = `update tTradeRule set closed = 1 where rule like '%toBuy%'`;
+        result = await db.runSync(sql, []);
+    } else if (all == "待卖") {
+        sql = `update tTradeRule set closed = 1 where rule like '%toSell%'`;
+        result = await db.runSync(sql, []);
     }
 
     let result = await db.runSync(sql, params);
@@ -2530,6 +2536,12 @@ app.get('/stock/rule/cancel', async (req, res) => {
             result = await db.runSync(sql, []);
         } else if (all == "BNB") {
             sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('EC"))`;
+            result = await db.runSync(sql, []);
+        } else if (all == "待买") {
+            sql = `update tRuleAction set done = -1 where action='buy' )`;
+            result = await db.runSync(sql, []);
+        } else if (all == "待卖") {
+            sql = `update tRuleAction set done = -1 where action='sell' )`;
             result = await db.runSync(sql, []);
         } else {
             sql = `update tRuleAction set done = -1 where ruleId=?`;

@@ -387,6 +387,20 @@ window.stock_list = window.stock_list || (function () {
                     }
                 },
                 {
+                    text: "取消所有待买",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toCancelRule("待买");
+                    }
+                },
+                {
+                    text: "取消所有待卖",
+                    onTap: function () {
+                        share.closePopup__();
+                        self.toCancelRule("待卖");
+                    }
+                },
+                {
                     text: "取消所有币安",
                     onTap: function () {
                         share.closePopup__();
