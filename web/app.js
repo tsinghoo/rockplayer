@@ -2794,7 +2794,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
         all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
 
-        if (currentPrice < buyPrice) {
+        if (currentPrice <= buyPrice) {
             all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
             all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
