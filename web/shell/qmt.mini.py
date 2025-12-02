@@ -69,7 +69,7 @@ async def websocket_client():
             info(f"websocket connected to {uri}")
 
             while True:
-                
+
                 resetThreadId("ws")
                 response = await wsc.recv()
                 info(f"websocket received: {response}")
@@ -127,7 +127,6 @@ async def websocket_client():
                     error(f"websocket decode error: {response}")
                     continue
 
-
                 await asyncio.sleep(1)
     except websockets.exceptions.ConnectionClosed:
         error("websocket closed")
@@ -135,6 +134,7 @@ async def websocket_client():
     except Exception as e:
         error(f"websocket connect error: {e}")
         await websocket_client()
+
 
 class MyXtQuantTraderCallback(XtQuantTraderCallback):
     def on_disconnected(self):
@@ -362,6 +362,7 @@ def get1dLastDate(scode):
     except Exception as e:
         error("getLast1dDate failed:", str(e))
 
+
 def get1mLastMinute(scode):
     try:
         url = g.baseUrl + "/stock/1m/lastMinute?scode=" + scode
@@ -461,7 +462,7 @@ def getStockDetail(scode):
 
     # data = xtdata.get_financial_data([scode])
     # info(data)
-    
+
     return detail
 
 
@@ -573,7 +574,7 @@ def updateDetailTask():
         info("9:30以后，再更新详情")
         time.sleep(60)
         now = datetime.datetime.now()
-    
+
     info("updateDetailTask start")
     details = []
     for index, scode in enumerate(g.stocklist):
@@ -736,6 +737,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             lastDate = get1dLastDate(scode)
             if lastDate:
                 dataStartTime = lastDate
+                # 把dateStartTime设置为14天前
+                dataStartTime = (datetime.datetime.strptime(
+                    lastDate, "%Y%m%d") - datetime.timedelta(days=14)).strftime("%Y%m%d")
             else:
                 # 把dateStartTime设置为1年前
                 dataStartTime = (datetime.datetime.now() -
@@ -747,7 +751,6 @@ def update1d(stocklist=None, startTime=None, endTime=None):
         columns = ['Time'] + datas.columns.tolist()
         # print(columns)
         info("", len(datas), "rows")
-        # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
         # 将datas的数据分批上传，每批100条
         bsize = 50
@@ -755,10 +758,11 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             batch = datas.iloc[i:i+bsize]
             info("上传", scode, period,
                  "[", i, ",", i+bsize, "]", len(batch))
-            batch_data=[]
+            batch_data = []
             for idx, row in batch.iterrows():
                 # info(row)
-                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"], row["low"], row["volume"], row["amount"]])
+                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
+                                  row["low"], row["volume"], row["amount"], row["cci"]])
             body = {"data": obj2Json(
                 batch_data), "scode": scode, "period": period, "passcode": "995560"}
             debug("body:", body)
@@ -768,9 +772,21 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                     g.baseUrl+"/stock/k/upload", json=body, verify=False, timeout=20)
                 if response.status_code != 200:
                     error("上传失败，状态码:", response.status_code,
-                            "响应内容:", response.text)
+                          "响应内容:", response.text)
             except Exception as e:
                 error("上传失败:", str(e))
+
+
+def CCI(table):
+    table["cci"] = 0.0
+    for i in range(14, len(table)):
+        high = table["high"].values[i-14:i]
+        low = table["low"].values[i-14:i]
+        close = table["close"].values[i-14:i]
+        tp = (high + low + close) / 3
+        sma = tp.mean()
+        mad = (tp - sma).abs().mean()
+        table["cci"].values[i] = (tp[-1] - sma) / (0.015 * mad)
 
 
 def get1dData(stocklist, index, startTime, endTime):
@@ -792,9 +808,12 @@ def get1dData(stocklist, index, startTime, endTime):
          'for', scode, "(", index, "/", len(stocklist), ")")
     df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                    start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
-    datas = df[scode]
+    table = df[scode]
     info("get1dData done")
-    return datas
+    # 计算cci
+    CCI(table)
+
+    return table
 
     # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
     # print(obj2JsonString(result_dict))
@@ -821,7 +840,6 @@ def update1m(stocklist, startTime=None):
     info("update1m")
     pds = ["1m"]
 
-                
     dataEndTime = ""
     for index, scode in enumerate(stocklist):
         dataStartTime = startTime
@@ -830,8 +848,9 @@ def update1m(stocklist, startTime=None):
             if lastMinute:
                 dataStartTime = lastMinute
             else:
-                dataStartTime = (datetime.datetime.now() - datetime.timedelta(hours=7)).strftime("%Y%m%d%H%M%S")
-        
+                dataStartTime = (datetime.datetime.now(
+                ) - datetime.timedelta(hours=7)).strftime("%Y%m%d%H%M%S")
+
         info("dataStartTime:", dataStartTime)
 
         for period in pds:
@@ -1157,7 +1176,8 @@ def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='u
 def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
-        log2File(toPrint, f"{g.logPathPrefix}\\qmt.mini.{g.config['sessionId']}")
+        log2File(
+            toPrint, f"{g.logPathPrefix}\\qmt.mini.{g.config['sessionId']}")
         while len(toPrint) > 0:
             item = toPrint.pop(0)
             print(*item[0], **item[1])
@@ -1177,6 +1197,7 @@ def refreshPositions():
 
     updatePositions()
 
+
 def updatePositions():
     positions = getPositions()
 
@@ -1184,6 +1205,7 @@ def updatePositions():
     js = object_to_json(positions)
 
     uploadPosition(js)
+
 
 def resubscribe():
     info("resubscribe start", g.stocklist)
@@ -1231,7 +1253,6 @@ if __name__ == '__main__':
 
     print("baseUrl:", g.baseUrl)
     time.sleep(2)
-
 
     init()
     # 生成session id 整数类型 同时运行的策略不能重复

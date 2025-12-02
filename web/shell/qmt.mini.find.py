@@ -175,77 +175,6 @@ def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
             # print(obj2JsonString(df[scode]))
             # print(datas.to_json(orient='index'))
 
-
-def update1m():
-    info("update1m")
-    stocklist = g.stocklist
-    pds = ["1m"]
-
-    if "lastStartTime1m" not in g.config:
-        today = datetime.datetime.now().date()
-        g.config["lastStartTime1m"] = datetime.datetime.combine(
-            today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
-        info("lastStartTime1m:", g.config["lastStartTime1m"])
-    dataStartTime = (datetime.datetime.strptime(
-        g.config["lastStartTime1m"], "%Y%m%d%H%M%S") - datetime.timedelta(minutes=1)).strftime("%Y%m%d%H%M%S")
-    info("dataStartTime:", dataStartTime)
-    g.config["lastStartTime1m"] = datetime.datetime.now().strftime(
-        "%Y%m%d%H%M%S")
-    saveConfig()
-    dataEndTime = ""
-    for index, scode in enumerate(stocklist):
-        for period in pds:
-            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
-            if period == "tick":
-                params = ['volume', 'amount', 'lastPrice']
-            # params = []
-            info('==downloading', period, 'from', dataStartTime)
-            xtdata.download_history_data(
-                scode, period, dataStartTime, dataEndTime)
-            info('get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
-            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
-            datas = df[scode]
-            # print("所有列名:", df.keys())
-            # info("所有:", df.values())
-            columns = ['Time'] + datas.columns.tolist()
-            debug(columns)
-            debug(len(datas), "rows")
-            # array_data = [datas.columns.tolist()] + datas.values.tolist()
-
-            # 将datas的数据分批上传，每批100条
-            bsize = 500
-            for i in range(0, len(datas), bsize):
-                batch = datas.iloc[i:i+bsize]
-                info("上传", scode, period,
-                     "[", i, ",", i+bsize, "]", len(batch))
-                for idx, row in batch.iterrows():
-                    batch_data = [[str(idx)] + [row["open"], row["close"],
-                                                row["high"], row["low"], row["volume"], row["amount"]]]
-                # info(obj2JsonString(batch_data, indent=None))
-                    body = {"data": obj2Json(
-                        batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                    debug("body:", body)
-                    # 上传数据到test1
-                    try:
-                        response = requests.post(
-                            g.baseUrl+"/stock/k/upload", json=body, timeout=20)
-                        if response.status_code != 200:
-                            error("上传失败，状态码:", response.status_code,
-                                  "响应内容:", response.text)
-                    except Exception as e:
-                        error("上传失败:", str(e))
-
-            # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
-            # info(obj2JsonString(result_dict))
-            # json_result = json.dumps(result_dict, indent=4)
-            # info(json_result)
-
-            # info(obj2JsonString(df[scode]))
-            # info(datas.to_json(orient='index'))
-
-
 def obj2Json(obj, max_depth=4, current_depth=1):
     """
     使用 dir() 和 getattr() 将 Python 对象（包括数组、字典、嵌套对象）转换为 JSON
@@ -310,10 +239,6 @@ def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
                     ensure_ascii=ensure_ascii)
     return js
 
-
-def cancel(order_id):
-    stockAccount = StockAccount(g.account)
-    return xt_trader.cancel_order_stock(stockAccount, order_id)
 
 
 def object_to_json(obj, max_depth=3, current_depth=0):
