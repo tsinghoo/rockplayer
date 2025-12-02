@@ -2871,15 +2871,26 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             expireHours: 12
         };
 
-        if (currentPrice > rc.sell) {
+        if (isCciCrossUpN100(scode, sname, threadId)) {
+            rc.sell = stockBasicInfo.UpStopPrice;
+            if (stockBasicInfo.DownStopPrice == 0) {
+                rc.sell = lastPrice * (1 + 0.1);
+                if (currentPrice > rc.sell) {
+                    rc.sell = currentPrice * (1 + 0.01);
+                }
+            }
+
+            rc.buy = lastPrice * (1 - 0.05);
+            rc.order = "";
+        } else if (currentPrice > rc.sell) {
             rc.sell = currentPrice * (1 + 0.001);
 
             if (rc.sell - currentPrice > minDelta) {
                 rc.sell = currentPrice + minDelta;
             }
-        }
 
-        setBuyPriceBySell(rc, maxDelta);
+            setBuyPriceBySell(rc, maxDelta);
+        }
     } else {
         return { error: `bad trade direction` };
     }
@@ -3076,6 +3087,24 @@ async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
     }
 
     return prevRes;
+}
+
+async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
+    prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
+    if (prevRes.reason) {
+        return prevRes;
+    }
+    let period = 14;
+    await calcCci(prevRes.rows, period);
+
+    for (let i = 0; i < 2; ++i) {
+        if (prevRes.rows[i].cci >= -100 && prevRes.rows[i + 1].cci <= -100) {
+            info(`${sname}:${i}.cci >=-100>=${i + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function updatePriceToRule(scode, price) {
@@ -3448,7 +3477,7 @@ app.post('/stock/k/upload', async (req, res) => {
             if (period == "1d") {
                 row.cci = data[i][7];
             }
-            
+
             if (row.volume < 0) {
                 if (period == "1m") {
                     row.volume = 0;
