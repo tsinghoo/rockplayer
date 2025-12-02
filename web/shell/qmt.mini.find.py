@@ -100,80 +100,115 @@ def resetThreadId(label=""):
         str(random.randint(0, 1000))
 
 
-def update1d(stocklist=None, dataStartTime=None, dataEndTime=None):
+def CCI(table):
+    table["cci"] = None
+    for i in range(13, len(table)):
+        high = table["high"].values[i-13:i+1]
+        low = table["low"].values[i-13:i+1]
+        close = table["close"].values[i-13:i+1]
+        tp = (high + low + close) / 3
+        sma = tp.mean()
+        mad = np.abs(tp - sma).mean()
+        table["cci"].values[i] = (tp[-1] - sma) / (0.015 * mad)
+        # 将cci的值保留小数点后2位
+        table["cci"].values[i] = round(table["cci"].values[i], 2)
+
+def get1dLastDate(scode):
+    try:
+        url = g.baseUrl + "/stock/1d/lastDate?scode=" + scode
+        debug("get", url)
+        response = requests.get(url, verify=False, timeout=5)
+        if response.status_code != 200:
+            error("getLast1dDate failed:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            content = response.text
+            debug(content)
+            return json.loads(content)["lastDate"]
+
+    except Exception as e:
+        error("getLast1dDate failed:", str(e))
+
+
+def get1dData(stocklist, index, startTime, endTime):
+    info("get1dData", stocklist, index, startTime, endTime)
+    if (startTime is None):
+        startTime = datetime.datetime.now().strftime("%Y%m%d")
+
+    if (endTime is None):
+        endTime = ""
+
+    scode = stocklist[index]
+    period = '1d'
+    params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+    info('downloading', period, 'from', startTime, "for", scode)
+    xtdata.download_history_data(scode, period, startTime, endTime)
+    # download_history_data2 批量版本 todo
+    # params = []
+    info('get', period, 'from', startTime, 'to', endTime,
+         'for', scode, "(", index, "/", len(stocklist), ")")
+    df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
+                                   start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
+    table = df[scode]
+    info("get1dData done")
+    # 计算cci
+    CCI(table)
+
+    return table
+
+def update1d(stocklist=None, startTime=None, endTime=None):
     info("update1d")
     if (stocklist is None):
         stocklist = g.stocklist
-    if (dataStartTime is None):
-        # 判断g.config里是否有lastStartTime1d这个key
-        if "lastStartTime1d" not in g.config:
-            g.config["lastStartTime1d"] = datetime.datetime.now().strftime(
-                "%Y%m%d")
-            info("lastStartTime1d:", g.config["lastStartTime1d"])
-            saveConfig()
+    if (endTime is None):
+        endTime = ""
 
-        dataStartTime = (datetime.datetime.strptime(
-            g.config["lastStartTime1d"], "%Y%m%d") - datetime.timedelta(minutes=0)).strftime("%Y%m%d")
-    if (dataEndTime is None):
-        dataEndTime = ""
-
-    pds = ["1d"]
     for index, scode in enumerate(stocklist):
-        for period in pds:
-            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
-            if period == "tick":
-                params = ['volume', 'amount', 'lastPrice']
+        dataStartTime = startTime
+        if (startTime is None):
+            lastDate = get1dLastDate(scode)
+            if lastDate:
+                dataStartTime = lastDate
+                # 把dateStartTime设置为30天前
+                dataStartTime = (datetime.datetime.strptime(
+                    lastDate, "%Y%m%d") - datetime.timedelta(days=30)).strftime("%Y%m%d")
+            else:
+                # 把dateStartTime设置为1年前
+                dataStartTime = (datetime.datetime.now() -
+                                 datetime.timedelta(days=365)).strftime("%Y%m%d")
+        period = '1d'
+        datas = get1dData(stocklist, index, dataStartTime, endTime)
+        # print("所有列名:", df.keys())
+        # print("所有:", df.values())
+        columns = ['Time'] + datas.columns.tolist()
+        # print(columns)
+        info("", len(datas), "rows")
 
-            info('downloading', period, 'from', dataStartTime)
-            xtdata.download_history_data(
-                scode, period, dataStartTime, dataEndTime)
-            # download_history_data2 批量版本 todo
-            # params = []
-            info('get', period, 'for', scode, 'from',
-                 dataStartTime, 'to', dataEndTime, "(", index, "/", len(stocklist), ")")
-            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
-            datas = df[scode]
-            # print("所有列名:", df.keys())
-            # print("所有:", df.values())
-            columns = ['Time'] + datas.columns.tolist()
-            # print(columns)
-            info("", len(datas), "rows")
-            # array_data = [datas.columns.tolist()] + datas.values.tolist()
-
-            # 将datas的数据分批上传，每批100条
-            bsize = 500
-            for i in range(0, len(datas), bsize):
-                batch = datas.iloc[i:i+bsize]
-                info("上传", scode, period,
-                     "[", i, ",", i+bsize, "]", len(batch))
-                batch_data = []
-                for idx, row in batch.iterrows():
-                    # info(row)
-                    batch_data .append([str(idx)] + [row["open"], row["close"],
-                                       row["high"], row["low"], row["volume"], row["amount"]])
-                # print(obj2JsonString(batch_data, indent=None))
-
-                body = {"data": obj2Json(
-                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                debug("body:", body)
-                # 上传数据到test1
-                try:
-                    response = requests.post(
-                        g.baseUrl+"/stock/k/upload", json=body, timeout=20)
-                    if response.status_code != 200:
-                        error("上传失败，状态码:", response.status_code,
-                              "响应内容:", response.text)
-                except Exception as e:
-                    error("上传失败:", str(e))
-
-            # result_dict = {str(date): datas.loc[date].to_dict() for date in datas.index}
-            # print(obj2JsonString(result_dict))
-            # json_result = json.dumps(result_dict, indent=4)
-            # print(json_result)
-
-            # print(obj2JsonString(df[scode]))
-            # print(datas.to_json(orient='index'))
+        # 将datas的数据分批上传，每批100条
+        bsize = 50
+        for i in range(0, len(datas), bsize):
+            batch = datas.iloc[i:i+bsize]
+            info("上传", scode, period,
+                 "[", i, ",", i+bsize, "]", len(batch))
+            batch_data = []
+            for idx, row in batch.iterrows():
+                # info(row)
+                if (row["cci"] is not None):
+                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
+                                                    row["low"], row["volume"], row["amount"], row["cci"]])
+            body = {"data": obj2Json(
+                batch_data), "scode": scode, "period": period, "passcode": "995560"}
+            debug("body:", body)
+            # 上传数据到test1
+            try:
+                response = requests.post(
+                    g.baseUrl+"/stock/k/upload", json=body, verify=False, timeout=20)
+                if response.status_code != 200:
+                    error("上传失败，状态码:", response.status_code,
+                          "响应内容:", response.text)
+            except Exception as e:
+                error("上传失败:", str(e))
 
 def obj2Json(obj, max_depth=4, current_depth=1):
     """
@@ -463,10 +498,13 @@ def findStock(sector):
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
             prices = df[scode]
+            CCI(prices)
             # debug("prices:", prices)
             if prices is None or len(prices['high']) < 3:
                 continue
 
+            
+                
             high_prices = prices['high']
             low_prices = prices['low']
             close_prices = prices['close']
@@ -655,7 +693,7 @@ if __name__ == '__main__':
             candidates = findStock(sector)
             # 将candidates分批上传到test1
             uploadCandidates(candidates)
-            update1d([c[0] for c in candidates], "20210101")
+            update1d([c[0] for c in candidates])
 
         info("all candidates\n", g.candidates)
     if ui == "3":
