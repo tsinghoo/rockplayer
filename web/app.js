@@ -2772,9 +2772,6 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     if (lastPrice - buyPrice < minDelta) {
         buyPrice = lastPrice - minDelta;
     }
-    if (lastPrice - buyPrice > maxDelta) {
-        buyPrice = lastPrice - maxDelta;
-    }
 
     buyPrice = parseFloat(buyPrice.toFixed(3));
 
@@ -2889,16 +2886,14 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             expireHours: 12
         };
 
-        if (isCciCrossUpN100(scode, sname, threadId)) {
-            rc.sell = stockBasicInfo.UpStopPrice;
-            if (stockBasicInfo.DownStopPrice == 0) {
-                rc.sell = lastPrice * (1 + 0.1);
-                if (currentPrice > rc.sell) {
-                    rc.sell = currentPrice * (1 + 0.01);
-                }
+        if (await isCciCrossUpN100(scode, sname, threadId)) {
+            rc.sell = lastPrice * (1 + 0.1);
+            if (currentPrice > rc.sell) {
+                rc.sell = currentPrice * (1 + 0.01);
             }
 
-            rc.buy = lastPrice * (1 - 0.05);
+            rc.buy = currentPrice * (1 - 0.05);
+
             rc.order = "";
         } else if (currentPrice > rc.sell) {
             rc.sell = currentPrice * (1 + 0.001);
@@ -3110,7 +3105,8 @@ async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
 async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
     prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
     if (prevRes.reason) {
-        return prevRes;
+        error(`${sname}:${prevRes.reason}`, { threadId }, workerCreateRule.logs, 5);
+        return false;
     }
     let period = 14;
     await calcCci(prevRes.rows, period);
@@ -3118,6 +3114,13 @@ async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci >= -100 && prevRes.rows[i + 1].cci <= -100) {
             info(`${sname}:${i}.cci >=-100>=${i + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
+            for (let j = i - 1; j >= 0; --j) {
+                if (prevRes.rows[j].cci < prevRes.rows[j + 1].cci) {
+                    info(`${sname}:${j}.cci < ${j + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
+                    return false;
+                }
+            }
+
             return true;
         }
     }
