@@ -903,13 +903,13 @@ window.stock_list = window.stock_list || (function () {
 
             $(".vote").click(async function (e) {
                 e.stopPropagation();
+                let code = $(this).parents("tr").attr("code");
                 let popup;
                 let buttons = [
                     {
                         text: "置顶",
                         onTap: async function () {
                             popup.close();
-                            let code = $(this).parents("tr").attr("code");
                             let res = await share.getSync__(`/stock/moveUp?code=${code}`);
                             if (res.error) {
                                 share.toastError__(res.error);
@@ -922,7 +922,6 @@ window.stock_list = window.stock_list || (function () {
                         text: "置底",
                         onTap: async function () {
                             popup.close();
-                            let code = $(this).parents("tr").attr("code");
                             let res = await share.getSync__(`/stock/moveDown?code=${code}`);
                             if (res.error) {
                                 share.toastError__(res.error);
