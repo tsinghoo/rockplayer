@@ -1371,7 +1371,7 @@ app.get('/stock/account', async (req, res) => {
     res.send(resp);
 });
 
-app.get('/stock/vote', async (req, res) => {
+app.get('/stock/moveUp', async (req, res) => {
     let js = req.query.js;
     let code = req.query.code;
     let sql = `update tstock set lastOperationTime=? where scode=? `;
@@ -1379,6 +1379,18 @@ app.get('/stock/vote', async (req, res) => {
     await db.runSync(sql, [now, code]);
     await db.runSync(`update tStockBasic set priority=? where scode=?`, [new Date().getTime(), code]);
     await db.runSync(`update tTradeRule set createTime=? where scode=?`, [new Date().getTime(), code]);
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
+app.get('/stock/moveDown', async (req, res) => {
+    let js = req.query.js;
+    let code = req.query.code;
+    let sql = `update tstock set lastOperationTime=? where scode=? `;
+    let now = timeFormat(new Date(), "-yyyyMMdd hh:mm:ss");
+    await db.runSync(sql, [now, code]);
+    await db.runSync(`update tStockBasic set priority=? where scode=?`, [-1 * new Date().getTime(), code]);
+    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [-1 * new Date().getTime(), code]);
     var resp = `${js}({})`;
     res.send(resp);
 });

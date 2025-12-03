@@ -903,14 +903,37 @@ window.stock_list = window.stock_list || (function () {
 
             $(".vote").click(async function (e) {
                 e.stopPropagation();
-
-                let code = $(this).parents("tr").attr("code");
-                let res = await share.getSync__(`/stock/vote?code=${code}`);
-                if (res.error) {
-                    share.toastError__(res.error);
-                } else {
-                    share.toastSuccess__("已置顶", 1000);
-                }
+                let popup;
+                let buttons = [
+                    {
+                        text: "置顶",
+                        onTap: async function () {
+                            popup.close();
+                            let code = $(this).parents("tr").attr("code");
+                            let res = await share.getSync__(`/stock/moveUp?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已置顶", 1000);
+                            }
+                        }
+                    },
+                    {
+                        text: "置底",
+                        onTap: async function () {
+                            popup.close();
+                            let code = $(this).parents("tr").attr("code");
+                            let res = await share.getSync__(`/stock/moveDown?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已置底", 1000);
+                            }
+                        }
+                    }
+                ];
+                share.currentTarget = e.currentTarget;
+                popup = await share.popupAction__("", buttons);
             })
 
             $(".deleteRow").click(async function (e) {
