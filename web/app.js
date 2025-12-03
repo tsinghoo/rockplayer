@@ -628,23 +628,37 @@ async function tryToBuy(r, req) {
     let rule = r.rule;
     let now = Date.now();
     let buy = 0;
-    let all = await ensureCciNotCrossDown100(rule.scode, rule.sname, req.threadId);
-    all = await ensureAboveMa5(rule.scode, rule.sname, req.threadId, all, 0, 1);
-    if (all.reason != null) {
-        info(all.reason, req);
-        return false;
-    }
+    let scode = rule.scode;
+    let sname = rule.sname;
+    let broker = rule.broker;
+    let threadId = req.threadId;
 
     if (rule.bounce < 0) {
+        //立即下单
         buy = rule.buy;
-    } else if (rule.currentPrice <= parseFloat(rule.buy)) {
-        debug(`currentPrice < buy`, req);
-        if (rule.minPrice <= parseFloat(rule.buy)) {
-            let delta = rule.currentPrice - rule.minPrice;
-            debug(`delta=${delta}`, req);
-            if (delta >= parseFloat(rule.bounce)) {
-                //买入
-                buy = rule.currentPrice;
+    } else {
+        let all = await ensureCciNotCrossDown100(scode, sname, threadId);
+        all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
+        all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
+        if (all.reason != null) {
+            info(all.reason, req);
+            await saveCreateRuleFailure(rule.scode, all.reason);
+            await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
+            if (rules[scode] && rules[scode][broker]) {
+                reloadRule(rules[scode][broker], req);
+            }
+            return false;
+        }
+
+        if (rule.currentPrice <= parseFloat(rule.buy)) {
+            debug(`currentPrice < buy`, req);
+            if (rule.minPrice <= parseFloat(rule.buy)) {
+                let delta = rule.currentPrice - rule.minPrice;
+                debug(`delta=${delta}`, req);
+                if (delta >= parseFloat(rule.bounce)) {
+                    //买入
+                    buy = rule.currentPrice;
+                }
             }
         }
     }
@@ -2858,6 +2872,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             setSellPriceByBuy(rc, maxDelta);
         } else {
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
+            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
 
             if (all.reason) {
                 return { error: `${all.reason}` };
