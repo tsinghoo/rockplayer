@@ -678,7 +678,7 @@ window.stock_list = window.stock_list || (function () {
                         }
 
                         if (firstRow) {
-                            td.html(`${row[key]}${option} <span class="vote">↑</span>`);
+                            td.html(`${row[key]}${option} <span class="vote">⇅</span>`);
                         } else {
                             td.html(`${row[key]}${option}`);
                             td.addClass("almostwhite");
