@@ -628,6 +628,13 @@ async function tryToBuy(r, req) {
     let rule = r.rule;
     let now = Date.now();
     let buy = 0;
+    let all = await ensureCciNotCrossDown100(rule.scode, rule.sname, req.threadId);
+    all = await ensureAboveMa5(rule.scode, rule.sname, req.threadId, all, 0, 1);
+    if (all.reason != null) {
+        info(all.reason, req);
+        return false;
+    }
+
     if (rule.bounce < 0) {
         buy = rule.buy;
     } else if (rule.currentPrice <= parseFloat(rule.buy)) {
