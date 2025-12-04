@@ -3426,15 +3426,15 @@ app.get('/stock/pair', async (req, res) => {
 
 app.get('/stock/delete/auto', async (req, res) => {
     let js = req.query.js;
-    let socde = req.query.scode;
+    let scode = req.query.scode;
 
     info("reset before pair", req)
     await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
-    let sql = `select * from tstock where tamount<0 and scode=?`;
+    let sql = `select * from tstock where tamount<0 and scode=? order by tday desc, ttime desc`;
     let r = await db.allSync(sql, [scode]);
     let sells = r.rows;
     info(`${sells.length} sells`, req)
-    for (var i = 0; i < sells.length; ++i) {
+    for (var i = 1; i < sells.length; ++i) {
         let sell = sells[i];
         info(`${sell.sname}(${sell.scode}):${sell.tid}`, req)
         let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday , ttime , tprice desc",

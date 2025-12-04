@@ -2484,6 +2484,8 @@ window.stock_list = window.stock_list || (function () {
                             let res = await share.getSync__(`/stock/delete/auto?scode=${scode}`);
                             if (res.error) {
                                 share.toastError__(res.error);
+                            } else {
+                                self.showTradeList(c, scode, 1, type);
                             }
                         }
                     }
