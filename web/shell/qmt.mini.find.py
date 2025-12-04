@@ -380,6 +380,7 @@ def log(*args, **kwargs):
 
     g.toPrint.append([all_args, kwargs])
 
+
 def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
     """
     将打印内容输出到文件，参数与print()函数保持一致
@@ -502,12 +503,10 @@ def findStock(sector):
             if prices is None or len(prices['high']) < 3:
                 continue
 
-            CCI(prices)
-
+            
             high_prices = prices['high']
             low_prices = prices['low']
             close_prices = prices['close']
-            cci = prices['cci']
             current_price = high_prices[-1]
 
             # 检查股价是否在合理范围内
@@ -515,11 +514,16 @@ def findStock(sector):
                 info("bad price:", current_price)
                 continue
 
+            """
             # 检查cci是否上穿-100线
+            CCI(prices)
+            cci = prices['cci']
             if cci[-1] >= -100 and cci[-2] < -100:
                 info("cci:", cci[-2], "< -100 <=", cci[-1])
             else:
                 continue
+            """
+            
             # 计算历史分位数判断是否低位
             # hist_percentile = sum(
             #     1 for price in close_prices if price < current_price) / len(close_prices)
@@ -530,7 +534,7 @@ def findStock(sector):
             #     continue
 
             # """
-            dayStart = -3
+            dayStart = -4
             dayEnd = -1
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
             info(" high price increase:", count)
@@ -538,14 +542,14 @@ def findStock(sector):
                 continue
             # """
 
-            """    
+            # """    
             dayStart = -4
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
             info(" close price increase:", count)
             if (count < (dayEnd-dayStart)):
                 continue
-            """
+            # """
 
             # #计算high_prices中最近30天的最大值
             # days=30
@@ -556,7 +560,7 @@ def findStock(sector):
             # if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
             #     continue
 
-            """
+            # """
             # 最近30天较大涨幅天数
             dayStart = -30
             dayEnd = -1
@@ -564,7 +568,7 @@ def findStock(sector):
             info(" increase 0.07 days:", count)
             if (count < (3)):
                 continue
-            """
+            # """
 
             """
             # 最近60天较大跌幅天数
@@ -642,14 +646,18 @@ if __name__ == '__main__':
     print("baseUrl:", g.baseUrl)
 
     # 等待用户输入，如果用户输入q，则退出,否则继续
-    print("1.搜索股票")
-    print("2.更新所有股票代码")
-    print("3.获取所有板块信息")
-    print("q.退出")
+    print("all. 搜索所有股票")
+    print("a. 搜索A股股票")
+    print("hk. 搜索港股股票")
+    print("2. 更新所有股票代码")
+    print("3. 获取所有板块信息")
+    print("q. 退出")
     ui = input("请选择:")
+    if ui == "q":
+        sys.exit(1)
 
     init()
-    
+
     if "sessionId" not in g.config:
         g.config["sessionId"] = 0
     g.config["sessionId"] = g.config["sessionId"]+1
@@ -697,6 +705,40 @@ if __name__ == '__main__':
 
     time.sleep(5)
 
+    if ui == "all":
+        # 先清空所有候选
+        doUploadCandidates([])
+        sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板', '香港联交所股票']
+        # 对于每个sector,调用findStock
+        for sector in sector_list:
+            candidates = findStock(sector)
+            # 将candidates分批上传到test1
+            uploadCandidates(candidates)
+            update1d([c[0] for c in candidates])
+
+        info(f"{len(g.candidates)} candidates found")
+    if ui == "a":
+        # 先清空所有候选
+        doUploadCandidates([])
+        sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板']
+        # 对于每个sector,调用findStock
+        for sector in sector_list:
+            candidates = findStock(sector)
+            # 将candidates分批上传到test1
+            uploadCandidates(candidates)
+            update1d([c[0] for c in candidates])
+
+        info(f"{len(g.candidates)} candidates found")
+    if ui == "hk":
+        # 对于每个sector,调用findStock
+        sector_list = ['香港联交所股票']
+        for sector in sector_list:
+            candidates = findStock(sector)
+            # 将candidates分批上传到test1
+            uploadCandidates(candidates)
+            update1d([c[0] for c in candidates])
+
+        info(f"{len(g.candidates)} candidates found")
     if ui == "2":
         # 对于每个sector,查询成分股
         g.stocks = []
@@ -705,24 +747,12 @@ if __name__ == '__main__':
             # info("stocks in:", sector, ":\n", stocks)
             # 将stocks加入全局变量g.stocks
             g.stocks = g.stocks + stocks
-    if ui == "1":
-        # 先清空所有候选
-        doUploadCandidates([])
-        # 对于每个sector,调用findStock
-        for sector in sector_list:
-            candidates = findStock(sector)
-            # 将candidates分批上传到test1
-            uploadCandidates(candidates)
-            update1d([c[0] for c in candidates])
-
-        info("all candidates\n", g.candidates)
+            
     if ui == "3":
         info("下载sector_data")
         xtdata.download_sector_data()
         sector_list = xtdata.get_sector_list()
         info("sector_list:", sector_list)
-    if ui == "q":
-        sys.exit(1)
 
     # 阻塞主线程退出
     # xt_trader.run_forever()
