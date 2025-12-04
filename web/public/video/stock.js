@@ -2380,6 +2380,19 @@ window.stock_list = window.stock_list || (function () {
                         <td>${row.operationName}</td>
                     </tr>
                  `;
+                if (row.deleted) {
+                    html = `
+                    <tr class="tradeHistoryTr clickable" data='${JSON.stringify(row)}'> 
+                        <td class="gray">${row.tday}</td> 
+                        <td class="gray">${row.ttime}</td>
+                        <td class="gray">${self.getBuySellText(row.operationDirection)}</td>
+                        <td class="gray">${row.tprice}</td>
+                        <td class="gray">${row.tamount}</td>
+                        <td class="gray">${row.operationName}</td>
+                    </tr>
+                 `;
+                }
+
                 return html;
             });
 
