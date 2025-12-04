@@ -3430,28 +3430,39 @@ app.get('/stock/delete/auto', async (req, res) => {
 
     info("reset before pair", req)
     await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
-    let sql = `select * from tstock where tamount<0 and scode=? order by tday desc, ttime desc`;
+    let sql = `select * from tstock where scode=? order by tday desc, ttime desc`;
     let r = await db.allSync(sql, [scode]);
-    let sells = r.rows;
-    info(`${sells.length} sells`, req)
-    for (var i = 0; i < sells.length; ++i) {
-        let sell = sells[i];
-        info(`${sell.sname}(${sell.scode}):${sell.tid}`, req)
-        let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday , ttime , tprice desc",
-            [sell.tamount * -1, sell.scode, sell.operationName, sell.tprice]);
-        let buys = r.rows;
-
-        if (buys.length < 1) {
-            r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tday, ttime, tprice desc",
-                [sell.tamount * -1, sell.scode, sell.tprice]);
-            buys = r.rows;
+    let trades = r.rows;
+    info(`${trades.length} trades`, req)
+    for (let i = 1; i < trades.length; ++i) {
+        let t1 = trades[i];
+        if (t1.deleted) {
+            continue;
         }
 
-        if (buys.length > 0) {
-            let buy = buys[0];
-            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req)
-            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [buy.tid, sell.tid]);
-            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [sell.tid, buy.tid]);
+        for (let j = i + 1; j < trades.length; ++j) {
+            let t2 = trades[j];
+            if (t2.deleted) {
+                continue;
+            }
+
+            if (t2.tamount * t1.tamount >= 0) {
+                continue;
+            }
+
+            if (t1.tprice <= t2.tprice && t1.tamount < 0) {
+                continue;
+            }
+
+            if (t1.tprice > t2.tprice && t1.tamount > 0) {
+                continue;
+            }
+
+            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [t2.tid, t1.tid]);
+            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [t1.tid, t2.tid]);
+            t2.deleted = 1;
+            t1.deleted = 1;
+            break;
         }
     };
 
