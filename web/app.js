@@ -2718,7 +2718,7 @@ app.get('/stock/rule/status', async (req, res) => {
         if (res.rows.length > 0) {
             let tsb = await db.getSync(`select * from tStockBasic where scode=?`, [scode]);
             let data = res.rows[0];
-            data.autoCreateRuleFail = tsb.autoCreateRuleFail;
+            data.autoCreateRuleFail = tsb ? tsb.autoCreateRuleFail : "";
             resp = JSON.stringify({ data });
         } else {
             resp = JSON.stringify({ data: null });

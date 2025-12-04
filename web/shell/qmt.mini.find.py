@@ -464,6 +464,13 @@ def getIncreaseDays(prices, rangeStart, rangeEnd, minRate, maxRate):
     return count
 
 
+def getCciCrossUpDay(cci, dayStart, dayEnd):
+    for i in range(dayEnd, dayStart, -1):
+        if cci[i] >= -100 and cci[i-1] < -100:
+            return i
+    return 0
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
@@ -503,7 +510,6 @@ def findStock(sector):
             if prices is None or len(prices['high']) < 3:
                 continue
 
-            
             high_prices = prices['high']
             low_prices = prices['low']
             close_prices = prices['close']
@@ -514,16 +520,27 @@ def findStock(sector):
                 info("bad price:", current_price)
                 continue
 
-            """
+            # """
             # 检查cci是否上穿-100线
             CCI(prices)
             cci = prices['cci']
-            if cci[-1] >= -100 and cci[-2] < -100:
-                info("cci:", cci[-2], "< -100 <=", cci[-1])
-            else:
+
+            dayStart = -4
+            dayEnd = -1
+            crossUpDay = getCciCrossUpDay(cci, dayStart, dayEnd)
+            if (crossUpDay == 0):
+                info("cciCrossUpDay:", crossUpDay)
                 continue
-            """
-            
+
+            dayStart = crossUpDay-1
+            dayEnd = -1
+            count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
+            info(" high price increase:", count)
+            if (count < (dayEnd-dayStart)):
+                continue
+
+            # """
+
             # 计算历史分位数判断是否低位
             # hist_percentile = sum(
             #     1 for price in close_prices if price < current_price) / len(close_prices)
@@ -533,23 +550,25 @@ def findStock(sector):
             #     info("bad")
             #     continue
 
-            # """
+            """
+            # 最近几天最高价连续上涨
             dayStart = -4
             dayEnd = -1
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
             info(" high price increase:", count)
             if (count < (dayEnd-dayStart)):
                 continue
-            # """
+            """
 
-            # """    
+            """
+            # 最近几天收盘价连续上涨
             dayStart = -4
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
             info(" close price increase:", count)
             if (count < (dayEnd-dayStart)):
                 continue
-            # """
+            """
 
             # #计算high_prices中最近30天的最大值
             # days=30
@@ -560,7 +579,7 @@ def findStock(sector):
             # if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
             #     continue
 
-            # """
+            """
             # 最近30天较大涨幅天数
             dayStart = -30
             dayEnd = -1
@@ -568,7 +587,7 @@ def findStock(sector):
             info(" increase 0.07 days:", count)
             if (count < (3)):
                 continue
-            # """
+            """
 
             """
             # 最近60天较大跌幅天数
@@ -580,7 +599,7 @@ def findStock(sector):
                 continue
                 """
 
-            info("OK")
+            info("-----OK-----")
             candidate.append([scode, sname])
 
         except Exception as e:
@@ -647,11 +666,11 @@ if __name__ == '__main__':
 
     # 等待用户输入，如果用户输入q，则退出,否则继续
     print("all. 搜索所有股票")
-    print("a. 搜索A股股票")
-    print("hk. 搜索港股股票")
-    print("2. 更新所有股票代码")
-    print("3. 获取所有板块信息")
-    print("q. 退出")
+    print("a.   搜索A股股票")
+    print("hk.  搜索港股股票")
+    print("2.   更新所有股票代码")
+    print("3.   获取所有板块信息")
+    print("q.   退出")
     ui = input("请选择:")
     if ui == "q":
         sys.exit(1)
@@ -747,7 +766,7 @@ if __name__ == '__main__':
             # info("stocks in:", sector, ":\n", stocks)
             # 将stocks加入全局变量g.stocks
             g.stocks = g.stocks + stocks
-            
+
     if ui == "3":
         info("下载sector_data")
         xtdata.download_sector_data()
