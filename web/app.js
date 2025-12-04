@@ -637,6 +637,23 @@ async function tryToBuy(r, req) {
         //立即下单
         buy = rule.buy;
     } else {
+
+        if (rule.currentPrice <= parseFloat(rule.buy)) {
+            debug(`currentPrice < buy`, req);
+
+
+            if (rule.minPrice <= parseFloat(rule.buy)) {
+                let delta = rule.currentPrice - rule.minPrice;
+                debug(`delta=${delta}`, req);
+                if (delta >= parseFloat(rule.bounce)) {
+                    //买入
+                    buy = rule.currentPrice;
+                }
+            }
+        }
+    }
+    debug(`buy=${buy}`, req);
+    if (buy > 0) {
         let all = await ensureCciNotCrossDown100(scode, sname, threadId);
         all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
         all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
@@ -650,20 +667,6 @@ async function tryToBuy(r, req) {
             return false;
         }
 
-        if (rule.currentPrice <= parseFloat(rule.buy)) {
-            debug(`currentPrice < buy`, req);
-            if (rule.minPrice <= parseFloat(rule.buy)) {
-                let delta = rule.currentPrice - rule.minPrice;
-                debug(`delta=${delta}`, req);
-                if (delta >= parseFloat(rule.bounce)) {
-                    //买入
-                    buy = rule.currentPrice;
-                }
-            }
-        }
-    }
-    debug(`buy=${buy}`, req);
-    if (buy > 0) {
         let action = {
             id: `${r.id}-${now}`,
             ruleId: r.id,
