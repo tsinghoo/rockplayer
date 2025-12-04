@@ -2476,6 +2476,16 @@ window.stock_list = window.stock_list || (function () {
                                 share.toastError__(res.error);
                             }
                         }
+                    },
+                    {
+                        text: "自动删除",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/delete/auto?scode=${scode}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            }
+                        }
                     }
                 ];
 

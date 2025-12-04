@@ -3424,6 +3424,41 @@ app.get('/stock/pair', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/delete/auto', async (req, res) => {
+    let js = req.query.js;
+    let socde = req.query.scode;
+
+    info("reset before pair", req)
+    await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
+    let sql = `select * from tstock where tamount<0 and scode=?`;
+    let r = await db.allSync(sql, [scode]);
+    let sells = r.rows;
+    info(`${sells.length} sells`, req)
+    for (var i = 0; i < sells.length; ++i) {
+        let sell = sells[i];
+        info(`${sell.sname}(${sell.scode}):${sell.tid}`, req)
+        let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday , ttime , tprice desc",
+            [sell.tamount * -1, sell.scode, sell.operationName, sell.tprice]);
+        let buys = r.rows;
+
+        if (buys.length < 1) {
+            r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tday, ttime, tprice desc",
+                [sell.tamount * -1, sell.scode, sell.tprice]);
+            buys = r.rows;
+        }
+
+        if (buys.length > 0) {
+            let buy = buys[0];
+            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req)
+            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [buy.tid, sell.tid]);
+            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [sell.tid, buy.tid]);
+        }
+    };
+
+    var resp = `${js}(${JSON.stringify({ data: "success" })})`;
+    res.send(resp);
+});
+
 app.post('/stock/query', async (req, res) => {
     let text = req.body.text;
     let row = JSON.parse(decodeURIComponent(atob(text)));
