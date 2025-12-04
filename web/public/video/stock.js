@@ -624,7 +624,7 @@ window.stock_list = window.stock_list || (function () {
             for (let i = 0; i < rows.length; i++) {
                 let tr = $("<tr>");
                 let row = rows[i];
-
+                tr.attr("data", JSON.stringify(row));
                 keys.forEach(key => {
                     if (row[params[key]] != null) {
                         row[key] = row[params[key]];
@@ -670,7 +670,6 @@ window.stock_list = window.stock_list || (function () {
                         }
 
                         tr.attr("code", row[key]);
-                        tr.attr("data", JSON.stringify(row));
                     } else if (key == "名称") {
                         let option = "";
                         if (row["type"] == 1) {
