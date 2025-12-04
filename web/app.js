@@ -3434,7 +3434,7 @@ app.get('/stock/delete/auto', async (req, res) => {
     let r = await db.allSync(sql, [scode]);
     let sells = r.rows;
     info(`${sells.length} sells`, req)
-    for (var i = 1; i < sells.length; ++i) {
+    for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
         info(`${sell.sname}(${sell.scode}):${sell.tid}`, req)
         let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday , ttime , tprice desc",

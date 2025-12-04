@@ -1007,6 +1007,8 @@ window.stock_list = window.stock_list || (function () {
                             let res = await share.getSync__(`/stock/undeleteRow?tid=${data.tid}`);
                             if (res.error) {
                                 share.toastError__(res.error);
+                            } else {
+                                tr.find("td").removeClass("gray");
                             }
                         }
                     },
@@ -2474,6 +2476,8 @@ window.stock_list = window.stock_list || (function () {
                             let res = await share.getSync__(`/stock/undeleteRow?tid=${data.tid}`);
                             if (res.error) {
                                 share.toastError__(res.error);
+                            } else {
+                                tr.find("td").removeClass("gray");
                             }
                         }
                     },
