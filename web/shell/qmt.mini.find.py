@@ -113,6 +113,7 @@ def CCI(table):
         # 将cci的值保留小数点后2位
         table["cci"].values[i] = round(table["cci"].values[i], 2)
 
+
 def get1dLastDate(scode):
     try:
         url = g.baseUrl + "/stock/1d/lastDate?scode=" + scode
@@ -156,6 +157,7 @@ def get1dData(stocklist, index, startTime, endTime):
     CCI(table)
 
     return table
+
 
 def update1d(stocklist=None, startTime=None, endTime=None):
     info("update1d")
@@ -209,6 +211,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                           "响应内容:", response.text)
             except Exception as e:
                 error("上传失败:", str(e))
+
 
 def obj2Json(obj, max_depth=4, current_depth=1):
     """
@@ -275,7 +278,6 @@ def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
     return js
 
 
-
 def object_to_json(obj, max_depth=3, current_depth=0):
     """
     使用 dir() 和 getattr() 将 Python 对象（包括数组、字典、嵌套对象）转换为 JSON
@@ -330,7 +332,6 @@ def object_to_json(obj, max_depth=3, current_depth=0):
     return result
 
 
-
 def printObj(data, indent):
     if (not indent):
         indent = ""
@@ -379,7 +380,6 @@ def log(*args, **kwargs):
 
     g.toPrint.append([all_args, kwargs])
 
-
 def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
     """
     将打印内容输出到文件，参数与print()函数保持一致
@@ -394,7 +394,7 @@ def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='u
         encoding: 文件编码(默认'utf-8')
     """
     # 在file文件名后边加上当天日期
-    file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
+    file = f"{file}.{datetime.datetime.now().strftime('%Y%m%d')}.log.{g.config['sessionId']}"
 
     with open(file, mode=mode, encoding=encoding) as f:
         for item in toPrint:
@@ -498,16 +498,16 @@ def findStock(sector):
             df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                            start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
             prices = df[scode]
-            CCI(prices)
             # debug("prices:", prices)
             if prices is None or len(prices['high']) < 3:
                 continue
 
-            
-                
+            CCI(prices)
+
             high_prices = prices['high']
             low_prices = prices['low']
             close_prices = prices['close']
+            cci = prices['cci']
             current_price = high_prices[-1]
 
             # 检查股价是否在合理范围内
@@ -515,6 +515,11 @@ def findStock(sector):
                 info("bad price:", current_price)
                 continue
 
+            # 检查cci是否上穿-100线
+            if cci[-1] >= -100 and cci[-2] < -100:
+                info("cci:", cci[-2], "< -100 <=", cci[-1])
+            else:
+                continue
             # 计算历史分位数判断是否低位
             # hist_percentile = sum(
             #     1 for price in close_prices if price < current_price) / len(close_prices)
@@ -524,17 +529,23 @@ def findStock(sector):
             #     info("bad")
             #     continue
 
-            dayStart = -4
+            # """
+            dayStart = -3
             dayEnd = -1
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
             info(" high price increase:", count)
             if (count < (dayEnd-dayStart)):
                 continue
+            # """
 
+            """    
+            dayStart = -4
+            dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
             info(" close price increase:", count)
             if (count < (dayEnd-dayStart)):
                 continue
+            """
 
             # #计算high_prices中最近30天的最大值
             # days=30
@@ -545,14 +556,17 @@ def findStock(sector):
             # if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
             #     continue
 
+            """
             # 最近30天较大涨幅天数
             dayStart = -30
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0.07, 1)
-            info(" close price increase:", count)
+            info(" increase 0.07 days:", count)
             if (count < (3)):
                 continue
-            
+            """
+
+            """
             # 最近60天较大跌幅天数
             dayStart = -60
             dayEnd = -1
@@ -560,6 +574,7 @@ def findStock(sector):
             info(" close price decrease:", count)
             if (count > 0):
                 continue
+                """
 
             info("OK")
             candidate.append([scode, sname])
@@ -633,6 +648,13 @@ if __name__ == '__main__':
     print("q.退出")
     ui = input("请选择:")
 
+    init()
+    
+    if "sessionId" not in g.config:
+        g.config["sessionId"] = 0
+    g.config["sessionId"] = g.config["sessionId"]+1
+    saveConfig()
+
     # 生成session id 整数类型 同时运行的策略不能重复
     stockAccount = StockAccount(g.account)
     stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
@@ -667,13 +689,11 @@ if __name__ == '__main__':
         xt_trader.stop()
         sys.exit(1)
 
-    init()
-
     sector_list = ['上期所', '上证A股', '上证B股', '上证期权', '上证转债', '中金所', '创业板', '大商所', '沪市ETF', '沪市债券', '沪市基金', '沪市指数', '沪深A股', '沪深B股', '沪深ETF', '沪深债券', '沪深基金',
                    '沪深指数', '沪深转债', '深市ETF', '深市债券', '深市基金', '深市指数', '深证A股', '深证B股', '深证期权', '深证转债', '科创板', '科创板CDR', '能源中心', '连续合约', '郑商所', '香港联交所指数', '香港联交所股票']
     sector_list = ['上证A股', '上证B股', '创业板', '沪深A股', '沪深B股',
                    '沪深ETF', '深市ETF', '深证A股', '深证B股', '科创板', '香港联交所股票']
-    sector_list = ['创业板', '沪深A股', '沪深B股', '沪深ETF', '科创板', '香港联交所股票']
+    sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板', '香港联交所股票']
 
     time.sleep(5)
 
