@@ -101,7 +101,7 @@ def resetThreadId(label=""):
 
 
 def CCI(table):
-    table["cci"] = None
+    table["cci"] = 0
     for i in range(13, len(table)):
         high = table["high"].values[i-13:i+1]
         low = table["low"].values[i-13:i+1]
@@ -195,10 +195,8 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                  "[", i, ",", i+bsize, "]", len(batch))
             batch_data = []
             for idx, row in batch.iterrows():
-                # info(row)
-                if (row["cci"] is not None):
-                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                                    row["low"], row["volume"], row["amount"], row["cci"]])
+                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
+                                                row["low"], row["volume"], row["amount"], row["cci"]])
             body = {"data": obj2Json(
                 batch_data), "scode": scode, "period": period, "passcode": "995560"}
             debug("body:", body)
@@ -470,11 +468,37 @@ def getCciCrossUpDay(cci, dayStart, dayEnd):
             return i
     return 0
 
+def getCandidateList():
+    # 从test1获取股票列表
+    info("getCandidateList")
+    try:
+        response = requests.get(
+            g.baseUrl + "/stock/candidates", verify=False, timeout=5)
+        if response.status_code != 200:
+            info("getCandidateList failed:", response.status_code)
+            return g.stocklist
+        else:
+            info("getCandidateList success:", response.status_code)
+            response.encoding = 'utf-8'
+            content = response.text
+            info("getCandidateList response:", content)
+            stocklist = json.loads(content)
+            # 将g.stocklist中包含".EC"的元素去除
+            stocklist = [x for x in stocklist if not x.endswith(".EC")]
+            # stocklist=["09926.HK"]
+            return stocklist
 
+    except Exception as e:
+        error("getCandidateList failed:", str(e))
+        return g.stocklist
+    
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
-    g.stocklist = xtdata.get_stock_list_in_sector(sector)
+    if sector == 'candidate':
+        g.stocklist = g.candidates
+    else:
+        g.stocklist = xtdata.get_stock_list_in_sector(sector)
 
     info("stocklist:", g.stocklist)
     period = '1d'
@@ -528,8 +552,8 @@ def findStock(sector):
             dayStart = -4
             dayEnd = -1
             crossUpDay = getCciCrossUpDay(cci, dayStart, dayEnd)
+            info("cciCrossUpDay:", crossUpDay)
             if (crossUpDay == 0):
-                info("cciCrossUpDay:", crossUpDay)
                 continue
 
             dayStart = crossUpDay-1
@@ -665,12 +689,13 @@ if __name__ == '__main__':
     print("baseUrl:", g.baseUrl)
 
     # 等待用户输入，如果用户输入q，则退出,否则继续
-    print("all. 搜索所有股票")
-    print("a.   搜索A股股票")
-    print("hk.  搜索港股股票")
-    print("2.   更新所有股票代码")
-    print("3.   获取所有板块信息")
-    print("q.   退出")
+    print("A. 搜索所有股票")
+    print("a. 搜索A股股票")
+    print("h. 搜索港股股票")
+    print("c. 搜索现有推荐股票")
+    print("2. 更新所有股票代码")
+    print("3. 获取所有板块信息")
+    print("q. 退出")
     ui = input("请选择:")
     if ui == "q":
         sys.exit(1)
@@ -724,13 +749,14 @@ if __name__ == '__main__':
 
     time.sleep(5)
 
-    if ui == "all":
+    if ui == "A":
         # 先清空所有候选
         doUploadCandidates([])
         sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板', '香港联交所股票']
         # 对于每个sector,调用findStock
         for sector in sector_list:
             candidates = findStock(sector)
+            info("candidates:", candidates)
             # 将candidates分批上传到test1
             uploadCandidates(candidates)
             update1d([c[0] for c in candidates])
@@ -743,12 +769,13 @@ if __name__ == '__main__':
         # 对于每个sector,调用findStock
         for sector in sector_list:
             candidates = findStock(sector)
+            info("candidates:", candidates)
             # 将candidates分批上传到test1
             uploadCandidates(candidates)
             update1d([c[0] for c in candidates])
 
         info(f"{len(g.candidates)} candidates found")
-    if ui == "hk":
+    if ui == "h":
         # 对于每个sector,调用findStock
         sector_list = ['香港联交所股票']
         for sector in sector_list:
@@ -756,8 +783,20 @@ if __name__ == '__main__':
             # 将candidates分批上传到test1
             uploadCandidates(candidates)
             update1d([c[0] for c in candidates])
-
-        info(f"{len(g.candidates)} candidates found")
+    if ui == "c":
+        # 对于每个sector,调用findStock
+        sector_list = ['candidate']
+        for sector in sector_list:
+            candidates = findStock(sector)
+            info("candidates:", candidates)
+            ui = input("要上传更新吗(y/n):")
+            if ui == "n":
+                sys.exit(1)
+            if ui == "y":
+                # 将candidates分批上传到test1
+                uploadCandidates([])
+                uploadCandidates(candidates)
+                update1d([c[0] for c in candidates])
     if ui == "2":
         # 对于每个sector,查询成分股
         g.stocks = []

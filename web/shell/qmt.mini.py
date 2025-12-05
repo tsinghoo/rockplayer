@@ -760,10 +760,8 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                  "[", i, ",", i+bsize, "]", len(batch))
             batch_data = []
             for idx, row in batch.iterrows():
-                # info(row)
-                if (row["cci"] is not None):
-                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                                    row["low"], row["volume"], row["amount"], row["cci"]])
+                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
+                                                row["low"], row["volume"], row["amount"], row["cci"]])
             body = {"data": obj2Json(
                 batch_data), "scode": scode, "period": period, "passcode": "995560"}
             debug("body:", body)
@@ -779,7 +777,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
 
 
 def CCI(table):
-    table["cci"] = None
+    table["cci"] = 0
     for i in range(13, len(table)):
         high = table["high"].values[i-13:i+1]
         low = table["low"].values[i-13:i+1]
