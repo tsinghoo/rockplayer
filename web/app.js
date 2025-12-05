@@ -603,7 +603,7 @@ async function reloadRule(r, req) {
                         await saveCreateRuleFailure(r.scode, "");
                         reloadRule(res.rule, req);
                     } else {
-                        error(res.error, req);
+                        error(res.error, req.threadId)
                         await saveCreateRuleFailure(r.scode, res.error);
                     }
                 }, 100);
@@ -756,7 +756,7 @@ async function checkRule(scodes, req) {
         }
     }
     if (checkingRule == 1) {
-        error("checking", req);
+        error("checking", req.threadId)
         return;
     }
 
@@ -2468,7 +2468,7 @@ app.get('/stock/k/1d', async (req, res) => {
         await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
         await genCci(scode, req);
     } catch (e) {
-        error(e.stack, req);
+        error(e.stack, req.threadId)
     }
 
     let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by scode,time`;
@@ -3557,7 +3557,7 @@ async function genCci(scode, req, all) {
     }
 
     if (r.rows.length < period) {
-        error(`${r.rows.length} < ${period} 1d data`, req);
+        error(`${r.rows.length} < ${period} 1d data`, req.threadId)
         return;
     }
     if (r.rows[0].cci == -200 && r.rows[1].cci == -200 && !all) {
@@ -3881,7 +3881,7 @@ app.post('/video/upload', (req, res) => {
     // 将文件保存到服务器上指定目录
     file.mv(filePath, err => {
         if (err) {
-            error(err, req);
+            error(err, req.threadId)
             return res.status(500).send(err);
         }
         // toStt(fileName);
@@ -4015,7 +4015,7 @@ app.get('/video/config', (req, res) => {
     try {
         text = fs.readFileSync(fp, "utf-8");
     } catch (e) {
-        error("error reading config.json:" + e.message, req);
+        error("error reading config.json:" + e.message, req.threadId)
     }
 
     var json = { data: JSON.parse(text) }
@@ -4029,7 +4029,7 @@ app.post('/video/ping', (req, res) => {
     try {
         text = fs.readFileSync(fp, "utf-8");
     } catch (e) {
-        error("error reading config.json:" + e.message, req);
+        error("error reading config.json:" + e.message, req.threadId)
     }
     var config = JSON.parse(text);
     var bd = req.body
@@ -4115,7 +4115,7 @@ app.get('/video/rename', (req, res) => {
     try {
         fs.renameSync(fileName, newName);
     } catch (err) {
-        error(`failed:${err.message}`, req);
+        error(`failed:${err.message}`, req.threadId)
         resp = { error: err.message };
     }
 
