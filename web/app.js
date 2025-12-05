@@ -1883,9 +1883,10 @@ app.post('/stock/candidates', async (req, res) => {
     if (stocks.length == 0) {
         await dbCall([`delete from tcandidate`]);
     }
+    
+    let now = Date.now();
     for (let i = 0; i < stocks.length; i++) {
         let stock = stocks[i];
-        let now = Date.now();
         let scode = stock[0].split(".")[0];
         let row = {
             id: scode,

@@ -573,7 +573,7 @@ def findStock(sector):
             dayStart = -30
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0.05, 1)
-            info(" increase 0.07 days:", count)
+            info(" increase 0.05 days:", count)
             if (count < (3)):
                 continue
 
@@ -809,7 +809,6 @@ if __name__ == '__main__':
                 sys.exit(1)
             if ui == "y":
                 # 将candidates分批上传到test1
-                doUploadCandidates([])
                 uploadCandidates(candidates)
                 update1d([c[0] for c in candidates])
     if ui == "2":
