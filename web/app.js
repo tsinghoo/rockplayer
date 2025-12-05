@@ -71,7 +71,7 @@ function initWss() {
             if (isBinary) {
                 //todo
             } else {
-                info("websocket rec:", message);
+                info("websocket rec:" + message);
                 let json = null;
                 try {
                     json = JSON.parse(message);
@@ -359,7 +359,7 @@ function deleteFiles(prefixs) {
                             if (err) {
                                 console.error('Error deleting file:', err);
                             } else {
-                                info('File deleted:', filePath);
+                                info('File deleted:' + filePath);
                             }
                         });
                     }
@@ -945,7 +945,7 @@ app.use((req, res, next) => {
     const url = req.url;
     const queryParams = JSON.stringify(req.query);
     const bodyParams = JSON.stringify(req.body);
-    info(`${method} ${url}`, req)
+    info(`${method} ${url}`, req.threadId)
     if (method.toLowerCase() == "post") {
         info(`body:${bodyParams}`, req.threadId)
     }
@@ -976,8 +976,8 @@ app.get('/video/i', (req, res) => {
     res.render('fileList', { files: files, tags: tags, remove: remove });
 });
 app.post('/video/tag', (req, res) => {
-    info("files=" + req.body.files, req)
-    info("tags=" + req.body.tags, req)
+    info("files=" + req.body.files, req.threadId)
+    info("tags=" + req.body.tags, req.threadId)
     const files = JSON.parse(req.body.files);
     const tags = JSON.parse(req.body.tags);
 
@@ -985,7 +985,7 @@ app.post('/video/tag', (req, res) => {
 
     if (files.length == 1) {
         for (var j = 0; j < files.length; ++j) {
-            info("file:" + files[j], req)
+            info("file:" + files[j], req.threadId)
             Object.keys(otags).map(
                 (tag) => {
                     var f = otags[tag];
@@ -994,7 +994,7 @@ app.post('/video/tag', (req, res) => {
             );
         }
 
-        info("otags=" + JSON.stringify(otags), req)
+        info("otags=" + JSON.stringify(otags), req.threadId)
 
         for (var i = 0; i < tags.length; ++i) {
             var f = otags[tags[i]];
@@ -1028,7 +1028,7 @@ app.post('/video/tag', (req, res) => {
 });
 app.post('/video/cookies', (req, res) => {
     let cookies = req.body.cookies;
-    info(req.body.cookies, req)
+    info(req.body.cookies, req.threadId)
 
     fs.writeFileSync(path.join(directoryPath, "cookies.txt"), cookies);
     var resp = JSON.stringify({ data: "success" });
@@ -1050,7 +1050,7 @@ app.post('/stock/update', async (req, resp) => {
     }
     info(broker)
     let data = req.body.rows.split("\n");
-    info(data.join("\n"), req)
+    info(data.join("\n"), req.threadId)
     let now = new Date().getTime();
     for (var i = 0; i < data.length; ++i) {
         if (data[i].trim() == "") {
@@ -1068,7 +1068,7 @@ app.post('/stock/update', async (req, resp) => {
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
             let res = await db.runSync(sql, fields.concat([tday + " " + ttime]));
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1118,7 +1118,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
                 tcash, tid, taccount, tpair, lastOperationTime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1161,7 +1161,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
                 tcash, tid, taccount, tpair, lastOperationTime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1184,7 +1184,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[5], "国金", fields[11], fields[7], fields[6],
                 fields[8], fields[9], fields[11], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1233,7 +1233,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
                 tcash, tid, taccount, tpair, lastOperationTime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1257,7 +1257,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, fields[2], fields[1], fields[4], "国金", getMarket(fields[1]), fields[7], fields[6],
                 fields[8], fields[9], fields[11], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1281,7 +1281,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], "国金", getMarket(fields[2]), fields[6], fields[5],
                 fields[7], fields[8], fields[1], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1328,7 +1328,7 @@ app.post('/stock/update', async (req, resp) => {
 
 
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1351,7 +1351,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, fields[6], fields[5], fields[8], "国金", "HGT", fields[10], fields[9],
                 fields[11], fields[12], fields[3], '', tday + " " + ttime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1399,7 +1399,7 @@ app.post('/stock/update', async (req, resp) => {
             let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
                 tcash, tid, taccount, tpair, lastOperationTime]);
             if (res.error) {
-                info(res.error, req)
+                info(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
@@ -1419,12 +1419,12 @@ app.post('/stock/update', async (req, resp) => {
     };
 
     let r = await db.allSync("select max(lastOperationTime) as maxOperationTime, scode from tstock group by scode");
-    info(`${r.rows.length} stocks`, req)
+    info(`${r.rows.length} stocks`, req.threadId)
     for (var i = 0; i < r.rows.length; ++i) {
         let row = r.rows[i];
         let scode = row.scode;
         let maxOperationTime = row.maxOperationTime;
-        info(`updating ${scode} to ${maxOperationTime}`, req)
+        info(`updating ${scode} to ${maxOperationTime}`, req.threadId)
         let sql = `update tstock set lastOperationTime=? where scode=?`;
         await db.runSync(sql, [maxOperationTime, scode]);
     }
@@ -1537,15 +1537,15 @@ app.get('/stock/undeleteRow', async (req, res) => {
 });
 
 app.post('/stock/account', async (req, res) => {
-    info(JSON.stringify(req.body), req)
+    info(JSON.stringify(req.body), req.threadId)
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request", req)
+        info("bad request", req.threadId)
         res.send("bad request");
         return;
     }
     let data = req.body.data;
-    info(data, req)
+    info(data, req.threadId)
     let sql = `insert or replace into config (key, value) values (?,?)`;
     let result = await db.runSync(sql, ["stockAccount", JSON.stringify(data)]);
     var resp = JSON.stringify({ data: "success" });
@@ -1793,7 +1793,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
     let root = req.body;
     let children = root.children;
     delete root["children"];
-    info(JSON.stringify(root), req)
+    info(JSON.stringify(root), req.threadId)
     root.children = children;
 
     //将nodes写入文件
@@ -1952,10 +1952,10 @@ app.post('/stock/candidates', async (req, res) => {
 
 app.post('/stock/positions', async (req, res) => {
 
-    info(JSON.stringify(req.body), req)
+    info(JSON.stringify(req.body), req.threadId)
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request", req)
+        info("bad request", req.threadId)
         res.send("bad request");
         return;
     }
@@ -2055,10 +2055,10 @@ function parseTime(str) {
 
 app.post('/stock/quotes', async (req, res) => {
     //{"data":{"837092.BJ":{"20250523101631.000":{"amount":10865500,"askPrice":[42.86,42.87,42.88,42.9,42.92],"askVol":[59,4,20,1,30],"bidPrice":[42.66,42.65,42.64,42.63,42.62],"bidVol":[2,2,10,32,26],"high":43.24,"lastClose":42.76,"lastPrice":42.65,"lastSettlementPrice":0,"low":42.41,"open":42.41,"openInt":13,"pvolume":253700,"settlementPrice":0,"stime":"20250523101631.000","stockStatus":1,"time":1747966591000,"transactionNum":0,"volume":2537}}}}
-    info(JSON.stringify(req.body), req)
+    info(JSON.stringify(req.body), req.threadId);
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request", req)
+        info("bad request", req.threadId);
         res.send("bad request");
         return;
     }
@@ -2102,10 +2102,10 @@ app.post('/stock/quotes', async (req, res) => {
 
 app.post('/stock/quotes.mini', async (req, res) => {
 
-    info(JSON.stringify(req.body), req)
+    info(JSON.stringify(req.body), req.threadId);
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request", req)
+        info("bad request", req.threadId);
         res.send("bad request");
         return;
     }
@@ -2135,10 +2135,10 @@ app.post('/stock/quotes.mini', async (req, res) => {
 
 app.post('/stock/details', async (req, res) => {
 
-    info(JSON.stringify(req.body), req)
+    info(JSON.stringify(req.body), req.threadId);
     let passcode = req.body.passcode;
     if (passcode != "995560") {
-        info("bad request", req)
+        info("bad request", req.threadId);
         res.send("bad request");
         return;
     }
@@ -2163,7 +2163,7 @@ app.get('/stock/screen/nodes', async (req, res) => {
     let js = req.query.js;
     let log = req.query.log;
     if (log) {
-        info("logLevel to " + log, req)
+        info("logLevel to " + log, req.threadId);
         logLevel = log;
     }
 
@@ -2308,8 +2308,8 @@ async function autoCreateRules() {
 
         info(`auto create rule succeeded`, threadId)
     } catch (e) {
-        error(e.message, { threadId });
-        error(e.stack, { threadId });
+        error(e.message, threadId);
+        error(e.stack, threadId);
         info(`auto create rule failed:${e}`, threadId)
     }
 
@@ -2374,7 +2374,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
 
 app.get('/stock/k/1m', async (req, res) => {
     let js = req.query.js;
-    info(JSON.stringify(req.query), req)
+    info(JSON.stringify(req.query), req.threadId);
     let scode = req.query.scode;
     let type = req.query.type;
     let day = req.query.day;
@@ -2407,7 +2407,7 @@ app.get('/stock/k/1m', async (req, res) => {
 
 app.get('/stock/reload/k1d', async (req, res) => {
     let js = req.query.js;
-    info(JSON.stringify(req.query), req)
+    info(JSON.stringify(req.query), req.threadId)
     let scode = req.query.scode;
     let broker = req.query.broker;
     let now = Date.now();
@@ -2442,7 +2442,7 @@ app.get('/stock/reload/k1d', async (req, res) => {
 
 app.get('/stock/k/1d', async (req, res) => {
     let js = req.query.js;
-    info(JSON.stringify(req.query), req)
+    info(JSON.stringify(req.query), req.threadId)
     let scode = req.query.scode;
     let type = req.query.type;
     let startDay = req.query.startDay;
@@ -2492,7 +2492,7 @@ app.get('/stock/k/1d', async (req, res) => {
 
 app.get('/stock/k/1ds', async (req, res) => {
     let js = req.query.js;
-    info(JSON.stringify(req.query), req)
+    info(JSON.stringify(req.query), req.threadId)
     let scodes = req.query.scodes;
     let type = req.query.type;
     let startDay = req.query.startDay;
@@ -2531,7 +2531,7 @@ app.get('/stock/k/1ds', async (req, res) => {
 
 app.get('/stock/k/1ms', async (req, res) => {
     let js = req.query.js;
-    info(JSON.stringify(req.query), req)
+    info(JSON.stringify(req.query), req.threadId)
     let scodes = req.query.scodes;
     let type = req.query.type;
     let day = req.query.day;
@@ -2563,7 +2563,7 @@ app.get('/stock/k/1ms', async (req, res) => {
 });
 
 app.get('/stock/rule/cancel', async (req, res) => {
-    info(JSON.stringify(req.query), req)
+    info(JSON.stringify(req.query), req.threadId)
     let js = req.query.js;
     let scode = req.query.scode;
     let broker = req.query.broker;
@@ -3186,7 +3186,7 @@ async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
 async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
     prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
     if (prevRes.reason) {
-        error(`${sname}:${prevRes.reason}`, { threadId });
+        error(`${sname}:${prevRes.reason}`, threadId);
         return false;
     }
     let period = 14;
@@ -3385,7 +3385,7 @@ app.get('/stock/candidates', async (req, res) => {
 app.get('/stock/1d/lastDate', async (req, res) => {
     let js = req.query.js;
     let scode = req.query.scode;
-    info("scode:" + scode, req)
+    info("scode:" + scode, req.threadId)
     let sql = `select max(time) as lastDate from t1d where scode=?`;
     let r = await db.getSync(sql, [scode.split(".")[0]]);
 
@@ -3400,7 +3400,7 @@ app.get('/stock/1d/lastDate', async (req, res) => {
 app.get('/stock/1m/lastMinute', async (req, res) => {
     let js = req.query.js;
     let scode = req.query.scode;
-    info("scode:" + scode, req)
+    info("scode:" + scode, req.threadId)
     let sql = `select max(time) as lastMinute from t1m where scode=?`;
     let r = await db.getSync(sql, [scode.split(".")[0]]);
 
@@ -3432,22 +3432,22 @@ app.get('/stock/pair', async (req, res) => {
 
     let sql = `select * from tstock where tamount<0 and tpair is null or tpair=''`;
     if (reset) {
-        info("reset before pair", req)
+        info("reset before pair", req.threadId)
         await db.runSync(`update tstock set tpair=''`);
         sql = "select * from tstock where tamount<0";
     }
     let r = await db.allSync(sql);
     let sells = r.rows;
-    info(`${sells.length} sells`, req)
+    info(`${sells.length} sells`, req.threadId)
     for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
-        info(`${sell.sname}(${sell.scode}):${sell.tid}`, req)
+        info(`${sell.sname}(${sell.scode}):${sell.tid}`, req.threadId)
         let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday , ttime , tprice desc",
             [sell.tamount * -1, sell.scode, sell.operationName, sell.tprice]);
         let buys = r.rows;
         if (buys.length > 0) {
             let buy = buys[0];
-            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req)
+            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req.threadId)
             await db.runSync(`update tstock set tpair=? where tid=?`, [buy.tid, sell.tid]);
             await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
         } else {
@@ -3456,7 +3456,7 @@ app.get('/stock/pair', async (req, res) => {
             let buys = r.rows;
             if (buys.length > 0) {
                 let buy = buys[0];
-                info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req)
+                info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req.threadId)
                 await db.runSync(`update tstock set tpair=? where tid=?`, [buy.tid, sell.tid]);
                 await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
             }
@@ -3472,12 +3472,12 @@ app.get('/stock/delete/auto', async (req, res) => {
     let js = req.query.js;
     let scode = req.query.scode;
 
-    info("reset before pair", req)
+    info("reset before pair", req.threadId)
     await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
     let sql = `select * from tstock where scode=? order by tday desc, ttime desc`;
     let r = await db.allSync(sql, [scode]);
     let trades = r.rows;
-    info(`${trades.length} trades`, req)
+    info(`${trades.length} trades`, req.threadId)
     for (let i = 1; i < trades.length; ++i) {
         let t1 = trades[i];
         if (t1.deleted) {
@@ -3520,11 +3520,11 @@ app.post('/stock/query', async (req, res) => {
     let sql = row.sql;
     let name = row.name;
     let params = row.params;
-    info(`/stock/query:${name}:sql:${sql}`, req)
-    info(`/stock/query:${name}:params:${params}`, req)
+    info(`/stock/query:${name}:sql:${sql}`, req.threadId)
+    info(`/stock/query:${name}:params:${params}`, req.threadId)
     let r = await db.allSync(sql);
     if (r.error) {
-        info(r.error, req)
+        info(r.error, req.threadId)
         res.send(JSON.stringify({ error: `${r.error}` }));
         return;
     }
@@ -3546,13 +3546,13 @@ async function genCci(scode, req, all) {
         }
     }
 
-    info(`genCci:${scode},${all}`, req)
+    info(`genCci:${scode},${all}`, req.threadId)
     let period = 14;
 
     let sql = `select * from t1d where scode=? order by time desc ${all ? "" : "limit " + period}`;
     let r = await db.allSync(sql, [scode]);
     if (r.error) {
-        error(r.error, req)
+        error(r.error, req.threadId)
         return;
     }
 
@@ -3561,7 +3561,7 @@ async function genCci(scode, req, all) {
         return;
     }
     if (r.rows[0].cci == -200 && r.rows[1].cci == -200 && !all) {
-        info(`need recalc all cci`, req);
+        info(`need recalc all cci`, req.threadId);
         genCci(scode, req, 1);
         return;
     }
@@ -3573,7 +3573,7 @@ async function genCci(scode, req, all) {
 }
 
 app.post('/stock/k/upload', async (req, res) => {
-    info(`/stock/k/upload`, req)
+    info(`/stock/k/upload`, req.threadId)
     let data = req.body.data;
     let scode = req.body.scode.split(".")[0];
     let period = req.body.period;
@@ -3581,7 +3581,7 @@ app.post('/stock/k/upload', async (req, res) => {
     if (type == null) {
         type = 0;
     }
-    info(`scode:${scode},period:${period},len:${data.length}`, req)
+    info(`scode:${scode},period:${period},len:${data.length}`, req.threadId)
     for (var i = 0; i < data.length; ++i) {
         if (period == "tick") {
             let dateStr = data[i][0];//"20250603091500";
@@ -3699,7 +3699,7 @@ function convertIfInteger(number) {
     return number; // 保持原值
 }
 app.post('/stock/deal/update', async (req, res) => {
-    info(`/stock/deal/update:${JSON.stringify(req.body)}`, req)
+    info(`/stock/deal/update:${JSON.stringify(req.body)}`, req.threadId)
     let deal = req.body;
     let ocode = deal.scode.split(".");
     deal.scode = ocode[0];
@@ -3734,7 +3734,7 @@ app.post('/stock/deal/update', async (req, res) => {
 
     let resp = {};
     if (r.error) {
-        info(r.error, req)
+        info(r.error, req.threadId)
         resp = { error: r.error };
     } else {
     }
@@ -3744,7 +3744,7 @@ app.post('/stock/deal/update', async (req, res) => {
 
 
 app.post('/stock/rule/action/ordered', async (req, res) => {
-    info(`rule/action/ordered:${JSON.stringify(req.body)}`, req)
+    info(`rule/action/ordered:${JSON.stringify(req.body)}`, req.threadId)
 
     let scode = req.body.scode;
     let broker = req.body.broker;
@@ -3762,7 +3762,7 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
     }
     let resp = {};
     if (r.error) {
-        info(r.error, req)
+        info(r.error, req.threadId)
         resp = { error: r.error };
     } else if (status == 56) {
         if (rules[scode]) {
@@ -3779,7 +3779,7 @@ app.get('/stock/sqls', async (req, res) => {
     let sql = "select * from tsql order by lastUseTime desc";
     let r = await db.allSync(sql);
     if (r.error) {
-        info(r.error, req)
+        info(r.error, req.threadId)
         res.send(r);
         return;
     }
@@ -3801,13 +3801,13 @@ app.post('/stock/sql/update', async (req, res) => {
 });
 
 app.get('/video/replacers', (req, res) => {
-    info("video/replacers", req)
+    info("video/replacers", req.threadId)
     var rPath = path.join(directoryPath, "replacers");
     var replacers = {};
     try {
         replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message, req)
+        info("error parsing replacers:" + e.message, req.threadId)
     }
 
     var resp = req.query.js + "(" + JSON.stringify({ data: replacers }) + ");";
@@ -3815,14 +3815,14 @@ app.get('/video/replacers', (req, res) => {
 });
 
 app.get('/video/metadata', (req, res) => {
-    info("video/metadata", req)
+    info("video/metadata", req.threadId)
     var fileName = req.query.fileName;
     var rPath = path.join(directoryPath, "metadata");
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message, req)
+        info("error parsing replacers:" + e.message, req.threadId)
     }
 
     var m = data[fileName];
@@ -3860,7 +3860,7 @@ const storage = multer.diskStorage({
 });
 // 定义上传文件的路由
 app.post('/video/upload', (req, res) => {
-    info("file uploading", req)
+    info("file uploading", req.threadId)
     if (!req.files || !req.files.file) {
         return res.status(400).send('No file uploaded.');
     }
@@ -3889,7 +3889,7 @@ app.post('/video/upload', (req, res) => {
     });
 });
 app.get('/video/addSegment', (req, res) => {
-    info("video/addSegment", req)
+    info("video/addSegment", req.threadId)
     var fileName = req.query.fileName;
     var start = req.query.start;
     var end = req.query.end;
@@ -3899,7 +3899,7 @@ app.get('/video/addSegment', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing metadata:" + e.message, req)
+        info("error parsing metadata:" + e.message, req.threadId)
     }
 
     var m = data[fileName];
@@ -3920,11 +3920,11 @@ app.get('/video/addSegment', (req, res) => {
     res.send(resp);
 });
 app.post('/video/updateScript', (req, res) => {
-    info("video/updateScript", req)
-    info("params:" + JSON.stringify(req.body), req)
+    info("video/updateScript", req.threadId)
+    info("params:" + JSON.stringify(req.body), req.threadId)
     const params = JSON.parse(req.body.params);
     var filePath = path.join(directoryPath, params.file);
-    info("filePath:" + filePath, req)
+    info("filePath:" + filePath, req.threadId)
     var replaceAll = params.replaceAll;
     var rPath = path.join(directoryPath, "replacers");
     var scripts = fs.readFileSync(filePath, "utf-8");
@@ -3932,7 +3932,7 @@ app.post('/video/updateScript', (req, res) => {
     try {
         replacers = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message, req)
+        info("error parsing replacers:" + e.message, req.threadId)
     }
 
     if (params.oldWords != "") {
@@ -3959,7 +3959,7 @@ app.post('/video/updateScript', (req, res) => {
     res.send(resp);
 });
 app.get('/video/updatePosition', (req, res) => {
-    info("video/updatePosition", req)
+    info("video/updatePosition", req.threadId)
     var fileName = req.query.fileName;
     var position = req.query.position;
     var rPath = path.join(directoryPath, "metadata");
@@ -3967,7 +3967,7 @@ app.get('/video/updatePosition', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message, req)
+        info("error parsing replacers:" + e.message, req.threadId)
     }
 
     m = data[fileName];
@@ -3983,7 +3983,7 @@ app.get('/video/updatePosition', (req, res) => {
     res.send(resp);
 });
 app.get('/video/updatePosition', (req, res) => {
-    info("video/updatePosition", req)
+    info("video/updatePosition", req.threadId)
     var fileName = req.query.fileName;
     var position = req.query.position;
     var rPath = path.join(directoryPath, "metadata");
@@ -3991,7 +3991,7 @@ app.get('/video/updatePosition', (req, res) => {
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message, req)
+        info("error parsing replacers:" + e.message, req.threadId)
     }
 
     m = data[fileName];
@@ -4033,7 +4033,7 @@ app.post('/video/ping', (req, res) => {
     }
     var config = JSON.parse(text);
     var bd = req.body
-    info("body:" + JSON.stringify(bd), req)
+    info("body:" + JSON.stringify(bd), req.threadId)
     Object.keys(bd).forEach((item) => {
         if (config[item] == null) {
             config[item] = {};
@@ -4048,7 +4048,7 @@ app.post('/video/ping', (req, res) => {
 app.get('/video/download/:filename', (req, res) => {
     const fileName = req.params.filename;
     const videoPath = path.join(directoryPath, fileName);
-    info("videoPath:" + videoPath, req)
+    info("videoPath:" + videoPath, req.threadId)
     const stat = fs.statSync(videoPath);
     const fileSize = stat.size;
 
@@ -4088,7 +4088,7 @@ app.get('/video/download/:filename', (req, res) => {
 app.post('/video/delete', (req, res) => {
     const files = JSON.parse(req.body.files);
     const remove = req.body.remove;
-    info("remove:" + remove, req)
+    info("remove:" + remove, req.threadId)
     if (remove != pwd) {
         var resp = JSON.stringify({ ok: 0 });
         //resp = JSON.stringify(otags);
@@ -4109,7 +4109,7 @@ app.get('/video/rename', (req, res) => {
     const fileName = path.join(directoryPath, req.query.fileName);
     const newName = path.join(directoryPath, req.query.newName);
 
-    info("rename:'" + fileName + "' to '" + newName + "'", req)
+    info("rename:'" + fileName + "' to '" + newName + "'", req.threadId)
 
     var resp = { ok: 1 };
     try {
@@ -4130,14 +4130,14 @@ app.get('/video/setScriptPos', (req, res) => {
     const right = req.query.right;
     const fileName = req.query.fileName;
 
-    info(`setScript:${top},${bottom},${left},${right},${fileName}`, req)
+    info(`setScript:${top},${bottom},${left},${right},${fileName}`, req.threadId)
 
     var rPath = path.join(directoryPath, "scripts");
     var data = {};
     try {
         data = JSON.parse(fs.readFileSync(rPath, "utf-8"));
     } catch (e) {
-        info("error parsing replacers:" + e.message, req)
+        info("error parsing replacers:" + e.message, req.threadId)
     }
 
     data[fileName] = { top: top, bottom: bottom, left: left, right: right };
@@ -4149,14 +4149,14 @@ app.get('/video/setScriptPos', (req, res) => {
             if (err) {
                 console.error('Error deleting file:', err);
             } else {
-                info('File deleted:', fileName, req)
+                info('File deleted:', fileName, req.threadId)
             }
         });
         fs.unlink(path.join(directoryPath, `${fileName}.srt`), err => {
             if (err) {
                 console.error('Error deleting file:', err);
             } else {
-                info('File deleted:', fileName, req)
+                info('File deleted:', fileName, req.threadId)
             }
         });
     } catch (err) {
@@ -4171,7 +4171,7 @@ app.get('/video/setScriptPos', (req, res) => {
 app.get('/video/removeScriptPos', (req, res) => {
     const fileName = req.query.fileName;
 
-    info(`removeScript:${fileName}`, req)
+    info(`removeScript:${fileName}`, req.threadId)
 
     var rPath = path.join(directoryPath, "scripts");
     var data = {};
@@ -4187,7 +4187,7 @@ app.get('/video/removeScriptPos', (req, res) => {
         });
 
     } catch (e) {
-        info("error parsing replacers:" + e.message, req)
+        info("error parsing replacers:" + e.message, req.threadId)
     }
 
     delete data[fileName];
@@ -4216,7 +4216,7 @@ app.post('/video/toSplit', (req, res) => {
 });
 
 app.get('/video/doSplit', (req, res) => {
-    info("splitting=" + splitting, req)
+    info("splitting=" + splitting, req.threadId)
     if (response.length > 0) {
         res.send("<pre>" + response.join("\n") + "</pre>");
         if (splitting == 0) {
