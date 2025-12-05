@@ -1891,7 +1891,7 @@ app.post('/stock/candidates', async (req, res) => {
             id: scode,
             scode: scode,
             sname: stock[1],
-            priority: 0,
+            priority: now,
             updateTime: now
         }
         await insertOrReplace("tcandidate", row);
