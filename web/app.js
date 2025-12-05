@@ -627,24 +627,24 @@ async function reloadRule(r, req) {
 }
 
 async function tryToSell(r, req) {
-    debug("tryToSell:" + JSON.stringify(r), req);
+    debug("tryToSell:" + JSON.stringify(r), req.threadId)
     let rule = r.rule;
     let now = Date.now();
     let price = 0;
     if (rule.dip < 0) {
         price = rule.sell;
     } else if (rule.currentPrice >= parseFloat(rule.sell)) {
-        debug(`currentPrice > sell`, req);
+        debug(`currentPrice > sell`, req.threadId)
         if (rule.maxPrice >= parseFloat(rule.sell)) {
-            debug(`maxPrice > sell`, req);
+            debug(`maxPrice > sell`, req.threadId)
             let delta = rule.maxPrice - rule.currentPrice;
-            debug(`delta=${delta}`, req);
+            debug(`delta=${delta}`, req.threadId)
             if (delta >= parseFloat(rule.dip)) {
                 price = rule.currentPrice;
             }
         }
     }
-    debug(`price=${price}`, req);
+    debug(`price=${price}`, req.threadId)
     if (price > 0) {
         //卖出
         let action = {
@@ -665,14 +665,14 @@ async function tryToSell(r, req) {
         r.status = "ordered";
 
         r.actions.push(action);
-        debug(`rules:${JSON.stringify(rules)}`, req);
+        debug(`rules:${JSON.stringify(rules)}`, req.threadId)
         return true;
     }
 
     return false;
 }
 async function tryToBuy(r, req) {
-    debug("tryToBuy:" + JSON.stringify(r), req);
+    debug("tryToBuy:" + JSON.stringify(r), req.threadId)
     let rule = r.rule;
     let now = Date.now();
     let buy = 0;
@@ -687,12 +687,12 @@ async function tryToBuy(r, req) {
     } else {
 
         if (rule.currentPrice <= parseFloat(rule.buy)) {
-            debug(`currentPrice < buy`, req);
+            debug(`currentPrice < buy`, req.threadId)
 
 
             if (rule.minPrice <= parseFloat(rule.buy)) {
                 let delta = rule.currentPrice - rule.minPrice;
-                debug(`delta=${delta}`, req);
+                debug(`delta=${delta}`, req.threadId)
                 if (delta >= parseFloat(rule.bounce)) {
                     //买入
                     buy = rule.currentPrice;
@@ -700,7 +700,7 @@ async function tryToBuy(r, req) {
             }
         }
     }
-    debug(`buy=${buy}`, req);
+    debug(`buy=${buy}`, req.threadId)
     if (buy > 0) {
         let all = await ensureCciNotCrossDown100(scode, sname, threadId);
         all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
@@ -761,7 +761,7 @@ async function checkRule(scodes, req) {
     }
 
     checkingRule = 1;
-    debug("checkRule start", req);
+    debug("checkRule start", req.threadId)
     let now = Date.now();
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
@@ -769,7 +769,7 @@ async function checkRule(scodes, req) {
         let rs = rules[scode];
         if (rs != null) {
             Object.values(rs).forEach(async (r) => {
-                debug(`checking rule: scode=${scode} status=${r.status}`, req);
+                debug(`checking rule: scode=${scode} status=${r.status}`, req.threadId)
 
                 if (r.expireTime != null && r.expireTime < now) {
                     info("expired rule:" + r.scode, req.threadId)
@@ -803,7 +803,7 @@ async function checkRule(scodes, req) {
         }
     }
 
-    debug("checkRule end", req);
+    debug("checkRule end", req.threadId)
     checkingRule = 0;
 }
 
@@ -1834,7 +1834,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
     }
 
     function getChildProperty(root, path, key) {
-        debug(`getChildProperty:${path}.${key}`, req);
+        debug(`getChildProperty:${path}.${key}`, req.threadId)
         let node = findChild(root, path.split("."));
         if (node) {
             return node[key];
@@ -1852,10 +1852,10 @@ app.post('/stock/screen/nodes', async (req, res) => {
     //0.0.0.0.0.0.0.1.0.1.3.0.1.1.0.0.0.0
     //0.0.0.0.0.0.0.1.0.1.3.0.1.2.1.2.0.0
     if (root.isGfStatus == 1) {
-        debug("isGfStatus", req);
+        debug("isGfStatus", req.threadId)
         var node = findNodeById(root, "com.gf.client:id/refresh_child");
         if (node) {
-            debug("refresh_child found", req);
+            debug("refresh_child found", req.threadId)
             for (let i = 0; ; i++) {
                 let sname = getChildProperty(node, `1.${i}.0.0.0`, "text");
                 let scode = getChildProperty(node, `1.${i}.0.0.1.0`, "text");
@@ -1864,7 +1864,7 @@ app.post('/stock/screen/nodes', async (req, res) => {
                 let ratio = getChildProperty(node, `2.1.2.${i * 4 + 2}.0.0`, "text");
                 let ratio1 = getChildProperty(node, `2.1.2.${i * 4 + 3}.0`, "text");
                 scodes.push(scode);
-                debug(`${i}:${sname}(${scode}),${price},${delta},${ratio},${ratio1}`, req);
+                debug(`${i}:${sname}(${scode}),${price},${delta},${ratio},${ratio1}`, req.threadId)
                 if (sname == null || scode == null || price == null || delta == null || ratio == null || ratio1 == null) {
                     break;
                 }
