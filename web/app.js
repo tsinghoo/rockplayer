@@ -488,7 +488,7 @@ async function reloadRule(r, req) {
         return;
     }
 
-    info("reloadRule:" + r.scode, req);
+    info("reloadRule:" + r.scode + r.sname, req);
 
     let now = Date.now();
     if (r.expireTime != null && r.expireTime < now) {
@@ -513,7 +513,7 @@ async function reloadRule(r, req) {
     }
 
     try {
-        info("r.rule:" + r.rule, req);
+        info("r.rule:" + JSON.stringify(r.rule), req);
         r.rule = JSON.parse(r.rule);
     } catch (e) {
         info(e.message, req);
@@ -534,7 +534,7 @@ async function reloadRule(r, req) {
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`);
     if (ra) {
-        info("ra:" + JSON.stringify(ra), req);
+        info("${r.scode} ${r.sname} ra:" + JSON.stringify(ra), req);
         if (ra.done == 0) {
             r.status = "ordered";
         } else if (ra.done == -1) {
@@ -565,7 +565,7 @@ async function reloadRule(r, req) {
         info(`r.status=${r.status}`, req);
         r.actions.push(ra);
     } else {
-        info(`r.status=${r.status}`, req);
+        info(`${r.scode} ${r.sname} r.status=${r.status}`, req);
         if (r.rule.order == "buyFirst") {
             r.status = "toBuy";
         } else if (r.rule.order == "sellFirst") {
@@ -574,7 +574,7 @@ async function reloadRule(r, req) {
             r.status = "todo";
         }
 
-        info(`set r.status=${r.status}`, req);
+        info(`${r.scode} ${r.sname} set r.status=${r.status}`, req);
     }
 }
 
