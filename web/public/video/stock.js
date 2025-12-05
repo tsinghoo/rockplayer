@@ -803,6 +803,12 @@ window.stock_list = window.stock_list || (function () {
                 }
             })
 
+            if (self.sql.name == "rule") {
+                setTimeout(() => {
+                    $(".thRule").click();
+                }, 100);
+            }
+
             $(".thK1d").click(function (e) {
                 self.showK1d = !self.showK1d;
                 if (self.showK1d) {
