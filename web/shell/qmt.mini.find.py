@@ -468,6 +468,7 @@ def getCciCrossUpDay(cci, dayStart, dayEnd):
             return i
     return 0
 
+
 def getCandidateList():
     # 从test1获取股票列表
     info("getCandidateList")
@@ -491,12 +492,13 @@ def getCandidateList():
     except Exception as e:
         error("getCandidateList failed:", str(e))
         return g.stocklist
-    
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
     if sector == 'candidate':
-        g.stocklist = g.candidates
+        g.stocklist = getCandidateList()
     else:
         g.stocklist = xtdata.get_stock_list_in_sector(sector)
 
@@ -561,6 +563,18 @@ def findStock(sector):
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
             info(" high price increase:", count)
             if (count < (dayEnd-dayStart)):
+                continue
+
+            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
+            info(" close price increase:", count)
+            if (count < (dayEnd-dayStart)):
+                continue
+
+            dayStart = -30
+            dayEnd = -1
+            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0.05, 1)
+            info(" increase 0.07 days:", count)
+            if (count < (3)):
                 continue
 
             # """
@@ -747,7 +761,7 @@ if __name__ == '__main__':
                    '沪深ETF', '深市ETF', '深证A股', '深证B股', '科创板', '香港联交所股票']
     sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板', '香港联交所股票']
 
-    time.sleep(5)
+    time.sleep(2)
 
     if ui == "A":
         # 先清空所有候选
@@ -788,13 +802,14 @@ if __name__ == '__main__':
         sector_list = ['candidate']
         for sector in sector_list:
             candidates = findStock(sector)
-            info("candidates:", candidates)
+            info(f"{len(candidates)} candidates found:{candidates}")
+            time.sleep(2)
             ui = input("要上传更新吗(y/n):")
             if ui == "n":
                 sys.exit(1)
             if ui == "y":
                 # 将candidates分批上传到test1
-                uploadCandidates([])
+                doUploadCandidates([])
                 uploadCandidates(candidates)
                 update1d([c[0] for c in candidates])
     if ui == "2":
