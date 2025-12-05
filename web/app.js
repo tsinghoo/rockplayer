@@ -2252,17 +2252,17 @@ async function autoCreateRules() {
                 workerCreateRule.succeeded.push({ scode, sname });
                 total++;
             } else {
-                info(result.error, { threadId }, workerCreateRule.logs, 5);
+                info(result.error, { threadId });
                 await saveCreateRuleFailure(scode, result.error);
                 workerCreateRule.failed.push({ scode, sname, reason: result.error });
             }
         }
 
-        info(`auto create rule succeeded`, { threadId }, workerCreateRule.logs, 5);
+        info(`auto create rule succeeded`, { threadId });
     } catch (e) {
         error(e.message, { threadId });
         error(e.stack, { threadId });
-        info(`auto create rule failed:${e}`, { threadId }, workerCreateRule.logs, 5);
+        info(`auto create rule failed:${e}`, { threadId });
     }
 
     reloadRules();
@@ -2283,7 +2283,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
     if (!priceDelay) {
         priceDelay = 30;
     }
-    let logs = [];
+
     let succeeded = [];
     let failed = [];
     if (workerCreateRule.id == 0) {
@@ -2293,7 +2293,6 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             workerCreateRule.priceDelay = priceDelay;
             if (scode == null) {
                 workerCreateRule.id = setTimeout(autoCreateRules, 100);
-                logs = ["autoCreateRule started"];
             } else {
                 workerCreateRule.scode = scode;
                 await autoCreateRules();
@@ -2304,23 +2303,19 @@ app.get('/stock/rule/create/auto', async (req, res) => {
                 workerCreateRule.failed = [];
             }
         } else {
-            logs = workerCreateRule.logs;
-            workerCreateRule.logs = [];
             succeeded = workerCreateRule.succeeded;
             workerCreateRule.succeeded = [];
             failed = workerCreateRule.failed;
             workerCreateRule.failed = [];
         }
     } else {
-        logs = workerCreateRule.logs;
         succeeded = workerCreateRule.succeeded;
         failed = workerCreateRule.failed;
     }
 
     var resp = JSON.stringify({
         succeeded: succeeded,
-        failed: failed,
-        logs
+        failed: failed
     });
     if (js) {
         resp = `${js}(${resp})`;
@@ -2753,7 +2748,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     let sname = stockBasicInfo.sname;
-    info(`${sname}: auto creating rule`, { threadId }, workerCreateRule.logs, 5);
+    info(`${sname}: auto creating rule`, { threadId });
     let failed = 0;
     //获取tstock里对应scode的最后一条记录
     let trade = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
@@ -3020,7 +3015,7 @@ async function ensureMa5Increasing(scode, sname, threadId, prevRes, start, end) 
     let ma5 = prevRes.ma5;
     let days = getDecreaseDays(ma5, start, end);
     if (days < end - start) {
-        info(`${sname}: ma5 increasing ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
+        info(`${sname}: ma5 increasing ${days}/${end - start} days`, { threadId });
         prevRes.reason = `ma5 increasing ${days}/${end - start} days`;
         return prevRes;
     }
@@ -3044,7 +3039,7 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes, start, end) {
     }
 
     if (days < end - start) {
-        info(`${sname}: larger than ma5 ${days}/${end - start} days`, { threadId }, workerCreateRule.logs, 5);
+        info(`${sname}: larger than ma5 ${days}/${end - start} days`, { threadId });
         prevRes.reason = `larger than ma5 ${days}/${end - start} days`;
         return prevRes;
     }
@@ -3068,7 +3063,7 @@ async function ensureLowPriceIncreasing(scode, sname, threadId, prevRes, start, 
 
     for (let i = start; i < end; ++i) {
         if (prevRes.rows[i].low < prevRes.rows[i + 1].low) {
-            info(`${sname}:${i}.low < ${i + 1}.low`, { threadId }, workerCreateRule.logs, 5);
+            info(`${sname}:${i}.low < ${i + 1}.low`, { threadId });
             prevRes.reason = `${i}.low < ${i + 1}.low`;
             return prevRes;
         }
@@ -3083,7 +3078,7 @@ async function ensureData1dIsEnough(scode, sname, threadId, prevRes) {
     }
 
     if (prevRes.rows == null || prevRes.rows.length < 3) {
-        info(`${sname}:no 1d data`, { threadId }, workerCreateRule.logs, 5);
+        info(`${sname}:no 1d data`, { threadId });
         prevRes.reason = "no 1d data";
         return prevRes;
     }
@@ -3091,7 +3086,7 @@ async function ensureData1dIsEnough(scode, sname, threadId, prevRes) {
     let lastDay = prevRes.rows[0].time;
     let todayStr = timeFormat(new Date(), "yyyyMMdd");
     if (todayStr != lastDay) {
-        info(`${sname}:no today 1d`, { threadId }, workerCreateRule.logs, 5);
+        info(`${sname}:no today 1d`, { threadId });
         prevRes.reason = "no today 1d";
         return prevRes;
     }
@@ -3108,7 +3103,7 @@ async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes, start,
 
     for (let i = start; i < end; ++i) {
         if (prevRes.rows[i].high < prevRes.rows[i + 1].high) {
-            info(`${sname}:${i}.high < ${i + 1}.high`, { threadId }, workerCreateRule.logs, 5);
+            info(`${sname}:${i}.high < ${i + 1}.high`, { threadId });
             prevRes.reason = `${i}.high < ${i + 1}.high`;
             return prevRes;
         }
@@ -3131,7 +3126,7 @@ async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
 
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci <= 100 && prevRes.rows[i + 1].cci >= 100) {
-            info(`${sname}:${i}.cci <=100<=${i + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
+            info(`${sname}:${i}.cci <=100<=${i + 1}.cci`, { threadId });
             prevRes.reason = `${i}.cci(${prevRes.rows[i].cci})<=100<=${i + 1}.cci(${prevRes.rows[i + 1].cci})`;
             return prevRes;
         }
@@ -3143,7 +3138,7 @@ async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
 async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
     prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
     if (prevRes.reason) {
-        error(`${sname}:${prevRes.reason}`, { threadId }, workerCreateRule.logs, 5);
+        error(`${sname}:${prevRes.reason}`, { threadId });
         return false;
     }
     let period = 14;
@@ -3151,10 +3146,10 @@ async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
 
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci >= -100 && prevRes.rows[i + 1].cci <= -100) {
-            info(`${sname}:${i}.cci >=-100>=${i + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
+            info(`${sname}:${i}.cci >=-100>=${i + 1}.cci`, { threadId });
             for (let j = i - 1; j >= 0; --j) {
                 if (prevRes.rows[j].cci < prevRes.rows[j + 1].cci) {
-                    info(`${sname}:${j}.cci < ${j + 1}.cci`, { threadId }, workerCreateRule.logs, 5);
+                    info(`${sname}:${j}.cci < ${j + 1}.cci`, { threadId });
                     return false;
                 }
             }
