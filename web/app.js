@@ -257,31 +257,43 @@ async function log2File() {
     }
 }
 
-function info(msg, req) {
+function info(msg, threadId) {
     if (logLevel > INFO) {
         return;
     }
 
+    if (threadId == null) {
+        threadId = "";
+    }
+
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    let text = `${time}[${req ? req.threadId : ""}]:${msg}`;
+    let text = `${time}[${threadId}]:${msg}`;
 
     log(text);
 }
-function debug(msg, req) {
+function debug(msg, threadId) {
     if (logLevel > DEBUG) {
         return;
     }
 
+    if (threadId == null) {
+        threadId = "";
+    }
+
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    log(`${time}[${req ? req.threadId : ""}]:${msg}`);
+    log(`${time}[${threadId}]:${msg}`);
 }
-function error(msg, req) {
+function error(msg, threadId) {
     if (logLevel > ERROR) {
         return;
     }
 
+    if (threadId == null) {
+        threadId = "";
+    }
+
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    log(`${time}[${req ? req.threadId : ""}]:${msg}`);
+    log(`${time}[${threadId}]:${msg}`);
 }
 
 // 列出目录下的所有文件
@@ -524,11 +536,11 @@ async function reloadRule(r, req) {
         return;
     }
 
-    info("reloadRule:" + r.scode + r.sname, req);
+    info("reloadRule:" + r.scode + r.sname, req.threadId)
 
     let now = Date.now();
     if (r.expireTime != null && r.expireTime < now) {
-        info("expired rule:" + r.scode, req);
+        info("expired rule:" + r.scode, req.threadId)
         if (rules[r.scode] && rules[r.scode][r.broker]) {
             delete rules[r.scode][r.broker];
         }
@@ -549,11 +561,11 @@ async function reloadRule(r, req) {
     }
 
     try {
-        info("r.rule:" + JSON.stringify(r.rule), req);
+        info("r.rule:" + JSON.stringify(r.rule), req.threadId)
         r.rule = JSON.parse(r.rule);
     } catch (e) {
-        info(e.message, req);
-        info(e.stack, req);
+        info(e.message, req.threadId)
+        info(e.stack, req.threadId)
     }
 
     if (rules[r.scode] == null) {
@@ -570,7 +582,7 @@ async function reloadRule(r, req) {
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`);
     if (ra) {
-        info("${r.scode} ${r.sname} ra:" + JSON.stringify(ra), req);
+        info("${r.scode} ${r.sname} ra:" + JSON.stringify(ra), req.threadId)
         if (ra.done == 0) {
             r.status = "ordered";
         } else if (ra.done == -1) {
@@ -581,7 +593,7 @@ async function reloadRule(r, req) {
             } else if (ra.action == "sell") {
                 r.status = "toBuy";
             } else {
-                info("rule done", req);
+                info("rule done", req.threadId)
                 r.status = "done";
                 await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
                 delete rules[r.scode][r.broker];
@@ -598,10 +610,10 @@ async function reloadRule(r, req) {
             }
         }
 
-        info(`r.status=${r.status}`, req);
+        info(`r.status=${r.status}`, req.threadId)
         r.actions.push(ra);
     } else {
-        info(`${r.scode} ${r.sname} r.status=${r.status}`, req);
+        info(`${r.scode} ${r.sname} r.status=${r.status}`, req.threadId)
         if (r.rule.order == "buyFirst") {
             r.status = "toBuy";
         } else if (r.rule.order == "sellFirst") {
@@ -610,7 +622,7 @@ async function reloadRule(r, req) {
             r.status = "todo";
         }
 
-        info(`${r.scode} ${r.sname} set r.status=${r.status}`, req);
+        info(`${r.scode} ${r.sname} set r.status=${r.status}`, req.threadId)
     }
 }
 
@@ -694,7 +706,7 @@ async function tryToBuy(r, req) {
         all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
         all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
         if (all.reason != null) {
-            info(all.reason, req);
+            info(all.reason, req.threadId)
             await saveCreateRuleFailure(rule.scode, all.reason);
             await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
             if (rules[scode] && rules[scode][broker]) {
@@ -760,7 +772,7 @@ async function checkRule(scodes, req) {
                 debug(`checking rule: scode=${scode} status=${r.status}`, req);
 
                 if (r.expireTime != null && r.expireTime < now) {
-                    info("expired rule:" + r.scode, req);
+                    info("expired rule:" + r.scode, req.threadId)
                     if (rules[r.scode] && rules[r.scode][r.broker]) {
                         delete rules[r.scode][r.broker];
                     }
@@ -935,7 +947,7 @@ app.use((req, res, next) => {
     const bodyParams = JSON.stringify(req.body);
     info(`${method} ${url}`, req)
     if (method.toLowerCase() == "post") {
-        info(`body:${bodyParams}`, req);
+        info(`body:${bodyParams}`, req.threadId)
     }
 
     next();
@@ -2288,17 +2300,17 @@ async function autoCreateRules() {
                 workerCreateRule.succeeded.push({ scode, sname });
                 total++;
             } else {
-                info(result.error, { threadId });
+                info(result.error, threadId)
                 await saveCreateRuleFailure(scode, result.error);
                 workerCreateRule.failed.push({ scode, sname, reason: result.error });
             }
         }
 
-        info(`auto create rule succeeded`, { threadId });
+        info(`auto create rule succeeded`, threadId)
     } catch (e) {
         error(e.message, { threadId });
         error(e.stack, { threadId });
-        info(`auto create rule failed:${e}`, { threadId });
+        info(`auto create rule failed:${e}`, threadId)
     }
 
     reloadRules();
@@ -2784,7 +2796,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     let sname = stockBasicInfo.sname;
-    info(`${sname}: auto creating rule`, { threadId });
+    info(`${sname}: auto creating rule`, threadId)
     let failed = 0;
     //获取tstock里对应scode的最后一条记录
     let trade = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
@@ -3051,7 +3063,7 @@ async function ensureMa5Increasing(scode, sname, threadId, prevRes, start, end) 
     let ma5 = prevRes.ma5;
     let days = getDecreaseDays(ma5, start, end);
     if (days < end - start) {
-        info(`${sname}: ma5 increasing ${days}/${end - start} days`, { threadId });
+        info(`${sname}: ma5 increasing ${days}/${end - start} days`, threadId)
         prevRes.reason = `ma5 increasing ${days}/${end - start} days`;
         return prevRes;
     }
@@ -3075,7 +3087,7 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes, start, end) {
     }
 
     if (days < end - start) {
-        info(`${sname}: larger than ma5 ${days}/${end - start} days`, { threadId });
+        info(`${sname}: larger than ma5 ${days}/${end - start} days`, threadId)
         prevRes.reason = `larger than ma5 ${days}/${end - start} days`;
         return prevRes;
     }
@@ -3099,7 +3111,7 @@ async function ensureLowPriceIncreasing(scode, sname, threadId, prevRes, start, 
 
     for (let i = start; i < end; ++i) {
         if (prevRes.rows[i].low < prevRes.rows[i + 1].low) {
-            info(`${sname}:${i}.low < ${i + 1}.low`, { threadId });
+            info(`${sname}:${i}.low < ${i + 1}.low`, threadId)
             prevRes.reason = `${i}.low < ${i + 1}.low`;
             return prevRes;
         }
@@ -3114,7 +3126,7 @@ async function ensureData1dIsEnough(scode, sname, threadId, prevRes) {
     }
 
     if (prevRes.rows == null || prevRes.rows.length < 3) {
-        info(`${sname}:no 1d data`, { threadId });
+        info(`${sname}:no 1d data`, threadId)
         prevRes.reason = "no 1d data";
         return prevRes;
     }
@@ -3122,7 +3134,7 @@ async function ensureData1dIsEnough(scode, sname, threadId, prevRes) {
     let lastDay = prevRes.rows[0].time;
     let todayStr = timeFormat(new Date(), "yyyyMMdd");
     if (todayStr != lastDay) {
-        info(`${sname}:no today 1d`, { threadId });
+        info(`${sname}:no today 1d`, threadId)
         prevRes.reason = "no today 1d";
         return prevRes;
     }
@@ -3139,7 +3151,7 @@ async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes, start,
 
     for (let i = start; i < end; ++i) {
         if (prevRes.rows[i].high < prevRes.rows[i + 1].high) {
-            info(`${sname}:${i}.high < ${i + 1}.high`, { threadId });
+            info(`${sname}:${i}.high < ${i + 1}.high`, threadId)
             prevRes.reason = `${i}.high < ${i + 1}.high`;
             return prevRes;
         }
@@ -3162,7 +3174,7 @@ async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
 
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci <= 100 && prevRes.rows[i + 1].cci >= 100) {
-            info(`${sname}:${i}.cci <=100<=${i + 1}.cci`, { threadId });
+            info(`${sname}:${i}.cci <=100<=${i + 1}.cci`, threadId)
             prevRes.reason = `${i}.cci(${prevRes.rows[i].cci})<=100<=${i + 1}.cci(${prevRes.rows[i + 1].cci})`;
             return prevRes;
         }
@@ -3182,10 +3194,10 @@ async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
 
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci >= -100 && prevRes.rows[i + 1].cci <= -100) {
-            info(`${sname}:${i}.cci >=-100>=${i + 1}.cci`, { threadId });
+            info(`${sname}:${i}.cci >=-100>=${i + 1}.cci`, threadId)
             for (let j = i - 1; j >= 0; --j) {
                 if (prevRes.rows[j].cci < prevRes.rows[j + 1].cci) {
-                    info(`${sname}:${j}.cci < ${j + 1}.cci`, { threadId });
+                    info(`${sname}:${j}.cci < ${j + 1}.cci`, threadId)
                     return false;
                 }
             }
