@@ -213,21 +213,13 @@ function getRuleId(scode, broker) {
     return `${scode}.${broker}`;
 }
 
-function info(msg, req, logs, maxLogSize) {
+function info(msg, req) {
     if (logLevel > INFO) {
         return;
     }
 
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
     let text = `${time}[${req ? req.threadId : ""}]:${msg}`;
-    if (logs) {
-        logs.push(text);
-        if (!maxLogSize) {
-            maxLogSize = 10;
-        }
-
-        logs.splice(0, logs.length - maxLogSize);
-    }
 
     console.log(text);
 }
