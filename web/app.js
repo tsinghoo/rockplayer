@@ -15,6 +15,10 @@ import('uuid').then(module => {
     console.error('Failed to load uuid module:', err);
 });
 
+g = {
+    logs: []
+}
+
 //引入sqlite库
 const sqlite3 = require('sqlite3').verbose();
 const { spawn, exec } = require('child_process');
@@ -31,6 +35,7 @@ let DEBUG = 2;
 let INFO = 3;
 let ERROR = 4;
 let logLevel = 2;
+
 info(args.length);
 const pwd = "995560";
 if (args.length < 4) {
@@ -213,6 +218,45 @@ function getRuleId(scode, broker) {
     return `${scode}.${broker}`;
 }
 
+function log(msg) {
+    g.logs.push(msg);
+}
+
+setTimeout(log2File, 10);
+
+async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function appendFile(filePath, data) {
+    return new Promise((resolve, reject) => {
+        fs.appendFile(filePath, data, (err) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+async function log2File() {
+    while (true) {
+        let logFilePath = path.join(__dirname, `app.${timeFormat(new Date(), "yyMMdd")}.log`);
+        let logs = g.logs;
+        g.logs = [];
+        if (logs.length > 0) {
+            try {
+                await appendFile(logFilePath, logs.join("\n") + "\n");
+            } catch (e) {
+                console.log(e.stack);
+            }
+        } else {
+            await sleep(100);
+        }
+    }
+}
+
 function info(msg, req) {
     if (logLevel > INFO) {
         return;
@@ -221,7 +265,7 @@ function info(msg, req) {
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
     let text = `${time}[${req ? req.threadId : ""}]:${msg}`;
 
-    console.log(text);
+    log(text);
 }
 function debug(msg, req) {
     if (logLevel > DEBUG) {
@@ -229,7 +273,7 @@ function debug(msg, req) {
     }
 
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    console.log(`${time}[${req ? req.threadId : ""}]:${msg}`);
+    log(`${time}[${req ? req.threadId : ""}]:${msg}`);
 }
 function error(msg, req) {
     if (logLevel > ERROR) {
@@ -237,7 +281,7 @@ function error(msg, req) {
     }
 
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
-    console.log(`${time}[${req ? req.threadId : ""}]:${msg}`);
+    log(`${time}[${req ? req.threadId : ""}]:${msg}`);
 }
 
 // 列出目录下的所有文件
@@ -1875,7 +1919,7 @@ app.post('/stock/candidates', async (req, res) => {
     if (stocks.length == 0) {
         await dbCall([`delete from tcandidate`]);
     }
-    
+
     let now = Date.now();
     for (let i = 0; i < stocks.length; i++) {
         let stock = stocks[i];
