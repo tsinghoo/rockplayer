@@ -1932,7 +1932,8 @@ app.post('/stock/candidates', async (req, res) => {
         await dbCall([`delete from tcandidate`]);
     }
 
-    let now = Date.now();
+    let now = timeFormat(Date.now(), "yyMMddhhmm");
+    now = parseInt(now);
     for (let i = 0; i < stocks.length; i++) {
         let stock = stocks[i];
         let scode = stock[0].split(".")[0];

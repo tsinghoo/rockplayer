@@ -624,13 +624,13 @@ window.stock_list = window.stock_list || (function () {
             for (let i = 0; i < rows.length; i++) {
                 let tr = $("<tr>");
                 let row = rows[i];
-                tr.attr("data", JSON.stringify(row));
                 keys.forEach(key => {
                     if (row[params[key]] != null) {
                         row[key] = row[params[key]];
                     }
                 });
 
+                tr.attr("data", JSON.stringify(row));
                 let firstRow = true;
                 if (row["代码"] == null) {
                     row["代码"] = "";

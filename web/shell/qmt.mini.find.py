@@ -551,7 +551,7 @@ def findStock(sector):
             CCI(prices)
             cci = prices['cci']
 
-            dayStart = -4
+            dayStart = -5
             dayEnd = -1
             crossUpDay = getCciCrossUpDay(cci, dayStart, dayEnd)
             info("cciCrossUpDay:", crossUpDay)
@@ -572,11 +572,14 @@ def findStock(sector):
 
             dayStart = -30
             dayEnd = -1
-            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0.05, 1)
-            info(" increase 0.05 days:", count)
-            if (count < (3)):
+            minRate = 7
+            count = getIncreaseDays(
+                close_prices, dayStart, dayEnd, minRate*0.01, 1)
+            minIncreaseDays = 3
+            if (count < (minIncreaseDays)):
+                info(f" increase {minRate}% days: {count} < {minIncreaseDays}")
                 continue
-
+            info(f" increase {minRate}% days: {count}")
             # """
 
             # 计算历史分位数判断是否低位
@@ -660,12 +663,14 @@ def uploadCandidates(stocks):
 def doUploadCandidates(batch):
     body = {"data": batch}
     try:
+        info("uploading candidates:", body)
         response = requests.post(
             g.baseUrl+"/stock/candidates", json=body, timeout=20)
         if response.status_code != 200:
             error("上传失败，状态码:", response.status_code,  "响应内容:", response.text)
     except Exception as e:
-        error("上传失败:", str(e))
+        error_info = traceback.format_exc()
+        error("上传失败:", error_info)
 
 
 if __name__ == '__main__':
@@ -765,7 +770,7 @@ if __name__ == '__main__':
 
     if ui == "A":
         # 先清空所有候选
-        doUploadCandidates([])
+        # doUploadCandidates([])
         sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板', '香港联交所股票']
         # 对于每个sector,调用findStock
         for sector in sector_list:
@@ -778,7 +783,7 @@ if __name__ == '__main__':
         info(f"{len(g.candidates)} candidates found")
     if ui == "a":
         # 先清空所有候选
-        doUploadCandidates([])
+        # doUploadCandidates([])
         sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板']
         # 对于每个sector,调用findStock
         for sector in sector_list:

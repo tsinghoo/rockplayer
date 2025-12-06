@@ -369,7 +369,7 @@ def get1mLastMinute(scode):
         debug("get", url)
         response = requests.get(url, verify=False, timeout=5)
         if response.status_code != 200:
-            error("getLast1dMinute failed:", response.status_code)
+            error("getLast1dMinute error:", response.status_code)
             return
         else:
             response.encoding = 'utf-8'
@@ -378,7 +378,8 @@ def get1mLastMinute(scode):
             return json.loads(content)["lastMinute"]
 
     except Exception as e:
-        error("getLast1dMinute failed:", str(e))
+        error_info = traceback.format_exc()
+        error("getLast1dMinute failed:", error_info)
 
 
 def getCandidates():
