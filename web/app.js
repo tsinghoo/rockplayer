@@ -702,17 +702,20 @@ async function tryToBuy(r, req) {
     }
     debug(`buy=${buy}`, req.threadId)
     if (buy > 0) {
-        let all = await ensureCciNotCrossDown100(scode, sname, threadId);
-        all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
-        all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
-        if (all.reason != null) {
-            info(all.reason, req.threadId)
-            await saveCreateRuleFailure(rule.scode, all.reason);
-            await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
-            if (rules[scode] && rules[scode][broker]) {
-                reloadRule(rules[scode][broker], req);
+        if (rule.bounce >= 0) {
+            let all = await ensureCciNotCrossDown100(scode, sname, threadId);
+            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
+            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
+            if (all.reason != null) {
+                info(all.reason, req.threadId)
+                await saveCreateRuleFailure(rule.scode, all.reason);
+                await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
+                if (rules[scode] && rules[scode][broker]) {
+                    await reloadRule(rules[scode][broker], req);
+                }
+                info(`rule closed`, req.threadId);
+                return false;
             }
-            return false;
         }
 
         let action = {
@@ -730,13 +733,16 @@ async function tryToBuy(r, req) {
         }
 
         if (r.actions.length > 0) {
+            info(`check recent actions`, req.threadId);
             let oc = r.actions[r.actions.length - 1].createTime;
             let n = Date.now();
             if (n - oc < 1000) {
+                info("buy action too close", req.threadId);
                 return false;
             }
         }
 
+        info("new action", req.threadId);
         await insertOrReplace("tRuleAction", action);
         r.status = "ordered";
 
@@ -768,38 +774,44 @@ async function checkRule(scodes, req) {
         let scode = scodes[i].split(".")[0];
         let rs = rules[scode];
         if (rs != null) {
-            Object.values(rs).forEach(async (r) => {
-                debug(`checking rule: scode=${scode} status=${r.status}`, req.threadId)
+            let vs = Object.values(rs);
+            for (let i = 0; i < vs.length; ++i) {
+                let r = vs[i];
+                try {
+                    debug(`checking rule: scode=${scode} status=${r.status}`, req.threadId)
+                    if (r.expireTime != null && r.expireTime < now) {
+                        info("expired rule:" + r.scode, req.threadId)
+                        if (rules[r.scode] && rules[r.scode][r.broker]) {
+                            delete rules[r.scode][r.broker];
+                        }
 
-                if (r.expireTime != null && r.expireTime < now) {
-                    info("expired rule:" + r.scode, req.threadId)
-                    if (rules[r.scode] && rules[r.scode][r.broker]) {
-                        delete rules[r.scode][r.broker];
+                        await db.runSync(`update tRuleAction set done = -1 where ruleId=?`, [r.id]);
+
+                        await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
+
+                        return;
                     }
 
-                    await db.runSync(`update tRuleAction set done = -1 where ruleId=?`, [r.id]);
-
-                    await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
-
-                    return;
+                    switch (r.status) {
+                        case "todo":
+                            //检查是否满足条件
+                            let succ = await tryToBuy(r, req);
+                            if (!succ) {
+                                succ = await tryToSell(r, req);
+                            }
+                            break;
+                        case "toBuy":
+                            await tryToBuy(r, req);
+                            break;
+                        case "toSell":
+                            await tryToSell(r, req);
+                            break;
+                    }
                 }
-
-                switch (r.status) {
-                    case "todo":
-                        //检查是否满足条件
-                        let succ = await tryToBuy(r, req);
-                        if (!succ) {
-                            succ = await tryToSell(r, req);
-                        }
-                        break;
-                    case "toBuy":
-                        await tryToBuy(r, req);
-                        break;
-                    case "toSell":
-                        await tryToSell(r, req);
-                        break;
+                catch (e) {
+                    error(e.stack, req.threadId);
                 }
-            });
+            }
         }
     }
 
@@ -3097,9 +3109,10 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes, start, end) {
 }
 
 
-async function get1dData(prevRes, scode) {
+async function get1dData(scode, threadId) {
+    info(`get1dData`, threadId);
     await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
-    prevRes = await db.allSync(`select * from t1d where scode=? order by time desc limit 30`, [scode]);
+    let prevRes = await db.allSync(`select * from t1d where scode=? order by time desc limit 30`, [scode]);
     return prevRes;
 }
 
@@ -3122,8 +3135,9 @@ async function ensureLowPriceIncreasing(scode, sname, threadId, prevRes, start, 
 }
 
 async function ensureData1dIsEnough(scode, sname, threadId, prevRes) {
+    info(`ensureData1dIsEnough`, threadId);
     if (prevRes == null) {
-        prevRes = await get1dData(prevRes, scode);
+        prevRes = await get1dData(scode, threadId);
     }
 
     if (prevRes.rows == null || prevRes.rows.length < 3) {
@@ -3162,16 +3176,13 @@ async function ensureHighPriceIncreasing(scode, sname, threadId, prevRes, start,
 }
 
 async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
+    info(`ensureCciNotCrossDown100`, threadId);
     prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
     if (prevRes.reason) {
         return prevRes;
     }
     let period = 14;
     await calcCci(prevRes.rows, period);
-
-    if (prevRes.rows[i].cci <= -100) {
-        return prevRes;
-    }
 
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci <= 100 && prevRes.rows[i + 1].cci >= 100) {
