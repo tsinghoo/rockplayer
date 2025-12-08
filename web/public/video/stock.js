@@ -209,10 +209,8 @@ window.stock_list = window.stock_list || (function () {
                             } else {
                                 let succeeded = res.succeeded.map((item) => `${item.scode}.${item.sname}`).join("<br/>");
                                 let failed = res.failed.map((item) => `${item.scode}.${item.sname}:${item.reason}`).join("<br/>");
-                                let logs = res.logs.join("<br/>");
                                 c.find(".succeededRules").html(succeeded);
                                 c.find(".failedRules").html(failed);
-                                c.find(".logs").html(logs);
                             }
                         }
 
@@ -1426,6 +1424,28 @@ window.stock_list = window.stock_list || (function () {
 
                 share.currentTarget = ele.currentTarget;
                 brokerPopup = await share.popupAction__("", buttons);
+            })
+
+            c.find(".buttonAuto").click(async function (ele) {
+                let broker = c.find(".operationName").val().trim();
+                self.lastBroker = broker;
+                let scode = c.find(".scode").val().trim();
+                let type = 0;
+                let maxCount = 5;
+                let priceDelay = 10000000;
+                let res = await share.getSync__(`/stock/rule/create/auto?scode=${scode}&type=${type}&max=${maxCount}&priceDelay=${priceDelay}`);
+                if (res.error) {
+                    share.toastError__(res.error);
+                } else {
+                    if (res.failed.length > 0) {
+                        share.toastError__(res.failed[0].reason);
+                    } else {
+                        c.find(".rule").html("");
+                        c.find(".ruleStatus").html("");
+                        let r = await self.showRule(null, c.find(".rule"), scode, c.find(".ruleStatus"));
+                    }
+                }
+
             })
 
             autoPrice("buyAmount");
