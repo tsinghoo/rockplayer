@@ -2593,7 +2593,7 @@ app.get('/stock/rule/cancel', async (req, res) => {
 
     if (all == 1) {
         sql = `update tTradeRule set closed = 1`;
-        cancelled = "1";
+        cancelled = "";
         params = [];
     } else if (all == "A股") {
         sql = `update tTradeRule set closed = 1 where scode in (select scode from tstockbasic where market in ('BJ','SH',"SZ"))`;
@@ -2656,26 +2656,29 @@ app.get('/stock/rule/cancel', async (req, res) => {
     }
 
 
-    let action = {
-        id: `${cancelled}-cancelAction`,
-        ruleId: ruleId,
-        broker: broker,
-        scode: scode,
-        sname: scode,
-        action: "cancelAction",
-        price: 0,
-        amount: 0,
-        orderNo: "",
-        done: 0,
-        createTime: now
-    }
-
-    result = await insertOrReplace("tRuleAction", action);
-
     var resp = JSON.stringify({});
-    if (result.error) {
-        resp = JSON.stringify(result);
+    if (cancelled != "") {
+        let action = {
+            id: `${cancelled}-cancelAction`,
+            ruleId: ruleId,
+            broker: broker,
+            scode: scode,
+            sname: scode,
+            action: "cancelAction",
+            price: 0,
+            amount: 0,
+            orderNo: "",
+            done: 0,
+            createTime: now
+        }
+
+        result = await insertOrReplace("tRuleAction", action);
+
+        if (result.error) {
+            resp = JSON.stringify(result);
+        }
     }
+
 
     if (js) {
         resp = `${js}(${resp})`;
