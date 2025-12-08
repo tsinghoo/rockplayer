@@ -3258,6 +3258,13 @@ window.stock_list = window.stock_list || (function () {
                         return;
                     }
 
+                    let minCount = 200;
+                    for (let i = 0; i < minCount - rows.length; i++) {
+                        categoryData.push("-");
+                        values.push([0, 0, 0, 0, 0, 0, 0]);
+                        volumes.push([i, 0, 1]);
+                    }
+
                     for (let i = 0; i < rows.length; i++) {
                         let row = rows[i];
                         categoryData.push(row.time);
