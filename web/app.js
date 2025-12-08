@@ -2596,7 +2596,7 @@ app.get('/stock/rule/cancel', async (req, res) => {
         cancelled = "";
         params = [];
     } else if (all == "A股") {
-        sql = `update tTradeRule set closed = 1 where scode in (select scode from tstockbasic where market in ('BJ','SH',"SZ"))`;
+        sql = `update tTradeRule set closed = 1 where scode in (select scode from tstockbasic where market in ('BJ','SH','SZ'))`;
         cancelled = "";
         params = [];
     } else if (all == "H股") {
@@ -2624,13 +2624,13 @@ app.get('/stock/rule/cancel', async (req, res) => {
             sql = `update tRuleAction set done = -1 `;
             result = await db.runSync(sql, []);
         } else if (all == "A股") {
-            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('BJ','SH',"SZ"))`;
+            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('BJ','SH','SZ'))`;
             result = await db.runSync(sql, []);
         } else if (all == "H股") {
-            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('HK"))`;
+            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('HK'))`;
             result = await db.runSync(sql, []);
         } else if (all == "BNB") {
-            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('EC"))`;
+            sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('EC'))`;
             result = await db.runSync(sql, []);
         } else if (all == "待买") {
             sql = `update tRuleAction set done = -1 where action='buy' )`;
