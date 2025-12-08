@@ -732,21 +732,24 @@ def update1d(stocklist=None, startTime=None, endTime=None):
     if (endTime is None):
         endTime = ""
 
+    newData = 0
     for index, scode in enumerate(stocklist):
         dataStartTime = startTime
         if (startTime is None):
             lastDate = get1dLastDate(scode)
             if lastDate:
                 dataStartTime = lastDate
-                # 把dateStartTime设置为30天前
-                dataStartTime = (datetime.datetime.strptime(
-                    lastDate, "%Y%m%d") - datetime.timedelta(days=30)).strftime("%Y%m%d")
             else:
+                newData = 1
                 # 把dateStartTime设置为1年前
                 dataStartTime = (datetime.datetime.now() -
                                  datetime.timedelta(days=365)).strftime("%Y%m%d")
+
+        # 把dateStartTime设置为30天前,为了计算cci
+        startTime = (datetime.datetime.strptime(
+            dataStartTime, "%Y%m%d") - datetime.timedelta(days=30)).strftime("%Y%m%d")
         period = '1d'
-        datas = get1dData(stocklist, index, dataStartTime, endTime)
+        datas = get1dData(stocklist, index, startTime, endTime)
         # print("所有列名:", df.keys())
         # print("所有:", df.values())
         columns = ['Time'] + datas.columns.tolist()
@@ -755,14 +758,24 @@ def update1d(stocklist=None, startTime=None, endTime=None):
 
         # 将datas的数据分批上传，每批100条
         bsize = 50
+        foundStart = 0
         for i in range(0, len(datas), bsize):
             batch = datas.iloc[i:i+bsize]
             info("上传", scode, period,
                  "[", i, ",", i+bsize, "]", len(batch))
             batch_data = []
             for idx, row in batch.iterrows():
-                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                                row["low"], row["volume"], row["amount"], row["cci"]])
+                if (newData == 1 or foundStart == 1):
+                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
+                                                    row["low"], row["volume"], row["amount"], row["cci"]])
+                elif idx == dataStartTime:
+                    foundStart = 1
+                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
+                                                    row["low"], row["volume"], row["amount"], row["cci"]])
+                else:
+                    info(
+                        f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}")
+
             body = {"data": obj2Json(
                 batch_data), "scode": scode, "period": period, "passcode": "995560"}
             debug("body:", body)
