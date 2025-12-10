@@ -2287,8 +2287,11 @@ function setSellPriceByBuy(rc, maxDelta) {
     rc.sell = parseFloat(rc.sell.toFixed(3));
 }
 
-async function autoCreateRules() {
-    let threadId = Date.now();
+async function autoCreateRules(threadId) {
+    if (threadId == null) {
+        threadId = Date.now();
+    }
+
     try {
         let sql = `select * from tStockBasic`;
         if (workerCreateRule.scode) {
@@ -2353,10 +2356,12 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             workerCreateRule.type = type;
             workerCreateRule.priceDelay = priceDelay;
             if (scode == null) {
-                workerCreateRule.id = setTimeout(autoCreateRules, 100);
+                workerCreateRule.id = setTimeout(function () {
+                    autoCreateRules(req.threadId);
+                }, 100);
             } else {
                 workerCreateRule.scode = scode;
-                await autoCreateRules();
+                await autoCreateRules(req.threadId);
                 workerCreateRule.scode = null;
                 succeeded = workerCreateRule.succeeded;
                 workerCreateRule.succeeded = [];
