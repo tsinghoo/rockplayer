@@ -494,6 +494,38 @@ def getCandidateList():
         return g.stocklist
 
 
+def cciPassed(prices):
+    # 检查cci是否上穿-100线
+    CCI(prices)
+
+    high_prices = prices['high']
+    low_prices = prices['low']
+    close_prices = prices['close']
+    current_price = high_prices[-1]
+    cci = prices['cci']
+
+    dayStart = -5
+    dayEnd = -1
+    crossUpDay = getCciCrossUpDay(cci, dayStart, dayEnd)
+    info("cciCrossUpDay:", crossUpDay)
+    if (crossUpDay == 0):
+        return False
+
+    dayStart = crossUpDay-1
+    dayEnd = -1
+    count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
+    info(" high price increase:", count)
+    if (count < (dayEnd-dayStart)):
+        return False
+
+    count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
+    info(" close price increase:", count)
+    if (count < (dayEnd-dayStart)):
+        return False
+
+    return True
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
@@ -546,40 +578,9 @@ def findStock(sector):
                 info("bad price:", current_price)
                 continue
 
-            # """
-            # 检查cci是否上穿-100线
-            CCI(prices)
-            cci = prices['cci']
+            # if not cciPassed(prices):
+            #     continue
 
-            dayStart = -5
-            dayEnd = -1
-            crossUpDay = getCciCrossUpDay(cci, dayStart, dayEnd)
-            info("cciCrossUpDay:", crossUpDay)
-            if (crossUpDay == 0):
-                continue
-
-            dayStart = crossUpDay-1
-            dayEnd = -1
-            count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
-            info(" high price increase:", count)
-            if (count < (dayEnd-dayStart)):
-                continue
-
-            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
-            info(" close price increase:", count)
-            if (count < (dayEnd-dayStart)):
-                continue
-
-            dayStart = -30
-            dayEnd = -1
-            minRate = 7
-            count = getIncreaseDays(
-                close_prices, dayStart, dayEnd, minRate*0.01, 1)
-            minIncreaseDays = 3
-            if (count < (minIncreaseDays)):
-                info(f" increase {minRate}% days: {count} < {minIncreaseDays}")
-                continue
-            info(f" increase {minRate}% days: {count}")
             # """
 
             # 计算历史分位数判断是否低位
@@ -591,7 +592,7 @@ def findStock(sector):
             #     info("bad")
             #     continue
 
-            """
+            # """
             # 最近几天最高价连续上涨
             dayStart = -4
             dayEnd = -1
@@ -599,9 +600,9 @@ def findStock(sector):
             info(" high price increase:", count)
             if (count < (dayEnd-dayStart)):
                 continue
-            """
+            # """
 
-            """
+            # """
             # 最近几天收盘价连续上涨
             dayStart = -4
             dayEnd = -1
@@ -609,7 +610,7 @@ def findStock(sector):
             info(" close price increase:", count)
             if (count < (dayEnd-dayStart)):
                 continue
-            """
+            # """
 
             # #计算high_prices中最近30天的最大值
             # days=30
@@ -620,15 +621,19 @@ def findStock(sector):
             # if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
             #     continue
 
-            """
+            # """
             # 最近30天较大涨幅天数
             dayStart = -30
             dayEnd = -1
-            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0.07, 1)
-            info(" increase 0.07 days:", count)
-            if (count < (3)):
+            minRate = 7
+            count = getIncreaseDays(
+                close_prices, dayStart, dayEnd, minRate*0.01, 1)
+            minIncreaseDays = 3
+            if (count < (minIncreaseDays)):
+                info(f" increa6e {minRate}% days: {count} < {minIncreaseDays}")
                 continue
-            """
+            info(f" increase {minRate}% days: {count}")
+            # """
 
             """
             # 最近60天较大跌幅天数

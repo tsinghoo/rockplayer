@@ -457,8 +457,9 @@ def getStockDetail(scode):
         "FloatVolume": si["FloatVolume"],
         "UpStopPrice": si["UpStopPrice"],
         "DownStopPrice": si["DownStopPrice"],
-        # "bNotProfitable": si["bNotProfitable"],
-        "VolumeMultiple": si["VolumeMultiple"]
+        "VolumeMultiple": si["VolumeMultiple"],
+        "MinLimitOrderVolume": si["MinLimitOrderVolume"],
+        "bNotProfitable": si["bNotProfitable"]
     }
 
     # data = xtdata.get_financial_data([scode])

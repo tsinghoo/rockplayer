@@ -1609,8 +1609,25 @@ async function upgradeDb(succ, fail) {
 
     let res = await db.getSync("SELECT * FROM config where key=?", "dbVersion");
     var updates = [
-        "",
-        `CREATE TABLE IF NOT EXISTS tStockPrice (
+        `alter table tStockBasic add column MinLimitOrderVolume int default 100;`,
+    ];
+
+    if (res == null || res.error) {
+        res = await db.runSync(`
+CREATE TABLE config(key varchar(50) primary key, value text);
+CREATE TABLE t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0, cci INTEGER DEFAULT -200);
+CREATE TABLE t1m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
+CREATE TABLE t5m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);
+CREATE TABLE tRuleAction(id text primary key, ruleId text, scode text,sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer, broker text default '', status text default '');
+CREATE TABLE tStockBasic (
+        id text primary key,
+        scode text,
+        sname text,
+        buy real default 0,
+        sell real default 0,
+        updateTime integer
+    , priority int default 0, volumeMultiple int default 100, upStopPrice real default 0, downStopPrice real default 0, totalVolume real default 0, floatVolume real default 0, bNotProfitable real default 0, market text, LastVolume real, optionPrice real, optionUpdateTime int, autoCreateRuleFail text);
+CREATE TABLE tStockPrice (
         id text primary key,
         scode text,
         sname text,
@@ -1619,90 +1636,17 @@ async function upgradeDb(succ, fail) {
         ratio real default 0,
         ratio1 real default 0,
         updateTime integer);
-        `,
-        "update config set value='3' where key='dbVersion';",
-        `create table tStockAction(id text primary key, scode text, sname text, type text, price real, step real, amount int, entrustPrice real, entrustNo text, createTime integer, updateTime integer);`,
-        "update config set value='5' where key='dbVersion';",
-        `alter table tstock add column lastOperationTime text;`,
-        "update config set value='7' where key='dbVersion';",
-        `create table tpositions(id text primary key, broker text, account_id text, avg_price real, can_use_volume real, frozen_volume real, market_value real, on_road_volume real, open_price real, stock_code text, volume real, updateTime integer);`,
-        "update config set value='9' where key='dbVersion';",
-        `create table tTradeRule(id text primary key, scode text, sname text, rule text, createTime integer);`,
-        "update config set value='11' where key='dbVersion';",
-        `alter table tsql add column params text;`,
-        "update config set value='13' where key='dbVersion';",
-        `drop table tStockAction;`,
-        "update config set value='15' where key='dbVersion';",
-        `create table tRuleAction(id text primary key, ruleId text, scode text, sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer);`,
-        "update config set value='17' where key='dbVersion';",
-        `alter table tTradeRule add column closed integer default 0;`,
-        "update config set value='19' where key='dbVersion';",
-        `alter table tRuleAction add column broker text default '';`,
-        "update config set value='21' where key='dbVersion';",
-        `alter table tRuleAction add column status text default '';`,
-        "update config set value='23' where key='dbVersion';",
-        `create table ttick(id text primary key, scode text, time int, data text);`,
-        "update config set value='25' where key='dbVersion';",
-        `create table t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
-        "update config set value='27' where key='dbVersion';",
-        `create table t1m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
-        "update config set value='29' where key='dbVersion';",
-        `create table t5m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);`,
-        "update config set value='31' where key='dbVersion';",
-        `alter table tpositions add column floatProfit real default 0;`,
-        "update config set value='33' where key='dbVersion';",
-        `/* The code you provided is not valid JavaScript code. It appears to be a mix of SQL and some
-        other characters that are not recognized in JavaScript. */
-        alter table tstockbasic add column priority int default 0;`,
-        "update config set value='35' where key='dbVersion';",
-        `create table tallstock(id text primary key, scode text, sname text, sector text, priority int default 0, updateTime integer);`,
-        "update config set value='37' where key='dbVersion';",
-        `create table tcandidate(id text primary key, scode text, sname text, priority int default 0, updateTime integer);`,
-        "update config set value='39' where key='dbVersion';",
-        `alter table tStockBasic add column volumeMultiple int default 100;`,
-        "update config set value='41' where key='dbVersion';",
-        `alter table tStockBasic add column upStopPrice real default 0;`,
-        "update config set value='43' where key='dbVersion';",
-        `alter table tStockBasic add column downStopPrice real default 0;`,
-        "update config set value='45' where key='dbVersion';",
-        `alter table tStockBasic add column totalVolume real default 0;`,
-        "update config set value='47' where key='dbVersion';",
-        `alter table tStockBasic add column floatVolume real default 0;`,
-        "update config set value='49' where key='dbVersion';",
-        `alter table tTradeRule add column broker text;`,
-        "update config set value='51' where key='dbVersion';",
-        `alter table tStockBasic add column bNotProfitable real default 0;`,
-        "update config set value='53' where key='dbVersion';",
-        `alter table tStockBasic add column market text;`,
-        "update config set value='55' where key='dbVersion';",
-        `alter table tStockBasic add column LastVolume real,add column TotalVolume real,add column FloatVolume real,add column UpStopPrice real,add column DownStopPrice real,add column VolumeMultiple int;`,
-        "update config set value='57' where key='dbVersion';",
-        `alter table tStockBasic add column LastVolume real;`,
-        "update config set value='59' where key='dbVersion';",
-        `alter table tStock add column deleted int default 0;`,
-        "update config set value='61' where key='dbVersion';",
-        `alter table tStockBasic add column optionPrice real;`,
-        "update config set value='63' where key='dbVersion';",
-        `alter table tStock add column type int default 0;`,
-        "update config set value='65' where key='dbVersion';",
-        `alter table tStockBasic add column optionUpdateTime int;`,
-        "update config set value='67' where key='dbVersion';",
-        `alter table t1m add column type int default 0;`,
-        "update config set value='69' where key='dbVersion';",
-        `alter table t1d add column type int default 0;`,
-        "update config set value='71' where key='dbVersion';",
-        `alter table tpositions add column type int default 0;`,
-        "update config set value='73' where key='dbVersion';",
-        `alter table tTradeRule add column expireTime int;`,
-        "update config set value='75' where key='dbVersion';",
-        `alter table tStockBasic add column autoCreateRuleFail text;`,
-        "update config set value='77' where key='dbVersion';",
-        `alter table t1d add column cci int default -200;`,
-        "update config set value='79' where key='dbVersion';",
-    ];
-
-    if (res == null || res.error) {
-        res = await db.runSync(`CREATE TABLE tstock (
+CREATE TABLE tTradeRule(id text primary key, scode text, sname text, rule text, createTime integer, closed integer default 0, broker text, expireTime int);
+CREATE TABLE tallstock(id text primary key, scode text, sname text, sector text, priority int default 0, updateTime integer);
+CREATE TABLE tcandidate(id text primary key, scode text, sname text, priority int default 0, updateTime integer);
+CREATE TABLE tpositions(id text primary key, broker text, account_id text, avg_price real, can_use_volume real, frozen_volume real, market_value real, on_road_volume real, open_price real, stock_code text, volume real, updateTime integer, floatProfit real default 0, type int default 0);
+CREATE TABLE tsql (
+        id text primary key,
+        name text,
+        sql text,
+        lastUseTime integer
+    , params text);
+CREATE TABLE tstock (
         tid text PRIMARY KEY,
         scode text,
         sname TEXT,
@@ -1715,46 +1659,26 @@ async function upgradeDb(succ, fail) {
         tamount integer,
         tcash REAL,
         taccount text,
-        tpair text);`);
+        tpair text
+    , lastOperationTime text, deleted int default 0, type int default 0);
+CREATE TABLE ttick(id text primary key, scode text, time int, data text);`);
 
-        await db.runSync("create table config(key varchar(50) primary key, value text);");
+        await db.runSync("insert into config values('dbVersion', 0);");
+    } else {
+        debug(JSON.stringify(res));
+        var ver = parseInt(res.value);
+        updates.splice(0, ver);
 
-        await db.runSync(`CREATE TABLE tsql (
-        id text primary key,
-        name text,
-        sql text,
-        lastUseTime integer);`);
-
-        await db.runSync(`CREATE TABLE tStockBasic (
-        id text primary key,
-        scode text,
-        sname text,
-        buy real default 0,
-        sell real default 0,
-        updateTime integer);`);
-
-        await db.runSync("insert into config values('dbVersion', 1);");
-
-        updates.forEach(async (sql, i) => {
+        for (let i = 0; i < updates.length; ++i) {
+            let sql = updates[i];
             let res = await db.runSync(sql);
             if (res.error) {
                 error(res.error);
                 return res;
             }
-        });
 
-    } else {
-        debug(JSON.stringify(res));
-
-        var ver = res.value;
-        updates.splice(0, parseInt(ver));
-
-        if (updates.length > 0) {
-            let res = await dbCall(updates);
-            if (res.error) {
-                error(res.error);
-                return res;
-            }
+            sql = `update config set value='${ver + i + 1}' where key='dbVersion';`;
+            await db.runSync(sql);
         }
 
         let row = await db.getSync("SELECT * FROM config where key=?", ["dbVersion"]);
@@ -1780,6 +1704,7 @@ async function insertOrReplace(table, row) {
 
         return val;
     });
+
     return await dbCall([[sql, vals]]);
 }
 
@@ -2159,8 +2084,11 @@ app.post('/stock/details', async (req, res) => {
     let data = req.body.data;
     let updateTime = Date.now();
     data.forEach(async (row) => {
-        let sql = `update tStockBasic set sname=?, market=?, LastVolume=?, TotalVolume=?, FloatVolume=?,    UpStopPrice=?,   DownStopPrice=?,   VolumeMultiple=?,updateTime=? where scode=?`;
-        await db.runSync(sql, [row.sname, row.ExchangeID, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, updateTime, row.scode.split(".")[0]]);
+        let sql = `update tStockBasic set sname=?, market=?, LastVolume=?, TotalVolume=?, FloatVolume=?,    UpStopPrice=?,   DownStopPrice=?,   VolumeMultiple=?, 
+        MinLimitOrderVolume=?, 
+        updateTime=? 
+        where scode=?`;
+        await db.runSync(sql, [row.sname, row.ExchangeID, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, row.MinLimitOrderVolume, updateTime, row.scode.split(".")[0]]);
     })
 
     if (data.length < 1) {
