@@ -99,6 +99,20 @@ async def websocket_client():
 
                         g.stocklist = getStockList()
                         resubscribe()
+                    elif message["func"] == "updateDetail":
+                        params = message["params"]
+                        scode = params["scode"]
+                        detail = getStockDetail(scode)
+                        if (detail is not None):
+                            uploadDetail([detail])
+                            
+                        info("updateDetail done")
+                        response = {
+                            "id": message["id"]
+                        }
+
+                        await wsc.send(json.dumps(response))
+                        info(f"websocket发送消息: {response}")
                     elif message["func"] == "forceUpdate1d":
                         params = message["params"]
                         scode = params["scode"]
@@ -444,10 +458,11 @@ def uploadStockPrice():
 
 def getStockDetail(scode):
     info("getStockDetail", scode)
-    si = xtdata.get_instrument_detail(scode)
+    si = xtdata.get_instrument_detail(scode, True)
     if (si is None):
         error(scode, "error")
         return None
+    info("detail:", obj2JsonString(si))
     detail = {
         "scode": scode,
         "sname": si["InstrumentName"],
@@ -458,9 +473,13 @@ def getStockDetail(scode):
         "UpStopPrice": si["UpStopPrice"],
         "DownStopPrice": si["DownStopPrice"],
         "VolumeMultiple": si["VolumeMultiple"],
-        "MinLimitOrderVolume": si["MinLimitOrderVolume"],
-        "bNotProfitable": si["bNotProfitable"]
+        "bNotProfitable": 1 if si["bNotProfitable"] == True else 0
     }
+
+    if si["MinLimitOrderVolume"] > detail["VolumeMultiple"]:
+        detail["VolumeMultiple"] = si["MinLimitOrderVolume"]
+    if si["MinMarketOrderVolume"] > detail["VolumeMultiple"]:
+        detail["VolumeMultiple"] = si["MinMarketOrderVolume"]
 
     # data = xtdata.get_financial_data([scode])
     # info(data)
@@ -579,18 +598,21 @@ def updateDetailTask():
 
     info("updateDetailTask start")
     details = []
-    for index, scode in enumerate(g.stocklist):
-        detail = getStockDetail(scode)
-        if (detail is None):
-            continue
-        details.append(detail)
-        # 如果 details 里有 10 个元素，则上传到 test1
-        if len(details) >= 20:
-            uploadDetail(details)
-            details = []
+    try:
+        for index, scode in enumerate(g.stocklist):
+            detail = getStockDetail(scode)
+            if (detail is None):
+                continue
+            details.append(detail)
+            # 如果 details 里有 10 个元素，则上传到 test1
+            if len(details) >= 20:
+                uploadDetail(details)
+                details = []
 
-    uploadDetail(details)
-    uploadDetail([])
+        uploadDetail(details)
+        uploadDetail([])
+    except Exception as e:
+        info("error:", traceback.format_exc())
     info("updateDetailTask end")
 
 

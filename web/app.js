@@ -2088,9 +2088,10 @@ app.post('/stock/details', async (req, res) => {
     data.forEach(async (row) => {
         let sql = `update tStockBasic set sname=?, market=?, LastVolume=?, TotalVolume=?, FloatVolume=?,    UpStopPrice=?,   DownStopPrice=?,   VolumeMultiple=?, 
         MinLimitOrderVolume=?, 
+        bNotProfitable=?,
         updateTime=? 
         where scode=?`;
-        await db.runSync(sql, [row.sname, row.ExchangeID, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, row.MinLimitOrderVolume, updateTime, row.scode.split(".")[0]]);
+        await db.runSync(sql, [row.sname, row.ExchangeID, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, row.MinLimitOrderVolume, row.bNotProfitable, updateTime, row.scode.split(".")[0]]);
     })
 
     if (data.length < 1) {
@@ -2131,6 +2132,17 @@ app.get('/stock/rule/create', async (req, res) => {
     let expireHours = parseFloat(calc);
     let expireTime = now + expireHours * 60 * 60 * 1000;
     let id = `${json.scode}.${broker}`;
+
+    let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [json.scode]);
+    if (stockBasicInfo) {
+        if (json.buyAmount > 0 && json.buyAmount < stockBasicInfo.volumeMultiple) {
+            json.buyAmount = stockBasicInfo.volumeMultiple
+        }
+        if (json.sellAmount > 0 && json.sellAmount < stockBasicInfo.volumeMultiple) {
+            json.sellAmount = stockBasicInfo.volumeMultiple
+        }
+    }
+
     let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
     await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
     if (rules[json.scode] == null) {
@@ -2183,6 +2195,7 @@ app.get('/stock/rule/create', async (req, res) => {
         }
     }
     wss.callFunc("国金", "reloadStockCodes", {});
+    wss.callFunc("国金", "updateDetail", { scode: formatScode(json.scode)});
     var resp = JSON.stringify({});
     if (result.error) {
         resp = JSON.stringify(result);
