@@ -688,9 +688,9 @@ async function tryToBuy(r, req) {
     } else {
         debug(`bounce=${rule.bounce}`, req.threadId)
         if (rule.currentPrice <= parseFloat(rule.buy)) {
-            debug(`currentPrice < buy`, req.threadId)
+            debug(`currentPrice < buy (${rule.currentPrice}<${rule.buy})`, req.threadId)
 
-
+            debug(`minPrice=${rule.minPrice}`, req.threadId);
             if (rule.minPrice <= parseFloat(rule.buy)) {
                 let delta = rule.currentPrice - rule.minPrice;
                 debug(`delta=${delta}`, req.threadId)
@@ -2178,10 +2178,11 @@ app.get('/stock/rule/create', async (req, res) => {
                 lastOperationTime: tday + " " + ttime
             }
             await insertOrReplace("tstock", obj);
-            await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
+            //await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
+
         }
     }
-
+    wss.callFunc("国金", "reloadStockCodes", {});
     var resp = JSON.stringify({});
     if (result.error) {
         resp = JSON.stringify(result);
