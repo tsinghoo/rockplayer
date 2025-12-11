@@ -682,10 +682,11 @@ async function tryToBuy(r, req) {
     let threadId = req.threadId;
 
     if (rule.bounce < 0) {
+        debug(`bounce=${rule.bounce}<0, order asap`, req.threadId)
         //立即下单
         buy = rule.buy;
     } else {
-
+        debug(`bounce=${rule.bounce}`, req.threadId)
         if (rule.currentPrice <= parseFloat(rule.buy)) {
             debug(`currentPrice < buy`, req.threadId)
 
@@ -700,6 +701,7 @@ async function tryToBuy(r, req) {
             }
         }
     }
+    
     debug(`buy=${buy}`, req.threadId)
     if (buy > 0) {
         if (rule.bounce >= 0) {
