@@ -701,10 +701,10 @@ async function tryToBuy(r, req) {
             }
         }
     }
-    
+
     debug(`buy=${buy}`, req.threadId)
     if (buy > 0) {
-        if (rule.bounce >= 0) {
+        if (rule.bounce > 0) {
             let all = await ensureCciNotCrossDown100(scode, sname, threadId);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
             all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
