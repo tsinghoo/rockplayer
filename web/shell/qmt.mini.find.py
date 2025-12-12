@@ -716,6 +716,7 @@ if __name__ == '__main__':
     print("A. 搜索所有股票")
     print("a. 搜索A股股票")
     print("h. 搜索港股股票")
+    print("t. 测试")
     print("c. 搜索现有推荐股票")
     print("2. 更新所有股票代码")
     print("3. 获取所有板块信息")
@@ -821,6 +822,9 @@ if __name__ == '__main__':
                 # 将candidates分批上传到test1
                 uploadCandidates(candidates)
                 update1d([c[0] for c in candidates])
+    if ui == "t":
+        report_data = xtdata.get_financial_data(['688795.SH'])
+        info("test:", obj2JsonString(report_data, 4, 0))
     if ui == "2":
         # 对于每个sector,查询成分股
         g.stocks = []

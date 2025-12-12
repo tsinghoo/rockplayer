@@ -187,13 +187,13 @@ db.allSync = (sql, params) => {
     });
 }
 
-db.getSync = db.getSync || function (sql, params) {
-    info("getSync:" + sql);
-    info(JSON.stringify(params));
+db.getSync = db.getSync || function (sql, params, threadId) {
+    info("getSync:" + sql, threadId);
+    info(JSON.stringify(params), threadId);
     return new Promise((resolve, reject) => {
         db.get(sql, params, function (err, row) {
             if (err != null) {
-                error(err);
+                error(err, threadId);
                 resolve({ error: err });
             } else {
                 resolve(row);
@@ -535,6 +535,7 @@ async function reloadRule(r, req) {
     if (r == null) {
         return;
     }
+    let threadId = req.threadId;
 
     info("reloadRule:" + r.scode + r.sname, req.threadId)
 
@@ -573,14 +574,14 @@ async function reloadRule(r, req) {
     }
     rules[r.scode][r.broker] = r;
 
-    let sb = await db.getSync(`select * from tStockBasic where scode = '${r.scode}'`);
+    let sb = await db.getSync(`select * from tStockBasic where scode = '${r.scode}'`, [], threadId);
     if (sb != null) {
         r.rule.currentPrice = r.rule.minPrice = r.rule.maxPrice = sb.buy;
     }
 
     r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
-    let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`);
+    let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`, [], threadId);
     if (ra) {
         info("${r.scode} ${r.sname} ra:" + JSON.stringify(ra), req.threadId)
         if (ra.done == 0) {
@@ -1448,10 +1449,11 @@ app.post('/stock/update', async (req, resp) => {
 });
 
 app.get('/stock/account', async (req, res) => {
+    let threadId = req.threadId;
     let js = req.query.js;
 
     let sql = `select * from config where key='stockAccount' `;
-    let r = await db.getSync(sql);
+    let r = await db.getSync(sql, [], threadId);
 
     var resp = `${js}(${r.value})`;
     res.send(resp);
@@ -1608,8 +1610,8 @@ function isArray(o) {
 
 async function upgradeDb(succ, fail) {
     debug("upgradeDb");
-
-    let res = await db.getSync("SELECT * FROM config where key=?", "dbVersion");
+    let threadId = Date.now();
+    let res = await db.getSync("SELECT * FROM config where key=?", "dbVersion", threadId);
     var updates = [
         `alter table tStockBasic add column MinLimitOrderVolume int default 100;`,
     ];
@@ -1683,7 +1685,7 @@ CREATE TABLE ttick(id text primary key, scode text, time int, data text);`);
             await db.runSync(sql);
         }
 
-        let row = await db.getSync("SELECT * FROM config where key=?", ["dbVersion"]);
+        let row = await db.getSync("SELECT * FROM config where key=?", ["dbVersion"], threadId);
         if (row == null) {
             debug("dbVersion:null");
         } else {
@@ -2122,6 +2124,7 @@ app.get('/stock/screen/nodes', async (req, res) => {
 });
 
 app.get('/stock/rule/create', async (req, res) => {
+    let threadId = req.threadId;
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
     let now = Date.now();
@@ -2131,10 +2134,14 @@ app.get('/stock/rule/create', async (req, res) => {
     let calc = eval(json.expireHours);
     let expireHours = parseFloat(calc);
     let expireTime = now + expireHours * 60 * 60 * 1000;
-    let id = `${json.scode}.${broker}`;
+    let ruleId = `${json.scode}.${broker}`;
 
-    let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [json.scode]);
+    let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [json.scode], threadId);
     if (stockBasicInfo) {
+        if (stockBasicInfo.volumeMultiple == 1) {
+            stockBasicInfo.volumeMultiple = 100;
+        }
+
         if (json.buyAmount > 0 && json.buyAmount < stockBasicInfo.volumeMultiple) {
             json.buyAmount = stockBasicInfo.volumeMultiple
         }
@@ -2143,13 +2150,13 @@ app.get('/stock/rule/create', async (req, res) => {
         }
     }
 
-    let result = await db.runSync(sql, [id, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
+    let result = await db.runSync(sql, [ruleId, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
     await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
     if (rules[json.scode] == null) {
         rules[json.scode] = {};
     }
 
-    rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker]);
+    rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker], threadId);
     await reloadRule(rules[json.scode][broker], req);
 
     let market = getMarket(json.scode);
@@ -2190,12 +2197,15 @@ app.get('/stock/rule/create', async (req, res) => {
                 lastOperationTime: tday + " " + ttime
             }
             await insertOrReplace("tstock", obj);
+
+            let sql = `update tTradeRule set closed = 1 where id=?`;
+            await db.runSync(sql, [ruleId]);
             //await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
 
         }
     }
     wss.callFunc("国金", "reloadStockCodes", {});
-    wss.callFunc("国金", "updateDetail", { scode: formatScode(json.scode)});
+    wss.callFunc("国金", "updateDetail", { scode: formatScode(json.scode) });
     var resp = JSON.stringify({});
     if (result.error) {
         resp = JSON.stringify(result);
@@ -2403,6 +2413,7 @@ app.get('/stock/reload/k1d', async (req, res) => {
 });
 
 app.get('/stock/k/1d', async (req, res) => {
+    let threadId = req.threadId;
     let js = req.query.js;
     info(JSON.stringify(req.query), req.threadId)
     let scode = req.query.scode;
@@ -2438,7 +2449,7 @@ app.get('/stock/k/1d', async (req, res) => {
     if (result.error) {
         resp = JSON.stringify(result);
     } else {
-        let sb = await db.getSync("select * from tStockBasic where scode=?", [scode]);
+        let sb = await db.getSync("select * from tStockBasic where scode=?", [scode], threadId);
         resp = JSON.stringify({
             stockBasic: sb,
             rows: result.rows
@@ -2716,6 +2727,7 @@ app.get('/stock/action/done', async (req, res) => {
 });
 
 app.get('/stock/rule/status', async (req, res) => {
+    let threadId = req.threadId;
     let js = req.query.js;
     let scode = req.query.scode;
     var resp = null;
@@ -2725,7 +2737,7 @@ app.get('/stock/rule/status', async (req, res) => {
         let res = await db.allSync(`select * from tTradeRule where scode=?`, [scode]);
 
         if (res.rows.length > 0) {
-            let tsb = await db.getSync(`select * from tStockBasic where scode=?`, [scode]);
+            let tsb = await db.getSync(`select * from tStockBasic where scode=?`, [scode], threadId);
             let data = res.rows[0];
             data.autoCreateRuleFail = tsb ? tsb.autoCreateRuleFail : "";
             resp = JSON.stringify({ data });
@@ -2757,20 +2769,20 @@ async function saveCreateRuleFailure(scode, error) {
 }
 async function autoCreateRule(scode, threadId, stockBasicInfo) {
     if (stockBasicInfo == null) {
-        stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [scode]);
+        stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [scode], threadId);
     }
 
     let sname = stockBasicInfo.sname;
     info(`${sname}: auto creating rule`, threadId)
     let failed = 0;
     //获取tstock里对应scode的最后一条记录
-    let trade = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode]);
+    let trade = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode], threadId);
     if (trade == null) {
         return { error: `no trade history` };
     }
 
     //如果已经存在rule,则跳过
-    let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName]);
+    let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName], threadId);
     if (oldRule != null && oldRule.closed == 0) {
         return `rule already active`;
     }
@@ -3347,11 +3359,12 @@ app.get('/stock/candidates', async (req, res) => {
 
 
 app.get('/stock/1d/lastDate', async (req, res) => {
+    let threadId = req.threadId;
     let js = req.query.js;
     let scode = req.query.scode;
     info("scode:" + scode, req.threadId)
     let sql = `select max(time) as lastDate from t1d where scode=?`;
-    let r = await db.getSync(sql, [scode.split(".")[0]]);
+    let r = await db.getSync(sql, [scode.split(".")[0]], threadId);
 
     var resp = JSON.stringify(r);
     if (js != null) {
@@ -3362,11 +3375,12 @@ app.get('/stock/1d/lastDate', async (req, res) => {
 });
 
 app.get('/stock/1m/lastMinute', async (req, res) => {
+    let threadId = req.threadId;
     let js = req.query.js;
     let scode = req.query.scode;
     info("scode:" + scode, req.threadId)
     let sql = `select max(time) as lastMinute from t1m where scode=?`;
-    let r = await db.getSync(sql, [scode.split(".")[0]]);
+    let r = await db.getSync(sql, [scode.split(".")[0]], threadId);
 
     var resp = JSON.stringify(r);
     if (js != null) {
@@ -3663,6 +3677,7 @@ function convertIfInteger(number) {
     return number; // 保持原值
 }
 app.post('/stock/deal/update', async (req, res) => {
+    let threadId = req.threadId;
     info(`/stock/deal/update:${JSON.stringify(req.body)}`, req.threadId)
     let deal = req.body;
     let ocode = deal.scode.split(".");
@@ -3683,7 +3698,7 @@ app.post('/stock/deal/update', async (req, res) => {
     deal.tprice = convertIfInteger(deal.tprice);
     deal.tid = `${deal.tday}.${deal.ttime}.${deal.scode}.${deal.tprice}`;
 
-    let old = await db.getSync("select * from tStock where tid=?", [deal.tid]);
+    let old = await db.getSync("select * from tStock where tid=?", [deal.tid], threadId);
     let r;
     if (old == null) {
         r = await insertOrIgnore("tStock", deal);

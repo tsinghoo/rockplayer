@@ -105,7 +105,7 @@ async def websocket_client():
                         detail = getStockDetail(scode)
                         if (detail is not None):
                             uploadDetail([detail])
-                            
+
                         info("updateDetail done")
                         response = {
                             "id": message["id"]
@@ -548,7 +548,7 @@ def update1dTask():
         if len(reloadK1d) > 0:
             info("reloading 1d data")
             for scode in reloadK1d:
-                updateActionOrdered(scode, "", "56", 0, "")
+                # updateActionOrdered(scode, "", "56", 0, "")
                 update1d([scode.replace(".HGT", ".HK")], "20210101", "")
         g.stocklist = getStockList()
         update1d(g.stocklist)
