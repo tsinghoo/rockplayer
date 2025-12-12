@@ -2735,7 +2735,7 @@ app.get('/stock/rule/status', async (req, res) => {
     var resp = null;
     if (scode == null) {
         resp = JSON.stringify({ data: rules });
-    } else if (rules[scode] == null || rules[scode].length == 0) {
+    } else if (rules[scode] == null || Object.keys(rules[scode]).length == 0) {
         info("no active rule for scode:" + scode, threadId);
         let res = await db.allSync(`select * from tTradeRule where scode=?`, [scode], threadId);
 
