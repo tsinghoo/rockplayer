@@ -172,13 +172,13 @@ db.runSync = (sql, params) => {
     })
 }
 
-db.allSync = (sql, params) => {
+db.allSync = (sql, params, threadId) => {
     return new Promise((resolve, reject) => {
-        info("allSync:" + sql);
-        info("params:" + JSON.stringify(params));
+        info("allSync:" + sql, threadId);
+        info("params:" + JSON.stringify(params), threadId);
         db.all(sql, params, function (err, rows) {
             if (err) {
-                error(err);
+                error(err, threadId);
                 resolve({ error: err });
             } else {
                 resolve({ rows: rows });
@@ -518,12 +518,11 @@ function add0(str, length) {
 let rules = {};
 
 async function reloadRules() {
-    //从 tTradeRule 读取所有未关闭的规则
-    let ruleList = await db.allSync("select * from tTradeRule where closed = 0");
     let req = {
         threadId:
             Date.now() + "" + Math.floor(Math.random() * 10000)
     }
+    let ruleList = await db.allSync("select * from tTradeRule where closed = 0", [], req.threadId);
 
     for (let i = 0; i < ruleList.rows.length; i++) {
         let rule = ruleList.rows[i];
@@ -1051,6 +1050,7 @@ app.post('/video/cookies', (req, res) => {
 });
 
 app.post('/stock/update', async (req, resp) => {
+    let threadId = req.threadId;
     let broker = req.body.broker;
     if (broker == null) {
         if (fields.length == 12) {
@@ -1433,7 +1433,7 @@ app.post('/stock/update', async (req, resp) => {
         }
     };
 
-    let r = await db.allSync("select max(lastOperationTime) as maxOperationTime, scode from tstock group by scode");
+    let r = await db.allSync("select max(lastOperationTime) as maxOperationTime, scode from tstock group by scode", [], threadId);
     info(`${r.rows.length} stocks`, req.threadId)
     for (var i = 0; i < r.rows.length; ++i) {
         let row = r.rows[i];
@@ -1938,10 +1938,10 @@ app.get('/stock/positions', async (req, res) => {
     let scode = req.query.scode;
     var resp = null;
     if (scode == null) {
-        resp = await db.allSync(`select * from tPositions`);
+        resp = await db.allSync(`select * from tPositions`, [], req.threadId);
         resp = JSON.stringify({ data: resp.rows });
     } else {
-        resp = await db.allSync(`select * from tPositions where stock_code=?`, [scode]);
+        resp = await db.allSync(`select * from tPositions where stock_code=?`, [scode], req.threadId);
         resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {
@@ -1963,14 +1963,14 @@ app.get('/stock/trades', async (req, res) => {
     }
     var resp = null;
     if (scode == null) {
-        resp = await db.allSync(`select * from tstock`);
+        resp = await db.allSync(`select * from tstock`, [], req.threadId);
         resp = JSON.stringify({ data: resp.rows });
     } else {
         let sql = `select * from tstock where scode=? and type=? and deleted=0 order by tday desc, ttime desc`;
         if (all == 1) {
             sql = `select * from tstock where scode=? and type=? order by tday desc, ttime desc`;
         }
-        resp = await db.allSync(sql, [scode, type]);
+        resp = await db.allSync(sql, [scode, type], req.threadId);
         resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {
@@ -2175,7 +2175,7 @@ app.get('/stock/rule/create', async (req, res) => {
     });
 
     if (json.order == "sellFirst") {
-        let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode]);
+        let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode], threadId);
         if (r.rows.length == 0) {
             let tday = timeFormat(now, "yyyyMMdd");
             let ttime = timeFormat(now, "hh:mm:ss");
@@ -2200,6 +2200,7 @@ app.get('/stock/rule/create', async (req, res) => {
 
             let sql = `update tTradeRule set closed = 1 where id=?`;
             await db.runSync(sql, [ruleId]);
+            delete rules[json.scode][broker];
             //await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
 
         }
@@ -2252,7 +2253,7 @@ async function autoCreateRules(threadId) {
             sql = `select * from tStockBasic where scode='${workerCreateRule.scode}'`;
         }
 
-        let res = await db.allSync(sql);
+        let res = await db.allSync(sql, [], threadId);
         let total = 0;
 
         for (let i = 0; i < res.rows.length; ++i) {
@@ -2363,7 +2364,7 @@ app.get('/stock/k/1m', async (req, res) => {
     day = timeFormat(day, "yyyyMMdd")
     nextDay = timeFormat(nextDay, "yyyyMMdd")
     let sql = `select * from t1m where scode=? and type=? and time > ? and time < ? order by scode, time`;
-    let result = await db.allSync(sql, [scode, type, day, nextDay]);
+    let result = await db.allSync(sql, [scode, type, day, nextDay], req.threadId);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
@@ -2445,7 +2446,7 @@ app.get('/stock/k/1d', async (req, res) => {
     }
 
     let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by scode,time`;
-    let result = await db.allSync(sql, [scode, type, startDay, endDay]);
+    let result = await db.allSync(sql, [scode, type, startDay, endDay], threadId);
     if (result.error) {
         resp = JSON.stringify(result);
     } else {
@@ -2488,7 +2489,7 @@ app.get('/stock/k/1ds', async (req, res) => {
     endDay = timeFormat(endDay, "yyyyMMdd");
 
     let sql = `select * from t1d where scode in ('${scodes.split(',').join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
-    let result = await db.allSync(sql, [type, startDay, endDay]);
+    let result = await db.allSync(sql, [type, startDay, endDay], req.threadId);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
@@ -2521,7 +2522,7 @@ app.get('/stock/k/1ms', async (req, res) => {
     nextDay = timeFormat(nextDay, "yyyyMMdd")
 
     let sql = `select * from t1m where scode in ('${scodes.split(',').join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
-    let result = await db.allSync(sql, [type, day, nextDay]);
+    let result = await db.allSync(sql, [type, day, nextDay], req.threadId);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
@@ -2682,7 +2683,7 @@ app.get('/stock/rule/actions', async (req, res) => {
     let js = req.query.js;
     let broker = req.query.broker;
     let sql = `select * from tRuleAction where (broker=?) and orderNo='' and done=0`;
-    let r = await db.allSync(sql, [broker]);
+    let r = await db.allSync(sql, [broker], req.threadId);
     r.rows.forEach(async (row) => {
         let nc = formatScode(row.scode);
         if (nc == null) {
@@ -2730,11 +2731,13 @@ app.get('/stock/rule/status', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
     let scode = req.query.scode;
+    info("scode:" + scode, threadId);
     var resp = null;
     if (scode == null) {
         resp = JSON.stringify({ data: rules });
-    } else if (rules[scode] == null) {
-        let res = await db.allSync(`select * from tTradeRule where scode=?`, [scode]);
+    } else if (rules[scode] == null || rules[scode].length == 0) {
+        info("no active rule for scode:" + scode, threadId);
+        let res = await db.allSync(`select * from tTradeRule where scode=?`, [scode], threadId);
 
         if (res.rows.length > 0) {
             let tsb = await db.getSync(`select * from tStockBasic where scode=?`, [scode], threadId);
@@ -2745,6 +2748,7 @@ app.get('/stock/rule/status', async (req, res) => {
             resp = JSON.stringify({ data: null });
         }
     } else {
+        info("active rule exists", threadId);
         resp = JSON.stringify({ data: Object.values(rules[scode])[0] });
     }
     if (js) {
@@ -2845,7 +2849,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
     let rc = null;
 
-    let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, trade.operationName]);
+    let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, trade.operationName], threadId);
     let position = 0;
     if (all.rows && all.rows.length > 0) {
         position = all.rows[0].volume;
@@ -3076,7 +3080,7 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes, start, end) {
 async function get1dData(scode, threadId) {
     info(`get1dData`, threadId);
     await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
-    let prevRes = await db.allSync(`select * from t1d where scode=? order by time desc limit 30`, [scode]);
+    let prevRes = await db.allSync(`select * from t1d where scode=? order by time desc limit 30`, [scode], threadId);
     return prevRes;
 }
 
@@ -3270,7 +3274,7 @@ function formatScode(stockCode) {
 app.get('/stock/codes', async (req, res) => {
     let js = req.query.js;
     let sql = `select scode from tstockbasic;`;
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
     let scodes = [];
     r.rows.forEach((row) => {
         let code = row.scode;
@@ -3293,7 +3297,7 @@ app.get('/stock/codes', async (req, res) => {
 app.get('/stock/rule/codes', async (req, res) => {
     let js = req.query.js;
     let sql = `select distinct scode from tTradeRule`;
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
     let scodes = [];
     r.rows.forEach((row) => {
         let code = row.scode;
@@ -3315,7 +3319,7 @@ app.get('/stock/rule/codes', async (req, res) => {
 app.get('/stock/rule/codes/active', async (req, res) => {
     let js = req.query.js;
     let sql = `select distinct scode from tTradeRule where closed=0;`;
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
     let scodes = [];
     r.rows.forEach((row) => {
         let code = row.scode;
@@ -3338,7 +3342,7 @@ app.get('/stock/rule/codes/active', async (req, res) => {
 app.get('/stock/candidates', async (req, res) => {
     let js = req.query.js;
     let sql = `select scode from tcandidate order by priority desc`;
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
     let scodes = [];
     r.rows.forEach((row) => {
         let code = row.scode;
@@ -3394,7 +3398,7 @@ app.get('/stock/price/current', async (req, res) => {
     let js = req.query.js;
 
     let sql = `select * from tstockbasic `;
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
 
     var resp = JSON.stringify({ rows: r.rows });
     if (js != null) {
@@ -3414,14 +3418,14 @@ app.get('/stock/pair', async (req, res) => {
         await db.runSync(`update tstock set tpair=''`);
         sql = "select * from tstock where tamount<0";
     }
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
     let sells = r.rows;
     info(`${sells.length} sells`, req.threadId)
     for (var i = 0; i < sells.length; ++i) {
         let sell = sells[i];
         info(`${sell.sname}(${sell.scode}):${sell.tid}`, req.threadId)
         let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday , ttime , tprice desc",
-            [sell.tamount * -1, sell.scode, sell.operationName, sell.tprice]);
+            [sell.tamount * -1, sell.scode, sell.operationName, sell.tprice], req.threadId);
         let buys = r.rows;
         if (buys.length > 0) {
             let buy = buys[0];
@@ -3430,7 +3434,7 @@ app.get('/stock/pair', async (req, res) => {
             await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
         } else {
             let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tday, ttime, tprice desc",
-                [sell.tamount * -1, sell.scode, sell.tprice]);
+                [sell.tamount * -1, sell.scode, sell.tprice], req.threadId);
             let buys = r.rows;
             if (buys.length > 0) {
                 let buy = buys[0];
@@ -3453,7 +3457,7 @@ app.get('/stock/delete/auto', async (req, res) => {
     info("reset before pair", req.threadId)
     await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
     let sql = `select * from tstock where scode=? order by tday desc, ttime desc`;
-    let r = await db.allSync(sql, [scode]);
+    let r = await db.allSync(sql, [scode], req.threadId);
     let trades = r.rows;
     info(`${trades.length} trades`, req.threadId)
     for (let i = 1; i < trades.length; ++i) {
@@ -3500,7 +3504,7 @@ app.post('/stock/query', async (req, res) => {
     let params = row.params;
     info(`/stock/query:${name}:sql:${sql}`, req.threadId)
     info(`/stock/query:${name}:params:${params}`, req.threadId)
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
     if (r.error) {
         info(r.error, req.threadId)
         res.send(JSON.stringify({ error: `${r.error}` }));
@@ -3528,7 +3532,7 @@ async function genCci(scode, req, all) {
     let period = 14;
 
     let sql = `select * from t1d where scode=? order by time desc ${all ? "" : "limit " + period}`;
-    let r = await db.allSync(sql, [scode]);
+    let r = await db.allSync(sql, [scode], req.threadId);
     if (r.error) {
         error(r.error, req.threadId)
         return;
@@ -3661,7 +3665,7 @@ async function calcCci(data, period, onCalced) {
 
 async function getDealName(scode) {
     let name = scode;
-    let r = await db.allSync(`select * from tstockbasic where scode=?`, [scode]);
+    let r = await db.allSync(`select * from tstockbasic where scode=?`, [scode], req.threadId);
     if (r.rows.length > 0) {
         name = r.rows[0].sname;
     }
@@ -3756,7 +3760,7 @@ app.get('/stock/sqls', async (req, res) => {
 
     let js = req.query.js;
     let sql = "select * from tsql order by lastUseTime desc";
-    let r = await db.allSync(sql);
+    let r = await db.allSync(sql, [], req.threadId);
     if (r.error) {
         info(r.error, req.threadId)
         res.send(r);
