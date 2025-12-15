@@ -15,6 +15,14 @@ import('uuid').then(module => {
     console.error('Failed to load uuid module:', err);
 });
 
+async function getUuid() {
+    while (uuid == null) {
+        await sleep(100);
+    }
+
+    return uuid();
+}
+
 g = {
     logs: []
 }
@@ -97,8 +105,8 @@ function initWss() {
         });
 
         ws.callFunc = async function (func, params) {
+            let id = await uuid();
             return new Promise((resolve, reject) => {
-                let id = uuid();
                 let timer = setTimeout(() => {
                     delete wss.callbacks[id];
                     resolve({ error: `ws.callFunc(${func}) timeout` });
