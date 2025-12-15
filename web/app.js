@@ -2305,19 +2305,16 @@ app.get('/stock/rule/create/auto', async (req, res) => {
 
     let succeeded = [];
     let failed = [];
-    if (workerCreateRule.id == 0) {
-        if (workerCreateRule.succeeded.length + workerCreateRule.failed.length == 0) {
-            workerCreateRule.max = max;
-            workerCreateRule.type = type;
-            workerCreateRule.priceDelay = priceDelay;
-            if (scode == null) {
+    if (scode == null) {
+        if (workerCreateRule.id == 0) {
+            if (workerCreateRule.succeeded.length + workerCreateRule.failed.length == 0) {
+                workerCreateRule.max = max;
+                workerCreateRule.type = type;
+                workerCreateRule.priceDelay = priceDelay;
                 workerCreateRule.id = setTimeout(function () {
                     autoCreateRules(req.threadId);
                 }, 100);
             } else {
-                workerCreateRule.scode = scode;
-                await autoCreateRules(req.threadId);
-                workerCreateRule.scode = null;
                 succeeded = workerCreateRule.succeeded;
                 workerCreateRule.succeeded = [];
                 failed = workerCreateRule.failed;
@@ -2325,13 +2322,18 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             }
         } else {
             succeeded = workerCreateRule.succeeded;
-            workerCreateRule.succeeded = [];
             failed = workerCreateRule.failed;
-            workerCreateRule.failed = [];
         }
     } else {
-        succeeded = workerCreateRule.succeeded;
-        failed = workerCreateRule.failed;
+        let result = await autoCreateRule(scode, req.threadId, null);
+        if (result.error == null) {
+            await saveCreateRuleFailure(scode, "");
+            succeeded.push({ scode, sname: result.sname });
+        } else {
+            info(result.error, req.threadId)
+            await saveCreateRuleFailure(scode, result.error);
+            failed.push({ scode, sname: result.sname, reason: result.error });
+        }
     }
 
     var resp = JSON.stringify({
@@ -2782,18 +2784,18 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     //获取tstock里对应scode的最后一条记录
     let trade = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode], threadId);
     if (trade == null) {
-        return { error: `no trade history` };
+        return { error: `no trade history`, sname };
     }
 
     //如果已经存在rule,则跳过
     let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName], threadId);
     if (oldRule != null && oldRule.closed == 0) {
-        return `rule already active`;
+        return { error: `rule already active`, sname };
     }
 
     //获取scode对应的当前价格
     if (stockBasicInfo.updateTime < Date.now() - 1000 * workerCreateRule.priceDelay) {
-        return { error: `price is old` };
+        return { error: `price is old`, sname };
     }
 
     let amount = Math.abs(trade.tamount);
@@ -2856,14 +2858,14 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     if (trade.operationName == "广发") {
-        return { error: `need buy by hand` };
+        return { error: `need buy by hand`, sname };
     }
 
     if (trade.tamount == 0) {
-        return { error: `need buy by hand` };
+        return { error: `need buy by hand`, sname };
     } else if (trade.operationDirection.indexOf("卖") >= 0) {
         if (workerCreateRule.type == "toSell") {
-            return { error: `toSell` };
+            return { error: `toSell`, sname };
         }
 
         let all;
@@ -2876,7 +2878,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
 
             if (all.reason) {
-                return { error: `${all.reason}` };
+                return { error: `${all.reason}`, sname };
             }
             let avgPrice = (currentPrice + all.rows[0].low) / 2;
             if (buyPrice > avgPrice) {
@@ -2903,7 +2905,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
 
             if (all.reason) {
-                return { error: `${all.reason}` };
+                return { error: `${all.reason}`, sname };
             }
 
             rc = {
@@ -2931,7 +2933,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         }
     } else if (trade.operationDirection.indexOf("买") >= 0) {
         if (workerCreateRule.type == "toBuy") {
-            return { error: `toBuy` };
+            return { error: `toBuy`, sname };
         }
 
         rc = {
@@ -2967,7 +2969,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             setBuyPriceBySell(rc, maxDelta);
         }
     } else {
-        return { error: `bad trade direction` };
+        return { error: `bad trade direction`, sname };
     }
 
     let broker = rc.broker;
@@ -2980,7 +2982,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     await insertOrReplace("tTradeRule", rule);
     await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [scode, broker]);
     return {
-        rule
+        rule,
+        sname
     };
 }
 

@@ -1691,7 +1691,7 @@ window.stock_list = window.stock_list || (function () {
                                     <div class="upStopPrice"></div>
                                 </div>
                             </div>
-                            <div class="k1d border margin4" style="width:480px;height:300px;">loading 1d</div>
+                            <div class="k1d border margin4" style="width:480px;height:350px;">loading 1d</div>
                        </div>
                     </div>
                             `;
