@@ -2798,7 +2798,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     //如果已经存在rule,则跳过
     let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName], threadId);
     if (oldRule != null && oldRule.closed == 0) {
-        return { error: `rule already active`, sname };
+        return { error: ``, sname };
     }
 
     //获取scode对应的当前价格
