@@ -2313,6 +2313,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
 
     let succeeded = [];
     let failed = [];
+    let done = 0;
     if (scode == null) {
         if (workerCreateRule.id == 0) {
             if (workerCreateRule.succeeded.length + workerCreateRule.failed.length == 0) {
@@ -2323,6 +2324,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
                     autoCreateRules(req.threadId);
                 }, 100);
             } else {
+                done = 1;
                 succeeded = workerCreateRule.succeeded;
                 workerCreateRule.succeeded = [];
                 failed = workerCreateRule.failed;
@@ -2342,11 +2344,14 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             await saveCreateRuleFailure(scode, result.error);
             failed.push({ scode, sname: result.sname, reason: result.error });
         }
+
+        done = 1;
     }
 
     var resp = JSON.stringify({
         succeeded: succeeded,
-        failed: failed
+        failed: failed,
+        done
     });
     if (js) {
         resp = `${js}(${resp})`;
