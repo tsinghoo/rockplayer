@@ -2798,7 +2798,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     //如果已经存在rule,则跳过
     let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName], threadId);
     if (oldRule != null && oldRule.closed == 0) {
-        return { error: ``, sname };
+        return { error: `I:exists`, sname };
     }
 
     //获取scode对应的当前价格
@@ -2866,11 +2866,15 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     if (trade.operationName == "广发") {
-        return { error: `need buy by hand`, sname };
+        return { error: `I:need buy by hand`, sname };
     }
 
     if (trade.tamount == 0) {
-        return { error: `need buy by hand`, sname };
+        if (isCciCrossUpN100(scode, sname, threadId, trade)) {
+            return { error: `cci buy`, sname };
+        }
+
+        return { error: `I:buy by hand`, sname };
     } else if (trade.operationDirection.indexOf("卖") >= 0) {
         if (workerCreateRule.type == "toSell") {
             return { error: `toSell`, sname };
@@ -2881,6 +2885,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
 
         if (currentPrice <= buyPrice) {
+            info(`currentPrice <= buyPrice(${currentPrice} <= ${buyPrice})`, threadId);
             all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
             all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
@@ -2909,6 +2914,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
             setSellPriceByBuy(rc, maxDelta);
         } else {
+            info(`currentPrice > buyPrice(${currentPrice})>${buyPrice})`, threadId);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
             all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
 
@@ -2931,6 +2937,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             };
 
             if (currentPrice < buyPrice) {
+                info(`currentPrice < buyPrice(${currentPrice})<${buyPrice})`, threadId);
                 rc.buy = currentPrice * (1 - 0.01);
                 if (currentPrice - rc.buy > minDelta) {
                     rc.buy = currentPrice - minDelta;
@@ -2958,19 +2965,12 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             expireHours: 12
         };
 
-        if (await isCciCrossUpN100(scode, sname, threadId)) {
-            rc.sell = lastPrice * (1 + 0.1);
-            if (currentPrice > rc.sell) {
-                rc.sell = currentPrice * (1 + 0.01);
-            }
-
-            rc.buy = currentPrice * (1 - 0.05);
-
-            rc.order = "";
-        } else if (currentPrice > rc.sell) {
+        if (currentPrice > rc.sell) {
+            info(`currentPrice > rc.sell(${currentPrice})>${rc.sell})`, threadId);
             rc.sell = currentPrice * (1 + 0.001);
 
             if (rc.sell - currentPrice > minDelta) {
+                info(`rc.sell - currentPrice > minDelta(${rc.sell} - ${currentPrice} > ${minDelta})`, threadId);
                 rc.sell = currentPrice + minDelta;
             }
 

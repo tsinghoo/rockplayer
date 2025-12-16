@@ -758,6 +758,11 @@ window.stock_list = window.stock_list || (function () {
                             `;
                             td.html(html);
                         }
+                    } else if (key == "错误") {
+                        td.text(share.convertIfInteger(row[key]));
+                        if (row[key].indexOf("I:") >= 0) {
+                            td.addClass("gray");
+                        }
                     } else {
                         td.text(share.convertIfInteger(row[key]));
                         if (key == "现价") {
