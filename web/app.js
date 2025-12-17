@@ -105,7 +105,7 @@ function initWss() {
         });
 
         ws.callFunc = async function (func, params) {
-            let id = await uuid();
+            let id = await getUuid();
             return new Promise((resolve, reject) => {
                 let timer = setTimeout(() => {
                     delete wss.callbacks[id];
@@ -2332,7 +2332,9 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             }
         } else {
             succeeded = workerCreateRule.succeeded;
+            workerCreateRule.succeeded = succeeded.length == 0 ? [] : [succeeded[succeeded.length - 1]];
             failed = workerCreateRule.failed;
+            workerCreateRule.failed = failed.length == 0 ? [] : [failed[failed.length - 1]];
         }
     } else {
         let result = await autoCreateRule(scode, req.threadId, null);
@@ -2875,11 +2877,13 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     if (trade.tamount == 0) {
-        if (isCciCrossUpN100(scode, sname, threadId, trade)) {
-            return { error: `cci buy`, sname };
+        all = await isCciCrossUpN100(scode, sname, threadId);
+        if (all.reason) {
+            error(`${sname}: ${all.reason}`);
+            return { error: `I:buy by hand`, sname };
         }
 
-        return { error: `I:buy by hand`, sname };
+        return { error: `cci buy`, sname };
     } else if (trade.operationDirection.indexOf("卖") >= 0) {
         if (workerCreateRule.type == "toSell") {
             return { error: `toSell`, sname };
@@ -3183,7 +3187,7 @@ async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
     prevRes = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
     if (prevRes.reason) {
         error(`${sname}:${prevRes.reason}`, threadId);
-        return false;
+        return prevRes;
     }
     let period = 14;
     await calcCci(prevRes.rows, period);
@@ -3194,15 +3198,17 @@ async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
             for (let j = i - 1; j >= 0; --j) {
                 if (prevRes.rows[j].cci < prevRes.rows[j + 1].cci) {
                     info(`${sname}:${j}.cci < ${j + 1}.cci`, threadId)
-                    return false;
+                    prevRes.reason = `${j}.cci(${prevRes.rows[j].cci}) < ${j + 1}.cci(${prevRes.rows[j + 1].cci})`;
+                    return prevRes;
                 }
             }
 
-            return true;
+            return prevRes;
         }
     }
 
-    return false;
+    prevRes.reason = `no cci cross up -100`;
+    return prevRes;
 }
 
 function updatePriceToRule(scode, price) {

@@ -532,7 +532,9 @@ window.stock_list = window.stock_list || (function () {
                     lastCode = row.scode;
                 } else if (lastCode != row.scode) {
 
-                    self.drawK1dChartSmall(lastCode, categoryData, values, volumes);
+                    let tr = $(`.firstCode[code="${lastCode}"]`);
+                    let c = tr.find(".tdK1d");
+                    self.drawK1dChartSmall(lastCode, categoryData, values, volumes, c);
                     lastCode = row.scode;
                     categoryData = [];
                     values = [];
@@ -545,10 +547,10 @@ window.stock_list = window.stock_list || (function () {
             }
 
             if (values.length > 0) {
-                self.drawK1dChartSmall(lastCode, categoryData, values, volumes);
-
+                let tr = $(`.firstCode[code="${lastCode}"]`);
+                let c = tr.find(".tdK1d");
+                self.drawK1dChartSmall(lastCode, categoryData, values, volumes, c);
             }
-
         },
 
         showRows: function (expanded) {
@@ -740,6 +742,7 @@ window.stock_list = window.stock_list || (function () {
                             <div class="flexrow">
                                 <span class = "k1dCollapse gray clickable">+</span>
                                 <div class="flexcolumn">
+
                                     <div class="k1d hide"></div>
                                 </div>
                             </div>
@@ -3041,13 +3044,9 @@ window.stock_list = window.stock_list || (function () {
                 chart.resize();
             });
         },
-        drawK1dChartSmall: function (scode, categoryData, values, volumes, k1d) {
-            if (k1d == null) {
-                let tr = $(`.firstCode[code="${scode}"]`);
-                let td = tr.find(".tdK1d");
-                td.find(".k1dCollapse").addClass("hide");
-                k1d = td.find(".k1d");
-            }
+        drawK1dChartSmall: function (scode, categoryData, values, volumes, c) {
+            c.find(".k1dCollapse").addClass("hide");
+            k1d = c.find(".k1d");
             const upColor = '#00da3c';
             const downColor = '#ec0000';
             k1d.css({
@@ -3058,9 +3057,27 @@ window.stock_list = window.stock_list || (function () {
             // k1d.html("loading k1d");
             var chartDom = k1d[0];
             var chart = echarts.init(chartDom);
+            let lastDay = categoryData[categoryData.length - 1];
+            let lastDayColor = "gray";
+            let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
+            if (todayStr != lastDay) {
+                lastDayColor = "red";
+            }
             // 配置项
             var option = {
                 animation: false,
+                graphic: {
+                    type: 'text',
+                    left: 'left',
+                    top: 1,
+                    style: {
+                        text: `${lastDay}`,
+                        font: '10px Microsoft YaHei',
+                        fill: lastDayColor,
+                        width: 10,
+                        height: 10
+                    }
+                },
                 tooltip: {
                     trigger: 'axis',
                     axisPointer: {
