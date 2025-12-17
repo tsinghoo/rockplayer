@@ -509,6 +509,7 @@ window.stock_list = window.stock_list || (function () {
 
         },
         showK1ds: async function (codes) {
+            let scode = codes[0];
             codes.forEach(function (scode) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdK1d");
@@ -517,39 +518,36 @@ window.stock_list = window.stock_list || (function () {
                 k1d.removeClass("hide");
             });
 
+            let minCount = 30;
             //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
-            let rows = await share.getSync__(`/stock/k/1ds?type=0&scodes=${codes.join(",")}`);
-            let lastCode = null;
-            let lastVolume = 0;
-
+            let data = await share.getSync__(`/stock/k/1d?scode=${scode}&type=0&max=${minCount}`);
+            let rows = data.rows;
+            let sb = data.stockBasic;
             let categoryData = [];
             let values = [];
             let volumes = [];
+            if (rows.length < 1) {
+                k1d.html(`${rows.length} rows`);
+                return;
+            }
+
+            for (let i = 0; i < minCount - rows.length; i++) {
+                categoryData.push("-");
+                values.push([0, 0, 0, 0, 0, 0, 0]);
+                volumes.push([i, 0, 1]);
+            }
 
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
-                if (lastCode == null) {
-                    lastCode = row.scode;
-                } else if (lastCode != row.scode) {
-
-                    let tr = $(`.firstCode[code="${lastCode}"]`);
-                    let c = tr.find(".tdK1d");
-                    self.drawK1dChartSmall(lastCode, categoryData, values, volumes, c);
-                    lastCode = row.scode;
-                    categoryData = [];
-                    values = [];
-                    volumes = [];
-                }
-
                 categoryData.push(row.time);
-                values.push([row.open, row.close, row.high, row.low]);
+                values.push([row.open, row.close, row.high, row.low, row.volume, row.amount, row.cci]);
                 volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
             }
 
             if (values.length > 0) {
-                let tr = $(`.firstCode[code="${lastCode}"]`);
+                let tr = $(`.firstCode[code="${scode}"]`);
                 let c = tr.find(".tdK1d");
-                self.drawK1dChartSmall(lastCode, categoryData, values, volumes, c);
+                self.drawK1dChartSmall(scode, categoryData, values, volumes, c);
             }
         },
 

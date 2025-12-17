@@ -2436,6 +2436,7 @@ app.get('/stock/k/1d', async (req, res) => {
     info(JSON.stringify(req.query), req.threadId)
     let scode = req.query.scode;
     let type = req.query.type;
+    let max = req.query.max;
     let startDay = req.query.startDay;
     let endDay = req.query.endDay;
     if (endDay == null) {
@@ -2447,7 +2448,11 @@ app.get('/stock/k/1d', async (req, res) => {
 
     if (startDay == null) {
         startDay = new Date();
-        startDay.setYear(endDay.getFullYear() - 4);
+        if (max) {
+            startDay = new Date(startDay.getTime() - max * 24 * 60 * 60 * 1000);
+        } else {
+            startDay.setYear(endDay.getFullYear() - 4);
+        }
         //day.setMonth(4, 30);
     } else {
         startDay = new Date(parseInt(startDay));
@@ -2462,7 +2467,7 @@ app.get('/stock/k/1d', async (req, res) => {
         error(e.stack, req.threadId)
     }
 
-    let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by scode,time`;
+    let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by time`;
     let result = await db.allSync(sql, [scode, type, startDay, endDay], threadId);
     if (result.error) {
         resp = JSON.stringify(result);
