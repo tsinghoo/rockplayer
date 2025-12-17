@@ -531,7 +531,7 @@ window.stock_list = window.stock_list || (function () {
                 return;
             }
 
-            const fillCount = maxCount - (maxCount / 7 * 2) - rows.length;
+            const fillCount = maxCount / 2 - rows.length;
             for (let i = 0; i < fillCount; i++) {
                 categoryData.push("-");
                 values.push([0, 0, 0, 0, 0, 0, 0]);
@@ -3135,6 +3135,15 @@ window.stock_list = window.stock_list || (function () {
                 },
                 toolbox: {
                     feature: {
+                        myCustomTool: {
+                            show: true,
+                            title: '关闭',
+                            icon: 'path://M15 15 L25 25 M25 15 L15 25',
+                            onclick: function (e, i, name, event) {
+                                self.toCloseK1d(scode);
+                                event.event.stopPropagation();
+                            }
+                        },
                         dataZoom: {
                             yAxisIndex: false
                         },
