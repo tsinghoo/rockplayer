@@ -518,9 +518,9 @@ window.stock_list = window.stock_list || (function () {
                 k1d.removeClass("hide");
             });
 
-            let minCount = 60;
+            let maxCount = 60;
             //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
-            let data = await share.getSync__(`/stock/k/1d?scode=${scode}&type=0&max=${minCount}`);
+            let data = await share.getSync__(`/stock/k/1d?scode=${scode}&type=0&max=${maxCount}`);
             let rows = data.rows;
             let sb = data.stockBasic;
             let categoryData = [];
@@ -531,11 +531,19 @@ window.stock_list = window.stock_list || (function () {
                 return;
             }
 
+            const fillCount = maxCount - (maxCount / 7 * 2) - rows.length;
+            for (let i = 0; i < fillCount; i++) {
+                categoryData.push("-");
+                values.push([0, 0, 0, 0, 0, 0, 0]);
+                volumes.push([i, 0, 1]);
+            }
+
+
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
                 categoryData.push(row.time);
                 values.push([row.open, row.close, row.high, row.low, row.volume, row.amount, row.cci]);
-                volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
+                volumes.push([i + fillCount, row.volume, row.open > row.close ? 1 : -1]);
             }
 
             if (values.length > 0) {
@@ -3538,7 +3546,7 @@ window.stock_list = window.stock_list || (function () {
                         let row = rows[i];
                         categoryData.push(row.time);
                         values.push([row.open, row.close, row.high, row.low, row.volume, row.amount, row.cci]);
-                        volumes.push([i, row.volume, row.open > row.close ? 1 : -1]);
+                        volumes.push([i + minCount - rows.length, row.volume, row.open > row.close ? 1 : -1]);
                     }
 
                     if (values.length > 0) {
