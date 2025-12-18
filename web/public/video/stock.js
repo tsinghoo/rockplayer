@@ -2577,6 +2577,48 @@ window.stock_list = window.stock_list || (function () {
             k1d.addClass("hide");
             td.find(".k1mCollapse").removeClass("hide");
         },
+
+        calculateKDJ: function (data, N = 9, M1 = 3, M2 = 3) {
+            const kdj = { K: [], D: [], J: [] };
+
+            for (let i = 0; i < data.length; i++) {
+                // 获取最近N个交易日的数据
+                const startIdx = Math.max(0, i - N + 1);
+                const periodData = data.slice(startIdx, i + 1);
+
+                // 计算周期内最高价和最低价
+                const highest = Math.max(...periodData.map(d => d[2]));
+                const lowest = Math.min(...periodData.map(d => d[3]));
+
+                // 计算RSV
+                const rsv = ((data[i][1] - lowest) / (highest - lowest)) * 100;
+
+                // 计算K值（RSV的M1日指数移动平均）
+                let kValue;
+                if (i === 0) {
+                    kValue = 50; // 初始值
+                } else {
+                    kValue = (2 / 3) * kdj.K[i - 1] + (1 / 3) * rsv;
+                }
+
+                // 计算D值（K值的M2日指数移动平均）
+                let dValue;
+                if (i === 0) {
+                    dValue = 50; // 初始值
+                } else {
+                    dValue = (2 / 3) * kdj.D[i - 1] + (1 / 3) * kValue;
+                }
+
+                // 计算J值
+                const jValue = 3 * kValue - 2 * dValue;
+
+                kdj.K.push(parseFloat(kValue.toFixed(2)));
+                kdj.D.push(parseFloat(dValue.toFixed(2)));
+                kdj.J.push(parseFloat(jValue.toFixed(2)));
+            }
+
+            return kdj;
+        },
         calculateBOLL: function (data, period = 20, k = 2) {
             const bollData = {
                 mid: [], // 中轨
@@ -2626,7 +2668,7 @@ window.stock_list = window.stock_list || (function () {
             const downColor = '#ec0000';
             k1d.css({
                 width: "480px",
-                height: "320px"
+                height: "380px"
             });
             k1d.removeAttr("_echarts_instance_");
             // k1d.html("loading k1d");
@@ -2635,19 +2677,18 @@ window.stock_list = window.stock_list || (function () {
             let data = { categoryData, values, volumes };
 
             const bollData = self.calculateBOLL(values);
+            const kdjData = self.calculateKDJ(values);
             // 配置项
             var option = {
                 animation: false,
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll上', 'Boll中', 'Boll下', 'cci', 'Volume'],
+                    data: ['1d', 'K线', 'D线', 'J线', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
                     selected: {
                         "MA20": false,
                         "MA60": false,
-                        'Boll上': false,
-                        'Boll中': false,
-                        'Boll下': false,
+                        'Boll': false,
                     }
                 },
                 tooltip: {
@@ -2757,20 +2798,26 @@ window.stock_list = window.stock_list || (function () {
                         right: '4px',
                         top: '200px',
                         height: '40px'
+                    },
+                    {
+                        left: '30px',
+                        right: '4px',
+                        top: '240px',
+                        height: '60px'
                     }
                 ],
                 dataZoom: [
                     {
                         type: 'inside',
-                        xAxisIndex: [0, 1, 2],
+                        xAxisIndex: [0, 1, 2, 3],
                         start: 85,
                         end: 100
                     },
                     {
                         show: true,
-                        xAxisIndex: [0, 1, 2],
+                        xAxisIndex: [0, 1, 2, 3],
                         type: 'slider',
-                        top: '240px',
+                        top: '280px',
                         start: 85,
                         end: 100
                     }
@@ -2822,6 +2869,21 @@ window.stock_list = window.stock_list || (function () {
                         axisLabel: { show: false },
                         min: 'dataMin',
                         max: 'dataMax'
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 3,
+                        data: categoryData,
+                        boundaryGap: false,
+                        axisLine: {
+                            onZero: false,
+                            show: false
+                        },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        min: 'dataMin',
+                        max: 'dataMax'
                     }
                 ],
                 yAxis: [
@@ -2844,9 +2906,11 @@ window.stock_list = window.stock_list || (function () {
                         scale: true,
                         gridIndex: 2,
                         splitNumber: 2,
-                        axisLabel: { show: false },
-                        axisLine: { show: false },
-                        axisTick: { show: false },
+                        splitLine: { show: false }
+                    },
+                    {
+                        scale: true,
+                        gridIndex: 3,
                         splitLine: { show: false }
                     }
                 ],
@@ -2954,6 +3018,24 @@ window.stock_list = window.stock_list || (function () {
                         symbol: 'none'
                     },
                     {
+                        name: 'Volume',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: volumes,
+                        itemStyle: {
+                            color: function (params) {
+                                var kData = option.series[0].data;
+                                if (kData.length > params.dataIndex) {
+                                    return kData[params.dataIndex][1] >= kData[params.dataIndex][0]
+                                        ? '#ef232a' : '#14b143';
+                                }
+
+                                return '#ef232a';
+                            }
+                        }
+                    },
+                    {
                         name: 'cci',
                         type: 'line',
                         data: values.map((item) => item[6]),
@@ -3016,22 +3098,40 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        name: 'Volume',
-                        type: 'bar',
-                        xAxisIndex: 1,
-                        yAxisIndex: 1,
-                        data: volumes,
-                        itemStyle: {
-                            color: function (params) {
-                                var kData = option.series[0].data;
-                                if (kData.length > params.dataIndex) {
-                                    return kData[params.dataIndex][1] >= kData[params.dataIndex][0]
-                                        ? '#ef232a' : '#14b143';
-                                }
-
-                                return '#ef232a';
-                            }
-                        }
+                        name: 'K线',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        data: kdjData.K,
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'D线',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        data: kdjData.D,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'J线',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        data: kdjData.J,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                        },
+                        symbol: 'none'
                     }
                 ]
             };
