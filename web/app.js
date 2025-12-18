@@ -1622,6 +1622,9 @@ async function upgradeDb(succ, fail) {
     let res = await db.getSync("SELECT * FROM config where key=?", "dbVersion", threadId);
     var updates = [
         `alter table tStockBasic add column MinLimitOrderVolume int default 100;`,
+        `alter table t1d add column kdj_k real default 0;`,
+        `alter table t1d add column kdj_d real default 0;`,
+        `alter table t1d add column kdj_j real default 0;`,
     ];
 
     if (res == null || res.error) {
@@ -2341,6 +2344,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
         if (result.error == null) {
             await saveCreateRuleFailure(scode, "");
             succeeded.push({ scode, sname: result.sname });
+            reloadRule(result.rule, req);
         } else {
             info(result.error, req.threadId)
             await saveCreateRuleFailure(scode, result.error);
@@ -3633,6 +3637,9 @@ app.post('/stock/k/upload', async (req, res) => {
 
             if (period == "1d") {
                 row.cci = data[i][7];
+                row.kdj_k = data[i][8];
+                row.kdj_d = data[i][9];
+                row.kdj_j = data[i][10];
             }
 
             if (row.volume < 0) {

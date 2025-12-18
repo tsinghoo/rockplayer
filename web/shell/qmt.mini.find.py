@@ -112,6 +112,24 @@ def CCI(table):
         table["cci"].values[i] = (tp[-1] - sma) / (0.015 * mad)
         # 将cci的值保留小数点后2位
         table["cci"].values[i] = round(table["cci"].values[i], 2)
+        
+def KDJ(table):
+        table["kdj_k"] = 0
+        table["kdj_d"] = 0
+        table["kdj_j"] = 0
+        for i in range(13, len(table)):
+            high = table["high"].values[i-13:i+1]
+            low = table["low"].values[i-13:i+1]
+            close = table["close"].values[i-13:i+1]
+            rsv = (close[-1] - low.min()) / (high.max() - low.min())
+            table["kdj_k"].values[i] = 2/3 * table["kdj_k"].values[i-1] + 1/3 * rsv
+            table["kdj_d"].values[i] = 2/3 * table["kdj_d"].values[i-1] + 1/3 * table["kdj_k"].values[i]
+            table["kdj_j"].values[i] = 3 * table["kdj_k"].values[i] - 2 * table["kdj_d"].values[i]
+            # 将kdj的值保留小数点后2位
+            table["kdj_k"].values[i] = round(table["kdj_k"].values[i], 3)
+            table["kdj_d"].values[i] = round(table["kdj_d"].values[i], 3)
+            table["kdj_j"].values[i] = round(table["kdj_j"].values[i], 3)
+
 
 
 def get1dLastDate(scode):
@@ -155,6 +173,7 @@ def get1dData(stocklist, index, startTime, endTime):
     info("get1dData done")
     # 计算cci
     CCI(table)
+    KDJ(table)
 
     return table
 
@@ -196,7 +215,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
             batch_data = []
             for idx, row in batch.iterrows():
                 batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                                row["low"], row["volume"], row["amount"], row["cci"]])
+                                                row["low"], row["volume"], row["amount"], row["cci"], row["kdj_k"], row["kdj_d"], row["kdj_j"]])
             body = {"data": obj2Json(
                 batch_data), "scode": scode, "period": period, "passcode": "995560"}
             debug("body:", body)
