@@ -2684,11 +2684,16 @@ window.stock_list = window.stock_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'K线', 'D线', 'J线', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
+                    data: ['1d', 'kdJ', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
                     selected: {
                         "MA20": false,
                         "MA60": false,
+                        'Kdj': true,
+                        'kDj': true,
+                        'kdJ': true,
                         'Boll': false,
+                        'Boll中': false,
+                        'Boll下': false
                     }
                 },
                 tooltip: {
@@ -2817,7 +2822,7 @@ window.stock_list = window.stock_list || (function () {
                         show: true,
                         xAxisIndex: [0, 1, 2, 3],
                         type: 'slider',
-                        top: '280px',
+                        top: '290px',
                         start: 85,
                         end: 100
                     }
@@ -2906,11 +2911,13 @@ window.stock_list = window.stock_list || (function () {
                         scale: true,
                         gridIndex: 2,
                         splitNumber: 2,
+                        axisLabel: { show: false },
                         splitLine: { show: false }
                     },
                     {
                         scale: true,
                         gridIndex: 3,
+                        axisLabel: { show: false },
                         splitLine: { show: false }
                     }
                 ],
@@ -2996,7 +3003,7 @@ window.stock_list = window.stock_list || (function () {
                         symbol: 'none'
                     },
                     {
-                        name: 'Boll上',
+                        name: 'Boll',
                         type: 'line',
                         data: bollData.upper,
                         smooth: true,
@@ -3098,7 +3105,7 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        name: 'K线',
+                        name: 'Kdj',
                         type: 'line',
                         xAxisIndex: 3,
                         yAxisIndex: 3,
@@ -3110,8 +3117,9 @@ window.stock_list = window.stock_list || (function () {
                         symbol: 'none'
                     },
                     {
-                        name: 'D线',
+                        name: 'kDj',
                         type: 'line',
+                        show: false,
                         xAxisIndex: 3,
                         yAxisIndex: 3,
                         data: kdjData.D,
@@ -3122,7 +3130,7 @@ window.stock_list = window.stock_list || (function () {
                         symbol: 'none'
                     },
                     {
-                        name: 'J线',
+                        name: 'kdJ',
                         type: 'line',
                         xAxisIndex: 3,
                         yAxisIndex: 3,
@@ -3132,12 +3140,102 @@ window.stock_list = window.stock_list || (function () {
                             width: 1,
                         },
                         symbol: 'none'
+                    },
+                    {
+                        name: 'kdJ+20',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        markLine: {
+                            symbol: 'none',
+                            lineStyle: {
+                                type: 'dashed',
+                                width: 1
+                            },
+                            data: [
+                                {
+                                    yAxis: 20
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        name: 'kdJ+80',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        markLine: {
+                            symbol: 'none',
+                            lineStyle: {
+                                type: 'dashed',
+                                width: 1
+                            },
+                            data: [
+                                {
+                                    yAxis: 80
+                                }
+                            ]
+                        }
                     }
                 ]
             };
 
             // 使用配置项显示图表
             chart.setOption(option);
+
+            function toggleLine(lineName, show) {
+                const option = chart.getOption();
+                const series = option.series;
+
+                for (let i = 0; i < series.length; i++) {
+                    if (series[i].name === lineName) {
+                        // 切换显示状态
+                        series[i].show = show;
+                        break;
+                    }
+                }
+
+                chart.setOption({ series }, { replaceMerge: 'series' });
+            }
+
+            chart.on('legendselectchanged', function (params) {
+                const selected = params.selected;
+
+                const kdjSel = selected['kdJ'];
+                const bollSel = selected['Boll'];
+                //toggleLine('Kdj', isSelected);
+
+                option.legend.selected = {
+                    'Kdj': kdjSel,
+                    'kDj': kdjSel,
+                    'kdJ': kdjSel,
+                    'kdJ+20': kdjSel,
+                    'kdJ+80': kdjSel,
+                    'Boll': bollSel,
+                    'Boll中': bollSel,
+                    'Boll下': bollSel
+                };
+
+                chart.setOption(option);
+
+
+                // chart.dispatchAction({
+                //     type: 'legendSelect',
+                //     name: 'kDj',
+                //     selected: isSelected
+                // });
+
+                // chart.dispatchAction({
+                //     type: 'legendSelect',
+                //     name: 'kdJ',
+                //     selected: isSelected
+                // });
+                // toggleLine('kDj', isSelected);
+                // toggleLine('kdJ', isSelected);
+                // toggleLine('kdJ+20', isSelected);
+                // toggleLine('kdJ+80', isSelected);
+            });
+
 
             // 响应式调整
             window.addEventListener('resize', function () {
