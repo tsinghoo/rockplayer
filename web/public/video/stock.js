@@ -2595,7 +2595,7 @@ window.stock_list = window.stock_list || (function () {
 
                 // 计算K值（RSV的M1日指数移动平均）
                 let kValue;
-                if (i === 0) {
+                if (i === 0 || highest == lowest) {
                     kValue = 50; // 初始值
                 } else {
                     kValue = (2 / 3) * kdj.K[i - 1] + (1 / 3) * rsv;
