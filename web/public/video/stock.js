@@ -3254,7 +3254,7 @@ window.stock_list = window.stock_list || (function () {
             const downColor = '#ec0000';
             k1d.css({
                 width: "400px",
-                height: "240px"
+                height: "300px"
             });
             k1d.removeAttr("_echarts_instance_");
             // k1d.html("loading k1d");
@@ -3268,12 +3268,13 @@ window.stock_list = window.stock_list || (function () {
                 lastDayColor = "red";
             }
             let data = { categoryData, values, volumes };
+            const kdjData = self.calculateKDJ(values);
             // 配置项
             var option = {
                 animation: false,
                 graphic: {
                     type: 'text',
-                    left: 'left',
+                    right: 20,
                     top: 1,
                     style: {
                         text: `${lastDay}`,
@@ -3281,6 +3282,10 @@ window.stock_list = window.stock_list || (function () {
                         fill: lastDayColor,
                         width: 10,
                         height: 10
+                    },
+                    onclick: function () {
+                        // 按钮点击事件
+                        alert('按钮被点击了');
                     }
                 },
                 tooltip: {
@@ -3390,6 +3395,12 @@ window.stock_list = window.stock_list || (function () {
                         right: '4px',
                         top: '200px',
                         height: '40px'
+                    },
+                    {
+                        left: '30px',
+                        right: '4px',
+                        top: '240px',
+                        height: '60px'
                     }
                 ],
                 dataZoom: [
@@ -3455,6 +3466,21 @@ window.stock_list = window.stock_list || (function () {
                         axisLabel: { show: false },
                         min: 'dataMin',
                         max: 'dataMax'
+                    },
+                    {
+                        type: 'category',
+                        gridIndex: 3,
+                        data: categoryData,
+                        boundaryGap: false,
+                        axisLine: {
+                            onZero: false,
+                            show: false
+                        },
+                        axisTick: { show: false },
+                        splitLine: { show: false },
+                        axisLabel: { show: false },
+                        min: 'dataMin',
+                        max: 'dataMax'
                     }
                 ],
                 yAxis: [
@@ -3481,23 +3507,12 @@ window.stock_list = window.stock_list || (function () {
                         axisLine: { show: false },
                         axisTick: { show: false },
                         splitLine: { show: false }
-                    }
-                ],
-                graphic: [
+                    },
                     {
-                        type: 'text',
-                        left: 'right',
-                        top: 20,
-                        z: 100,
-                        style: {
-                            text: '',
-                            fill: '#333',
-                            fontSize: 12
-                        },
-                        onclick: function () {
-                            // 按钮点击事件
-                            alert('按钮被点击了');
-                        }
+                        scale: true,
+                        gridIndex: 3,
+                        axisLabel: { show: false },
+                        splitLine: { show: false }
                     }
                 ],
                 series: [
@@ -3551,6 +3566,24 @@ window.stock_list = window.stock_list || (function () {
                         symbol: 'none',
                         lineStyle: {
                             opacity: 0.5
+                        }
+                    },
+                    {
+                        name: 'Volume',
+                        type: 'bar',
+                        xAxisIndex: 1,
+                        yAxisIndex: 1,
+                        data: volumes,
+                        itemStyle: {
+                            color: function (params) {
+                                var kData = option.series[0].data;
+                                if (kData.length > params.dataIndex) {
+                                    return kData[params.dataIndex][1] >= kData[params.dataIndex][0]
+                                        ? '#ef232a' : '#14b143';
+                                }
+
+                                return '#ef232a';
+                            }
                         }
                     },
                     {
@@ -3616,21 +3649,76 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        name: 'Volume',
-                        type: 'bar',
-                        xAxisIndex: 1,
-                        yAxisIndex: 1,
-                        data: volumes,
-                        itemStyle: {
-                            color: function (params) {
-                                var kData = option.series[0].data;
-                                if (kData.length > params.dataIndex) {
-                                    return kData[params.dataIndex][1] >= kData[params.dataIndex][0]
-                                        ? '#ef232a' : '#14b143';
+                        name: 'Kdj',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        data: kdjData.K,
+                        smooth: true,
+                        lineStyle: {
+                            opacity: 0.5
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'kDj',
+                        type: 'line',
+                        show: false,
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        data: kdjData.D,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'kdJ',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        data: kdjData.J,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'kdJ+20',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        markLine: {
+                            symbol: 'none',
+                            lineStyle: {
+                                type: 'dashed',
+                                width: 1
+                            },
+                            data: [
+                                {
+                                    yAxis: 20
                                 }
-
-                                return '#ef232a';
-                            }
+                            ]
+                        }
+                    },
+                    {
+                        name: 'kdJ+80',
+                        type: 'line',
+                        xAxisIndex: 3,
+                        yAxisIndex: 3,
+                        markLine: {
+                            symbol: 'none',
+                            lineStyle: {
+                                type: 'dashed',
+                                width: 1
+                            },
+                            data: [
+                                {
+                                    yAxis: 80
+                                }
+                            ]
                         }
                     }
                 ]

@@ -545,7 +545,7 @@ def update1dTask():
     update1d(g.ruleCodes)
 
     while True:
-        time.sleep(1)
+        time.sleep(60)
         resetThreadId("u1d")
         reloadK1d, g.reloadK1d = g.reloadK1d, []
         if len(reloadK1d) > 0:
@@ -880,7 +880,7 @@ def get1dData(stocklist, index, startTime, endTime):
     info("get1dData done")
     # 计算cci
     CCI(table)
-    # KDJ(table)
+    KDJ(table)
 
     return table
 
@@ -1408,8 +1408,8 @@ if __name__ == '__main__':
     resubscribe()
     # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
-    # t1 = Thread(target=update1dTask)
-    # t1.start()
+    t1 = Thread(target=update1dTask)
+    t1.start()
 
     # t2 = Thread(target=update1mTask)
     # t2.start()
