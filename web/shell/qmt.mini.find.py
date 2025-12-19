@@ -160,7 +160,7 @@ def get1dData(stocklist, index, startTime, endTime):
 
     scode = stocklist[index]
     period = '1d'
-    params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+    params = ['open', 'close', 'high', 'low', 'volume', 'amount', 'suspendFlag']
     info('downloading', period, 'from', startTime, "for", scode)
     xtdata.download_history_data(scode, period, startTime, endTime)
     # download_history_data2 批量版本 todo
@@ -170,6 +170,7 @@ def get1dData(stocklist, index, startTime, endTime):
     df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
                                    start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
     table = df[scode]
+    table = table.query('suspendFlag != 1')
     info("get1dData done")
     # 计算cci
     CCI(table)
