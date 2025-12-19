@@ -23,8 +23,9 @@ async function getUuid() {
     return uuid();
 }
 
-g = {
-    logs: []
+let g = {
+    logs: [],
+    actions: []
 }
 
 //引入sqlite库
@@ -2719,6 +2720,11 @@ app.get('/stock/rule/actions', async (req, res) => {
         }
     });
 
+    g.actions.forEach(element => {
+        r.rows.push(element);
+    });
+    g.actions = [];
+
     var resp = JSON.stringify({ data: r.rows });
 
     if (r.error) {
@@ -4263,7 +4269,7 @@ async function init() {
     server.listen(port, () => {
         info(`Server is running on port ${port}`);
         initWss();
-
+        g.actions.push({ action: "connectWebSocket", broker: "国金", id: "connectWebSocket" });
     });
 }
 
