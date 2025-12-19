@@ -479,9 +479,6 @@ window.stock_list = window.stock_list || (function () {
         showK1dsInView: async function () {
             let vtr = $('.firstCode').map(function (i, item) {
                 let k1d = $(item).find(".k1d");
-                if (!k1d.hasClass("hide")) {
-                    return;
-                }
 
                 let res = share.isInViewport($(item));
                 if (res) {
@@ -824,6 +821,10 @@ window.stock_list = window.stock_list || (function () {
                 if (self.showK1d) {
                     $(".thK1d").removeClass("gray");
                     $(".k1dCollapse").removeClass("gray");
+                    $(".k1d").css({
+                        width: "480px",
+                        height: "380px"
+                    }).removeClass("hide");
                 } else {
                     $(".thK1d").addClass("gray");
                     $(".k1d").addClass("hide");
