@@ -479,9 +479,8 @@ window.stock_list = window.stock_list || (function () {
         showK1dsInView: async function () {
             let vtr = $('.firstCode').map(function (i, item) {
                 let k1d = $(item).find(".k1d");
-
                 let res = share.isInViewport($(item));
-                if (res) {
+                if (res && k1d.html() == "") {
                     let data = $(this).attr("data");
                     let row = JSON.parse(data);
                     self.showK1ds([row["代码"]]);
@@ -822,8 +821,8 @@ window.stock_list = window.stock_list || (function () {
                     $(".thK1d").removeClass("gray");
                     $(".k1dCollapse").removeClass("gray");
                     $(".k1d").css({
-                        width: "480px",
-                        height: "380px"
+                        width: "380px",
+                        height: "300px"
                     }).removeClass("hide");
                 } else {
                     $(".thK1d").addClass("gray");
