@@ -2186,37 +2186,33 @@ app.get('/stock/rule/create', async (req, res) => {
         updateTime: now
     });
 
-    if (json.order == "sellFirst") {
-        let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode], threadId);
-        if (r.rows.length == 0) {
-            let tday = timeFormat(now, "yyyyMMdd");
-            let ttime = timeFormat(now, "hh:mm:ss");
-            let obj = {
-                tday,
-                ttime,
-                sname: json.sname,
-                scode: json.scode,
-                operationDirection: "卖出",
-                operationName: broker,
-                market: market,
-                tamount: 0,
-                tprice: json.sell,
-                tcash: 0,
-                tid: `${json.scode}.${json.sname}`,
-                taccount: "",
-                tpair: "",
-                deleted: 0,
-                lastOperationTime: tday + " " + ttime
-            }
-            await insertOrReplace("tstock", obj);
-
-            let sql = `update tTradeRule set closed = 1 where id=?`;
-            await db.runSync(sql, [ruleId]);
-            delete rules[json.scode][broker];
-            //await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
-
+    let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode], threadId);
+    if (r.rows.length == 0) {
+        let tday = timeFormat(now, "yyyyMMdd");
+        let ttime = timeFormat(now, "hh:mm:ss");
+        let obj = {
+            tday,
+            ttime,
+            sname: json.sname,
+            scode: json.scode,
+            operationDirection: "卖出",
+            operationName: broker,
+            market: market,
+            tamount: 0,
+            tprice: json.sell,
+            tcash: 0,
+            tid: `${json.scode}.${json.sname}`,
+            taccount: "",
+            tpair: "",
+            deleted: 0,
+            lastOperationTime: tday + " " + ttime
         }
+        await insertOrReplace("tstock", obj);
+        await checkRule([json.scode], req);
+        //await db.runSync(`update tStock set lastOperationTime=? where scode=?`, [obj.lastOperationTime, obj.scode]);
+
     }
+
     wss.callFunc("国金", "reloadStockCodes", {});
     wss.callFunc("国金", "updateDetail", { scode: formatScode(json.scode) });
     var resp = JSON.stringify({});
@@ -3285,7 +3281,7 @@ function formatScode(stockCode) {
     if (code.length == 6) {
         if (/^(600|601|603|605|688|900|51|58|56)\d+$/.test(code)) {
             suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
-        } else if (/^(000|001|002|003|30|15|12|3)\d+$/.test(code)) {
+        } else if (/^(000|001|002|003|30|15|16|12|3)\d+$/.test(code)) {
             suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
         } else if (/^(8|43|83|87|88|920)\d+$/.test(code)) {
             suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
