@@ -766,6 +766,13 @@ window.stock_list = window.stock_list || (function () {
                         if (row[key].indexOf("I:") >= 0) {
                             td.addClass("gray");
                         }
+                    } else if (key == "持仓") {
+                        let text = "";
+                        if (row["volume"] != null && row["volume"] > 0) {
+                            text = `${share.convertIfInteger(row["can_use_volume"])}/${share.convertIfInteger(row["volume"])}@${share.convertIfInteger(row["avg_price"], 2)}`;
+                        }
+                        td.text(text);
+
                     } else {
                         td.text(share.convertIfInteger(row[key]));
                         if (key == "现价") {
