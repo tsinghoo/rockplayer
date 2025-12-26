@@ -972,8 +972,11 @@ app.use((req, res, next) => {
     if (method.toLowerCase() == "post") {
         info(`body:${bodyParams}`, req.threadId)
     }
-
-    next();
+    try {
+        next();
+    } catch (e) {
+        error(e.stack, req.threadId);
+    }
 });
 
 // 设置模板引擎
@@ -2716,10 +2719,16 @@ app.get('/stock/rule/actions', async (req, res) => {
         }
     });
 
-    g.actions.forEach(element => {
-        r.rows.push(element);
-    });
-    g.actions = [];
+    for (let i = 0; i < g.actions.length;) {
+        let element = g.actions[i];
+        if (element.broker == broker) {
+            r.rows.push(element);
+            //从g.actions里删除element;
+            g.actions.splice(i, 1);
+        } else {
+            ++i;
+        }
+    }
 
     var resp = JSON.stringify({ data: r.rows });
 
@@ -3699,7 +3708,7 @@ async function calcCci(data, period, onCalced) {
     }
 }
 
-async function getDealName(scode) {
+async function getDealName(scode, req) {
     let name = scode;
     let r = await db.allSync(`select * from tstockbasic where scode=?`, [scode], req.threadId);
     if (r.rows.length > 0) {
@@ -3723,7 +3732,7 @@ app.post('/stock/deal/update', async (req, res) => {
     let ocode = deal.scode.split(".");
     deal.scode = ocode[0];
     if ("" == deal.sname) {
-        deal.sname = await getDealName(deal.scode);
+        deal.sname = await getDealName(deal.scode, req);
     }
     if ("" == deal.market) {
         deal.market = ocode.length > 1 ? ocode[1] : "";
@@ -4265,7 +4274,8 @@ async function init() {
     server.listen(port, () => {
         info(`Server is running on port ${port}`);
         initWss();
-        g.actions.push({ action: "connectWebSocket", broker: "国金", id: "connectWebSocket" });
+        let scode = "WS" + Date.now();
+        g.actions.push({ action: "connectWebSocket", broker: "国金", id: "connectWebSocket", scode });
     });
 }
 

@@ -686,9 +686,9 @@ def getActions():
         error("getActions出错:", traceback.format_exc())
 
 
-def connectWebSocket():
+async def connectWebSocket():
     info("connectWebSocket")
-    websocket_client()
+    await websocket_client()
 
 
 def cancelAction(scode):
