@@ -699,7 +699,7 @@ window.stock_list = window.stock_list || (function () {
                         td.html(`<span class="deleteRowById clickable gray">X</span>` + row[key]);
                     } else if (key == "买卖") {
                         td.text(self.getBuySellText(row[key]));
-                        td.addClass("buySell");
+                        td.addClass("tdBuySell");
                     } else if (key == "总额") {
                         td.text(share.toFixed(row[key]));
                     } else if (key == "规则") {
@@ -860,10 +860,10 @@ window.stock_list = window.stock_list || (function () {
                 }
             })
 
-            $(".buySell").click(function (e) {
+            share.onClick__($(".tdBuySell"),function (e) {
                 e.stopPropagation();
                 self.onBuySellClicked(this);
-            })
+            });
 
             $(".ruleContent").click(function (e) {
                 e.stopPropagation();

@@ -8,6 +8,7 @@ window.mhgl_share =
       mhgl__: "web",
       defaultAnimationInterval: 100,
       rockWidth: 10,
+      lastClick: {},
       computePosition: window.FloatingUIDOM.computePosition,
       flip: window.FloatingUIDOM.flip,
       shift: window.FloatingUIDOM.shift,
@@ -855,14 +856,34 @@ window.mhgl_share =
         });
       },
 
-
       popup__: async function (target, content, placement, onShown, document) {
-        if (target == null) {
-          target = share.currentTarget;
-        }
-
         if (document == null) {
           document = window.document;
+        }
+
+        let point;
+
+        if (target == null) {
+          if (share.lastClick) {
+            let x = share.lastClick.clientX;
+            let y = share.lastClick.clientY;
+            share.debug__(`use: x: ${x}, y: ${y}, ${document.location.href}`);
+            point = $(`<div>`, {
+              text: "",
+              css: {
+                position: "fixed",
+                left: `${x}px`,
+                top: `${y}px`,
+                width: `1px`,
+                height: `1px`
+              }
+            });
+
+            $("body", document).append(point);
+            target = point[0];
+          } else {
+            target = share.currentTarget;
+          }
         }
 
         let popupId = share.uuid__();
@@ -873,6 +894,9 @@ window.mhgl_share =
         $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
 
         async function setPosition() {
+          if (target == null) {
+            return;
+          }
           let tooltip = $(`#${popupId}`, document)[0];
           let arrow = $(`#arrow${popupId}`, document)[0];
           let res = await share.computePosition(target, tooltip, {
@@ -919,25 +943,26 @@ window.mhgl_share =
         let popup = {
           id: popupId,
           update: async function (newContent) {
-            $(`#${popupId}`, document).html(newContent);
-            $(`#${popupId}`, document).append(`<div class="arrow" ></div>`);
-            onShown && onShown();
-            await setPosition();
-          },
-          setPosition: async function () {
+            if (newContent != null) {
+              $(`#${popupId}`, document).html(newContent);
+              $(`#${popupId}`, document).append(`<div class="arrow" ></div>`);
+              onShown && onShown();
+            }
+
             await setPosition();
           },
           close: async function () {
+            point && point.remove();
             let p = [];
-            popup.onClosed && popup.onClosed();
             p.push(share.fadeOut__($(`#bg${popupId}`, document)));
             p.push(share.fadeOut__($(`#${popupId}`, document)));
             await Promise.allSettled(p);
           }
         }
 
-        $(`#bg${popupId}`, document).off("click").on("click", async function () {
+        share.onClick__($(`#bg${popupId}`, document), async function () {
           await popup.close();
+          popup.onClosed && popup.onClosed();
         });
 
         return popup;
@@ -3347,6 +3372,42 @@ window.mhgl_share =
       },
       getString__: function () {
         return share.getSelf().string__;
+      },
+      triggerClick__: function (eles) {
+        eles.trigger("click");
+      },
+      onClick__: function (eles, fn, noUpdateLastClick) {
+        let event = "click";
+
+        eles.off(event);
+        eles.on(event, function (e) {
+          share.debug__('event phase:' + e.eventPhase); // 1:捕获, 2:目标, 3:冒泡
+          if (e.originalEvent && e.originalEvent._handled) {
+            share.debug__("handled");
+            return;
+          }
+          if (e.originalEvent) {
+            share.debug__("to handle");
+            e.originalEvent._handled = true;
+          }
+
+          if (!noUpdateLastClick) {
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if (clientX == null && e.originalEvent) {
+              clientX = e.originalEvent.pageX;
+              clientY = e.originalEvent.pageY;
+            }
+
+            if (clientX != null) {
+              share.lastClick = { clientX, clientY };
+              share.debug__(`lastClickEvent: x=${share.lastClick.clientX}, y=${share.lastClick.clientY}, ${document.location.href}`);
+            }
+
+          }
+
+          fn.call(this, e);
+        });
       },
       login__: function (u, p, fail) {
         share.log__("login:u=" + u + "&p=" + p);
