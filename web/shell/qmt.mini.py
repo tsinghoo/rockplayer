@@ -686,10 +686,9 @@ def getActions():
         error("getActions出错:", traceback.format_exc())
 
 
-async def connectWebSocket():
+def connectWebSocket():
     info("connectWebSocket")
-    await websocket_client()
-
+    asyncio.run(websocket_client())
 
 def cancelAction(scode):
     accounts = [StockAccount(g.account), StockAccount(
