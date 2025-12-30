@@ -423,7 +423,7 @@ window.stock_list = window.stock_list || (function () {
         updateData: async function () {
             let sqlName = self.sqlRow.name.trim();
             if (self.sql.params.includes("现价")) {
-                await self.getCurrentPrices();
+                await self.updatePrices();
             }
 
             if (self.showRule && self.sql.params.includes("规则")) {
@@ -860,7 +860,7 @@ window.stock_list = window.stock_list || (function () {
                 }
             })
 
-            share.onClick__($(".tdBuySell"),function (e) {
+            share.onClick__($(".tdBuySell"), function (e) {
                 e.stopPropagation();
                 self.onBuySellClicked(this);
             });
@@ -1615,7 +1615,7 @@ window.stock_list = window.stock_list || (function () {
             //share.open__(link, `${code}`);
 
         },
-        getCurrentPrices: async function () {
+        updatePrices: async function () {
             let res = await share.getSync__(`/stock/price/current`);
             res.rows.forEach(row => {
                 self.currentPrices[row.scode] = row;
@@ -1623,9 +1623,9 @@ window.stock_list = window.stock_list || (function () {
                     let tr = $(`[code="${row.scode}"]`);
                     tr.each(function () {
                         try {
-                            let th = $(this);
-                            let cpl = th.find(".curPrice");
-                            let data = th.attr("data");
+                            let td = $(this);
+                            let cpc = td.find(".curPrice");
+                            let data = td.attr("data");
 
                             data = JSON.parse(data);
                             let curPrice = share.convertIfInteger(row.buy);
@@ -1635,33 +1635,41 @@ window.stock_list = window.stock_list || (function () {
                                 timePassed = share.getTimePassed__(row.optionUpdateTime);
                             }
                             data.curPrice = curPrice;
-                            th.attr("data", JSON.stringify(data));
+                            td.attr("data", JSON.stringify(data));
                             const price = data["价格"];
                             if (price == null) {
-                                cpl.html(`${curPrice} (${timePassed})`);
+                                cpc.html(`<div class="currentPrice red">${curPrice} (${timePassed})</div>`);
                             } else {
                                 let delta = parseFloat(((curPrice - price) / price * 100).toFixed(1));
-                                cpl.html(`${curPrice} (${delta}% ${timePassed})`);
-                                cpl.removeClass("red");
-                                cpl.removeClass("green");
-                                cpl.removeClass("gold");
+                                cpc.html(`<div class="currentPrice">${curPrice} (${delta}% ${timePassed})</div>`);
+                                let cp = cpc.find(".currentPrice");
                                 if (data["买卖"].indexOf("买") >= 0) {
                                     if (delta > 0) {
-                                        cpl.addClass("red");
+                                        cp.addClass("red");
                                     }
 
                                     if (delta < -2) {
-                                        cpl.addClass("green");
+                                        cp.addClass("green");
                                     }
 
                                     if (delta < -5) {
-                                        cpl.addClass("gold");
+                                        cp.addClass("gold");
                                     }
                                 }
 
                                 if (delta < 0 && data["买卖"].indexOf("卖") >= 0) {
-                                    cpl.addClass("red");
+                                    cp.addClass("red");
                                 }
+
+                                if (self.showK1d && data["错误"]) {
+                                    let error = $(`<div class="error">${share.convertIfInteger(data["错误"])}</div>`);
+
+                                    if (data["错误"].indexOf("I:") >= 0) {
+                                        error.addClass("gray");
+                                    }
+                                    cpc.append(error);
+                                }
+
                             }
                         } catch (e) {
                             console.log(e);
