@@ -427,7 +427,7 @@ window.stock_list = window.stock_list || (function () {
             }
 
             if (self.showRule && self.sql.params.includes("规则")) {
-                await self.getRuleStatus();
+                await self.updateRuleStatus();
             }
         },
         showK1ms: async function (codes) {
@@ -777,6 +777,9 @@ window.stock_list = window.stock_list || (function () {
                         td.text(share.convertIfInteger(row[key]));
                         if (key == "现价") {
                             td.addClass("curPrice");
+                            td.html(`<div class="currentPrice"></div>
+                                        <div class="error"/>
+                                        <div class="ruleStatus"/>`);
                         } else if (key == "市场") {
                             if (firstRow) {
                                 td.text(code);
@@ -1090,36 +1093,33 @@ window.stock_list = window.stock_list || (function () {
             }, 500);
         },
 
-        getRuleStatus: async function () {
+        updateRuleStatus: async function () {
             let res = await share.getSync__("/stock/rule/status");
-            if (self.showingRule) {
-                $(".ruleStatus").each(function () {
-                    let td = $(this);
-                    let scode = td.parents("tr").attr("code").trim();
-                    let r = res.data[scode];
+            let func = function () {
+                let td = $(this);
+                let data = td.parents("tr").attr("data");
+                if (data == null) {
+                    return;
+                }
+
+                data = JSON.parse(data);
+
+                let scode = data["代码"];
+                let broker = data["券商"];
+
+                if (res.data[scode]) {
+                    let r = res.data[scode][broker];
                     if (r) {
                         self.showRuleStatus(r, td);
                     }
-                })
-                $(".tdRule").each(function () {
-                    let td = $(this);
-                    let data = td.parents("tr").attr("data");
-                    if (data == null) {
-                        return;
-                    }
+                }
+            }
 
-                    data = JSON.parse(data);
 
-                    let scode = data["代码"];
-                    let broker = data["券商"];
+            $(".ruleStatus").each(func);
 
-                    if (res.data[scode]) {
-                        let r = res.data[scode][broker];
-                        if (r) {
-                            self.showRuleStatus(r, td);
-                        }
-                    }
-                })
+            if (self.showingRule) {
+                $(".tdRule").each(func);
             }
         },
 
@@ -1626,7 +1626,7 @@ window.stock_list = window.stock_list || (function () {
                             let td = $(this);
                             let cpc = td.find(".curPrice");
                             let data = td.attr("data");
-
+                            let cp = cpc.find(".currentPrice");
                             data = JSON.parse(data);
                             let curPrice = share.convertIfInteger(row.buy);
                             let timePassed = share.getTimePassed__(row.updateTime);
@@ -1638,11 +1638,11 @@ window.stock_list = window.stock_list || (function () {
                             td.attr("data", JSON.stringify(data));
                             const price = data["价格"];
                             if (price == null) {
-                                cpc.html(`<div class="currentPrice red">${curPrice} (${timePassed})</div>`);
+                                cp.html(`${curPrice} (${timePassed})`);
+                                cp.addClass("red");
                             } else {
                                 let delta = parseFloat(((curPrice - price) / price * 100).toFixed(1));
-                                cpc.html(`<div class="currentPrice">${curPrice} (${delta}% ${timePassed})</div>`);
-                                let cp = cpc.find(".currentPrice");
+                                cp.html(`${curPrice} (${delta}% ${timePassed})`);
                                 if (data["买卖"].indexOf("买") >= 0) {
                                     if (delta > 0) {
                                         cp.addClass("red");
@@ -1662,12 +1662,34 @@ window.stock_list = window.stock_list || (function () {
                                 }
 
                                 if (self.showK1d && data["错误"]) {
-                                    let error = $(`<div class="error">${share.convertIfInteger(data["错误"])}</div>`);
+                                    let error = cpc.find(".error");
+                                    error.html(`${share.convertIfInteger(data["错误"])}`);
 
                                     if (data["错误"].indexOf("I:") >= 0) {
                                         error.addClass("gray");
                                     }
-                                    cpc.append(error);
+                                }
+
+                                let rsc = cpc.find(".ruleStatus");
+                                if (self.showK1d && data["rule"]) {
+                                    rsc.removeClass("hide");
+                                    /*
+                                    let rc = JSON.parse(data["rule"]);
+                                    let closed = data["closed"];
+                                    self.showRule({ rule: rc, closed }, rsc);
+                                    if (rc.order == "") {
+                                        rsc.find("table").css({
+                                            border: "1px solid gray",
+                                            "border-collapse": "collapse"
+                                        });
+                                        rsc.find("table td, table th").css({
+                                            border: "none"
+                                        });
+                                    }
+                                        */
+
+                                } else {
+                                    rsc.addClass("hide");
                                 }
 
                             }
