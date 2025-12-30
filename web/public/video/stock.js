@@ -777,9 +777,12 @@ window.stock_list = window.stock_list || (function () {
                         td.text(share.convertIfInteger(row[key]));
                         if (key == "现价") {
                             td.addClass("curPrice");
-                            td.html(`<div class="currentPrice"></div>
+                            td.html(`<div class="currentPrice"></div>`);
+                            if (firstRow) {
+                                td.html(`<div class="currentPrice"></div>
                                         <div class="error"/>
                                         <div class="ruleStatus"/>`);
+                            }
                         } else if (key == "市场") {
                             if (firstRow) {
                                 td.text(code);
