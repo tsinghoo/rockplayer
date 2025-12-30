@@ -18,6 +18,8 @@ import traceback
 from threading import Thread
 from colorama import Fore, Back, Style
 import colorama
+import akshare as ak
+
 colorama.init()
 
 
@@ -481,7 +483,21 @@ def getIncreaseDays(prices, rangeStart, rangeEnd, minRate, maxRate):
 
     return count
 
+def getCompanyInfo(scode):
+    ci = ak.stock_individual_info_em(symbol=scode)
+    info(ci)
 
+def test():
+    # stock_individual_basic_info_hk_xq_df = ak.stock_individual_basic_info_hk_xq(symbol="02097")
+    # print(stock_individual_basic_info_hk_xq_df)
+
+    stock_individual_info_em_df = ak.stock_individual_info_em(symbol="000001")
+    print(stock_individual_info_em_df)
+    
+    stock_individual_basic_info_xq_df = ak.stock_individual_basic_info_xq(symbol="SH601127")
+    print(stock_individual_basic_info_xq_df)
+
+    
 def getCciCrossUpDay(cci, dayStart, dayEnd):
     for i in range(dayEnd, dayStart, -1):
         if cci[i] >= -100 and cci[i-1] < -100:
@@ -740,10 +756,13 @@ if __name__ == '__main__':
     print("c. 搜索现有推荐股票")
     print("2. 更新所有股票代码")
     print("3. 获取所有板块信息")
+    print("t. 测试")
     print("q. 退出")
     ui = input("请选择:")
     if ui == "q":
         sys.exit(1)
+    if ui == "t":
+        test()
 
     init()
 
@@ -767,7 +786,7 @@ if __name__ == '__main__':
     if connect_result != 0:
         info("连接失败")
         xt_trader.stop()
-        sys.exit(1)
+        # sys.exit(1)
     else:
         info("连接成功")
 
