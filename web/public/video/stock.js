@@ -780,6 +780,7 @@ window.stock_list = window.stock_list || (function () {
                             td.html(`<div class="currentPrice"></div>`);
                             if (firstRow) {
                                 td.html(`<div class="currentPrice"></div>
+                                        <div class="positions font10 gray"></div>
                                         <div class="error"/>
                                         <div class="ruleStatus"/>`);
                             }
@@ -1119,7 +1120,7 @@ window.stock_list = window.stock_list || (function () {
             }
 
 
-            $(".ruleStatus").each(func);
+            $(".ruleStatus").not(".hide").each(func);
 
             if (self.showingRule) {
                 $(".tdRule").each(func);
@@ -1620,13 +1621,20 @@ window.stock_list = window.stock_list || (function () {
         },
         updatePrices: async function () {
             let res = await share.getSync__(`/stock/price/current`);
+            let tdHeight = 0;
+            let showRuleStatus = false;
             res.rows.forEach(row => {
                 self.currentPrices[row.scode] = row;
+
                 if (self.currentPrices[row.scode]) {
                     let tr = $(`[code="${row.scode}"]`);
                     tr.each(function () {
                         try {
                             let td = $(this);
+                            if (tdHeight == 0) {
+                                tdHeight = td.innerHeight();
+                                showRuleStatus = tdHeight > 300;
+                            }
                             let cpc = td.find(".curPrice");
                             let data = td.attr("data");
                             let cp = cpc.find(".currentPrice");
@@ -1664,7 +1672,13 @@ window.stock_list = window.stock_list || (function () {
                                     cp.addClass("red");
                                 }
 
-                                if (self.showK1d && data["错误"]) {
+                                let positions = "0/0@0";
+                                if (data["volume"] != null && data["volume"] > 0) {
+                                    positions = `${share.convertIfInteger(data["can_use_volume"])}/${share.convertIfInteger(data["volume"])}@${share.convertIfInteger(data["avg_price"], 2)}`;
+                                }
+
+                                cpc.find(".positions").html(`${positions}`);
+                                if (showRuleStatus && data["错误"]) {
                                     let error = cpc.find(".error");
                                     error.html(`${share.convertIfInteger(data["错误"])}`);
 
@@ -1674,7 +1688,7 @@ window.stock_list = window.stock_list || (function () {
                                 }
 
                                 let rsc = cpc.find(".ruleStatus");
-                                if (self.showK1d && data["rule"]) {
+                                if (showRuleStatus && data["rule"]) {
                                     rsc.removeClass("hide");
                                     /*
                                     let rc = JSON.parse(data["rule"]);
