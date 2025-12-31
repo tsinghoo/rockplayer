@@ -1672,7 +1672,7 @@ window.stock_list = window.stock_list || (function () {
                                     cp.addClass("red");
                                 }
 
-                                let positions = `0/0=0@${data["券商"]}`;
+                                let positions = `0@${data["券商"]}`;
                                 if (data["volume"] != null && data["volume"] > 0) {
                                     positions = `${share.convertIfInteger(data["can_use_volume"])}/${share.convertIfInteger(data["volume"])}=${share.convertIfInteger(data["avg_price"], 2)}@${data["券商"]}`;
                                 }
