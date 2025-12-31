@@ -781,7 +781,7 @@ window.stock_list = window.stock_list || (function () {
                             if (firstRow) {
                                 td.html(`<div class="currentPrice"></div>
                                         <div class="positions font10 gray"></div>
-                                        <div class="error"/>
+                                        <div class="error font12"/>
                                         <div class="ruleStatus"/>`);
                             }
                         } else if (key == "市场") {
@@ -1672,19 +1672,21 @@ window.stock_list = window.stock_list || (function () {
                                     cp.addClass("red");
                                 }
 
-                                let positions = "0/0@0";
+                                let positions = `0/0=0@${data["券商"]}`;
                                 if (data["volume"] != null && data["volume"] > 0) {
-                                    positions = `${share.convertIfInteger(data["can_use_volume"])}/${share.convertIfInteger(data["volume"])}@${share.convertIfInteger(data["avg_price"], 2)}`;
+                                    positions = `${share.convertIfInteger(data["can_use_volume"])}/${share.convertIfInteger(data["volume"])}=${share.convertIfInteger(data["avg_price"], 2)}@${data["券商"]}`;
                                 }
 
                                 cpc.find(".positions").html(`${positions}`);
-                                if (showRuleStatus && data["错误"]) {
-                                    let error = cpc.find(".error");
-                                    error.html(`${share.convertIfInteger(data["错误"])}`);
-
-                                    if (data["错误"].indexOf("I:") >= 0) {
+                                let error = cpc.find(".error");
+                                if (data["autoCreateRuleFail"]) {
+                                    error.html(`${share.convertIfInteger(data["autoCreateRuleFail"])}`);
+                                    error.addClass("bg_05");
+                                    if (data["autoCreateRuleFail"].indexOf("I:") >= 0) {
                                         error.addClass("gray");
                                     }
+                                } else {
+                                    error.removeClass("bg_05");
                                 }
 
                                 let rsc = cpc.find(".ruleStatus");
