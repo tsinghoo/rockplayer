@@ -780,7 +780,7 @@ window.stock_list = window.stock_list || (function () {
                             td.html(`<div class="currentPrice"></div>`);
                             if (firstRow) {
                                 td.html(`<div class="currentPrice"></div>
-                                        <div class="positions font10 gray"></div>
+                                        <div class="positions font12"></div>
                                         <div class="error font12"/>
                                         <div class="ruleStatus"/>`);
                             }
@@ -3842,16 +3842,6 @@ window.stock_list = window.stock_list || (function () {
             if (r.expireTime < Date.now()) {
                 color = "gray";
             }
-            let price = `
-                                <tr>
-                                    <td colspan="6" class="nowrap">
-                                    <div class="nowrap ${color} font10 center">
-                                    ${expireTime}
-                                    </div>
-                                    ${prices}
-                                    </td>
-                                </tr>
-                            `;
             let actions = "";
             if (r.actions && r.actions.length > 0) {
                 actions = r.actions.map(a => {
@@ -3863,24 +3853,40 @@ window.stock_list = window.stock_list || (function () {
                         statusText = +":" + a.orderNo;
                     }
                     return `
+                                <div class="center">
+                                    <table style="margin:2px 0 2px 0;display:inline-table">
                                         <tr>
-                                            <td>${share.timeFormat__(a.createTime, "yyyy-MM-dd hh:mm:ss")}</td>
-                                            <td>${a.action}</td>
+                                            <td>${share.timeFormat__(a.createTime, "hh:mm:ss")}</td>
+                                            <td>${a.action.substring(0, 1)}</td>
                                             <td>${share.convertIfInteger(a.price)}</td>
                                             <td>${a.amount}</td>
                                             <td>${a.done}</td>
-                                            <td>${statusText}</td>
                                         </tr>
+                                        <tr>
+                                            <td colspan="5">${statusText}</td>
+                                        </tr>
+                                    </table>
+                                </div>
                                     `;
                 }).join("");
             }
+            let price = `
+                        <div class="borderGray">
+                            <div class="nowrap ${color} font10 center">
+                            ${expireTime}
+                            </div>
+                            ${prices}
+
+                            ${actions}
+                        </div>
+                            `;
 
             color = "";
             if (r.expireTime < Date.now() || r.closed) {
                 color = "gray";
             }
 
-            let html = `<table class="${color}">${price}${actions}</table>
+            let html = `<div class="${color}">${price}</div>
             `;
             c.html(html);
         },
