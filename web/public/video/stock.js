@@ -780,7 +780,10 @@ window.stock_list = window.stock_list || (function () {
                             td.html(`<div class="currentPrice"></div>`);
                             if (firstRow) {
                                 td.html(`<div class="currentPrice"></div>
-                                        <div class="positions font12"></div>
+                                        <div class="flexrow">
+                                            <div class="positions left widthauto font12"></div>
+                                            <div class="avgprice right font12"></div>
+                                        </div>
                                         <div class="error font12"/>
                                         <div class="ruleStatus hide"/>`);
                             }
@@ -1672,12 +1675,20 @@ window.stock_list = window.stock_list || (function () {
                                     cp.addClass("red");
                                 }
 
-                                let positions = `0@${data["券商"]}`;
+                                let positions = ``;
                                 if (data["volume"] != null && data["volume"] > 0) {
-                                    positions = `${share.convertIfInteger(data["can_use_volume"])}/${share.convertIfInteger(data["volume"])}=${share.convertIfInteger(data["avg_price"], 2)}@${data["券商"]}`;
+                                    positions = `${share.convertIfInteger(data["can_use_volume"])}/${share.convertIfInteger(data["volume"])}`;
                                 }
 
                                 cpc.find(".positions").html(`${positions}`);
+
+                                let avgprice = `0@${data["券商"]}`;
+                                if (data["volume"] != null && data["volume"] > 0) {
+                                    avgprice = `${share.convertIfInteger(data["avg_price"], 2)}@${data["券商"]}`;
+                                }
+
+                                cpc.find(".avgprice").html(`${avgprice}`);
+
                                 let error = cpc.find(".error");
                                 if (data["autoCreateRuleFail"]) {
                                     error.html(`${share.convertIfInteger(data["autoCreateRuleFail"])}`);
