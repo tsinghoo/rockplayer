@@ -782,7 +782,7 @@ window.stock_list = window.stock_list || (function () {
                                 td.html(`<div class="currentPrice"></div>
                                         <div class="positions font12"></div>
                                         <div class="error font12"/>
-                                        <div class="ruleStatus"/>`);
+                                        <div class="ruleStatus hide"/>`);
                             }
                         } else if (key == "市场") {
                             if (firstRow) {
