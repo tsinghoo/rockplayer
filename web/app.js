@@ -2295,6 +2295,7 @@ async function autoCreateRules(threadId) {
         info(`auto create rule failed:${e}`, threadId)
     }
 
+    rules = {};
     reloadRules();
 
     workerCreateRule.id = 0;
@@ -2641,7 +2642,6 @@ app.get('/stock/rule/cancel', async (req, res) => {
             reloadRules();
         }
     }
-
 
     var resp = JSON.stringify({});
     if (cancelled != "") {
