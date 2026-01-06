@@ -2587,27 +2587,37 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        text: "配对删除",
+                        text: "配对隐藏",
                         onTap: async function () {
                             popup.close();
-                            let res = await share.getSync__(`/stock/delete/auto?scode=${scode}`);
-                            if (res.error) {
-                                share.toastError__(res.error);
-                            } else {
-                                self.showTradeList(c, scode, 1, type);
-                            }
-                        }
-                    },
-                    {
-                        text: "增量配对删除",
-                        onTap: async function () {
-                            popup.close();
-                            let res = await share.getSync__(`/stock/delete/auto?scode=${scode}&delta=1`);
-                            if (res.error) {
-                                share.toastError__(res.error);
-                            } else {
-                                self.showTradeList(c, scode, 1, type);
-                            }
+                            let buttons = [
+                                {
+                                    text: "增量配对隐藏",
+                                    onTap: async function () {
+                                        popup.close();
+                                        let res = await share.getSync__(`/stock/delete/auto?scode=${scode}&delta=1`);
+                                        if (res.error) {
+                                            share.toastError__(res.error);
+                                        } else {
+                                            self.showTradeList(c, scode, 1, type);
+                                        }
+                                    }
+                                },
+                                {
+                                    text: "全量配对隐藏",
+                                    onTap: async function () {
+                                        popup.close();
+                                        let res = await share.getSync__(`/stock/delete/auto?scode=${scode}`);
+                                        if (res.error) {
+                                            share.toastError__(res.error);
+                                        } else {
+                                            self.showTradeList(c, scode, 1, type);
+                                        }
+                                    }
+                                }
+                            ];
+
+                            popup = await share.popupAction__("", buttons);
                         }
                     }
                 ];
