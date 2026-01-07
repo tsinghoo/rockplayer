@@ -45,11 +45,12 @@ broker = "国信"
 
 runGetActionTask = 1
 
-baseUrl = "http://192.168.66.205:3001"
-baseUrl = "http://test1.91taogu.com"
+
 
 g.baseUrl = "http://192.168.66.205:3001"
 g.baseUrl = "http://test1.91taogu.com"
+g.baseUrl = "http://192.168.66.165:3001"
+
 
 logPathPrefix = os.getenv("logPathPrefix")
 if logPathPrefix:
@@ -205,7 +206,7 @@ def saveConfig():
 def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
     try:
         # 目标 URL
-        url = "http://test1.91taogu.com/stock/rule/action/ordered"
+        url = g.baseUrl + "/stock/rule/action/ordered"
 
         if (status == 57):
             status = f"{status}:{statusMessage}"
@@ -245,7 +246,7 @@ def getActions(ContextInfo):
     info("getActions")
     try:
         response = requests.get(
-            "http://test1.91taogu.com/stock/rule/actions?broker="+broker, timeout=5)
+            g.baseUrl + "/stock/rule/actions?broker="+broker, timeout=5)
         if response.status_code != 200:
             error("getActions失败，状态码:", response.status_code)
             return
@@ -311,7 +312,7 @@ def cancelAction(scode, ContextInfo):
 def actionDone(id):
     try:
         response = requests.get(
-            baseUrl+"/stock/action/done?id="+id, timeout=20)
+            g.baseUrl+"/stock/action/done?id="+id, timeout=20)
         if response.status_code != 200:
             error("action done error:", response.status_code,
                   "响应内容:", response.text)
@@ -358,7 +359,7 @@ def syncPosition(accountType):
         body = {"data": positions, "passcode": "995560"}
         info("body:", json.dumps(body, indent=None))
         response = requests.post(
-            "http://test1.91taogu.com/stock/positions", json=body, timeout=5)
+            g.baseUrl + "/stock/positions", json=body, timeout=5)
         if response.status_code != 200:
             error("上传持仓失败，状态码:", response.status_code, response.content)
             return
@@ -474,7 +475,7 @@ def orderError_callback(ContextInfo, orderArgs, errMsg):
 def updateDeal(deal):
     try:
         # 目标 URL
-        url = "http://test1.91taogu.com/stock/deal/update"
+        url = g.baseUrl + "/stock/deal/update"
 
         # 设置请求头（声明内容类型为 JSON）
         headers = {

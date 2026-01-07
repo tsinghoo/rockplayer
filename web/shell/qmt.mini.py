@@ -943,7 +943,7 @@ def update1m(stocklist, startTime=None):
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
             # 将datas的数据分批上传，每批100条
-            bsize = 500
+            bsize = 100
             for i in range(0, len(datas), bsize):
                 batch = datas.iloc[i:i+bsize]
                 info("上传", scode, period,
@@ -1161,11 +1161,13 @@ def python_to_json(obj, indent=4, ensure_ascii=False):
 
 def subscribe_whole_callback(data):
     info("subscribe_whole_callback", data)
-    for stock in data:
-        if stock not in g.stocklist:
-            continue
-        g.tick[stock] = data[stock]
-
+    try:
+        for stock in data:
+            if stock not in g.stocklist:
+                continue
+            g.tick[stock] = data[stock]
+    except Exception as e:
+         info(f"error:{e}")
 
 def printObj(data, indent):
     if (not indent):

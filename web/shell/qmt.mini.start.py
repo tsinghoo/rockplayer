@@ -49,17 +49,17 @@ def main():
         else:
             continue
         
-        print("1. https://vbj.labadida.com")
-        print("2. http://test1.91taogu.com")
+        print("1. http://vbj.labadida.com")
+        print("2. http://test.labadida.com:3001")
         print("3. http://192.168.66.205:3001")
         print("q. quit")
         
         user_input = input("Please select: ")
         
         if user_input == "1":
-            proxy = "https://vbj.labadida.com"
+            proxy = "http://vbj.labadida.com"
         elif user_input == "2":
-            proxy = "http://test1.91taogu.com"
+            proxy = "http://test.labadida.com:3001"
         elif user_input == "3":
             proxy = "http://192.168.66.205:3001"
         elif user_input.lower() == "q":
