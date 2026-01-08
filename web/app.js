@@ -532,7 +532,11 @@ async function reloadRules() {
             Date.now() + "" + Math.floor(Math.random() * 10000)
     }
     let ruleList = await db.allSync("select * from tTradeRule where closed = 0", [], req.threadId);
-
+    if (ruleList == null || ruleList.rows == null ) {
+        error("bad rule list", req.threadId);
+        return;
+    }
+    
     for (let i = 0; i < ruleList.rows.length; i++) {
         let rule = ruleList.rows[i];
         await reloadRule(rule, req);
