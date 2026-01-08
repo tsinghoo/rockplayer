@@ -943,7 +943,7 @@ def update1m(stocklist, startTime=None):
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
             # 将datas的数据分批上传，每批100条
-            bsize = 100
+            bsize = 20
             for i in range(0, len(datas), bsize):
                 batch = datas.iloc[i:i+bsize]
                 info("上传", scode, period,
