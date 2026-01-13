@@ -562,7 +562,7 @@ def update1dTask():
 
 def update1mTask():
     while True:
-        time.sleep(1)
+        time.sleep(60)
         resetThreadId("u1m")
         update1m(g.stocklist)
         # update1m(g.candidates)
@@ -943,7 +943,7 @@ def update1m(stocklist, startTime=None):
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
 
             # 将datas的数据分批上传，每批100条
-            bsize = 20
+            bsize = 50
             for i in range(0, len(datas), bsize):
                 batch = datas.iloc[i:i+bsize]
                 info("上传", scode, period,
@@ -1413,8 +1413,8 @@ if __name__ == '__main__':
     t1 = Thread(target=update1dTask)
     t1.start()
 
-    # t2 = Thread(target=update1mTask)
-    # t2.start()
+    t2 = Thread(target=update1mTask)
+    t2.start()
 
     t4 = Thread(target=getActionsTask)
     t4.start()
