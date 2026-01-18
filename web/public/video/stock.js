@@ -980,7 +980,7 @@ window.stock_list = window.stock_list || (function () {
                 let popup;
                 let buttons = [
                     {
-                        text: "删除本行",
+                        text: "隐藏本行",
                         onTap: async function () {
                             popup.close();
 
@@ -993,7 +993,7 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        text: "彻底删除本行",
+                        text: "清除本行",
                         onTap: async function () {
                             popup.close();
 
@@ -1006,7 +1006,7 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        text: "删除本行及关联",
+                        text: "隐藏本行及关联",
                         onTap: async function () {
                             popup.close();
 
@@ -1033,7 +1033,7 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        text: "取消删除",
+                        text: "取消隐藏",
                         onTap: async function () {
                             popup.close();
 
@@ -2548,7 +2548,7 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        text: "删除本行",
+                        text: "隐藏本行",
                         onTap: async function () {
                             popup.close();
 
@@ -2561,7 +2561,7 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        text: "彻底删除本行",
+                        text: "清除本行",
                         onTap: async function () {
                             popup.close();
 
@@ -2574,7 +2574,7 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
-                        text: "取消删除",
+                        text: "取消隐藏本行",
                         onTap: async function () {
                             popup.close();
 

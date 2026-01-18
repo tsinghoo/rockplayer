@@ -532,11 +532,11 @@ async function reloadRules() {
             Date.now() + "" + Math.floor(Math.random() * 10000)
     }
     let ruleList = await db.allSync("select * from tTradeRule where closed = 0", [], req.threadId);
-    if (ruleList == null || ruleList.rows == null ) {
+    if (ruleList == null || ruleList.rows == null) {
         error("bad rule list", req.threadId);
         return;
     }
-    
+
     for (let i = 0; i < ruleList.rows.length; i++) {
         let rule = ruleList.rows[i];
         await reloadRule(rule, req);
@@ -2365,7 +2365,11 @@ app.get('/stock/k/1m', async (req, res) => {
         day = new Date(parseInt(day));
     }
 
-    await wss.callFunc("国金", "forceUpdate1m", { scode: formatScode(scode) });
+    try {
+        await wss.callFunc("国金", "forceUpdate1m", { scode: formatScode(scode) });
+    } catch (e) {
+        error("update1m error:" + e.message, req.threadId);
+    }
     day.setHours(0, 0, 0, 0);
     let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
     day = timeFormat(day, "yyyyMMdd")
@@ -3501,7 +3505,7 @@ app.get('/stock/delete/auto', async (req, res) => {
                 continue;
             }
 
-            if (t2.tamount * t1.tamount >= 0) {
+            if (t2.tamount + t1.tamount != 0) {
                 continue;
             }
 
@@ -3855,6 +3859,7 @@ app.get('/video/metadata', (req, res) => {
 });
 const multer = require('multer');
 const { CLIENT_RENEG_WINDOW } = require('tls');
+const { warn } = require('console');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // 指定文件存储的目录
