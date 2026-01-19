@@ -5,12 +5,24 @@ const fs = require("fs");
 let DEBUG = 2;
 let INFO = 3;
 let ERROR = 4;
-let logLevel = INFO;
+let logLevel = DEBUG;
 
 
 const args = process.argv;
 let dev = 0;
 
+/*
+const { SocksProxyAgent } = require('socks-proxy-agent');
+const https = require('https');
+const http = require('http');
+
+// 设置全局代理
+const proxyAgent = new SocksProxyAgent('socks5://192.168.66.1:10800');
+
+// 覆盖默认的 Agent
+https.globalAgent = proxyAgent;
+http.globalAgent = proxyAgent;
+*/
 const { RestClient, WebsocketClient } = require('okx-api');
 
 
@@ -19,10 +31,12 @@ const { RestClient, WebsocketClient } = require('okx-api');
 let g = {};
 g.broker = "OKX";
 g.baseUrl = "http://test1.91taogu.com";
+g.baseUrl = "http://192.168.66.205:3001";
 g.httpsProxy = 'http://192.168.66.205:8080/';
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
+g.stocklist = ['BTC-USDT', 'ETH-USDT'];
 g.apiKey = '1315b7af-d17e-4582-8de7-2919f4de5f20';
 g.apiSecret = 'EB46A9E766BFE107F37B882443FCB780';
 g.apiPass = 'OkxPassw0rd!';
@@ -83,7 +97,7 @@ const wsClient = new WebsocketClient({
 
 
 async function test() {
-
+  console.log("test");
 
   // Submit a buy and sell market order
   (async () => {
@@ -321,7 +335,7 @@ function error(msg) {
 async function updateSticks(stock, period, limit) {
   info(`updateSticks ${stock} ${period} ${limit}`);
   try {
-    if (period == "1d") {
+    if (period == "1D") {
       timePatten = "yyyyMMdd";
     } else if (period == "1m") {
       timePatten = "yyyyMMddhhmmss";
@@ -330,17 +344,24 @@ async function updateSticks(stock, period, limit) {
 
     let response = await client.getHistoricCandles({
       instId: stock,
-      bar: "tick",
+      bar: period,
       limit: limit
     });
+
+    debug(`getHistoricCandles:${period}:${JSON.stringify(response)}`);
+    // ["1768794720000","92657.5","92666","92652","92666","0.30707865","28453.361543349","28453.361543349","1"]]
+    // ["1768794660000","92654.5","92657.5","92654.4","92657.5","0.31136184","28849.391537192","28849.391537192","1"]
+    // ["1768794600000","92647.9","92654.5","92647.9","92654.5","0.65591968","60770.491709034","60770.491709034","1"]
+    // ["1768793760000","92587.9","92588","92579.6","92580.1","1.08476682","100429.408988716","100429.408988716","1"
+    // return;
 
     let data = [];
     for (let i = 0; i < response.length; i++) {
       let item = response[i];
-      data.push([timeFormat(item.openTime, timePatten), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
+      data.push([timeFormat(item[0], timePatten), item[1], item[4], item[2], item[3], item[5], item[6]]);
       if (data.length == 50) {
         let body = {
-          period: period,
+          period: period.toLowerCase(),
           scode: stock,
           data: data
         };
@@ -603,13 +624,15 @@ async function start() {
   log2File();
   await updatePositions(1);
   await updatePositions(0);
-  await updateFuturePositions();
+  // await updateFuturePositions();
 
-  binance.websockets.userData(balance_update, execution_update);
+  // binance.websockets.userData(balance_update, execution_update);
 
   for (let scode of g.stocklist) {
     await updateSticks(scode, "1m", 240);
-    await updateSticks(scode, "1d", 360);
+    return;
+    
+    await updateSticks(scode, "1D", 360);
 
     await futureCandles(scode, "1m", 240);
     await futureCandles(scode, "1d", 360);
@@ -666,10 +689,9 @@ async function updatePositions(clean) {
   if (clean != 1) {
 
     const response = await client.getBalance();
-    console.log('All balances: ', JSON.stringify(response, null, 2));
-
+    debug('All balances: ', JSON.stringify(response, null, 2));
     let data = [];
-    response.details.forEach(
+    response[0].details.forEach(
       item => {
         data.push({
           "broker": g.broker,
@@ -783,14 +805,6 @@ function init() {
     g.stocklist = ['ETHUSDT'];
   } else {
     info("env: prod")
-  }
-
-  if (args.length > 3) {
-    if (args[3].startsWith("socks")) {
-      binance.socksProxy = args[3];
-    } else if (args[3].startsWith("http")) {
-      binance.httpsProxy = args[3];
-    }
   }
 }
 
