@@ -92,55 +92,91 @@ const wsClient = new WebsocketClient({
 });
 
 
+function handleCandle1m(response) {
+  if (response == null || response.arg == null || response.arg.channel != 'candle1m') {
+    return false;
+  }
+
+  let stock = response.arg.instId;
+  let arr = response.data[0];
+  let time = parseInt(arr[0]);
+  let open = arr[1];
+  let high = arr[2];
+  let low = arr[3];
+  let close = arr[4];
+  let volume = arr[5];
+  let quoteVolume = arr[6];
+  let isFinal = arr[8];
+
+  let data = [[timeFormat(time, "yyyyMMddhhmmss"), open, close, high, low, volume, quoteVolume]];
+  let body = {
+    period: "1m",
+    scode: stock,
+    data: data
+  };
+
+  post(`${g.baseUrl}/stock/k/upload`, body);
+}
+
+function handleCandle1d(response) {
+  if (response == null || response.arg == null || response.arg.channel != 'candle1D') {
+    return false;
+  }
+
+  let stock = response.arg.instId;
+  let arr = response.data[0];
+  let time = parseInt(arr[0]);
+  let open = arr[1];
+  let high = arr[2];
+  let low = arr[3];
+  let close = arr[4];
+  let volume = arr[5];
+  let quoteVolume = arr[6];
+  let isFinal = arr[8];
+
+  let data = [[timeFormat(time, "yyyyMMdd"), open, close, high, low, volume, quoteVolume]];
+  let body = {
+    period: "1d",
+    scode: stock,
+    data: data
+  };
+
+  post(`${g.baseUrl}/stock/k/upload`, body);
+}
 
 
+function handleTickers(data) {
+  if (data == null || data.arg == null || data.arg.channel != 'tickers' || data.data.length < 1) {
+    return false;
+  }
+
+  let symbol = data.arg.instId;
+  let row = data.data[0];
+  let close = row.bidPx;
+  let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`;
+  info(`GET ${url}`);
+  get(url)
+    .catch((err) => {
+      error("updatePrice error:", err.toString());
+    });
+}
+
+async function test(){
 
 
-async function test() {
-  console.log("test");
+}
 
-  // Submit a buy and sell market order
-  (async () => {
-    try {
+async function subscribe() {
+  console.log("subscribe");
 
-      let response = await client.getHistoricCandles({
-        instId: "BTC-USDT",
-        bar: "",
-        limit: 5
-      });
-
-      console.log('All balances: ', JSON.stringify(response, null, 2));
-
-      return;
-
-      const allBalances = await client.getBalance();
-      console.log('All balances: ', JSON.stringify(allBalances, null, 2));
-
-
-
-      const buyResult = await client.submitOrder({
-        instId: 'BTC-USDT',
-        ordType: 'market',
-        side: 'buy',
-        sz: '0.1',
-        tdMode: 'cash',
-        tgtCcy: 'base_ccy',
-      });
-      console.log('buy order result: ', buyResult);
-
-    } catch (e) {
-      console.error('request failed: ', e);
-    }
-  })();
-
-  return;
   // Raw data will arrive on the 'update' event
   wsClient.on('update', (data) => {
-    console.log('ws update (raw data received)', JSON.stringify(data));
+    console.log('\nws update:', JSON.stringify(data));
+    handleTickers(data) || handleCandle1m(data) || handleCandle1d(data);
   });
 
   wsClient.on('open', (data) => {
-    console.log('connection opened open:', data.wsKey);
+    console.log('ws opened:', data.wsKey);
   });
 
   // Replies (e.g. authenticating or subscribing to channels) will arrive on the 'response' event
@@ -150,10 +186,10 @@ async function test() {
   });
 
   wsClient.on('reconnect', ({ wsKey }) => {
-    console.log('ws automatically reconnecting.... ', wsKey);
+    console.log('ws reconnect:', wsKey);
   });
   wsClient.on('reconnected', (data) => {
-    console.log('ws has reconnected ', data?.wsKey);
+    console.log('ws reconnected:', data?.wsKey);
   });
   wsClient.on('exception', (data) => {
     console.error('ws exception: ', data);
@@ -184,14 +220,6 @@ async function test() {
   // Public topics, for comparison. These do not require authentication / api keys:
   wsClient.subscribe([
     {
-      channel: 'instruments',
-      instType: 'SPOT',
-    },
-    {
-      channel: 'instruments',
-      instType: 'FUTURES',
-    },
-    {
       channel: 'tickers',
       instId: 'BTC-USDT',
     }, {
@@ -200,10 +228,11 @@ async function test() {
     }, {
       channel: 'candle1D',
       instId: 'BTC-USDT',
-    }, {
-      channel: 'trades',
-      instId: 'BTC-USDT',
     }
+    // , {
+    //   channel: 'trades',
+    //   instId: 'BTC-USDT',
+    // }
 
   ]);
 
@@ -358,7 +387,7 @@ async function updateSticks(stock, period, limit) {
     let data = [];
     for (let i = 0; i < response.length; i++) {
       let item = response[i];
-      data.push([timeFormat(item[0], timePatten), item[1], item[4], item[2], item[3], item[5], item[6]]);
+      data.push([timeFormat(parseInt(item[0]), timePatten), item[1], item[4], item[2], item[3], item[5], item[6]]);
       if (data.length == 50) {
         let body = {
           period: period.toLowerCase(),
@@ -371,7 +400,7 @@ async function updateSticks(stock, period, limit) {
     }
 
     let body = {
-      period: period,
+      period: period.toLowerCase(),
       scode: stock,
       data: data
     };
@@ -629,55 +658,23 @@ async function start() {
   // binance.websockets.userData(balance_update, execution_update);
 
   for (let scode of g.stocklist) {
-    await updateSticks(scode, "1m", 240);
-    return;
-    
-    await updateSticks(scode, "1D", 360);
 
-    await futureCandles(scode, "1m", 240);
-    await futureCandles(scode, "1d", 360);
+    await updateSticks(scode, "1D", 360);
+    await updateSticks(scode, "1m", 240);
+
+    // return;
+    // await futureCandles(scode, "1m", 240);
+    // await futureCandles(scode, "1d", 360);
   }
 
-  startFutureMiniTicket();
+  // startFutureMiniTicket();
 
-  //futuresCandlesticksStream
-  binance.websockets.candlesticks(g.stocklist, "1m", (candlesticks) => {
-    let { e: type, E: time, s: symbol, k: ticks } = candlesticks;
-    let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
-
-    let data = [[timeFormat(time, "yyyyMMddhhmmss"), open, close, high, low, volume, quoteVolume]];
-    let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`;
-    info(`GET ${url}`);
-    get(url)
-      .catch((err) => {
-        error("updatePrice error:", err.toString());
-      });
-
-    if (isFinal) {
-      let body = {
-        period: "1m",
-        scode: symbol,
-        data: data
-      }
-      info(`POST ${g.baseUrl}/stock/k/upload`, JSON.stringify(body));
-      post(`${g.baseUrl}/stock/k/upload`, body);
-
-      for (let scode of g.stocklist) {
-        updateSticks(scode, "1d", 1);
-        updateSticks(scode, "1m", 10);
-        futureCandles(scode, "1m", 2);
-        futureCandles(scode, "1d", 1);
-      }
-    }
-  });
-
+  subscribe();
 
   while (1 == 1) {
     await getActions();
     await sleep(100);
   }
-
-  return;
 
 }
 
@@ -697,19 +694,20 @@ async function updatePositions(clean) {
           "broker": g.broker,
           "account_id": "",
           "avg_price": 0,
-          "can_use_volume": item.availBal,
-          "frozen_volume": item.frozenBal,
-          "market_value": item.eqUsd,
+          "can_use_volume": parseFloat(item.availBal),
+          "frozen_volume": parseFloat(item.frozenBal),
+          "market_value": parseFloat(item.eqUsd),
           "on_road_volume": 0,
           "open_price": 0,
-          "stock_code": item.ccy + "USDT",
-          "volume": item.spotBal
+          "stock_code": item.ccy + "-USDT",
+          "volume": parseFloat(item.spotBal)
         });
       }
     )
 
     body.data = data;
   }
+
   post(`${g.baseUrl}/stock/positions`, body);
 }
 
@@ -739,58 +737,6 @@ async function updateFuturePositions() {
 
   let body = { "data": data, "passcode": "995560", type: 1 };
   post(`${g.baseUrl}/stock/positions`, body);
-}
-
-async function test1() {
-  start();
-}
-
-async function futureCandles(stock, period, limit) {
-  info(`futureCandles ${stock} ${period} ${limit}`);
-  try {
-    let count = 0;
-    if (period == "1d") {
-      timePatten = "yyyyMMdd";
-    } else if (period == "1m") {
-      timePatten = "yyyyMMddhhmmss";
-    }
-
-
-    let response = await binance.futuresCandles(stock, period, { limit });
-    let data = [];
-    for (let i = 0; i < response.length; i++) {
-      let item = response[i];
-      data.push([timeFormat(item.openTime, timePatten), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
-      if (data.length == 50) {
-        let body = {
-          period: period,
-          scode: stock,
-          type: 1,
-          data: data
-        };
-        await post(`${g.baseUrl}/stock/k/upload`, body);
-        count += 50;
-        info(`fc upload:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
-        data = [];
-      }
-    }
-
-    if (data.length > 0) {
-      let body = {
-        period: period,
-        scode: stock,
-        type: 1,
-        data: data
-      };
-      await post(`${g.baseUrl}/stock/k/upload`, body);
-      count += data.length;
-      info(`fc upload last:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
-    }
-
-  } catch (e) {
-    error("futureCandles failed:", e);
-  }
-
 }
 
 function init() {
