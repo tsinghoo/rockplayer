@@ -36,7 +36,7 @@ g.httpsProxy = 'http://192.168.66.205:8080/';
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
-g.stocklist = ['BTC-USDT', 'ETH-USDT'];
+g.stocklist = ['BTC-USDT', 'ETH-USDT','DOOD-USDT'];
 g.apiKey = '1315b7af-d17e-4582-8de7-2919f4de5f20';
 g.apiSecret = 'EB46A9E766BFE107F37B882443FCB780';
 g.apiPass = 'OkxPassw0rd!';
@@ -407,6 +407,18 @@ async function updateSticks(stock, period, limit) {
   }
 }
 
+function updateActionOrdered(scode, status) {
+  let url = g.baseUrl + "/stock/rule/action/ordered"
+  let body = {
+    "broker": g.broker,
+    "scode": scode.split(".")[0],
+    "status": status,
+    "orderNo": ""
+  }
+
+  post(url, body);
+}
+
 async function getActions() {
   try {
     let response = await get(g.baseUrl + "/stock/rule/actions?broker=" + g.broker);
@@ -419,7 +431,7 @@ async function getActions() {
     const jso = JSON.parse(content);
     if (jso.data.length == 0) {
       g.getActionTimes++;
-      if (g.getActionTimes > 10) {
+      if (g.getActionTimes > 100) {
         info("getActions ok");
         g.getActionTimes = 0;
       }
@@ -453,7 +465,7 @@ async function getActions() {
           if (act.action === "buy") {
             info("买入", price, quantity);
 
-            const response = await client.submitOrder({
+            client.submitOrder({
               instId: act.scode,
               ordType: 'limit',
               side: 'buy',
@@ -461,15 +473,22 @@ async function getActions() {
               sz: quantity,
               tdMode: 'cash',
               tgtCcy: 'base_ccy',
+            }).then((response) => {
+              debug("resp:", JSON.stringify(response));
+              info("已买入", act.sname, act.scode, act.price, act.amount);
+            }).catch((error) => {
+              let msg = JSON.stringify(error);
+              try {
+                msg = error.data[0].sMsg;
+              } catch (e) {
+              }
+
+              updateActionOrdered(act.scode, msg);
             });
-
-            debug("resp:", JSON.stringify(response));
-            info("已买入", act.sname, act.scode, act.price, act.amount);
-
           } else if (act.action === "sell") {
             info("卖出", act.sname, act.scode, act.price, act.amount);
             info("卖出", price, quantity);
-            const response = await client.submitOrder({
+            client.submitOrder({
               instId: act.scode,
               ordType: 'limit',
               side: 'sell',
@@ -477,10 +496,18 @@ async function getActions() {
               sz: quantity,
               tdMode: 'cash',
               tgtCcy: 'base_ccy',
-            });
+            }).then((response) => {
+              debug(JSON.stringify(response));
+              info("已卖出", act.sname, act.scode, act.price, act.amount);
+            }).catch((error) => {
+              let msg = JSON.stringify(error);
+              try {
+                msg = error.data[0].sMsg;
+              } catch (e) {
+              }
 
-            debug(JSON.stringify(response));
-            info("已卖出", act.sname, act.scode, act.price, act.amount);
+              updateActionOrdered(act.scode, msg);
+            });
           } else if (act.action === "reloadK1d") {
             info("reloadK1d action for", act.scode);
           } else if (act.action === "cancelAction") {
@@ -645,13 +672,13 @@ async function start() {
   log2File();
   /* The above code is a JavaScript code snippet that is currently commented out. It appears to be part
   of a script that involves updating positions and sticks for stocks. */
-  // await updatePositions(1);
-  // await updatePositions(0);
+  await updatePositions(1);
+  await updatePositions(0);
 
-  // for (let scode of g.stocklist) {
-  //   await updateSticks(scode, "1D", 360);
-  //   await updateSticks(scode, "1m", 240);
-  // }
+  for (let scode of g.stocklist) {
+    await updateSticks(scode, "1D", 360);
+    await updateSticks(scode, "1m", 240);
+  }
 
 
   // subscribe();

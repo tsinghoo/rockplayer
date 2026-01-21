@@ -711,9 +711,8 @@ window.mhgl_share =
         }
 
         if (fixed == null) {
-          fixed = 3;
-          for (let i = 0; i < 5; ++i) {
-            if (number < Math.pow(10, -i)) {
+          for (let i = 0; i < 10; ++i) {
+            if (number > Math.pow(10, -i)) {
               fixed = i + 3;
               break;
             }
