@@ -407,13 +407,13 @@ async function updateSticks(stock, period, limit) {
   }
 }
 
-function updateActionOrdered(scode, status) {
+function updateActionOrdered(scode, status, orderNo) {
   let url = g.baseUrl + "/stock/rule/action/ordered"
   let body = {
     "broker": g.broker,
     "scode": scode.split(".")[0],
     "status": status,
-    "orderNo": ""
+    "orderNo": orderNo
   }
 
   post(url, body);
@@ -479,6 +479,7 @@ async function getActions() {
             }).then((response) => {
               debug("resp:", JSON.stringify(response));
               info("已买入", act.sname, act.scode, act.price, act.amount);
+              updateActionOrdered(act.scode, "", response[0].ordId);
             }).catch((error) => {
               let msg = JSON.stringify(error);
               info("action买:" + msg);
@@ -487,7 +488,7 @@ async function getActions() {
               } catch (e) {
               }
 
-              updateActionOrdered(act.scode, msg);
+              updateActionOrdered(act.scode, msg, "");
             });
           } else if (act.action === "sell") {
             info("卖出", act.sname, act.scode, act.price, act.amount);
@@ -503,6 +504,8 @@ async function getActions() {
             }).then((response) => {
               debug(JSON.stringify(response));
               info("已卖出", act.sname, act.scode, act.price, act.amount);
+
+              updateActionOrdered(act.scode, "", response[0].ordId);
             }).catch((error) => {
               let msg = JSON.stringify(error);
               info("action卖:" + msg);
@@ -511,7 +514,7 @@ async function getActions() {
               } catch (e) {
               }
 
-              updateActionOrdered(act.scode, msg);
+              updateActionOrdered(act.scode, msg, "");
             });
           } else if (act.action === "reloadK1d") {
             info("reloadK1d action for", act.scode);
@@ -519,7 +522,8 @@ async function getActions() {
             info("cancel action for", act.scode);
 
             response = await client.cancelOrder({
-              instId: act.scode
+              instId: act.scode,
+              ordId: act.orderNo
             });
 
             debug("cancelAll response:" + response);

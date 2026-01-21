@@ -622,7 +622,7 @@ async function reloadRule(r, req) {
                 }, 100);
             }
         } else {
-            
+
         }
 
         info(`r.status=${r.status}`, req.threadId)
@@ -2561,6 +2561,30 @@ app.get('/stock/k/1ms', async (req, res) => {
     res.send(resp);
 });
 
+async function cancelAction(rule) {
+    info("cancelAction:" + rule.scode);
+    if (rule.actions.length > 0) {
+        let oa = rule.actions[0];
+        let now = Date.now();
+        let action = {
+            id: `${oa.ruleId}-cancelAction`,
+            ruleId: oa.ruleId,
+            broker: oa.broker,
+            scode: oa.scode,
+            sname: oa.scode,
+            action: "cancelAction",
+            price: 0,
+            amount: 0,
+            orderNo: oa.orderNo,
+            done: 0,
+            createTime: now
+        }
+
+        let result = await insertOrReplace("tRuleAction", action);
+
+    }
+}
+
 app.get('/stock/rule/cancel', async (req, res) => {
     info(JSON.stringify(req.query), req.threadId)
     let js = req.query.js;
@@ -2633,36 +2657,25 @@ app.get('/stock/rule/cancel', async (req, res) => {
     if (result.error == null) {
         if (all == null) {
             if (rules[scode] && rules[scode][broker]) {
+                await cancelAction(rules[scode][broker]);
                 reloadRule(rules[scode][broker], req);
             }
         } else {
+            for (let scode in Object.keys(rules)) {
+                let sbs = rules[scode];
+                if (sbs == null) continue;
+                for (let broker in Object.keys(sbs)) {
+                    let rule = sbs[broker];
+                    await cancelAction(rule);
+                }
+            }
+
             rules = {}
             reloadRules();
         }
     }
 
     var resp = JSON.stringify({});
-    if (cancelled != "") {
-        let action = {
-            id: `${cancelled}-cancelAction`,
-            ruleId: ruleId,
-            broker: broker,
-            scode: scode,
-            sname: scode,
-            action: "cancelAction",
-            price: 0,
-            amount: 0,
-            orderNo: "",
-            done: 0,
-            createTime: now
-        }
-
-        result = await insertOrReplace("tRuleAction", action);
-
-        if (result.error) {
-            resp = JSON.stringify(result);
-        }
-    }
 
 
     if (js) {
@@ -2706,7 +2719,7 @@ app.get('/stock/rule/delete', async (req, res) => {
 app.get('/stock/rule/actions', async (req, res) => {
     let js = req.query.js;
     let broker = req.query.broker;
-    let sql = `select * from tRuleAction where (broker=?) and orderNo='' and done=0`;
+    let sql = `select * from tRuleAction where (broker=?) and done=0`;
     let r = await db.allSync(sql, [broker], req.threadId);
     r.rows.forEach(async (row) => {
         let nc = formatScode(row.scode);
@@ -3789,13 +3802,13 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
         let err = orderNo;
         r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, err, scode, broker]);
     } else {
-        r = await db.runSync("update tRuleAction set status=?, orderNo=? where scode=? and broker=?", [status, orderNo, scode, broker]);
+        r = await db.runSync("update tRuleAction set done = 2, status=?, orderNo=? where scode=? and broker=?", [status, orderNo, scode, broker]);
     }
     let resp = {};
     if (r.error) {
         info(r.error, req.threadId)
         resp = { error: r.error };
-    } else if (status == 56) {
+    } else {
         if (rules[scode]) {
             reloadRule(rules[scode][broker], req);
         }
