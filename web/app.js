@@ -2137,7 +2137,7 @@ app.get('/stock/rule/create', async (req, res) => {
     let ruleId = `${json.scode}.${broker}`;
 
     let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [json.scode], threadId);
-    if (stockBasicInfo) {
+    if (stockBasicInfo && broker!="OKX" && broker!="BNB") {
         if (stockBasicInfo.volumeMultiple == 1) {
             stockBasicInfo.volumeMultiple = 100;
         }
@@ -2823,7 +2823,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
     }
 
     let amount = Math.abs(trade.tamount);
-    if (trade.operationName == "BNB") {
+    if (trade.operationName == "BNB" || trade.operationName == "OKX") {
 
     } else {
         if (amount < stockBasicInfo.volumeMultiple) {
@@ -2848,7 +2848,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
         dip = 0.1;
     }
 
-    if (trade.operationName == "BNB") {
+    if (trade.operationName == "BNB" || trade.operationName == "OKX") {
         minDelta = 1;
         maxDelta = 20000;
         dip = 10;

@@ -97,6 +97,7 @@ function handleCandle1m(response) {
     return false;
   }
 
+  debug("candle1m")
   let stock = response.arg.instId;
   let arr = response.data[0];
   let time = parseInt(arr[0]);
@@ -116,6 +117,8 @@ function handleCandle1m(response) {
   };
 
   post(`${g.baseUrl}/stock/k/upload`, body);
+
+  return true;
 }
 
 function handleCandle1d(response) {
@@ -123,6 +126,7 @@ function handleCandle1d(response) {
     return false;
   }
 
+  debug("candle1D")
   let stock = response.arg.instId;
   let arr = response.data[0];
   let time = parseInt(arr[0]);
@@ -142,6 +146,8 @@ function handleCandle1d(response) {
   };
 
   post(`${g.baseUrl}/stock/k/upload`, body);
+
+  return true;
 }
 
 
@@ -150,64 +156,58 @@ function handleTickers(data) {
     return false;
   }
 
+  info("tickers")
   let symbol = data.arg.instId;
   let row = data.data[0];
   let close = row.bidPx;
   let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`;
-  info(`GET ${url}`);
   get(url)
     .catch((err) => {
       error("updatePrice error:", err.toString());
     });
+
+  return true;
 }
 
-async function test(){
+async function test() {
 
 
 }
 
 async function subscribe() {
-  console.log("subscribe");
+  info("subscribe");
 
   // Raw data will arrive on the 'update' event
   wsClient.on('update', (data) => {
-    console.log('\nws update:', JSON.stringify(data));
-    handleTickers(data) || handleCandle1m(data) || handleCandle1d(data);
+    debug("\n\nws update: start");
+    let handled = handleTickers(data) || handleCandle1m(data) || handleCandle1d(data);
+    if (!handled) {
+      info('unhandled:', JSON.stringify(data));
+    }
   });
 
   wsClient.on('open', (data) => {
-    console.log('ws opened:', data.wsKey);
+    debug('ws opened:', data.wsKey);
   });
 
   // Replies (e.g. authenticating or subscribing to channels) will arrive on the 'response' event
   wsClient.on('response', (data) => {
-    // console.log('ws response: ', JSON.stringify(data, null, 2));
-    console.log('ws response: ', JSON.stringify(data));
+    // debug('ws response: ', JSON.stringify(data, null, 2));
+    debug('ws response: ', JSON.stringify(data));
   });
 
   wsClient.on('reconnect', ({ wsKey }) => {
-    console.log('ws reconnect:', wsKey);
+    debug('ws reconnect:', wsKey);
   });
   wsClient.on('reconnected', (data) => {
-    console.log('ws reconnected:', data?.wsKey);
+    debug('ws reconnected:', data?.wsKey);
   });
   wsClient.on('exception', (data) => {
     console.error('ws exception: ', data);
   });
 
-  /**
-   * Simply call subscribe to request the channels that you're interested in.
-   *
-   * If authentication is required, the WSClient will automatically authenticate with the available credentials.
-   */
-
-  // Subscribe one event at a time:
-  wsClient.subscribe({
-    channel: 'account',
-  });
-
-  // OR, combine multiple subscription events into one request using an array instead of an object:
-  wsClient.subscribe([
+  // Public topics, for comparison. These do not require authentication / api keys:
+  let subs = [
     {
       channel: 'account',
     },
@@ -215,26 +215,21 @@ async function subscribe() {
       channel: 'positions',
       instType: 'ANY',
     },
-  ]);
+  ];
 
-  // Public topics, for comparison. These do not require authentication / api keys:
-  wsClient.subscribe([
-    {
-      channel: 'tickers',
-      instId: 'BTC-USDT',
-    }, {
-      channel: 'candle1m',
-      instId: 'BTC-USDT',
-    }, {
-      channel: 'candle1D',
-      instId: 'BTC-USDT',
+  let channels = ['tickers', 'candle1m', 'candle1D'];
+
+  for (let instId of g.stocklist) {
+    for (let channel of channels) {
+      subs.push({
+        channel, instId
+      });
     }
-    // , {
-    //   channel: 'trades',
-    //   instId: 'BTC-USDT',
-    // }
+  }
 
-  ]);
+  wsClient.subscribe(
+    subs
+  );
 
 }
 
@@ -320,7 +315,7 @@ async function log2File() {
         let toWrite = g.logs.join("\n");
         g.logs = [];
         //将toWrite同步写入当前目录的日志文件里,文件名是yyyyMMdd格式
-        let logFile = `${__dirname}/bnb${timeFormat(new Date(), "yyMMdd")}.log`;
+        let logFile = `${__dirname}/okx${timeFormat(new Date(), "yyMMdd")}.log`;
         fs.writeFileSync(logFile, toWrite + "\n", { flag: "a" });
       } else {
         await sleep(100);
@@ -332,7 +327,6 @@ async function log2File() {
 function log() {
 
   let now = timeFormat(new Date(), "yy-MM-dd hh:mm:ss");
-  console.log(now, ...arguments);
 
   let msg = [now, ...arguments].join(" ");
   g.logs.push(msg);
@@ -444,11 +438,10 @@ async function getActions() {
 
         try {
           let dotNums = {
-            "BTCUSDT": 100000,
-            "ETHUSDT": 10000,
-            "BNBUSDT": 1000,
-            "DOGEUSDT": 1
+            "BTC-USDT": 100000,
+            "ETH-USDT": 10000,
           };
+          info("买", act.sname, act.scode, act.price, act.amount);
           let ratio = dotNums[act.scode];
           let price = parseFloat(act.price);
           if (price < 1) {
@@ -458,7 +451,6 @@ async function getActions() {
           }
           let quantity = Math.floor(parseFloat(act["amount"]) * ratio) / ratio;
           if (act.action === "buy") {
-            info("买入", act.sname, act.scode, act.price, act.amount);
             info("买入", price, quantity);
 
             const response = await client.submitOrder({
@@ -471,7 +463,7 @@ async function getActions() {
               tgtCcy: 'base_ccy',
             });
 
-            debug(response);
+            debug("resp:", JSON.stringify(response));
             info("已买入", act.sname, act.scode, act.price, act.amount);
 
           } else if (act.action === "sell") {
@@ -487,7 +479,7 @@ async function getActions() {
               tgtCcy: 'base_ccy',
             });
 
-            debug(response);
+            debug(JSON.stringify(response));
             info("已卖出", act.sname, act.scode, act.price, act.amount);
           } else if (act.action === "reloadK1d") {
             info("reloadK1d action for", act.scode);
@@ -501,7 +493,7 @@ async function getActions() {
             debug("cancelAll response:" + response);
           }
         } catch (e) {
-          error(act.action, act.scode, "fail:", e);
+          error("error:", act.action, act.scode, JSON.stringify(e));
         }
 
         actionDone(act.id);
@@ -651,25 +643,18 @@ async function startFutureMiniTicket() {
 }
 async function start() {
   log2File();
-  await updatePositions(1);
-  await updatePositions(0);
-  // await updateFuturePositions();
+  /* The above code is a JavaScript code snippet that is currently commented out. It appears to be part
+  of a script that involves updating positions and sticks for stocks. */
+  // await updatePositions(1);
+  // await updatePositions(0);
 
-  // binance.websockets.userData(balance_update, execution_update);
+  // for (let scode of g.stocklist) {
+  //   await updateSticks(scode, "1D", 360);
+  //   await updateSticks(scode, "1m", 240);
+  // }
 
-  for (let scode of g.stocklist) {
 
-    await updateSticks(scode, "1D", 360);
-    await updateSticks(scode, "1m", 240);
-
-    // return;
-    // await futureCandles(scode, "1m", 240);
-    // await futureCandles(scode, "1d", 360);
-  }
-
-  // startFutureMiniTicket();
-
-  subscribe();
+  // subscribe();
 
   while (1 == 1) {
     await getActions();

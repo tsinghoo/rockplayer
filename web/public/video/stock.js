@@ -1152,7 +1152,7 @@ window.stock_list = window.stock_list || (function () {
                 broker = self.selectedData["券商"];
             }
 
-            if (!["国信", "国金", "BNB"].includes(broker)) {
+            if (!["国信", "国金", "BNB", "OKX"].includes(broker)) {
                 if (self.lastBroker) {
                     broker = self.lastBroker;
                 } else {
