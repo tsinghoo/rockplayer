@@ -600,7 +600,7 @@ async function reloadRule(r, req) {
             r.status = "ordered";
         } else if (ra.done == -1) {
             r.status = "cancelled";
-        } else {
+        } else if (ra.done == 1) {
             if (ra.action == "buy") {
                 r.status = "toSell";
             } else if (ra.action == "sell") {
@@ -621,6 +621,8 @@ async function reloadRule(r, req) {
                     }
                 }, 100);
             }
+        } else {
+            
         }
 
         info(`r.status=${r.status}`, req.threadId)
@@ -718,9 +720,13 @@ async function tryToBuy(r, req) {
     debug(`buy=${buy}`, req.threadId)
     if (buy > 0) {
         if (rule.bounce > 0) {
-            let all = await ensureCciNotCrossDown100(scode, sname, threadId);
-            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
-            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
+            let all = {};
+            if (rule.auto == 1) {
+                all = await ensureCciNotCrossDown100(scode, sname, threadId);
+                all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
+                all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
+            }
+
             if (all.reason != null) {
                 info(all.reason, req.threadId)
                 await saveCreateRuleFailure(rule.scode, all.reason);
@@ -788,7 +794,10 @@ async function checkRule(scodes, req) {
     for (let i = 0; i < scodes.length; i++) {
         let scode = scodes[i].split(".")[0];
         let rs = rules[scode];
-        if (rs != null) {
+        debug("checkRule:" + scode, req.threadId);
+        if (rs == null) {
+            debug("no rule", req.threadId);
+        } else {
             let vs = Object.values(rs);
             for (let i = 0; i < vs.length; ++i) {
                 let r = vs[i];
@@ -2137,7 +2146,7 @@ app.get('/stock/rule/create', async (req, res) => {
     let ruleId = `${json.scode}.${broker}`;
 
     let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [json.scode], threadId);
-    if (stockBasicInfo && broker!="OKX" && broker!="BNB") {
+    if (stockBasicInfo && broker != "OKX" && broker != "BNB") {
         if (stockBasicInfo.volumeMultiple == 1) {
             stockBasicInfo.volumeMultiple = 100;
         }
@@ -2927,6 +2936,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
                 sname: trade.sname,
                 broker: trade.operationName,
                 order: "buyFirst",
+                auto: 1,
                 expireHours: 12
             };
 
@@ -2951,6 +2961,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
                 sname: trade.sname,
                 broker: trade.operationName,
                 order: "buyFirst",
+                auto: 1,
                 expireHours: 12
             };
 
@@ -2980,6 +2991,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             sname: trade.sname,
             broker: trade.operationName,
             order: "sellFirst",
+            auto: 1,
             expireHours: 12
         };
 

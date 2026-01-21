@@ -36,7 +36,7 @@ g.httpsProxy = 'http://192.168.66.205:8080/';
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
-g.stocklist = ['BTC-USDT', 'ETH-USDT','DOOD-USDT'];
+g.stocklist = ['BTC-USDT', 'ETH-USDT', 'DOOD-USDT'];
 g.apiKey = '1315b7af-d17e-4582-8de7-2919f4de5f20';
 g.apiSecret = 'EB46A9E766BFE107F37B882443FCB780';
 g.apiPass = 'OkxPassw0rd!';
@@ -455,6 +455,9 @@ async function getActions() {
           };
           info("买", act.sname, act.scode, act.price, act.amount);
           let ratio = dotNums[act.scode];
+          if (ratio == null) {
+            ratio = 1;
+          }
           let price = parseFloat(act.price);
           if (price < 1) {
             price = price.toFixed(5);
@@ -478,6 +481,7 @@ async function getActions() {
               info("已买入", act.sname, act.scode, act.price, act.amount);
             }).catch((error) => {
               let msg = JSON.stringify(error);
+              info("action买:" + msg);
               try {
                 msg = error.data[0].sMsg;
               } catch (e) {
@@ -501,6 +505,7 @@ async function getActions() {
               info("已卖出", act.sname, act.scode, act.price, act.amount);
             }).catch((error) => {
               let msg = JSON.stringify(error);
+              info("action卖:" + msg);
               try {
                 msg = error.data[0].sMsg;
               } catch (e) {
@@ -681,7 +686,7 @@ async function start() {
   }
 
 
-  // subscribe();
+  subscribe();
 
   while (1 == 1) {
     await getActions();
@@ -712,7 +717,7 @@ async function updatePositions(clean) {
           "on_road_volume": 0,
           "open_price": 0,
           "stock_code": item.ccy + "-USDT",
-          "volume": parseFloat(item.spotBal)
+          "volume": parseFloat(item.cashBal)
         });
       }
     )
