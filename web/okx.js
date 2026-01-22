@@ -40,6 +40,7 @@ g.stocklist = ['BTC-USDT', 'ETH-USDT', 'DOOD-USDT'];
 g.apiKey = '1315b7af-d17e-4582-8de7-2919f4de5f20';
 g.apiSecret = 'EB46A9E766BFE107F37B882443FCB780';
 g.apiPass = 'OkxPassw0rd!';
+g.price = {};
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -156,15 +157,40 @@ function handleTickers(data) {
     return false;
   }
 
-  info("tickers")
+  //info("tickers:", JSON.stringify(data));
+  info("tickers");
   let symbol = data.arg.instId;
   let row = data.data[0];
   let close = row.bidPx;
-  let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`;
-  get(url)
-    .catch((err) => {
-      error("updatePrice error:", err.toString());
-    });
+  let time = parseInt(row.ts);
+  let needUpdate = 0;
+  if (g.price[symbol] == null) {
+    g.price[symbol] = {
+      lastPrice: close,
+      lastUpdateTime: time
+    }
+    needUpdate = 1;
+  }
+
+  if (g.price[symbol].lastPrice != close) {
+    needUpdate = 1;
+  }
+
+  if (time - g.price[symbol].lastUpdateTime > 1000) {
+    needUpdate = 1;
+  }
+
+  if (needUpdate) {
+    g.price[symbol].lastPrice = close;
+    g.price[symbol].lastUpdateTime = time;
+    let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&time=${time}&type=0`;
+    get(url)
+      .catch((err) => {
+        error("updatePrice error:", err.toString());
+      });
+  } else {
+    info("updatePrice skipped:", close, time);
+  }
 
   return true;
 }

@@ -47,9 +47,9 @@ runGetActionTask = 1
 
 
 
-g.baseUrl = "http://192.168.66.205:3001"
 g.baseUrl = "http://test1.91taogu.com"
 g.baseUrl = "http://192.168.66.165:3001"
+g.baseUrl = "http://192.168.66.205:3001"
 
 
 logPathPrefix = os.getenv("logPathPrefix")
@@ -759,3 +759,5 @@ def handlebar(ContextInfo):
 
 def stop(ContextInfo):
     error('stop')
+
+
