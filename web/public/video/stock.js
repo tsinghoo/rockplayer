@@ -1130,6 +1130,51 @@ window.stock_list = window.stock_list || (function () {
             }
         },
 
+        autoPrice: function (changed, c) {
+            let buy = c.find(".buy").val().trim();
+            let sell = c.find(".sell").val().trim();
+            let buyAmount = c.find(".buyAmount").val().trim();
+            let sellAmount = c.find(".sellAmount").val().trim();
+            let buyTotal = c.find(".buyTotal").val().trim();
+            let sellTotal = c.find(".sellTotal").val().trim();
+
+            if (changed == "buyTotal") {
+                c.find(".buyAmount").val(parseFloat(buyTotal) / parseFloat(buy));
+            }
+
+            if (changed == "buyAmount") {
+                c.find(".buyTotal").val(parseFloat(buy) * parseFloat(buyAmount));
+            }
+
+
+            if (changed == "sellTotal") {
+                c.find(".sellAmount").val(parseFloat(sellTotal) / parseFloat(sell));
+            }
+            if (changed == "sellAmount") {
+                c.find(".sellTotal").val(parseFloat(sell) * parseFloat(sellAmount));
+            }
+
+            if (changed == "buy") {
+                let buyTotal = parseFloat(buy) * parseFloat(buyAmount);
+                $(".buyTotal").val(buyTotal);
+                if (parseFloat(sell) < parseFloat(buy) * (1 + 0.02)) {
+                    sell = parseFloat(buy) * (1 + 0.02);
+                    c.find(".sell").val(sell);
+                    let sellTotal = (sell) * parseFloat(c.find(".sellAmount").val().trim());
+                    $(".sellTotal").val(sellTotal);
+                }
+            }
+            if (changed == "sell") {
+                let sellTotal = parseFloat(sell) * parseFloat(c.find(".sellAmount").val().trim());
+                $(".sellTotal").val(sellTotal);
+                if (parseFloat(buy) > parseFloat(sell) * (1 - 0.02)) {
+                    buy = parseFloat(sell) * (1 - 0.02);
+                    c.find(".buy").val(buy);
+                    let buyTotal = (buy) * parseFloat(buyAmount);
+                    $(".buyTotal").val(buyTotal);
+                }
+            }
+        },
         showBuySell: async function (opt, popup) {
             let c = null;
             if (popup != null) {
@@ -1268,79 +1313,28 @@ window.stock_list = window.stock_list || (function () {
             c.find(".bounce").val(bounce);
             c.find(".dip").val(dip);
             autoDelta();
-            let priceAutoed = "";
-            let autoPrice = function (changed) {
-                let buy = c.find(".buy").val().trim();
-                let sell = c.find(".sell").val().trim();
-                let buyAmount = c.find(".buyAmount").val().trim();
-                let sellAmount = c.find(".sellAmount").val().trim();
-                let buyTotal = c.find(".buyTotal").val().trim();
-                let sellTotal = c.find(".sellTotal").val().trim();
-
-                if (changed == "buyTotal") {
-                    c.find(".buyAmount").val(parseFloat(buyTotal) / parseFloat(buy));
-                }
-
-                if (changed == "buyAmount") {
-                    c.find(".buyTotal").val(parseFloat(buy) * parseFloat(buyAmount));
-                }
-
-
-                if (changed == "sellTotal") {
-                    c.find(".sellAmount").val(parseFloat(sellTotal) / parseFloat(sell));
-                }
-                if (changed == "sellAmount") {
-                    c.find(".sellTotal").val(parseFloat(sell) * parseFloat(sellAmount));
-                }
-
-                if (changed == "buy") {
-                    let buyTotal = parseFloat(buy) * parseFloat(buyAmount);
-
-                    $(".buyTotal").val(buyTotal);
-
-                    if (priceAutoed == "sell") {
-                        priceAutoed = "";
-                        return;
-                    }
-                    priceAutoed = "buy";
-                    if (parseFloat(sell) < parseFloat(buy) * (1 + 0.02))
-                        c.find(".sell").val(parseFloat(buy) * (1 + 0.02));
-                }
-                if (changed == "sell") {
-                    let sellTotal = parseFloat(sell) * parseFloat(c.find(".sellAmount").val().trim());
-
-                    $(".sellTotal").val(sellTotal);
-                    if (priceAutoed == "buy") {
-                        priceAutoed = "";
-                        return;
-                    }
-                    priceAutoed = "sell";
-                    if (parseFloat(buy) > parseFloat(sell) * (1 - 0.02))
-                        c.find(".buy").val(parseFloat(sell) * (1 - 0.02));
-                }
-            }
 
             $('.buy', c).change(function () {
-                autoPrice("buy");
+                self.autoPrice("buy", c);
             });
             $('.sell', c).change(function () {
-                autoPrice("sell");
+                self.autoPrice("sell", c);
             });
 
             $('.buyTotal', c).change(function () {
-                autoPrice("buyTotal");
+                self.autoPrice("buyTotal", c);
             });
 
             $('.buyAmount', c).change(function () {
-                autoPrice("buyAmount");
+                self.autoPrice("buyAmount", c);
             });
 
             $('.sellTotal', c).change(function () {
-                autoPrice("sellTotal");
+                self.autoPrice("sellTotal", c);
             });
 
             $('.sellAmount', c).change(function () {
-                autoPrice("sellAmount");
+                self.autoPrice("sellAmount", c);
             });
 
 
@@ -1474,8 +1468,8 @@ window.stock_list = window.stock_list || (function () {
 
             })
 
-            autoPrice("buyAmount");
-            autoPrice("sellAmount");
+            self.autoPrice("buyAmount", c);
+            self.autoPrice("sellAmount", c);
         },
 
         createFloatingWindow: function (url, width) {
@@ -2538,13 +2532,23 @@ window.stock_list = window.stock_list || (function () {
                 let popup;
                 let buttons = [
                     {
-                        text: "设置价格",
+                        text: "-2%买入",
                         onTap: function () {
                             popup.close();
                             let buy = data.tprice * (1 - 0.02);
-                            let sell = data.tprice * (1 + 0.02);
                             c.find(".buy").val(buy);
+                            c.find(".sell").val(data.tprice);
+                            self.autoPrice("buy", c);
+                        }
+                    },
+                    {
+                        text: "+2%卖出",
+                        onTap: function () {
+                            popup.close();
+                            let sell = data.tprice * (1 + 0.02);
                             c.find(".sell").val(sell);
+                            c.find(".buy").val(data.tprice);
+                            self.autoPrice("sell", c);
                         }
                     },
                     {
