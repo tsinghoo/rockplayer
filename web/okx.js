@@ -673,36 +673,6 @@ function balance_update(data) {
 
   }
 }
-
-function execution_update(data) {
-  let { x: executionType, s: symbol, p: price, q: quantity, S: side, o: orderType, i: orderId, X: orderStatus } = data;
-  if (executionType == "NEW") {
-    if (orderStatus == "REJECTED") {
-      debug("Order Failed! Reason: " + data.r);
-    }
-    debug(symbol + " " + side + " " + orderType + " ORDER #" + orderId + " (" + orderStatus + ")");
-    debug("..price: " + price + ", quantity: " + quantity);
-    return;
-  }
-  //NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED
-  debug(symbol + "\t" + side + " " + executionType + " " + orderType + " ORDER #" + orderId);
-}
-
-async function startFutureMiniTicket() {
-  g.stocklist.forEach(element => {
-    binance.futuresMiniTickerStream(element, item => {
-      let { symbol, close, high, low, open, volume, quoteVolume, eventTime } = item;
-      let url = `${g.baseUrl}/stock/updatePrice/option?scode=${symbol}&price=${close}&time=${eventTime}`;
-      info(`GET ${url}`);
-      get(url)
-        .catch((err) => {
-          error("updatePrice error:", err.toString());
-        });
-
-    });
-  });
-
-}
 async function start() {
   log2File();
   /* The above code is a JavaScript code snippet that is currently commented out. It appears to be part

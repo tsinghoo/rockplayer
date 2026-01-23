@@ -688,7 +688,11 @@ def getActions():
 
 def connectWebSocket():
     info("connectWebSocket")
-    asyncio.run(websocket_client())
+    
+    thread = threading.Thread(
+        target=lambda: asyncio.run(websocket_client())
+    )
+    thread.start()
 
 def cancelAction(scode):
     accounts = [StockAccount(g.account), StockAccount(
