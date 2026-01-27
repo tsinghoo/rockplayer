@@ -1098,6 +1098,7 @@ app.post('/stock/update', async (req, resp) => {
         }
 
         var fields = data[i].split("\t");
+        info(JSON.stringify(fields));
         let tday = fields[0];
         let ttime = fields[1];
         if (broker == "广发历史") {
@@ -1363,14 +1364,38 @@ app.post('/stock/update', async (req, resp) => {
                 updateTime: now
             });
         } else if (broker == "国金港股通当日") {
-            //tdx 国金证券
             fields = fields.concat([""]);
+            let tday = fields[0];
+            let ttime = fields[1];
+            let sname = fields[6];
+            let scode = fields[5];
+            let operationDirection = fields[8];
+            let operationName = "国金";
+            let market = "HK";
+            let tprice = fields[9];
+            let tamount = fields[10];
+            let tcash = fields[11];
+            let taccount = fields[3];
+            let tpair = "";
+
+            scode = fixScode(scode);
+
+            if (ttime.length == 7) {
+                ttime = "0" + ttime.substring(0, 1) + ":" + ttime.substring(1, 3) + ":" + ttime.substring(3, 5);
+            }
+
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
+            }
+
+            let tid = `${tday}.${ttime}.${scode}.${tprice}`;
+            let lastOperationTime = tday + " " + ttime;
+
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
-
-            let res = await db.runSync(sql, [tday, ttime, fields[6], fields[5], fields[8], "国金", "HGT", fields[10], fields[9],
-                fields[11], fields[12], fields[3], '', tday + " " + ttime]);
+            let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
+                tcash, tid, taccount, tpair, lastOperationTime]);
             if (res.error) {
                 info(res.error, req.threadId)
                 resp.send(res);
@@ -1378,11 +1403,11 @@ app.post('/stock/update', async (req, resp) => {
             } else {
             }
 
-            await insertOrReplace("tStockBasic", {
-                id: fields[5],
-                scode: fields[5],
-                sname: fields[6],
-                buy: fields[6],
+            await insertOrIgnore("tStockBasic", {
+                id: scode,
+                scode: scode,
+                sname: sname,
+                buy: tprice,
                 updateTime: now
             });
         } else if (broker == "国信港股通历史") {
@@ -1577,7 +1602,7 @@ app.post('/stock/account', async (req, res) => {
 
 function fixScode(scode, minLength) {
     if (minLength == null) {
-        minLength = 6;
+        minLength = 5;
     }
     if (scode.length < minLength) {
         scode = "000000".substring(0, minLength - scode.length) + scode;
