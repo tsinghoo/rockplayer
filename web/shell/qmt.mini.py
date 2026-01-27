@@ -21,7 +21,7 @@ import asyncio
 import websockets
 
 
-class G():
+class G:
     pass
 
 
@@ -37,7 +37,7 @@ g.tick = {}
 g.actions = {}
 g.reloadK1d = []
 g.uploading = 0
-g.stocklist = ['000300.SH', '000004.SZ']
+g.stocklist = ["000300.SH", "000004.SZ"]
 
 g.baseUrl = "http://192.168.66.205:3001"
 g.baseUrl = "http://test1.91taogu.com"
@@ -81,7 +81,7 @@ async def websocket_client():
                             "id": message["id"],
                             "result": {
                                 "clientId": g.broker,
-                            }
+                            },
                         }
 
                         await wsc.send(json.dumps(response))
@@ -89,9 +89,7 @@ async def websocket_client():
 
                     elif message["func"] == "reloadStockCodes":
                         params = message["params"]
-                        response = {
-                            "id": message["id"]
-                        }
+                        response = {"id": message["id"]}
 
                         await wsc.send(json.dumps(response))
                         info(f"websocket发送消息: {response}")
@@ -102,13 +100,11 @@ async def websocket_client():
                         params = message["params"]
                         scode = params["scode"]
                         detail = getStockDetail(scode)
-                        if (detail is not None):
+                        if detail is not None:
                             uploadDetail([detail])
 
                         info("updateDetail done")
-                        response = {
-                            "id": message["id"]
-                        }
+                        response = {"id": message["id"]}
 
                         await wsc.send(json.dumps(response))
                         info(f"websocket发送消息: {response}")
@@ -117,9 +113,7 @@ async def websocket_client():
                         scode = params["scode"]
                         update1d([scode])
                         info("update1d done")
-                        response = {
-                            "id": message["id"]
-                        }
+                        response = {"id": message["id"]}
 
                         await wsc.send(json.dumps(response))
                         info(f"websocket发送消息: {response}")
@@ -128,9 +122,7 @@ async def websocket_client():
                         scode = params["scode"]
                         update1m([scode])
                         info("update1m done")
-                        response = {
-                            "id": message["id"]
-                        }
+                        response = {"id": message["id"]}
 
                         await wsc.send(json.dumps(response))
                         info(f"websocket发送消息: {response}")
@@ -143,12 +135,12 @@ async def websocket_client():
                 await asyncio.sleep(1)
     except websockets.exceptions.ConnectionClosed:
         error(f"websocket closed {g.websocketFailedTime}")
-        if (g.websocketFailedTime < 6):
+        if g.websocketFailedTime < 6:
             g.websocketFailedTime += 1
             await websocket_client()
     except Exception as e:
         error(f"websocket connect error {g.websocketFailedTime}: {e}")
-        if (g.websocketFailedTime < 6):
+        if g.websocketFailedTime < 6:
             g.websocketFailedTime += 1
             await websocket_client()
 
@@ -190,8 +182,14 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         resetThreadId("oto")
         info("on order callback:")
         info(object_to_json(order))
-        updateActionOrdered(order.stock_code, order.order_type,
-                            order.order_status, order.traded_price, order.order_sysid, order.status_msg)
+        updateActionOrdered(
+            order.stock_code,
+            order.order_type,
+            order.order_status,
+            order.traded_price,
+            order.order_sysid,
+            order.status_msg,
+        )
         # print(order.stock_code, order.order_status, order.order_sysid)
 
     def on_stock_trade(self, trade):
@@ -222,7 +220,7 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
                 "tid": js["m_strTradedID"],
                 "tcash": js["traded_amount"],
                 "tamount": js["traded_volume"],
-                "tpair": ""
+                "tpair": "",
             }
 
             if deal["operationDirection"].find("卖") != -1:
@@ -232,8 +230,14 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
 
             updateDeal(deal)
 
-            updateActionOrdered(deal["scode"], js["order_type"],
-                                56, deal["tprice"], js["order_sysid"], "")
+            updateActionOrdered(
+                deal["scode"],
+                js["order_type"],
+                56,
+                deal["tprice"],
+                js["order_sysid"],
+                "",
+            )
 
             updatePositions()
         except Exception as e:
@@ -283,25 +287,29 @@ class MyXtQuantTraderCallback(XtQuantTraderCallback):
         :return:
         """
         info("on_smt_appointment_async_response callback")
-        info(response.account_id, response.order_sysid,
-             response.error_id, response.error_msg, response.seq)
+        info(
+            response.account_id,
+            response.order_sysid,
+            response.error_id,
+            response.error_msg,
+            response.seq,
+        )
 
 
 def updateDeal(deal):
     try:
         info("updateDeal:", deal)
         # 目标 URL
-        url = g.baseUrl+"/stock/deal/update"
+        url = g.baseUrl + "/stock/deal/update"
         info("url:", url)
         info("data:", json.dumps(deal))
         # 设置请求头（声明内容类型为 JSON）
-        headers = {
-            "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
 
         # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(
-            deal), verify=False, headers=headers)
+        response = requests.post(
+            url, data=json.dumps(deal), verify=False, headers=headers
+        )
 
         # 输出响应
         debug("updateDeal:", response.status_code)
@@ -314,7 +322,7 @@ def updateDeal(deal):
 def loadConfig():
     if not os.path.exists(g.configFile):
         g.config = {}
-        with open(g.configFile, 'w') as f:
+        with open(g.configFile, "w") as f:
             json.dump(g.config, f)
     else:
         with open(g.configFile) as f:
@@ -324,9 +332,9 @@ def loadConfig():
 
 def saveConfig():
     # 备份g.configFile到g.configFile+".bak"
-    shutil.copy(g.configFile, g.configFile+".bak")
+    shutil.copy(g.configFile, g.configFile + ".bak")
 
-    with open(g.configFile, 'w') as f:
+    with open(g.configFile, "w") as f:
         json.dump(g.config, f)
 
 
@@ -341,14 +349,13 @@ def getStockList():
     # 从test1获取股票列表
     info("getStockList")
     try:
-        response = requests.get(
-            g.baseUrl + "/stock/codes", verify=False, timeout=5)
+        response = requests.get(g.baseUrl + "/stock/codes", verify=False, timeout=5)
         if response.status_code != 200:
             info("getStockList failed:", response.status_code)
             return g.stocklist
         else:
             info("getStockList success:", response.status_code)
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             info("getStockList response:", content)
             stocklist = json.loads(content)
@@ -371,7 +378,7 @@ def get1dLastDate(scode):
             error("getLast1dDate failed:", response.status_code)
             return
         else:
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             debug(content)
             return json.loads(content)["lastDate"]
@@ -389,7 +396,7 @@ def get1mLastMinute(scode):
             error("getLast1dMinute error:", response.status_code)
             return
         else:
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             debug(content)
             return json.loads(content)["lastMinute"]
@@ -403,13 +410,14 @@ def getCandidates():
     info("getCandidates")
     try:
         response = requests.get(
-            g.baseUrl + "/stock/candidates", verify=False, timeout=5)
+            g.baseUrl + "/stock/candidates", verify=False, timeout=5
+        )
         if response.status_code != 200:
             info("请求失败，状态码:", response.status_code)
             return
         else:
             info("获取candidates成功:", response.status_code)
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             info(content)
             return json.loads(content)
@@ -422,13 +430,14 @@ def getRuleCodes():
     info("getRuleCodes")
     try:
         response = requests.get(
-            g.baseUrl + "/stock/rule/codes", verify=False, timeout=5)
+            g.baseUrl + "/stock/rule/codes", verify=False, timeout=5
+        )
         if response.status_code != 200:
             info("getRuleCodes:", response.status_code)
             return
         else:
             info("getRuleCodes:", response.status_code)
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             info(content)
             return json.loads(content)
@@ -441,19 +450,23 @@ def uploadStockPrice():
     # 组装成json对象post到test1.91taogu.com
     # 为data添加passcode属性
     sb, g.tick = g.tick, {}  # 这行是原子的
-    if (len(list(sb)) < 1):
+    if len(list(sb)) < 1:
         info("0 stocks, skip upload")
         return
     info("上传", len(list(sb)), "个股票价格")
     # info(sb.keys())
     try:
-        response = requests.post(g.baseUrl+"/stock/quotes.mini", json={
-            "data": sb, "passcode": "995560"}, verify=False, timeout=5)
+        response = requests.post(
+            g.baseUrl + "/stock/quotes.mini",
+            json={"data": sb, "passcode": "995560"},
+            verify=False,
+            timeout=5,
+        )
         if response.status_code != 200:
             error("请求失败，状态码:", response.status_code)
             return
         else:
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             # info("请求test1成功:", response.status_code, response.text)
     except Exception as e:
         error("请求失败:", str(e))
@@ -462,7 +475,7 @@ def uploadStockPrice():
 def getStockDetail(scode):
     info("getStockDetail", scode)
     si = xtdata.get_instrument_detail(scode, True)
-    if (si is None):
+    if si is None:
         error(scode, "error")
         return None
     info("detail:", obj2JsonString(si))
@@ -476,7 +489,7 @@ def getStockDetail(scode):
         "UpStopPrice": si["UpStopPrice"],
         "DownStopPrice": si["DownStopPrice"],
         "VolumeMultiple": si["VolumeMultiple"],
-        "bNotProfitable": 1 if si["bNotProfitable"] == True else 0
+        "bNotProfitable": 1 if si["bNotProfitable"] == True else 0,
     }
 
     if si["MinLimitOrderVolume"] > detail["VolumeMultiple"]:
@@ -492,9 +505,9 @@ def getStockDetail(scode):
 
 def uploadPosition(positions=None):
     # 组装成json对象post到test1.91taogu.com
-    url = g.baseUrl+"/stock/positions"
+    url = g.baseUrl + "/stock/positions"
     body = {"broker": g.broker, "clean": 1, "passcode": "995560"}
-    if (positions is None):
+    if positions is None:
         info("clean股票持仓")
     else:
         info("上传", len(positions), "个股票持仓")
@@ -502,18 +515,20 @@ def uploadPosition(positions=None):
         # positions 里的没个元素只保留 broker 属性
         data = []
         for position in positions:
-            data.append({
-                "broker": g.broker,
-                "account_id": position["account_id"],
-                "avg_price": position["avg_price"],
-                "can_use_volume": position["can_use_volume"],
-                "frozen_volume": position["frozen_volume"],
-                "market_value": position["market_value"],
-                "on_road_volume": position["on_road_volume"],
-                "open_price": position["open_price"],
-                "stock_code": position["stock_code"],
-                "volume": position["volume"]
-            })
+            data.append(
+                {
+                    "broker": g.broker,
+                    "account_id": position["account_id"],
+                    "avg_price": position["avg_price"],
+                    "can_use_volume": position["can_use_volume"],
+                    "frozen_volume": position["frozen_volume"],
+                    "market_value": position["market_value"],
+                    "on_road_volume": position["on_road_volume"],
+                    "open_price": position["open_price"],
+                    "stock_code": position["stock_code"],
+                    "volume": position["volume"],
+                }
+            )
         body = {"data": data, "passcode": "995560"}
         info(url, "\n", body)
     try:
@@ -522,15 +537,18 @@ def uploadPosition(positions=None):
             error("上传持仓失败，状态码:", response.status_code)
             return
         else:
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             info("上传持仓到test1成功:", response.status_code, response.text)
     except Exception as e:
         info("请求失败:", str(e))
 
 
 def resetThreadId(label=""):
-    threadLocal.id = label + datetime.datetime.now().strftime("%H%M%S") + \
-        str(random.randint(0, 1000))
+    threadLocal.id = (
+        label
+        + datetime.datetime.now().strftime("%H%M%S")
+        + str(random.randint(0, 1000))
+    )
 
 
 def update1dTask():
@@ -578,13 +596,17 @@ def updatePriceTask():
 def uploadDetail(details):
     info("uploadDetail", (details))
     try:
-        response = requests.post(g.baseUrl+"/stock/details", json={
-            "data": details, "passcode": "995560"}, verify=False, timeout=5)
+        response = requests.post(
+            g.baseUrl + "/stock/details",
+            json={"data": details, "passcode": "995560"},
+            verify=False,
+            timeout=5,
+        )
         if response.status_code != 200:
             error("上传详情失败，状态码:", response.status_code)
             return
         else:
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             info("上传详情到test1成功:", response.status_code, response.text)
     except Exception as e:
         info("请求失败:", str(e))
@@ -594,7 +616,7 @@ def updateDetailTask():
     resetThreadId("udt")
     # 判断是否9:30以后
     now = datetime.datetime.now()
-    while (now.hour < 9 or (now.hour == 9 and now.minute < 31)):
+    while now.hour < 9 or (now.hour == 9 and now.minute < 31):
         info("9:30以后，再更新详情")
         time.sleep(60)
         now = datetime.datetime.now()
@@ -604,7 +626,7 @@ def updateDetailTask():
     try:
         for index, scode in enumerate(g.stocklist):
             detail = getStockDetail(scode)
-            if (detail is None):
+            if detail is None:
                 continue
             details.append(detail)
             # 如果 details 里有 10 个元素，则上传到 test1
@@ -629,12 +651,15 @@ def getActionsTask():
 def getActions():
     try:
         response = requests.get(
-            g.baseUrl+"/stock/rule/actions?broker="+g.broker, verify=False, timeout=5)
+            g.baseUrl + "/stock/rule/actions?broker=" + g.broker,
+            verify=False,
+            timeout=5,
+        )
         if response.status_code != 200:
             error("getActions失败，状态码:", response.status_code)
             return
         else:
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             debug("getActions成功:", response.status_code, content)
             jso = json.loads(content)
@@ -650,28 +675,66 @@ def getActions():
                     else:
                         stockAccount = StockAccount(g.account)
                     if act["action"] == "buy":
-                        info("买入", act["sname"], act["scode"],
-                             act["price"], act["amount"])
+                        info(
+                            "买入",
+                            act["sname"],
+                            act["scode"],
+                            act["price"],
+                            act["amount"],
+                        )
 
                         oper = xtconstant.STOCK_BUY
-                        if "ETF" in act["sname"] or act["scode"].startswith(("51", "15")):
+                        if "ETF" in act["sname"] or act["scode"].startswith(
+                            ("51", "15")
+                        ):
                             # oper = xtconstant.ETF_PURCHASE
                             info("ETF", act["scode"])
                         order_id = xt_trader.order_stock(
-                            stockAccount, act["scode"], oper, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
+                            stockAccount,
+                            act["scode"],
+                            oper,
+                            act["amount"],
+                            xtconstant.FIX_PRICE,
+                            act["price"],
+                            "strategy_name",
+                            "remark",
+                        )
                         info("order_id:", order_id)
 
-                        info("已买入", act["sname"], act["scode"],
-                             act["price"], act["amount"])
+                        info(
+                            "已买入",
+                            act["sname"],
+                            act["scode"],
+                            act["price"],
+                            act["amount"],
+                        )
 
                     elif act["action"] == "sell":
-                        info("卖出", act["sname"], act["scode"],
-                             act["price"], act["amount"])
+                        info(
+                            "卖出",
+                            act["sname"],
+                            act["scode"],
+                            act["price"],
+                            act["amount"],
+                        )
                         order_id = xt_trader.order_stock(
-                            stockAccount, act["scode"], xtconstant.STOCK_SELL, act["amount"], xtconstant.FIX_PRICE, act["price"], 'strategy_name', 'remark')
+                            stockAccount,
+                            act["scode"],
+                            xtconstant.STOCK_SELL,
+                            act["amount"],
+                            xtconstant.FIX_PRICE,
+                            act["price"],
+                            "strategy_name",
+                            "remark",
+                        )
                         print(order_id)
-                        info("已卖出", act["sname"], act["scode"],
-                             act["price"], act["amount"])
+                        info(
+                            "已卖出",
+                            act["sname"],
+                            act["scode"],
+                            act["price"],
+                            act["amount"],
+                        )
                     elif act["action"] == "reloadK1d":
                         info("reloadK1d action for", act["scode"])
                         g.reloadK1d.append(act["scode"])
@@ -688,15 +751,17 @@ def getActions():
 
 def connectWebSocket():
     info("connectWebSocket")
-    
-    thread = threading.Thread(
-        target=lambda: asyncio.run(websocket_client())
-    )
+
+    thread = threading.Thread(target=lambda: asyncio.run(websocket_client()))
     thread.start()
 
+
 def cancelAction(scode):
-    accounts = [StockAccount(g.account), StockAccount(
-        g.account, "HUGANGTONG"), StockAccount(g.account, "SHENGANGTONG")]
+    accounts = [
+        StockAccount(g.account),
+        StockAccount(g.account, "HUGANGTONG"),
+        StockAccount(g.account, "SHENGANGTONG"),
+    ]
 
     for account in accounts:
         orders = xt_trader.query_stock_orders(account, cancelable_only=False)
@@ -718,22 +783,23 @@ def cancelAction(scode):
 def actionDone(id):
     try:
         response = requests.get(
-            g.baseUrl+"/stock/action/done?id="+id, verify=False, timeout=20)
+            g.baseUrl + "/stock/action/done?id=" + id, verify=False, timeout=20
+        )
         if response.status_code != 200:
-            error("action done error:", response.status_code,
-                  "响应内容:", response.text)
+            error(
+                "action done error:", response.status_code, "响应内容:", response.text
+            )
     except Exception as e:
         error("action done error:", str(e))
 
 
 def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
     try:
-        info("updateActionOrdered", scode, type,
-             status, price, orderId, statusMessage)
+        info("updateActionOrdered", scode, type, status, price, orderId, statusMessage)
         # 目标 URL
-        url = g.baseUrl+"/stock/rule/action/ordered"
+        url = g.baseUrl + "/stock/rule/action/ordered"
         info("url:", url)
-        if (status == 57):
+        if status == 57:
             status = f"{status}:{statusMessage}"
 
         # 要发送的 JSON 数据（Python 字典）
@@ -741,17 +807,16 @@ def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
             "broker": g.broker,
             "scode": scode.split(".")[0],
             "status": status,
-            "orderNo": orderId
+            "orderNo": orderId,
         }
         info("data:", json.dumps(data))
         # 设置请求头（声明内容类型为 JSON）
-        headers = {
-            "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
 
         # 发送 POST 请求
-        response = requests.post(url, data=json.dumps(
-            data), verify=False, headers=headers)
+        response = requests.post(
+            url, data=json.dumps(data), verify=False, headers=headers
+        )
 
         # 输出响应
         debug("updateActionStatus:", response.status_code)
@@ -763,32 +828,35 @@ def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
 
 def update1d(stocklist=None, startTime=None, endTime=None):
     info("update1d")
-    if (stocklist is None):
+    if stocklist is None:
         stocklist = g.stocklist
-    if (endTime is None):
+    if endTime is None:
         endTime = ""
 
     newData = 0
     for index, scode in enumerate(stocklist):
         dataStartTime = startTime
-        if (startTime is None):
+        if startTime is None:
             lastDate = get1dLastDate(scode)
             if lastDate:
                 dataStartTime = lastDate
             else:
                 newData = 1
                 # 把dateStartTime设置为1年前
-                dataStartTime = (datetime.datetime.now() -
-                                 datetime.timedelta(days=365)).strftime("%Y%m%d")
+                dataStartTime = (
+                    datetime.datetime.now() - datetime.timedelta(days=365)
+                ).strftime("%Y%m%d")
 
         # 把dateStartTime设置为30天前,为了计算cci
-        startTime = (datetime.datetime.strptime(
-            dataStartTime, "%Y%m%d") - datetime.timedelta(days=30)).strftime("%Y%m%d")
-        period = '1d'
+        startTime = (
+            datetime.datetime.strptime(dataStartTime, "%Y%m%d")
+            - datetime.timedelta(days=30)
+        ).strftime("%Y%m%d")
+        period = "1d"
         datas = get1dData(stocklist, index, startTime, endTime)
         # print("所有列名:", df.keys())
         # print("所有:", df.values())
-        columns = ['Time'] + datas.columns.tolist()
+        columns = ["Time"] + datas.columns.tolist()
         # print(columns)
         info("", len(datas), "rows")
 
@@ -796,32 +864,67 @@ def update1d(stocklist=None, startTime=None, endTime=None):
         bsize = 50
         foundStart = 0
         for i in range(0, len(datas), bsize):
-            batch = datas.iloc[i:i+bsize]
-            info("上传", scode, period,
-                 "[", i, ",", i+bsize, "]", len(batch))
+            batch = datas.iloc[i : i + bsize]
+            info("上传", scode, period, "[", i, ",", i + bsize, "]", len(batch))
             batch_data = []
             for idx, row in batch.iterrows():
-                if (newData == 1 or foundStart == 1):
-                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                                    row["low"], row["volume"], row["amount"], row["cci"], row["kdj_k"], row["kdj_d"], row["kdj_j"]])
+                if newData == 1 or foundStart == 1:
+                    batch_data.append(
+                        [str(idx)]
+                        + [
+                            row["open"],
+                            row["close"],
+                            row["high"],
+                            row["low"],
+                            row["volume"],
+                            row["amount"],
+                            row["cci"],
+                            row["kdj_k"],
+                            row["kdj_d"],
+                            row["kdj_j"],
+                        ]
+                    )
                 elif idx == dataStartTime:
                     foundStart = 1
-                    batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                                    row["low"], row["volume"], row["amount"], row["cci"], row["kdj_k"], row["kdj_d"], row["kdj_j"]])
+                    batch_data.append(
+                        [str(idx)]
+                        + [
+                            row["open"],
+                            row["close"],
+                            row["high"],
+                            row["low"],
+                            row["volume"],
+                            row["amount"],
+                            row["cci"],
+                            row["kdj_k"],
+                            row["kdj_d"],
+                            row["kdj_j"],
+                        ]
+                    )
                 else:
                     info(
-                        f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}")
+                        f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}"
+                    )
 
-            body = {"data": obj2Json(
-                batch_data), "scode": scode, "period": period, "passcode": "995560"}
+            body = {
+                "data": obj2Json(batch_data),
+                "scode": scode,
+                "period": period,
+                "passcode": "995560",
+            }
             debug("body:", body)
             # 上传数据到test1
             try:
                 response = requests.post(
-                    g.baseUrl+"/stock/k/upload", json=body, verify=False, timeout=20)
+                    g.baseUrl + "/stock/k/upload", json=body, verify=False, timeout=20
+                )
                 if response.status_code != 200:
-                    error("上传失败，状态码:", response.status_code,
-                          "响应内容:", response.text)
+                    error(
+                        "上传失败，状态码:",
+                        response.status_code,
+                        "响应内容:",
+                        response.text,
+                    )
             except Exception as e:
                 error("上传失败:", str(e))
 
@@ -831,15 +934,17 @@ def KDJ(table):
     table["kdj_d"] = 0
     table["kdj_j"] = 0
     for i in range(13, len(table)):
-        high = table["high"].values[i-13:i+1]
-        low = table["low"].values[i-13:i+1]
-        close = table["close"].values[i-13:i+1]
+        high = table["high"].values[i - 13 : i + 1]
+        low = table["low"].values[i - 13 : i + 1]
+        close = table["close"].values[i - 13 : i + 1]
         rsv = (close[-1] - low.min()) / (high.max() - low.min())
-        table["kdj_k"].values[i] = 2/3 * table["kdj_k"].values[i-1] + 1/3 * rsv
-        table["kdj_d"].values[i] = 2/3 * \
-            table["kdj_d"].values[i-1] + 1/3 * table["kdj_k"].values[i]
-        table["kdj_j"].values[i] = 3 * \
-            table["kdj_k"].values[i] - 2 * table["kdj_d"].values[i]
+        table["kdj_k"].values[i] = 2 / 3 * table["kdj_k"].values[i - 1] + 1 / 3 * rsv
+        table["kdj_d"].values[i] = (
+            2 / 3 * table["kdj_d"].values[i - 1] + 1 / 3 * table["kdj_k"].values[i]
+        )
+        table["kdj_j"].values[i] = (
+            3 * table["kdj_k"].values[i] - 2 * table["kdj_d"].values[i]
+        )
         # 将kdj的值保留小数点后2位
         table["kdj_k"].values[i] = round(table["kdj_k"].values[i], 3)
         table["kdj_d"].values[i] = round(table["kdj_d"].values[i], 3)
@@ -849,9 +954,9 @@ def KDJ(table):
 def CCI(table):
     table["cci"] = 0
     for i in range(13, len(table)):
-        high = table["high"].values[i-13:i+1]
-        low = table["low"].values[i-13:i+1]
-        close = table["close"].values[i-13:i+1]
+        high = table["high"].values[i - 13 : i + 1]
+        low = table["low"].values[i - 13 : i + 1]
+        close = table["close"].values[i - 13 : i + 1]
         tp = (high + low + close) / 3
         sma = tp.mean()
         mad = np.abs(tp - sma).mean()
@@ -862,25 +967,46 @@ def CCI(table):
 
 def get1dData(stocklist, index, startTime, endTime):
     info("get1dData", stocklist, index, startTime, endTime)
-    if (startTime is None):
+    if startTime is None:
         startTime = datetime.datetime.now().strftime("%Y%m%d")
 
-    if (endTime is None):
+    if endTime is None:
         endTime = ""
 
     scode = stocklist[index]
-    period = '1d'
-    params = ['open', 'close', 'high', 'low', 'volume', 'amount', 'suspendFlag']
-    info('downloading', period, 'from', startTime, "for", scode)
+    period = "1d"
+    params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
+    info("downloading", period, "from", startTime, "for", scode)
     xtdata.download_history_data(scode, period, startTime, endTime)
     # download_history_data2 批量版本 todo
     # params = []
-    info('get', period, 'from', startTime, 'to', endTime,
-         'for', scode, "(", index, "/", len(stocklist), ")")
-    df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                   start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
+    info(
+        "get",
+        period,
+        "from",
+        startTime,
+        "to",
+        endTime,
+        "for",
+        scode,
+        "(",
+        index,
+        "/",
+        len(stocklist),
+        ")",
+    )
+    df = xtdata.get_market_data_ex(
+        params,
+        stock_list=[scode],
+        period=period,
+        start_time=startTime,
+        end_time=endTime,
+        count=-1,
+        dividend_type="none",
+        fill_data=True,
+    )
     table = df[scode]
-    table = table.query('suspendFlag != 1')
+    table = table.query("suspendFlag != 1")
     info("get1dData done")
     # 计算cci
     CCI(table)
@@ -898,14 +1024,14 @@ def get1dData(stocklist, index, startTime, endTime):
 
 
 def updateLastStartTime1d():
-    g.config["lastStartTime1d"] = datetime.datetime.now().strftime(
-        "%Y%m%d")
+    g.config["lastStartTime1d"] = datetime.datetime.now().strftime("%Y%m%d")
     info("lastStartTime1d:", g.config["lastStartTime1d"])
 
 
 def initLastStartTime1d():
-    g.config["lastStartTime1d"] = (datetime.datetime.now() - datetime.timedelta(days=370)).strftime(
-        "%Y%m%d")
+    g.config["lastStartTime1d"] = (
+        datetime.datetime.now() - datetime.timedelta(days=370)
+    ).strftime("%Y%m%d")
     info("lastStartTime1d:", g.config["lastStartTime1d"])
 
 
@@ -916,32 +1042,53 @@ def update1m(stocklist, startTime=None):
     dataEndTime = ""
     for index, scode in enumerate(stocklist):
         dataStartTime = startTime
-        if (startTime is None):
+        if startTime is None:
             lastMinute = get1mLastMinute(scode)
             if lastMinute:
                 dataStartTime = lastMinute
             else:
-                dataStartTime = (datetime.datetime.now(
-                ) - datetime.timedelta(hours=7)).strftime("%Y%m%d%H%M%S")
+                dataStartTime = (
+                    datetime.datetime.now() - datetime.timedelta(hours=7)
+                ).strftime("%Y%m%d%H%M%S")
 
         info("dataStartTime:", dataStartTime)
 
         for period in pds:
-            params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+            params = ["open", "close", "high", "low", "volume", "amount"]
             if period == "tick":
-                params = ['volume', 'amount', 'lastPrice']
+                params = ["volume", "amount", "lastPrice"]
             # params = []
-            info('downloading', period, 'for', scode, 'from', dataStartTime)
-            xtdata.download_history_data(
-                scode, period, dataStartTime, dataEndTime)
-            info('get', period, 'from', dataStartTime, 'to', dataEndTime,
-                 'for', scode, "(", index, "/", len(stocklist), ")")
-            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                           start_time=dataStartTime, end_time=dataEndTime, count=-1, dividend_type='none', fill_data=True)
+            info("downloading", period, "for", scode, "from", dataStartTime)
+            xtdata.download_history_data(scode, period, dataStartTime, dataEndTime)
+            info(
+                "get",
+                period,
+                "from",
+                dataStartTime,
+                "to",
+                dataEndTime,
+                "for",
+                scode,
+                "(",
+                index,
+                "/",
+                len(stocklist),
+                ")",
+            )
+            df = xtdata.get_market_data_ex(
+                params,
+                stock_list=[scode],
+                period=period,
+                start_time=dataStartTime,
+                end_time=dataEndTime,
+                count=-1,
+                dividend_type="none",
+                fill_data=True,
+            )
             datas = df[scode]
             # print("所有列名:", df.keys())
             # info("所有:", df.values())
-            columns = ['Time'] + datas.columns.tolist()
+            columns = ["Time"] + datas.columns.tolist()
             # debug(columns)
             debug(len(datas), "rows")
             # array_data = [datas.columns.tolist()] + datas.values.tolist()
@@ -949,28 +1096,48 @@ def update1m(stocklist, startTime=None):
             # 将datas的数据分批上传，每批100条
             bsize = 50
             for i in range(0, len(datas), bsize):
-                batch = datas.iloc[i:i+bsize]
-                info("上传", scode, period,
-                     "[", i, ",", i+bsize, "]", len(batch))
+                batch = datas.iloc[i : i + bsize]
+                info("上传", scode, period, "[", i, ",", i + bsize, "]", len(batch))
                 batch_data = []
                 for idx, row in batch.iterrows():
-                    batch_data.append([str(idx)] + [row["open"], row["close"],
-                                                    row["high"], row["low"], row["volume"], row["amount"]])
+                    batch_data.append(
+                        [str(idx)]
+                        + [
+                            row["open"],
+                            row["close"],
+                            row["high"],
+                            row["low"],
+                            row["volume"],
+                            row["amount"],
+                        ]
+                    )
                 # info(obj2JsonString(batch_data, indent=None))
 
-                if (len(batch_data) == 0):
+                if len(batch_data) == 0:
                     info("no data")
                     continue
-                body = {"data": obj2Json(
-                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                body = {
+                    "data": obj2Json(batch_data),
+                    "scode": scode,
+                    "period": period,
+                    "passcode": "995560",
+                }
                 debug("body:", body)
                 # 上传数据到test1
                 try:
                     response = requests.post(
-                        g.baseUrl+"/stock/k/upload", json=body, verify=False, timeout=20)
+                        g.baseUrl + "/stock/k/upload",
+                        json=body,
+                        verify=False,
+                        timeout=20,
+                    )
                     if response.status_code != 200:
-                        error("上传失败，状态码:", response.status_code,
-                              "响应内容:", response.text)
+                        error(
+                            "上传失败，状态码:",
+                            response.status_code,
+                            "响应内容:",
+                            response.text,
+                        )
                 except Exception as e:
                     error("上传失败:", str(e))
 
@@ -978,7 +1145,8 @@ def update1m(stocklist, startTime=None):
 def initLastStartTime1m():
     today = datetime.datetime.now().date()
     g.config["lastStartTime1m"] = datetime.datetime.combine(
-        today, datetime.time(9, 0)).strftime("%Y%m%d%H%M%S")
+        today, datetime.time(9, 0)
+    ).strftime("%Y%m%d%H%M%S")
     info("lastStartTime1m:", g.config["lastStartTime1m"])
 
 
@@ -1017,7 +1185,7 @@ def obj2Json(obj, max_depth=4, current_depth=1):
     result = {}
     for attr_name in dir(obj):
         # 跳过魔术方法（如 __init__, __str__ 等）
-        if attr_name.startswith('__') and attr_name.endswith('__'):
+        if attr_name.startswith("__") and attr_name.endswith("__"):
             continue
 
         try:
@@ -1028,8 +1196,7 @@ def obj2Json(obj, max_depth=4, current_depth=1):
                 continue
 
             # 递归处理属性值
-            result[attr_name] = obj2Json(
-                attr_value, max_depth, current_depth + 1)
+            result[attr_name] = obj2Json(attr_value, max_depth, current_depth + 1)
 
         except Exception as e:
             result[attr_name] = f"<无法获取属性值: {str(e)}>"
@@ -1042,8 +1209,7 @@ def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
     最终转换为 JSON 字符串
     """
     data = obj2Json(obj, max_depth=max_depth)
-    js = json.dumps(data, indent=indent,
-                    ensure_ascii=ensure_ascii)
+    js = json.dumps(data, indent=indent, ensure_ascii=ensure_ascii)
     return js
 
 
@@ -1051,14 +1217,30 @@ def buy(scode, price, volume):
     stockAccount = StockAccount(g.account)
 
     order_id = xt_trader.order_stock(
-        stockAccount, scode, xtconstant.STOCK_BUY, volume, xtconstant.FIX_PRICE, price, 'strategy1', '')
+        stockAccount,
+        scode,
+        xtconstant.STOCK_BUY,
+        volume,
+        xtconstant.FIX_PRICE,
+        price,
+        "strategy1",
+        "",
+    )
     return order_id
 
 
 def sell(scode, price, volume):
     stockAccount = StockAccount(g.account)
     order_id = xt_trader.order_stock(
-        stockAccount, scode, xtconstant.STOCK_SELL, volume, xtconstant.FIX_PRICE, price, 'strategy1', '')
+        stockAccount,
+        scode,
+        xtconstant.STOCK_SELL,
+        volume,
+        xtconstant.FIX_PRICE,
+        price,
+        "strategy1",
+        "",
+    )
     return order_id
 
 
@@ -1076,12 +1258,10 @@ def getOrders(cancelable_only):
 def getPositions():
     all = xt_trader.query_stock_positions(StockAccount(g.account))
 
-    positions = xt_trader.query_stock_positions(
-        StockAccount(g.account, "HUGANGTONG"))
+    positions = xt_trader.query_stock_positions(StockAccount(g.account, "HUGANGTONG"))
     all = all + positions
 
-    positions = xt_trader.query_stock_positions(
-        StockAccount(g.account, "SHENGANGTONG"))
+    positions = xt_trader.query_stock_positions(StockAccount(g.account, "SHENGANGTONG"))
     all = all + positions
 
     return all
@@ -1091,12 +1271,18 @@ def getDeals(stockAccount, start_time, end_time):
     # result = xt_trader.export_data(
     #     stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time="2025-01-01", end_time="2025-05-11")
     # info(result)
-    if (start_time is None):
-        start_time = (datetime.datetime.now() -
-                      datetime.timedelta(days=15)).strftime("%Y%m%d")
+    if start_time is None:
+        start_time = (datetime.datetime.now() - datetime.timedelta(days=15)).strftime(
+            "%Y%m%d"
+        )
 
     deals = xt_trader.query_data(
-        stockAccount, g.logPathPrefix + "\\guojin_deal.csv", "deal", start_time=start_time, end_time=end_time)
+        stockAccount,
+        g.logPathPrefix + "\\guojin_deal.csv",
+        "deal",
+        start_time=start_time,
+        end_time=end_time,
+    )
     return deals
 
 
@@ -1134,7 +1320,7 @@ def object_to_json(obj, max_depth=3, current_depth=0):
     result = {}
     for attr_name in dir(obj):
         # 跳过魔术方法（如 __init__, __str__ 等）
-        if attr_name.startswith('__') and attr_name.endswith('__'):
+        if attr_name.startswith("__") and attr_name.endswith("__"):
             continue
 
         try:
@@ -1145,8 +1331,7 @@ def object_to_json(obj, max_depth=3, current_depth=0):
                 continue
 
             # 递归处理属性值
-            result[attr_name] = object_to_json(
-                attr_value, max_depth, current_depth + 1)
+            result[attr_name] = object_to_json(attr_value, max_depth, current_depth + 1)
 
         except Exception as e:
             result[attr_name] = f"<无法获取属性值: {str(e)}>"
@@ -1171,10 +1356,11 @@ def subscribe_whole_callback(data):
                 continue
             g.tick[stock] = data[stock]
     except Exception as e:
-         info(f"error:{e}")
+        info(f"error:{e}")
+
 
 def printObj(data, indent):
-    if (not indent):
+    if not indent:
         indent = ""
     dirs = dir(data)
     if not dirs:
@@ -1191,19 +1377,19 @@ def printObj(data, indent):
 
 
 def debug(*args, **kwargs):
-    if (g.log["level"] >= g.log["debug"]):
+    if g.log["level"] >= g.log["debug"]:
         all_args = (f"D",) + args
         log(*all_args, **kwargs)
 
 
 def info(*args, **kwargs):
-    if (g.log["level"] >= g.log["info"]):
+    if g.log["level"] >= g.log["info"]:
         all_args = (f"I",) + args
         log(*all_args, **kwargs)
 
 
 def error(*args, **kwargs):
-    if (g.log["level"] >= g.log["error"]):
+    if g.log["level"] >= g.log["error"]:
         all_args = (f"E",) + args
         log(*all_args, **kwargs)
 
@@ -1212,7 +1398,7 @@ def log(*args, **kwargs):
     """增强版log函数，完全模拟print的参数行为"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # 将时间作为第一个元素插入到输出中
-    if (hasattr(threadLocal, "id")):
+    if hasattr(threadLocal, "id"):
         time_header = f"[{current_time}][{threadLocal.id}]"
     else:
         time_header = f"[{current_time}]"
@@ -1222,7 +1408,7 @@ def log(*args, **kwargs):
     g.toPrint.append([all_args, kwargs])
 
 
-def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+def log2File(toPrint, file, sep=" ", end="\n", flush=True, mode="a", encoding="utf-8"):
     """
     将打印内容输出到文件，参数与print()函数保持一致
 
@@ -1251,8 +1437,7 @@ def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='u
 def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
-        log2File(
-            toPrint, f"{g.logPathPrefix}\\qmt.mini")
+        log2File(toPrint, f"{g.logPathPrefix}\\qmt.mini")
         while len(toPrint) > 0:
             item = toPrint.pop(0)
             print(*item[0], **item[1])
@@ -1289,12 +1474,13 @@ def resubscribe():
         xtdata.unsubscribe_quote(g.subscribeId)
 
     g.subscribeId = xtdata.subscribe_whole_quote(
-        g.stocklist, callback=subscribe_whole_callback)
+        g.stocklist, callback=subscribe_whole_callback
+    )
 
     info("resubscribe end", g.subscribeId)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Mini-QMT的userdata_mini路径
     # path = r'D:\国金证券QMT交易端\userdata_mini'
     path = os.getenv("qmtpath")
@@ -1335,7 +1521,7 @@ if __name__ == '__main__':
     stockAccountHgt = StockAccount(g.account, "HUGANGTONG")
     if "sessionId" not in g.config:
         g.config["sessionId"] = 0
-    g.config["sessionId"] = g.config["sessionId"]+1
+    g.config["sessionId"] = g.config["sessionId"] + 1
     saveConfig()
 
     xt_trader = XtQuantTrader(path, g.config["sessionId"])
@@ -1382,12 +1568,12 @@ if __name__ == '__main__':
 
     xt_asset = xt_trader.query_stock_asset(stockAccount)
 
-    info('账号类型', xt_asset.account_type)
-    info('资金账号', xt_asset.account_id)
-    info('可用金额', xt_asset.cash)
-    info('冻结金额', xt_asset.frozen_cash)
-    info('持仓市值', xt_asset.market_value)
-    info('总资产', xt_asset.total_asset)
+    info("账号类型", xt_asset.account_type)
+    info("资金账号", xt_asset.account_id)
+    info("可用金额", xt_asset.cash)
+    info("冻结金额", xt_asset.frozen_cash)
+    info("持仓市值", xt_asset.market_value)
+    info("总资产", xt_asset.total_asset)
 
     info("start updateDetailTask")
     t0 = Thread(target=updateDetailTask)
