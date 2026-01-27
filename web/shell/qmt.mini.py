@@ -912,7 +912,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                     "period": period,
                     "passcode": "995560",
                 }
-                debug("body:", body)
+                # debug("body:", body)
                 # 上传数据
                 try:
                     response = requests.post(
