@@ -57,7 +57,7 @@ def main():
         user_input = input("Please select: ")
         
         if user_input == "1":
-            proxy = "http://152.136.244.225/"
+            proxy = "http://152.136.244.225"
         elif user_input == "2":
             proxy = "http://test.labadida.com:3001"
         elif user_input == "3":
