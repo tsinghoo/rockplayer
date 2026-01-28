@@ -905,31 +905,31 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                     info(
                         f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}"
                     )
-            if len(batch_data) > 0:
-                body = {
-                    "data": obj2Json(batch_data),
-                    "scode": scode,
-                    "period": period,
-                    "passcode": "995560",
-                }
-                # debug("body:", body)
-                # 上传数据
-                try:
-                    response = requests.post(
-                        g.baseUrl + "/stock/k/upload",
-                        json=body,
-                        verify=False,
-                        timeout=20,
+            #if len(batch_data) > 0:
+            body = {
+                "data": obj2Json(batch_data),
+                "scode": scode,
+                "period": period,
+                "passcode": "995560",
+            }
+            # debug("body:", body)
+            # 上传数据
+            try:
+                response = requests.post(
+                    g.baseUrl + "/stock/k/upload",
+                    json=body,
+                    verify=False,
+                    timeout=20,
+                )
+                if response.status_code != 200:
+                    error(
+                        "上传失败，状态码:",
+                        response.status_code,
+                        "响应内容:",
+                        response.text,
                     )
-                    if response.status_code != 200:
-                        error(
-                            "上传失败，状态码:",
-                            response.status_code,
-                            "响应内容:",
-                            response.text,
-                        )
-                except Exception as e:
-                    error("上传失败:", str(e))
+            except Exception as e:
+                error("上传失败:", str(e))
 
 
 def KDJ(table):
