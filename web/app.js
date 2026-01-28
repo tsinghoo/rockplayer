@@ -812,8 +812,8 @@ async function checkRule(scodes, req) {
                         await db.runSync(`update tRuleAction set done = -1 where ruleId=?`, [r.id]);
 
                         await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
-
-                        return;
+                        
+                        break;
                     }
 
                     switch (r.status) {
