@@ -1614,18 +1614,6 @@ if __name__ == "__main__":
 
     t5 = Thread(target=updatePriceTask)
     t5.start()
-
-    info("start websocket_client")
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(websocket_client())
-    finally:
-        loop.close()
-        asyncio.set_event_loop(None)
-
-    info("started websocket_client")
-
+    
     # 阻塞主线程退出
-    # xt_trader.run_forever()
+    xt_trader.run_forever()
