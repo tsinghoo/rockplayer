@@ -639,6 +639,8 @@ async function reloadRule(r, req) {
 
         info(`${r.scode} ${r.sname} set r.status=${r.status}`, req.threadId)
     }
+
+    checkRule(r, req);
 }
 
 async function tryToSell(r, req) {
