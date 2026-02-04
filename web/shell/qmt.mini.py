@@ -750,7 +750,7 @@ def getActions():
 
 
 def connectWebSocket():
-    info("connectWebSocket")
+    info("connect webSocket")
 
     thread = threading.Thread(target=lambda: asyncio.run(websocket_client()))
     thread.start()

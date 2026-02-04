@@ -1600,7 +1600,7 @@ window.stock_list = window.stock_list || (function () {
             let fullCode = self.formatScode(code);
             let link = `https://xueqiu.com/S/${fullCode}`;
 
-            self.openMiniBrowser(link, 840, 790);
+            self.openMiniBrowser(link, 1150, 790);
             //self.createFloatingWindow(link, 800);
             //share.open__(link, `${code}`);
 
@@ -2537,7 +2537,7 @@ window.stock_list = window.stock_list || (function () {
                             popup.close();
                             let buy = data.tprice * (1 - 0.02);
                             c.find(".buy").val(buy);
-                            c.find(".sell").val(data.tprice);
+                            // c.find(".sell").val(data.tprice);
                             self.autoPrice("buy", c);
                         }
                     },
@@ -2547,7 +2547,7 @@ window.stock_list = window.stock_list || (function () {
                             popup.close();
                             let sell = data.tprice * (1 + 0.02);
                             c.find(".sell").val(sell);
-                            c.find(".buy").val(data.tprice);
+                            // c.find(".buy").val(data.tprice);
                             self.autoPrice("sell", c);
                         }
                     },
