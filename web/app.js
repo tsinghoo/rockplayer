@@ -814,7 +814,7 @@ async function checkRule(scodes, req) {
                         await db.runSync(`update tRuleAction set done = -1 where ruleId=?`, [r.id]);
 
                         await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
-                        
+
                         break;
                     }
 
@@ -2362,6 +2362,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             workerCreateRule.failed = failed.length == 0 ? [] : [failed[failed.length - 1]];
         }
     } else {
+        workerCreateRule.type = null;
         let result = await autoCreateRule(scode, req.threadId, null);
         if (result.error == null) {
             await saveCreateRuleFailure(scode, "");
