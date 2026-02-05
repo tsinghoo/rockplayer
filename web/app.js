@@ -2362,8 +2362,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
             workerCreateRule.failed = failed.length == 0 ? [] : [failed[failed.length - 1]];
         }
     } else {
-        workerCreateRule.type = null;
-        let result = await autoCreateRule(scode, req.threadId, null);
+        let result = await autoCreateRule(scode, req.threadId, null, true);
         if (result.error == null) {
             await saveCreateRuleFailure(scode, "");
             succeeded.push({ scode, sname: result.sname });
@@ -2847,7 +2846,7 @@ app.get('/stock/fe/user/login', async (req, res) => {
 async function saveCreateRuleFailure(scode, error) {
     await db.runSync(`update tStockBasic set autoCreateRuleFail=? where scode=?`, [error, scode]);
 }
-async function autoCreateRule(scode, threadId, stockBasicInfo) {
+async function autoCreateRule(scode, threadId, stockBasicInfo, force) {
     if (stockBasicInfo == null) {
         stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [scode], threadId);
     }
@@ -2944,7 +2943,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
 
         return { error: `cci buy`, sname };
     } else if (trade.operationDirection.indexOf("卖") >= 0) {
-        if (workerCreateRule.type == "toSell") {
+        if (!force && workerCreateRule.type == "toSell") {
             return { error: `toSell`, sname };
         }
 
@@ -3017,7 +3016,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo) {
             setSellPriceByBuy(rc, maxDelta);
         }
     } else if (trade.operationDirection.indexOf("买") >= 0) {
-        if (workerCreateRule.type == "toBuy") {
+        if (!force && workerCreateRule.type == "toBuy") {
             return { error: `toBuy`, sname };
         }
 
