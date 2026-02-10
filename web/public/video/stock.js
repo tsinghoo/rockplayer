@@ -988,7 +988,7 @@ window.stock_list = window.stock_list || (function () {
                             if (res.error) {
                                 share.toastError__(res.error);
                             } else {
-                                tr.remove();
+                                tr.find("td").addClass("gray");
                             }
                         }
                     },
@@ -2560,7 +2560,7 @@ window.stock_list = window.stock_list || (function () {
                             if (res.error) {
                                 share.toastError__(res.error);
                             } else {
-                                tr.remove();
+                                tr.find("td").addClass("gray");
                             }
                         }
                     },
