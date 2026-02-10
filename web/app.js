@@ -601,9 +601,9 @@ async function reloadRule(r, req) {
         } else if (ra.done == -1) {
             r.status = "cancelled";
         } else if (ra.done == 1) {
-            if (ra.action == "buy") {
+            if (1 == 0 && ra.action == "buy") {
                 r.status = "toSell";
-            } else if (ra.action == "sell") {
+            } else if (1 == 0 && ra.action == "sell") {
                 r.status = "toBuy";
             } else {
                 info("rule done", req.threadId)
@@ -611,7 +611,7 @@ async function reloadRule(r, req) {
                 await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
                 delete rules[r.scode][r.broker];
                 setTimeout(async () => {
-                    let res = await autoCreateRule(r.scode, req.threadId);
+                    let res = await autoCreateRule(r.scode, req.threadId, null, true);
                     if (res.error == null) {
                         await saveCreateRuleFailure(r.scode, "");
                         reloadRule(res.rule, req);
@@ -2846,7 +2846,7 @@ app.get('/stock/fe/user/login', async (req, res) => {
 async function saveCreateRuleFailure(scode, error) {
     await db.runSync(`update tStockBasic set autoCreateRuleFail=? where scode=?`, [error, scode]);
 }
-async function autoCreateRule(scode, threadId, stockBasicInfo, force) {
+async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
     if (stockBasicInfo == null) {
         stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [scode], threadId);
     }
@@ -2943,7 +2943,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, force) {
 
         return { error: `cci buy`, sname };
     } else if (trade.operationDirection.indexOf("卖") >= 0) {
-        if (!force && workerCreateRule.type == "toSell") {
+        if (!notBatch && workerCreateRule.type == "toSell") {
             return { error: `toSell`, sname };
         }
 
@@ -3016,7 +3016,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, force) {
             setSellPriceByBuy(rc, maxDelta);
         }
     } else if (trade.operationDirection.indexOf("买") >= 0) {
-        if (!force && workerCreateRule.type == "toBuy") {
+        if (!notBatch && workerCreateRule.type == "toBuy") {
             return { error: `toBuy`, sname };
         }
 
