@@ -2565,6 +2565,19 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
+                        text: "取消隐藏",
+                        onTap: async function () {
+                            popup.close();
+
+                            let res = await share.getSync__(`/stock/undeleteRow?tid=${data.tid}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                tr.find("td").removeClass("gray");
+                            }
+                        }
+                    },
+                    {
                         text: "清除本行",
                         onTap: async function () {
                             popup.close();
@@ -2574,19 +2587,6 @@ window.stock_list = window.stock_list || (function () {
                                 share.toastError__(res.error);
                             } else {
                                 tr.remove();
-                            }
-                        }
-                    },
-                    {
-                        text: "取消隐藏本行",
-                        onTap: async function () {
-                            popup.close();
-
-                            let res = await share.getSync__(`/stock/undeleteRow?tid=${data.tid}`);
-                            if (res.error) {
-                                share.toastError__(res.error);
-                            } else {
-                                tr.find("td").removeClass("gray");
                             }
                         }
                     },
