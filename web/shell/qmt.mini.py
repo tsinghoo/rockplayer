@@ -1589,7 +1589,7 @@ if __name__ == "__main__":
     #     time.sleep(1)
 
     startUpdatePositions()
-
+    connectWebSocket()
     # deals = getDeals(stockAccount)
     # info("deals A:", len(deals))
     # js = python_to_json(deals)
