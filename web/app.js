@@ -251,7 +251,7 @@ async function appendFile(filePath, data) {
 
 async function log2File() {
     while (true) {
-        let logFilePath = path.join(__dirname, `app.${timeFormat(new Date(), "yyMMdd")}.log`);
+        let logFilePath = path.join(__dirname, `logs/app.${timeFormat(new Date(), "yyMMdd")}.log`);
         let logs = g.logs;
         g.logs = [];
         if (logs.length > 0) {

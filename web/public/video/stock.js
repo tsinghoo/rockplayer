@@ -209,13 +209,17 @@ window.stock_list = window.stock_list || (function () {
                             } else {
                                 let succeeded = res.succeeded.map((item) => `${item.scode}.${item.sname}`).join("<br/>");
                                 let failed = res.failed.map((item) => `${item.scode}.${item.sname}:${item.reason}`).join("<br/>");
+                                c.find(".succeededRules").html(succeeded);
+                                c.find(".failedRules").html(failed);
                                 let done = res.done;
                                 if (done) {
                                     share.toastSuccess__("finished", 2000);
+                                } else {
+                                    setTimeout(function () { toCreateRule(type); }, 2000);
                                 }
-                                c.find(".succeededRules").html(succeeded);
-                                c.find(".failedRules").html(failed);
                             }
+
+                            return res;
                         }
 
                         c.find(".buttonToBuySell").on("click", async function () {
