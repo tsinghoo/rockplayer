@@ -3545,7 +3545,7 @@ app.get('/stock/delete/auto', async (req, res) => {
     let r = await db.allSync(sql, [scode], req.threadId);
     let trades = r.rows;
     info(`${trades.length} trades`, req.threadId)
-    for (let i = 1; i < trades.length; ++i) {
+    for (let i = 0; i < trades.length; ++i) {
         let t1 = trades[i];
         if (t1.deleted) {
             continue;
