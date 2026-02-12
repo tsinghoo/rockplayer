@@ -3541,7 +3541,7 @@ app.get('/stock/delete/auto', async (req, res) => {
         info("reset before pair", req.threadId)
         await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
     }
-    let sql = `select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc`;
+    let sql = `select * from tstock where scode=? and deleted=0 order by tday , ttime`;
     let r = await db.allSync(sql, [scode], req.threadId);
     let trades = r.rows;
     info(`${trades.length} trades`, req.threadId)
