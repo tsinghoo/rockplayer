@@ -3495,11 +3495,11 @@ app.get('/stock/pair', async (req, res) => {
     let js = req.query.js;
     let reset = req.query.reset;
 
-    let sql = `select * from tstock where tamount<0 and tpair is null or tpair=''`;
+    let sql = `select * from tstock where tamount<0 and tpair is null or tpair='' order by tday desc, ttime desc`;
     if (reset) {
         info("reset before pair", req.threadId)
         await db.runSync(`update tstock set tpair=''`);
-        sql = "select * from tstock where tamount<0";
+        sql = "select * from tstock where tamount<0 order by tday desc, ttime desc";
     }
     let r = await db.allSync(sql, [], req.threadId);
     let sells = r.rows;
