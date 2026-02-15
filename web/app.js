@@ -3940,7 +3940,7 @@ app.post('/video/upload', (req, res) => {
     const file = req.files.file;
     let dir = req.body.dir;
     if (dir == null) {
-        dir = "";
+        dir = "voice";
     }
 
     if (!fs.existsSync(directoryPath + "/" + dir)) {
