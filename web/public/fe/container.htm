@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%;">
+
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no,viewport-fit=cover">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: app:; 
+        frame-src 'self' app: gap: *;
+        img-src * 'self' data: cdvfile: android-webview-video-poster:;
+        style-src 'self' 'unsafe-inline' *; 
+        script-src * 'self' 'unsafe-inline' 'unsafe-eval';">
+    <!-- jsCss start -->
+    <link rel="stylesheet" href="vendor/normalize.css">
+    <link rel="stylesheet" href="vendor/bootstrap-5.3.3-dist/css/bootstrap.css">
+    <link rel="stylesheet" href="vendor/bootstrap5-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/lqh.css">
+    <!--[if lt IE 9]>
+<link type="text/css" href="vendor/jquery-ui-bootstrap-v0.5/css/custom-theme/jquery-ui-1.10.0.ie.css" />
+<![endif]-->
+    <script src="vendor/math.uuid.js"></script>
+    <script src="vendor/jsQR.js"></script>
+    <script src="vendor/jquery.js" defer="defer"></script>
+    <script src="vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
+    <script src="vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+    <script src="vendor/jquery.form.js" defer="defer"></script>
+    <script src="vendor/jquery.lazyload.js" defer="defer"></script>
+    <script src="vendor/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js" defer="defer"></script>
+    <script src="vendor/bootstrap5-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript"
+        defer="defer"></script>
+    <script src="vendor/detectmobilebrowser.js" defer="defer"></script>
+    <script src="vendor/mustache.js"></script>
+    <script src="vendor/way.js"></script>
+    <script src="vendor/store.legacy.min.js"></script>
+    <script src="vendor/purify.js"></script>
+    <script src="js/common.js"></script>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="vendor/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="vendor/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <!-- jsCss end -->
+</head>
+<style>
+    .modal-backdrop img {
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 8px;
+    }
+</style>
+
+<body class="fullHeight">
+    <div id="loading" class="modal-backdrop bg-white flexrow center">
+        <div class="loading-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+    <iframe id="navFrame" class="hide" name="navFrame" frameBorder="0" scrolling="yes"
+        style="border: 0; position:fixed; top:0; left:0; right:0; bottom:0; width:100%; max-width:100%; height:55px; height:calc(55px + env(safe-area-inset-top)); z-index:100;">
+    </iframe>
+    <div id="status" class="status right hide"></div>
+    <div
+        style="border: 0; position:fixed; padding-top:55px; padding-top:calc(55px + env(safe-area-inset-top)); left:0; right:0; top:0; bottom:0; width:100%; max-width:100%; -webkit-overflow-scrolling:auto;">
+        <iframe id="mainFrame" class="hide fullHeight width100p" style="-webkit-overflow-scrolling:auto;padding:0 10px 0 10px;" name="mainFrame" frameBorder="0">
+        </iframe>
+
+        <div id="protect" class="width100p hide" style="height:100%;">
+            <div class="insetTop" style="height:0; height: calc(55px + env(safe-area-inset-top));"></div>
+            <div class="flexrow hcenter margintb20 marginlr20">
+                <div class="col-12 col-sm-10 col-md-8">
+                    <div class="row">
+                        <div class="col-12">
+                            <form class="form-horizontal" role="form" id="formLogin">
+                                <div class="input-group">
+                                    <div class="form-floating widthauto">
+                                        <input style="height:20px;" type="password" class="form-control" id="password"
+                                            placeholder="&nbsp;">
+                                        <label for="password" class="passcodeHint" style="color:lightgray">访问密码</label>
+                                    </div>
+                                </div>
+                                <div class="height4"></div>
+                                <div id="retype" class="input-group hide">
+                                    <div class="form-floating widthauto">
+                                        <input style="height:20px;" type="password" class="form-control" id="password1"
+                                            placeholder="&nbsp;">
+                                        <label for="password1" class="passwordRetype"
+                                            style="color:lightgray">再次输入</label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-12 flexrow center margintb4">
+                                        <button id="buttonConfirm" type="button" class="btn btn-primary">确定</button>
+                                        <div class="marginlr10"></div>
+                                        <button id="buttonLang" type="button"
+                                            class="btn btn-sm btn-outline-primary">语言</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="templateDialogButton" style="display:none">
+        <button id="dialogButton#id#" type="button" class="btn btn-primary btn-sm marginlr2">
+            #name#
+        </button>
+    </div>
+    <div id="templateDialog" class="hide">
+        <div class="row hcenter">#content#</div>
+        <div id="dialogButtons" class="flexrow center">
+            #buttons#
+        </div>
+    </div>
+    <div id="templateActionSheetButton" style="display:none">
+        <button id="actionSheetButton#id#" type="button" class="btn btn-primary widthAuto margintb4 #class#">
+            #icon# #name#
+        </button>
+    </div>
+    <div id="templateActionSheetLabel" style="display:none">
+        <label id="actionSheetButton#id#" for="#for#" type="button" class="btn btn-primary widthAuto margintb4 #class#">
+            #icon# #name#
+        </label>
+    </div>
+    <div id="templateActionSheet" class="hide">
+        <div class="row hcenter">#content#</div>
+        <br>
+        <div id="actionSheetButtons" class="flexcolumn">
+            #buttons#
+        </div>
+    </div>
+    <div id="topWinBackdrop" class="modal-backdrop fade in hide" style="z-index: 1010;"></div>
+    <div id="topWin" class="flexrow hcenter topWin hide"></div>
+    <button id="closeButton" class="close closeButton hide" aria-label="close">×</button>
+    <script type="text/javascript" src="js/string.js"></script>
+    <script type="text/javascript" src="js/share.js" defer="defer"></script>
+    <script type="text/javascript">
+        window.shareBuffer = null;
+    </script>
+    <div style="height: 80px;"></div>
+    <nav id="pagination" class="navbar navbar-default bottom width100p hcenter hide">
+        <div class="row hcenter">
+            <div class="col-12 col-sm-8 col-md-4 col-lg-4">
+                <ul class="pagination justify-content-center" style="margin-bottom: 0px;">
+                    <div id="paginationButtons" class="pagination">
+                        <li id="paginationPrev">
+                            <a id="paginationPrevLink" class="paginationButton" aria-label="Previous">
+                                <span class="glyphicon glyphicon-chevron-left"></span>
+                            </a>
+                        </li>
+                        <li id="paginationCurrent">
+                            <a id="paginationCurrentLink" class="paginationButton">
+                                <span id="paginationCurrentPage" class=""></span>
+                            </a>
+                        </li>
+                        <li id="paginationNext">
+                            <a id="paginationNextLink" aria-label="Next" class="paginationButton">
+                                <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                            </a>
+                        </li>
+                        <li id="paginationAdd" class="hide">
+                            <a id="paginationAddLink" class="paginationAddButton">
+                                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                            </a>
+                        </li>
+                        <li id="paginationMore" class="hide">
+                            <a id="paginationMoreLink" class="paginationAddButton">
+                                <span class="glyphicon glyphicon-option-horizontal" aria-hidden="true"></span>
+                            </a>
+                        </li>
+                    </div>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div id="templateGroupSelector" style="display: none">
+        <div class="flexrow "></div>
+    </div>
+    <div class="templatePopupHeader hide">
+        <div class="flexrow justify bg_deepblue white" style="margin: -8px -8px 8px -8px; padding: 4px;height: 30px;">
+            <div>#title#</div>
+            <div style="display: block;">
+                <button class="close" aria-label="close">×</button>
+            </div>
+        </div>
+    </div>
+    <div id="templateDelete" class="hide">
+        <div class="flexcolumn">
+            <div class="bold mb-2 confirmDeleteFeed">
+                .confirmDeleteFeed:confirmDeleteFeed:确定要删除此消息吗?
+            </div>
+            <div>
+                <div class="flexcolumninline  left">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" class="delBefore form-check-input" aria-label="...">
+                        <span class="delBefore">.delBefore:delBefore:也删除此前所有消息</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="templateDetail" style="display: none">
+        <div class="flexcolumn">
+            <div class="input-group vcenter">
+                <div class="form-floating widthauto margintb4">
+                    <input type="text" class="form-control detailAlias h20" placeholder=" ">
+                    <label id="commentHint" for="name" class="floating-label">别名</label>
+                </div>
+                <button type="button" class="btn btn-primary detailConfirmAlias" aria-label="Help">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+            </div>
+            <button type="button" class="buttonComment btn btn-primary btn-sm widthAuto margintb4">
+                评论
+            </button>
+            <button type="button" class="buttonDelete btn btn-primary btn-sm widthAuto margintb4">
+                删除
+            </button>
+            <button type="button" class="buttonSend btn btn-primary btn-sm widthAuto margintb4">
+                发消息
+            </button>
+            <button type="button" class="buttonUnfollow btn btn-primary btn-sm widthAuto margintb4">
+                取消关注
+            </button>
+        </div>
+    </div>
+    <div id="templateDetailGroup" style="display: none">
+        <div class="flexcolumn">
+            <div class="input-group vcenter">
+                <div class="form-floating widthauto margintb4">
+                    <input type="text" class="form-control font12 detailName h20" placeholder=" ">
+                    <label id="groupNameHint" for="name" class="">#groupNameHint:groupName:群名</label>
+                </div>
+                <div class="input-group-btn detailConfirmName">
+                    <button type="button" class="btn btn-primary" aria-label="Help">
+                        <span class="glyphicon glyphicon-ok"></span>
+                    </button>
+                </div>
+            </div>
+            <div class="input-group vcenter">
+                <div class="form-floating widthauto margintb4">
+                    <input type="text" class="form-control font12 detailGroupAlias h20" placeholder=" ">
+                    <label id="groupCommentHint" for="name" class="">#groupCommentHint:commentHint:别名</label>
+                </div>
+                <button type="button" class="btn btn-primary detailConfirmAlias" aria-label="Help">
+                    <span class="glyphicon glyphicon-ok"></span>
+                </button>
+            </div>
+            <button type="button" class="detailMembers btn btn-primary btn-sm widthAuto margintb4">
+                .detailMembers:groupMemebers:群成员
+            </button>
+            <button type="button" class="detailSend btn btn-primary btn-sm widthAuto margintb4">
+                发消息
+            </button>
+            <button type="button" class="detailDelete btn btn-primary btn-sm widthAuto margintb4">
+                删除
+            </button>
+        </div>
+    </div>
+    <div id="templateGroup" style="display: none">
+        <div id="group_#id#" class="flexrow listItem group">
+            <div class="col-12 table-cell">
+                <div class="flexrow vcenter">
+                    <div class="header margin4 #headerBackgroundColor#">
+                        <div class="star"></div>
+                        #header#
+                    </div>
+                    <div class="row left widthAuto">
+                        <div class="col-12 overflow-hidden">#name#</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="templatePaginationInfo" class="hide">
+        <div class="flexrow center margintb6">
+            #message#
+        </div>
+        <div class="input-group">
+            <div class="form-floating margintb4 widthauto">
+                <input type="number" min="1" class="form-control paginationCurrentPage h20" id="#pageIndexId#"
+                    name="pageIndex" value="#pageIndex#" placeholder="请输入页码">
+                <label class="currentPageNumber">当前页码</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating margintb4 widthauto">
+                <input type="number" min="1" class="form-control paginationPageSize h20" id="#pageSizeId#"
+                    name="pageSize" value="#pageSize#" placeholder="请输入每页个数">
+                <label class="pageSize">每页个数</label>
+            </div>
+        </div>
+        <div class="flexrow center margintb4">
+            <button id="#buttonSubmitId#" type="submit" class="btn btn-primary go" style="margin-top:4px;">跳转</button>
+        </div>
+    </div>
+    <div id="templateLink" class="hide">
+        <div id="item_#id#" class="row listItem">
+            <div class="flexrow marginlr4">
+                <div class="flexcolumn">
+                    <div id="header_#id#" class="header #redpoint# margin4 #headerBackgroundColor#">
+                        <div class="seal-img"></div>
+                        #header#
+                    </div>
+                    <div class="center">
+                        <img class="vote clickable" style="width:24px;">
+                    </div>
+                </div>
+                <div class="flexcolumn widthauto">
+                    <div class="flexrow justify">
+                        <div class="flexrow">
+                            <div class="left blue overflow-hidden senderName">#name#</div>
+                            <div class="toFollowing flexrow center font12 hide">
+                                <span class="gray glyphicon glyphicon-triangle-right"></span>
+                                <span class="blue followingName"></span>
+                            </div>
+                        </div>
+                        <div class="flexrow messageStatus clickable">
+                            <img src="" class="messageStatusImage" style="width:16px;height:16px;">
+                            <div class="progress-container hide">
+                                <div class="progress-background"></div>
+                                <div class="progress-pointer"></div>
+                            </div>
+                            <div class="gray createTime"></div>
+                        </div>
+                    </div>
+                    <div class="flexrow">
+                        <div class="flexrow padding10 clickable pageLink borderRadius8 borderGray" url="#url#">
+                            <div class="flexcolumn">
+                                <div class="widthauto left bold font14 breakword">#title#</div>
+                                <div class="widthauto left font12 breakword">#desc#</div>
+                            </div>
+                            <img src="img/link1.png" style="height:35px;">
+                        </div>
+                    </div>
+                    <div class="comments-section">
+                        <div class="comments-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="templateImage" style="display: none">
+        <div id="item_#id#" class="row listItem">
+            <div class="flexrow marginlr4">
+                <div class="flexcolumn">
+                    <div id="header_#id#" class="header #redpoint# margin4 #headerBackgroundColor#">
+                        <div class="seal-img"></div>
+                        #header#
+                    </div>
+                    <div class="center">
+                        <img class="vote clickable" style="width:24px;">
+                    </div>
+                </div>
+                <div class="flexcolumn widthauto">
+                    <div class="flexrow justify">
+                        <div class="flexrow">
+                            <div class="left blue overflow-hidden senderName">#name#</div>
+                            <div class="toFollowing flexrow center font12 hide">
+                                <span class="gray glyphicon glyphicon-triangle-right"></span>
+                                <span class="blue followingName"></span>
+                            </div>
+                        </div>
+                        <div class="flexrow messageStatus clickable">
+                            <img src="" class="messageStatusImage" style="width:16px;height:16px;">
+                            <div class="progress-container hide">
+                                <div class="progress-background"></div>
+                                <div class="progress-pointer"></div>
+                            </div>
+                            <div class="gray createTime"></div>
+                        </div>
+                    </div>
+                    <div class="flexrow">
+                        <div class="left feedContent maxHeight55">
+                            <pre>#content#</pre>
+                        </div>
+                    </div>
+                    <div class="flexrow">
+                        <div class="left overflow-hidden flexrow mediaGrid"></div>
+                        <div class="widthauto flexcolumn">
+                            <div class="widthauto"></div>
+                        </div>
+                    </div>
+                    <div class="comments-section">
+                        <div class="comments-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="templateHelp" class="hide">
+        <div class="helpGuide">
+            <div class="margintb2 font12">
+                <b>AllinEmail</b>
+                is a decentralized, server-independent social software based on the email system, which implements most
+                of the features of social platforms like X, Signal and Facebook.
+            </div>
+            <div class="margintb2 font12">
+                Since emails can be slow and sometimes restricted when sending,
+                <b>AllinEmail</b>
+                also supports and provides basic proxy services. Through the proxy, users can directly communicate with
+                online friends in real-time without relying on email delivery.
+            </div>
+            <div class="flexrow margintb4 center">
+                <div
+                    style="width:fit-content; max-width:100%;border-radius: 20px;border: 1px solid yellow;padding: 10px;background-color: lightgoldenrodyellow;">
+                    <div class="margintb6 center bold widthauto">
+                        Welcome to donate to support the setup of public proxy servers and the improvement of
+                        <b>AllinEmail</b>
+                        !
+                    </div>
+                    <div class="margintb2 center flexrow">
+                        <div class="flexcolumn">
+                            <a href="https://wise.com/pay/me/ahgy47d">
+                                <img src="img/donateWise.png" style="width:200px;">
+                            </a>
+                            <a href="https://wise.com/pay/me/ahgy47d">
+                                <img src="img/wisetag.png" style="width:200px;">
+                            </a>
+                        </div>
+                        <div class="flexcolumn">
+                            <a href="https://paypal.me/tsinghoo">
+                                <img src="img/donatePaypal.png" style="width:200px;">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="margintb2 center">
+                Please also follow the author for updates or to provide feedback!
+            </div>
+        </div>
+        <div class="height6"></div>
+        <div class="width100p center">
+            <button class="btn btn-primary followAuthor">关注作者</button>
+        </div>
+    </div>
+    <div id="templateComment" class="hide">
+        <div class="comment-input form-floating">
+            <textarea class="comment-text form-control" style="padding-top:0.5rem;" placeholder=" "></textarea>
+            <label class="comment-label floating-label">Comment</label>
+        </div>
+        <div class="height6"></div>
+        <div class="width100p center">
+            <button class="btn btn-primary post-comment">发送</button>
+        </div>
+    </div>
+    <div id="templateLinkOrFile" class="hide">
+        <div class="input-group">
+            <div class="form-floating margintb4 widthauto">
+                <input class="form-control weblinkInput h20" placeholder=" ">
+                <label class="webLinkLabel">链接</label>
+            </div>
+        </div>
+        <div class="flexrow center margintb4">
+            <button type="submit" class="btn btn-primary buttonConfirm" style="margin-top:4px;">确定</button>
+            <div class="marginlr4"></div>
+            <button type="button" class="btn btn-outline-primary btnLoadFile" style="margin-top:4px;">文件</button>
+        </div>
+    </div>
+    <div id="imageFullScreenContainer" class="fullScreen hide bg_black">
+        <img id="imageFullScreen" class="centerMiddle maxWidthHeight" src="">
+    </div>
+    <div id="templateLinkPageForm" class="hide">
+        <div class="padding2">
+            <div class="bold font16 center">#title#</div>
+            <div class="input-group inputLinkContainer vcenter">
+                <div class="form-floating margintb8">
+                    <input type="text" class="form-control inputLink height20" placeholder="&nbsp;">
+                    <label for="linkUrlHint#id#" class="linkHint">.linkHint:link:链接</label>
+                </div>
+            </div>
+            <div class="form-floating margintb8 inputTitleContainer hide">
+                <input type="text" class="form-control inputTitle font12 height20" placeholder="&nbsp;">
+                <label class="titleHint">.titleHint:title:标题</label>
+            </div>
+            <div class="form-floating margintb8 inputDescContainer hide">
+                <input type="text" class="form-control inputDesc font10 height20" placeholder="&nbsp;">
+                <label class="abstractHint">.abstractHint:abstractHint:概要</label>
+            </div>
+            <div class="flexrow padding10 clickable pageLink borderRadius8 borderGray hide" url="">
+                <div class="flexcolumn">
+                    <div class="widthauto left bold font14 breakword linkTitle"></div>
+                    <div class="widthauto left font12 breakword linkDesc"></div>
+                </div>
+                <img style="height:35px;" onError="this.onerror=null; this.src='./img/link.png'">
+            </div>
+        </div>
+    </div>
+    <div id="templateAddFriend" class="hide">
+        <div class="flexrow center addFriendGuide margintb4" style="max-width: 300px;">
+            .addFriendGuide:addFriendGuide:添加好友并得到对方确认后才能发密信
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input type="text" min="5" class="form-control addFriendName h20" name="pageIndex" placeholder=" ">
+                <label class=" addFriendNameLabel floating-label">.addFriendNameLabel:addFriendNameLabel:姓名</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input type="text" min="2" class="form-control addFriendEmail h20" placeholder=" ">
+                <label class=" addFriendEmailLabel floating-label">.addFriendEmailLabel:addFriendEmailLabel:邮箱</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input type="text" min="2" class="form-control addFriendGreeting h20" placeholder=" ">
+                <label class="addFriendGreetingLabel floating-label"></label>
+            </div>
+        </div>
+        <div class="flexrow center margintb4">
+            <button type="submit"
+                class="btn btn-primary sendInviteButton">.sendInviteButton:sendInviteButton:发送邀请</button>
+        </div>
+    </div>
+    <div id="templateFollow" class="hide">
+        <div class="flexrow center followGuide"></div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input type="text" min="5" class="form-control addFriendName h20" name="pageIndex" placeholder=" ">
+                <label class=" addFriendNameLabel floating-label">.addFriendNameLabel:addFriendNameLabel:姓名</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input type="text" min="2" class="form-control addFriendEmail h20" placeholder=" ">
+                <label class=" addFriendEmailLabel floating-label">.addFriendEmailLabel:addFriendEmailLabel:邮箱</label>
+            </div>
+        </div>
+        <div class="flexrow center margintb4">
+            <button type="submit" class="btn btn-primary sendButton">.sendButton:sendButton:发送</button>
+        </div>
+    </div>
+    <div id="templateCreateMailFolder" class="hide">
+        <input type="text" min="5" class="form-control mailFolderName" id="#nameId#" name="pageIndex" value=""
+            placeholder="请输入邮箱名称">
+        <div class="height2"></div>
+        <div class="flexrow center">
+            <button id="#buttonSubmitId#" type="submit"
+                class="btn btn-primary createMailFolderSubmitButton">.createMailFolderSubmitButton:create:创建</button>
+        </div>
+    </div>
+    <div id="templateCreateImageFeed" class="hide">
+        <div class="form-floating">
+            <textarea id="content" class="form-control" placeholder=" "></textarea>
+            <label class="form-label contentLabel"></label>
+        </div>
+        <div class="height6"></div>
+        <div class="mediaGrid flexrow center">
+            <div class="add-media-button">+</div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="image/*">
+        <div class="margintb4"></div>
+        <div class="width100p center">
+            <button class="btn btn-primary postButton margintb2">发布</button>
+        </div>
+    </div>
+    <div id="templateCreateVideoFeed" class="hide">
+        <div class="form-floating">
+            <textarea id="content" class="form-control" placeholder=" "></textarea>
+            <label class="form-label contentLabel"></label>
+        </div>
+        <div class="height6"></div>
+        <div class="mediaGrid flexrow center">
+            <div class="add-media-button">+</div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="video/*">
+        <div class="margintb4"></div>
+        <div class="width100p center">
+            <button class="btn btn-primary postButton margintb2">发布</button>
+        </div>
+    </div>
+    <div id="fullscreenModal" class="modal-backdrop center flexrow hide">
+        <span id="modalClose" style="z-index: 1051;" class="modal-close">&times;</span>
+        <video class="feedVideo hide" controls style="max-width: 100%; max-height: 100%;">
+            <p class="unsupportVideoLink">.unsupportVideoLink:unsupportVideoLink:不支持播放该视频链接</p>
+        </video>
+    </div>
+    <div id="templateFolderSetting" class="hide">
+        <div class="center bold breakword folderSettingGuide margintb6" style="max-width: 300px;">
+            会从下面两个目录查找密信
+        </div>
+        <div class="height6"></div>
+        <div class="form-floating">
+            <select class="form-select inboxMapping">
+                <option value=""></option>
+            </select>
+            <label class="inboxMappingLabel">Inbox</label>
+        </div>
+        <div class="form-floating">
+            <select class="form-select junkMapping">
+                <option value=""></option>
+            </select>
+            <label class="junkMappingLabel">Junk</label>
+        </div>
+        <div class="height2"></div>
+        <div class="flexrow center">
+            <button class="btn btn-primary folderSettingSubmitButton">.folderSettingSubmitButton:create:确定</button>
+        </div>
+    </div>
+    <div id="templateProxy" class="hide">
+        <div id="proxy_#id#" class="flexrow vcenter padding4 clickable">
+            <span id="deleteProxy_#id#"
+                class="f20 gray glyphicon glyphicon-remove-circle proxyDelete #hideDelete#"></span>
+            <span id="banProxy_#id#" class="f20 gray glyphicon glyphicon-ban-circle proxyDelete #hideBan#"></span>
+            <span class="f20 green1 glyphicon glyphicon-circle-arrow-right #selected#"></span>
+            <span id="proxyName_#id#" class="proxyName marginlr2 #proxyNameColor#">
+                #proxyName#
+            </span>
+        </div>
+    </div>
+    <div id="templateProgress" class="hide">
+        <div class="progress-container">
+            <div class="progress-background"></div>
+            <div class="progress-pointer"></div>
+        </div>
+    </div>
+    <div id="templateAddProxy" class="hide">
+        <div class="flexrow center addProxyGuide bold margintb4" style="max-width: 300px;">
+            .addProxyGuide:addProxyGuide:新增代理
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input type="text" min="2" class="form-control addProxyUrl h20" style="min-width:240px;"
+                    placeholder=" ">
+                <label class="addProxyUrlLabel floating-label">.addProxyUrlLabel:addProxyUrlLabel:链接</label>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="form-floating widthauto margintb4">
+                <input type="text" min="5" class="form-control addProxyName h20" placeholder=" ">
+                <label class="addProxyNameLabel floating-label"
+                    style="color:lightgray !important;">.addProxyNameLabel:addProxyNameLabel:名称</label>
+            </div>
+        </div>
+        <div class="flexrow center margintb4">
+            <button type="submit" class="btn btn-primary addProxyButton">.addProxyButton:addProxyButton:确定</button>
+        </div>
+    </div>
+    <div id="qrReader" class="hide"></div>
+    <div id="templatePaginationLast" class="hide">
+        <a class="paginationLastLink">#lastPage#</a>
+    </div>
+    <script type="text/javascript" src="js/pagination.js" defer></script>
+    <div id="bottomInfo" class="navbar navbar-default fixed-bottom width100p hcenter  hide"></div>
+    <script type="text/javascript" src="js/container.js" defer></script>
+</body>
+
+</html>

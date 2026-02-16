@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>朋友圈发布界面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+            font-size: 16px;
+        }
+
+        #imagePreview {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        #imagePreview img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .add-image-button {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #ccc;
+            background-color: #f9f9f9;
+        }
+
+        .add-image-button:hover {
+            border-color: #007bff;
+            color: #007bff;
+            background-color: #e6f0ff;
+        }
+
+        #imageUpload {
+            display: none;
+        }
+
+        #postButton {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #postButton:hover {
+            background-color: #0056b3;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 点击加号按钮触发文件选择
+            $('.add-image-button').on('click', function() {
+                $('#imageUpload').click();
+            });
+
+            // 图片上传预览
+            $('#imageUpload').on('change', function(event) {
+                const files = event.target.files;
+                const imagePreview = $('#imagePreview');
+                const existingImages = imagePreview.children('img').length;
+
+                // 最多允许 9 张图片（3 行 x 3 个）
+                if (existingImages + files.length > 9) {
+                    alert('最多只能上传 9 张图片');
+                    return;
+                }
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = $('<img>').attr('src', e.target.result);
+                        imagePreview.append(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                // 如果图片数量达到 9 张，隐藏加号按钮
+                if (imagePreview.children('img').length >= 9) {
+                    $('.add-image-button').hide();
+                }
+            });
+
+            // 发布按钮点击事件
+            $('#postButton').on('click', function() {
+                const content = $('#postContent').val();
+                const images = $('#imageUpload')[0].files;
+
+                if (content.trim() === '' && images.length === 0) {
+                    alert('内容或图片不能为空');
+                    return;
+                }
+
+                // 这里可以添加将内容和图片上传到服务器的代码
+                share.debug__('发布内容:', content);
+                share.debug__('图片:', images);
+
+                // 清空输入框和图片预览
+                $('#postContent').val('');
+                $('#imageUpload').val('');
+                $('#imagePreview').empty();
+                $('#imagePreview').append('<div class="add-image-button">+</div>'); // 重新显示加号按钮
+
+                alert('发布成功！');
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <textarea id="postContent" placeholder="分享你的想法..."></textarea>
+        <div id="imagePreview">
+            <div class="add-image-button">+</div>
+        </div>
+        <input type="file" id="imageUpload" multiple accept="image/*">
+        <button id="postButton">发布</button>
+    </div>
+</body>
+</html>

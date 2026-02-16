@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" class="fullHeight fullHeightInset">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title></title>
+        <!-- jsCss start -->
+        <link rel="stylesheet" href="vendor/normalize.css">
+        <link rel="stylesheet" href="vendor/bootstrap-5.3.3-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="vendor/lqh.css">
+        <!--[if lt IE 9]>
+<link type="text/css" href="vendor/jquery-ui-bootstrap-v0.5/css/custom-theme/jquery-ui-1.10.0.ie.css" />
+<![endif]-->
+        <script src="vendor/math.uuid.js"></script>
+        <script src="vendor/jquery.js" defer="defer"></script>
+        <script src="vendor/detectmobilebrowser.js" defer="defer"></script>
+        <script src="vendor/store.legacy.min.js"></script>
+        <script src="js/common.js"></script>
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+      <script src="vendor/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="vendor/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+        <!-- jsCss end -->
+    </head>
+    <style>
+        .modal-backdrop img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+    </style>
+    <body>
+        <div id="loading" class="modal-backdrop bg-white flexrow center">
+            <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        </div>
+        <div id="topWinBackdrop" class="modal-backdrop fade in hide" style="z-index: 1010;"></div>
+        <div id="topWin" class="flexrow hcenter topWin hide"></div>
+        <button id="closeButton" class="close closeButton hide" aria-label="close">×</button>
+        <script type="text/javascript" src="js/string.js"></script>
+        <script type="text/javascript" src="js/share.js" defer="defer"></script>
+        <script type="text/javascript">
+		window.shareBuffer = null;
+        </script>
+        <script type="text/javascript" src="js/start.js" defer></script>
+    </body>
+</html>

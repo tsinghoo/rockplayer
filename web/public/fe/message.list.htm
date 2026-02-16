@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en" class="fullHeight">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no,viewport-fit=contain">
+
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: app: *; 
+        frame-src 'self' app: gap: *;
+        img-src 'self' data: cdvfile: *;
+        style-src 'self' 'unsafe-inline' *; 
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' *;">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>密信</title>
+        <!-- jsCss start -->
+        <link rel="stylesheet" href="vendor/normalize.css">
+        <link rel="stylesheet" href="vendor/bootstrap-5.3.3-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="vendor/bootstrap5-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+        <link rel="stylesheet" href="vendor/lqh.css">
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/glyphicon.css">
+        <link rel="stylesheet" href="vendor/webwx.css">
+        <!--[if lt IE 9]>
+<link type="text/css" href="vendor/jquery-ui-bootstrap-v0.5/css/custom-theme/jquery-ui-1.10.0.ie.css" rel="stylesheet" />
+<![endif]-->
+        <script src="vendor/math.uuid.js" defer="defer"></script>
+        <script src="vendor/jquery.js" defer="defer"></script>
+        <script src="vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
+        <script src="vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+        <script src="vendor/jquery.form.js" defer="defer"></script>
+        <script src="vendor/jquery.lazyload.js" defer="defer"></script>
+        <script src="vendor/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js" defer="defer"></script>
+        <script src="vendor/bootstrap5-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
+        <script src="vendor/detectmobilebrowser.js" defer="defer"></script>
+        <script src="vendor/mustache.js" defer="defer"></script>
+        <script src="vendor/way.js" defer="defer"></script>
+        <script src="vendor/store.legacy.min.js" defer="defer"></script>
+        <script src="js/common.js" defer="defer"></script>
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+      <script src="vendor/html5shiv/3.7.2/html5shiv.min.js" defer="defer"></script>
+      <script src="vendor/respond/1.4.2/respond.min.js" defer="defer"></script>
+    <![endif]-->
+        <!-- jsCss end -->
+    </head>
+    <body style="overflow-x: hidden;">
+        <div id="templateLinkAudioForm" style="display:none">
+            <div class="padding2">
+                <div class="bold font16 center">#title#</div>
+                <div class="form-floating margintb8">
+                    <input
+                        type="text"
+                        class="form-control inputAudioLink height20"
+                        id="linkUrl#id#"
+                        placeholder="&nbsp;"
+                    >
+                    <label for="linkUrlHint#id#" class="linkHint">.linkHint:link:链接</label>
+                </div>
+                <div class="form-floating margintb8">
+                    <input
+                        type="text"
+                        class="form-control inputAudioTitle height20"
+                        id="linkTitle#id#"
+                        placeholder="&nbsp;"
+                    >
+                    <label for="linkTitleHint#id#" class="nameHint">.nameHint:name:名称</label>
+                </div>
+                <div class="form-floating margintb8">
+                    <input
+                        type="text"
+                        class="form-control inputAudioAuthor height20"
+                        id="linkAuthor#id#"
+                        placeholder="&nbsp;"
+                    >
+                    <label for="linkAuthorHint#id#" class="authorHint">.authorHint:author:作者</label>
+                </div>
+            </div>
+        </div>
+        <div id="templateLinkVideoForm" style="display:none">
+            <div class="padding2">
+                <div class="bold font16 center">#title#</div>
+                <form class="form-horizontal" role="form">
+                    <div class="form-floating margintb8">
+                        <input
+                            type="text"
+                            class="form-control inputVideoLink height20"
+                            id="linkUrl#id#"
+                            placeholder="&nbsp;"
+                        >
+                        <label for="linkUrlHint#id#" class="linkHint">链接</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div id="templateDelete" class="hide">
+            <div class="flexcolumn">
+                <div class="bold mb-2 confirmDeleteMessage">
+                    .confirmDeleteMessage:confirmDeleteMessage:确定要删除此消息吗?
+                </div>
+                <div>
+                    <div class="flexcolumninline  left">
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="delBefore form-check-input" aria-label="...">
+                            <span class="delBefore">.delBefore:delBefore:也删除此前所有消息</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="templateActionSheet" style="display: none">
+            <div class="row hcenter">#content#</div>
+            <br>
+            <div id="actionSheetButtons" class="flexcolumn">
+                #buttons#
+            </div>
+        </div>
+        <script type="text/javascript" src="js/string.js"></script>
+        <script type="text/javascript" src="js/share.js" defer="defer"></script>
+        <div id="loading" class="flexrow center">加载中，请稍候...</div>
+        <div id="body" style="overflow-x: hidden;" class="hide">
+            <div id="homepage" class="hide" href="./chat.list.htm"></div>
+            <div class="" style="margin-top: 4px;">
+                <div class="row center">
+                    <div class="col-12 col-sm-10 col-md-9 col-lg-8">
+                        <div class="flexcolumn" id="main">
+                            <div class="col-12 paddingb100" id="messages"></div>
+                            <div id="groups" class="hide"></div>
+                        </div>
+                        <div id="templatePrevPage" style="display: none">
+                            <div class="flexrow prevPageContainer center top90">
+                                <div class="prevPage clickable red">.prevPage:moreMessage:更多消息</div>
+                            </div>
+                        </div>
+                        <div id="templateMessage" style="display: none">
+                            <div id="message_#id#" class="row listItemNc contact">
+                                <div class="flexrow col-12 float-none">
+                                    <div class="hide chooseMore">
+                                        <input class="form-check-input" type="checkbox" id="checkbox_#id#">
+                                    </div>
+                                    <div class="flexcolumn alignTop widthauto">
+                                        <div class="flexrow center gray width100p">
+                                            <div class="time">__time__</div>
+                                        </div>
+                                        <div class="flexrow width100p">
+                                            <div class="flexcolumn">
+                                                <div
+                                                    id="header_#id#"
+                                                    class="header messageAction clickable margin4 #headerBackgroundColor#"
+                                                    data-id="#messageId#"
+                                                    data-mark="#important#"
+                                                >
+                                                    <div class="star"></div>
+                                                    #header#
+                                                </div>
+                                            </div>
+                                            <div class="flexcolumn widthauto">
+                                                <div class="flexrow justify gray">
+                                                    <div class="marginlr10 nickNameOfMessage flexrow">
+                                                        __name__
+                                                        <div class="__verified__" title="#publicKey#"></div>
+                                                        #publicKey#
+                                                    </div>
+                                                </div>
+                                                <div class="flexrow widthauto">
+                                                    <div class="marginlr10 clickable maxWidthHeight">__message__</div>
+                                                    <div class="widthauto"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="fileSelector" style="position:absolute; opacity:0; left:-9999px;">
+                        <div id="templateMessageSys" style="display: none">
+                            <div id="message_#id#" class="row listItemNc contact">
+                                <div class="flexrow col-12 float-none">
+                                    <div class="hide chooseMore">
+                                        <input class="form-check-input" type="checkbox" id="checkbox_#id#">
+                                    </div>
+                                    <div class="col-12 float-none">
+                                        <div class="flexrow width100p">
+                                            <div class="flexcolumn widthauto">
+                                                <div class="flexrow center gray width100p">
+                                                    <div class="time">__time__</div>
+                                                </div>
+                                                <div class="height2"></div>
+                                                <div class="widthauto flexrow marginlr10 center gray font12">
+                                                    <div class="__verified__" title="#publicKey#"></div>
+                                                    <div id="messageStatus_#id#" class="resizableMessage flexrow">
+                                                        <img src="" class="messageStatus clickable" style="width:16px;height:16px;">
+                                                        <div id="progress_#id#" class="progress-container">
+                                                            <div class="progress-background"></div>
+                                                            <div id="progress_#chatId#" class="progress-pointer"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="marginlr10 maxWidthHeight clickable">
+                                                        __message__
+                                                    </div>
+                                                    <img
+                                                        id="deleteBtn_#id#"
+                                                        class="sysMessageDelete messageAction clickable"
+                                                        src="./img/delete.png"
+                                                        data-id="#messageId#"
+                                                    >
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateMessageForbidden" style="display: none">
+                            <div id="message_#id#" class="row listItemNc contact">
+                                <div class="col-12 float-none">
+                                    <div class="flexrow width100p">
+                                        <div class="flexcolumn widthauto">
+                                            <div class="height2"></div>
+                                            <div class="widthauto marginlr10 center gray font12">
+                                                <span class="messageForbidden">.messageForbidden:messageForbidden:此消息已忽略</span>
+                                                <img class="sysMessageDelete messageAction clickable" src="./img/delete.png" data-id="#messageId#">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateMessageLogin" style="display: none">
+                            <div class="flexcolumn borderGray borderRadius8 padding10 clickable loginMessage right">
+                                <div class="widthauto center font14">#info#</div>
+                                <hr>
+                                <div class="widthauto center font14">#detail#</div>
+                            </div>
+                        </div>
+                        <div id="templateMessageSystem" style="display: none">
+                            <div class="flexcolumn borderGray borderRadius8 padding10 clickable systemMessage right">
+                                <pre class="widthauto center font14">#info#</pre>
+                                <div class="flexrow center">
+                                    <button id="resetKey_#id#" type="button" class="btn btn-primary buttonResetKey __hide__">.buttonResetKey:sendResetKey:发送秘钥</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateMessageResetFriend" style="display: none">
+                            <div class="flexcolumn borderGray borderRadius8 padding10 clickable systemMessage right">
+                                <pre class="widthauto center font14">#info#</pre>
+                                <div class="flexrow center">
+                                    <button id="resetFriend_#id#" type="button" class="btn btn-primary buttonResetFriend">.buttonResetFriend:accept:接受</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateMessageCancelled" style="display: none">
+                            <div id="cancelled#id#" class="flexcolumn center borderGray gray borderRadius10">
+                                <div id="original_#id#" class="margin2">
+                                    #content#
+                                </div>
+                                <div class="flexrow paddinglr10 font12 borderGrayTop gray right cancelled">
+                                    .cancelled:cancelled:已撤回
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateMessageConfirmFriend" style="display: none">
+                            <div class="flexcolumn borderGray borderRadius8 padding10 clickable systemMessage right">
+                                <pre class="widthauto center font14">#info#</pre>
+                            </div>
+                        </div>
+                        <div id="templateMessageAcceptKey" style="display: none">
+                            <div class="flexcolumn borderGray borderRadius8 padding10 clickable systemMessage right">
+                                <pre class="widthauto center font14">#info#</pre>
+                                <div class="flexrow center">
+                                    #send#
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateExportFriend" style="display: none">
+                            <div class="flexcolumn borderGray borderRadius8 padding10 clickable importFriendsMessage right">
+                                <pre class="widthauto center font14">#info#</pre>
+                                <div class="flexrow center">
+                                    <button id="buttonImportFriend_#id#" type="button" class="btn btn-primary buttonImportFriends">.buttonImportFriends:import:导入</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateInviteToGroup" style="display: none">
+                            <div id="inviteToGroup_#id#" class="flexcolumn borderGray borderRadius8 padding10 clickable inviteToGroupMessage right">
+                                <div class="widthauto left font14">#title#</div>
+                                <div class="widthauto gray left breakword font12">#group#</div>
+                            </div>
+                        </div>
+                        <div id="templateJoinGroup" style="display: none">
+                            <div id="joinGroup_#id#" class="flexcolumn borderGray borderRadius8 padding10 clickable joinGroupMessage right">
+                                <div class="widthauto left font14">#title#</div>
+                                <div class="widthauto gray left breakword font12">#group#</div>
+                            </div>
+                        </div>
+                        <div id="templateShareGroup" style="display: none">
+                            <div id="shareGroup_#id#" class="flexcolumn borderGray borderRadius8 padding10 clickable shareGroupMessage right">
+                                <div class="widthauto left font14">#title#</div>
+                                <div class="widthauto gray left breakword font12">#group#</div>
+                            </div>
+                        </div>
+                        <div id="templateImage" style="display: none">
+                            <img
+                                class="messageImage clickable"
+                                src="#src#"
+                                onError="this.nextElementSibling.style.display='block';"
+                                onLoad="this.nextElementSibling.style.display='none';"
+                            >
+                            <span class="imageAlt">#alt#</span>
+                        </div>
+                        <div id="templateText" style="display: none">
+                            <div class="maxHeightMessage forceWrap">
+                                <pre class="padding6 borderRadius4 margin2 font14 borderGray bg_05">#text#</pre>
+                            </div>
+                        </div>
+                        <div id="templateMail" style="display: none">
+                            <div class="" style="position:relative; max-width:200px;height:20px;overflow:hidden;">
+                                <div id="mailMessageMask_#id#" class="mailMessageMask"></div>
+                                <iframe id="mailMessage_#id#" class="padding6 borderRadius4 margin2 font10 borderGray bg_05 mailMessage" style="transform-origin: left top;">#body#</iframe>
+                            </div>
+                        </div>
+                        <div id="templateFile" style="display: none">
+                            <div class="flexrow borderGray borderRadius8 padding10 clickable toDownloadFile right" path="#path#" filename="#name#">
+                                <div class="fileName widthauto breakword font14"></div>
+                                <div>
+                                    <img class="fileIcon" style="height:35px;">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateLinkPage" style="display: none">
+                            <div class="flexrow borderGray padding10 clickable linkPageClicked borderRadius8" url="#url#">
+                                <div class="flexcolumn">
+                                    <div class="widthauto left bold font14 breakword">#title#</div>
+                                    <div class="widthauto left font12 breakword">#desc#</div>
+                                </div>
+                                <img src="#favicon#" style="height:35px;" onError="#onError#" >
+                            </div>
+                        </div>
+                        <div id="templateFileName" style="display: none">[#title#]</div>
+                        <audio id="audio" preload="preload" style="width: 0px; height: 0px;"></audio>
+                        <div id="templateVoice" style="display: none">
+                            <div id="player_#id#" class="player flexrow font12">
+                                <div class="flexrow widthauto">
+                                    <div id="voiceIcon_#id#" class="voiceIcon"></div>
+                                    <div class="paddinglr10 flexcolumn widthauto">
+                                        <div class="flexcolumn width100p height4"></div>
+                                        <div id="voice_#id#" class="flexrow widthauto">
+                                            <div id="voiceBody_#id#" class="voiceDuration separator flexcolumn widthauto height20" style="width: _width_px">
+                                                <div id="progressBar_#id#" class="progressBar center" style="width: 0"></div>
+                                            </div>
+                                            <div id="voiceDuration_#id#" class="font12 marginlr2">#duration#</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateVideo" style="display: none">
+                            <video class="wechatVideo clickable" controls="controls" src="#src#" preload="metadata">
+                            </video>
+                        </div>
+                        <div id="templateLinkAudio" style="display: none">
+                            <div id="linkAudio#id#" class="flexcolumn padding4 left">
+                                <div class="flexrow justify">
+                                    <pre class="desc border0 padding0">#author#</pre>
+                                    <svg
+                                        t="1664958395106"
+                                        class="icon"
+                                        viewBox="0 0 1024 1024"
+                                        version="1.1"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        p-id="3437"
+                                        width="20px"
+                                        height="20px"
+                                    >
+                                        <path
+                                            d="M650.24 561.493333c-11.9296-13.6704-25.6-20.48-42.666667-20.48s-32.426667 6.826667-46.08 20.48c-10.257067 11.9296-17.066667 25.6-17.066666 42.666667s6.8096 30.72 17.066666 44.373333c13.653333 11.946667 28.996267 18.773333 46.062934 18.773334S638.293333 660.48 650.24 648.533333c11.946667-11.946667 18.7904-27.306667 18.7904-47.786666v-6.826667c-1.723733-11.946667-8.5504-23.893333-18.7904-32.426667zM669.013333 395.946667v-63.146667l-237.226666 32.426667-1.706667 61.44 238.933333-30.72zM411.306667 588.8c-11.946667-11.946667-25.6-18.773333-44.373334-18.773333-17.066667 0-30.72 6.8096-44.373333 18.773333-11.946667 11.946667-18.773333 27.306667-18.773333 44.373333s6.826667 30.737067 18.773333 42.666667c13.653333 13.6704 27.306667 18.7904 44.373333 18.7904 18.773333 0 32.426667-5.12 44.373334-18.7904 8.533333-6.8096 13.653333-17.066667 17.066666-25.6 1.706667-6.8096 1.706667-11.9296 1.706667-17.066667 0-5.12 0-10.24-1.706667-15.342933-3.413333-10.257067-8.533333-20.497067-17.066666-29.0304z"
+                                            fill="#F7300F"
+                                            p-id="3438"
+                                            data-spm-anchor-id="a313x.7781069.0.i2"
+                                            class="selected"
+                                        ></path>
+                                        <path d="M826.146133 197.853867C747.434667 119.1424 649.5744 75.554133 534.186667 68.266667l-45.431467 0.034133c-116.0192 7.253333-213.947733 50.875733-290.901333 129.553067C110.728533 284.9792 66.56 390.673067 66.56 512s44.168533 227.0208 131.293867 314.146133C283.8528 912.128 388.983467 955.733333 510.293333 955.733333c123.5968 0 229.853867-43.605333 315.989334-129.706666C911.0528 739.4816 954.026667 633.821867 954.026667 512c0-121.821867-42.973867-227.4816-127.880534-314.146133z m-24.132266 604.16C722.653867 881.373867 624.503467 921.6 510.293333 921.6c-111.940267 0-208.9472-40.226133-288.3072-119.586133C141.499733 721.5104 100.693333 623.957333 100.693333 512s40.8064-209.527467 121.429334-290.1504C294.126933 148.258133 382.037333 109.1584 489.813333 102.4l43.281067-0.034133c107.264 6.8096 195.2256 45.9264 268.782933 119.5008 78.318933 79.957333 118.016 177.5616 118.016 290.133333 0 112.5888-39.697067 210.193067-117.879466 290.013867z" fill="#0A0AE5" p-id="3439"></path>
+                                        <path d="M666.692267 315.886933l-237.226667 32.426667a17.066667 17.066667 0 0 0-14.7456 16.4352l-1.706667 61.44 0.017067 0.1536-0.034133 0.170667-1.262934 140.458666c-13.1584-9.335467-27.921067-14.011733-44.8-14.011733-20.0192 0-37.6832 7.304533-56.456533 23.773867-15.325867 15.342933-23.7568 35.3792-23.7568 56.439466 0 20.548267 8.004267 38.9632 23.773867 54.7328 16.2304 16.2304 34.1504 23.790933 56.456533 23.790934 23.825067 0 41.728-7.4752 56.251733-23.517867 11.349333-9.608533 17.425067-22.562133 21.026134-31.5904a16.571733 16.571733 0 0 0 0.7168-2.2016c2.218667-8.874667 2.218667-15.7184 2.218666-21.213867 0-4.6592-0.3584-10.359467-1.706666-16.401066l1.570133-175.069867L651.946667 415.351467v124.3648a68.317867 68.317867 0 0 0-44.373334-15.7696c-21.691733 0-41.250133 8.584533-59.016533 26.436266-14.250667 16.605867-21.1968 34.184533-21.1968 53.777067 0 24.234667 10.9568 41.915733 20.48 54.613333a16.4352 16.4352 0 0 0 2.4064 2.577067c17.425067 15.274667 36.7104 23.005867 57.309867 23.005867 20.565333 0 38.980267-8.004267 54.7328-23.773867 15.786667-15.786667 23.790933-35.908267 23.790933-59.8528V332.8a17.032533 17.032533 0 0 0-5.853867-12.8512 16.810667 16.810667 0 0 0-13.533866-4.061867z m-14.7456 36.471467v28.586667L447.6928 407.210667l0.750933-27.016534L651.946667 352.3584zM412.074667 645.0176c-3.4816 8.3968-7.2192 14.1312-11.4176 17.476267a17.066667 17.066667 0 0 0-2.2016 2.0992c-8.2432 9.437867-16.7936 12.9536-31.522134 12.9536-13.329067 0-22.391467-3.874133-32.3072-13.789867-9.5232-9.506133-13.7728-18.961067-13.7728-30.583467 0-12.117333 4.7616-23.278933 12.9536-31.522133 11.656533-10.205867 21.5552-14.557867 33.1264-14.557867 12.987733 0 22.664533 4.113067 32.3072 13.7728 5.546667 5.546667 9.7792 12.8512 12.936534 22.357334 0.836267 2.474667 0.836267 5.9392 0.836266 9.949866 0 4.352 0 7.611733-0.938666 11.844267zM651.946667 600.746667c0 14.967467-4.386133 26.3168-13.806934 35.720533-9.489067 9.5232-18.926933 13.7728-30.5664 13.7728-11.758933 0-22.749867-4.386133-33.501866-13.397333-8.9088-12.202667-12.578133-21.777067-12.578134-32.682667 0-11.229867 4.113067-21.265067 12.0832-30.600533 10.3936-10.410667 21.521067-15.479467 33.979734-15.479467 11.776 0 20.974933 4.522667 29.815466 14.6432a16.725333 16.725333 0 0 0 1.928534 1.877333c6.587733 5.4784 11.246933 13.141333 12.629333 20.667734v5.4784z" fill="#0A0AE5" p-id="3440"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="title">#title#</h4>
+                                <audio controls loop>
+                                    <p class="unsupportAudioLink">.unsupportAudioLink:unsupportAudioLink:不支持播放该音频链接</p>
+                                </audio>
+                            </div>
+                        </div>
+                        <div id="templateLinkVideo" style="display: none">
+                            <div id="linkVideo#id#" class="flexcolumn padding4 left">
+                                <video
+                                    class="messageVideo"
+                                    controls
+                                    loop
+                                >
+                                    <p class="unsupportVideoLink">.unsupportVideoLink:unsupportVideoLink:不支持播放该视频链接</p>
+                                </video>
+                            </div>
+                        </div>
+                        <div id="templateForward" style="display: none">
+                            <div id="forward_#id#" class="flexcolumn left borderGray borderRadius10">
+                                <div class="margin8 flexrow hcenter">
+                                    #content#
+                                </div>
+                                <div class="flexrow paddinglr10 font10 borderGrayTop right">
+                                    <div>#from#</div>
+                                    <div>
+                                        <div class="dot6 marginlr2 headerBg4"></div>
+                                    </div>
+                                    <div>#time#</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateOwnMessage" class="hide">
+                            <div id="message_#id#" class="row listItemNc contact">
+                                <div class="flexrow col-12 float-none">
+                                    <div class="hide chooseMore">
+                                        <input class="form-check-input" type="checkbox" id="checkbox_#id#">
+                                    </div>
+                                    <div class="flexcolumn widthauto maxWidthHeight">
+                                        <div class="flexrow center gray">
+                                            <div class="time">__time__</div>
+                                        </div>
+                                        <div class="flexrow right gray">
+                                            <div class="nickNameOfMessage">__name__</div>
+                                        </div>
+                                        <div class="flexrow width100p right">
+                                            <div class="widthauto"></div>
+                                            <div id="messageStatus_#id#" class="resizableMessage flexrow">
+                                                <img class="messageStatus clickable __hide__" style="width:16px;height:16px;">
+                                                <div id="progress_#id#" class="progress-container __hideProgress__">
+                                                    <div class="progress-background"></div>
+                                                    <div id="progress_#chatId#" class="progress-pointer" style="__progressStyle__"></div>
+                                                </div>
+                                            </div>
+                                            <div class="marginlr10 maxWidthHeight clickable right">
+                                                __message__
+                                            </div>
+                                            <div class="flexcolumn">
+                                                <div
+                                                    id="header_#id#"
+                                                    class="header clickable margin4 messageAction"
+                                                    data-id="#messageId#"
+                                                    data-mark="#important#"
+                                                >
+                                                    <span class="me">.me:me:我</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <script type="text/javascript" src="js/pagination.js" defer></script>
+                        <script type="text/javascript" src="js/message.list.js" defer></script>
+                        <div id="log" style="overflow-x: hidden"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="messageInput" class="bottom width100p hcenter bg_gray padding6 z1000">
+                <div class="row hcenter">
+                    <div class="flexrow col-12 col-sm-10 col-md-9 col-lg-8">
+                        <div class="flexcolumn form-floating widthauto">
+                            <textarea
+                                class="form-control"
+                                id="input_message"
+                                height="100%"
+                                style="transition: height 0.2s ease;padding-top:1rem;padding-bottom:0;"
+                                placeholder="&nbsp;"
+                            ></textarea>
+                            <label for="input_message" style="height:auto; color:lightgray">
+                                <div class="flexrow alignTop">
+                                    <span id="input_message_label"></span>
+                                    <span id="input_message_label_totalMembers" class="font10"></span>
+                                    <span>:</span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="buttonSendFile btn-group center marginlr1">
+                            <button id="buttonSendFile" type="button" class="btn btn-outline-primary">
+                                <span class="glyphicon glyphicon-plus-sign"></span>
+                            </button>
+                            <button id="buttonSend" type="button" class="btn btn-primary">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="moreOptions" class="bottom bg_gray padding10 width100p z1000 hide">
+                <div class="flexrow center">
+                    <div class="marginlr2">
+                        <button id="buttonDelete" type="button" class="btn btn-primary">删除</button>
+                    </div>
+                    <div class="marginlr2">
+                        <button id="buttonCancel" type="button" class="btn btn-primary">取消</button>
+                    </div>
+                </div>
+            </div>
+            <div id="emptyList" style="display: none">
+                <div class="row widthauto">
+                    <center>
+                        <img src="img/empty.png">
+                    </center>
+                </div>
+                <br>
+                <div class="row widthauto">
+                    <center>
+                        <span class="gray emptyList">空空如也</span>
+                    </center>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -307,7 +307,36 @@ function error(msg, threadId) {
 
 // 列出目录下的所有文件
 function listFiles() {
-    const files = fs.readdirSync(directoryPath);
+    let files = fs.readdirSync(directoryPath);
+    let matchedFiles = files;
+    if (suffix.length > 0) {
+        matchedFiles = files.filter(file => {
+            for (var i = 0; i < suffix.length; ++i) {
+                if (file.endsWith(suffix[i])) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+    }
+
+    return matchedFiles.map(file => {
+        var script = fs.existsSync(path.join(directoryPath, file + ".htm"));
+        const stats = fs.statSync(path.join(directoryPath, file));
+
+        return {
+            name: file,
+            mtime: stats.mtime,
+            path: path.join(directoryPath, file),
+            script: script
+        };
+    });
+}
+
+// 列出目录下的所有文件
+function listVoices() {
+    const files = fs.readdirSync(directoryPath + "/voice");
     let matchedFiles = files;
     if (suffix.length > 0) {
         matchedFiles = files.filter(file => {
@@ -321,8 +350,8 @@ function listFiles() {
         });
     }
     return matchedFiles.map(file => {
-        var script = fs.existsSync(path.join(directoryPath, file + ".htm"));
-        const stats = fs.statSync(path.join(directoryPath, file));
+        var script = fs.existsSync(path.join(directoryPath, "/voice/" + file + ".htm").replace(/([\[\] ])/g, '\\$1'));
+        const stats = fs.statSync(path.join(directoryPath, "/voice/" + file).replace(/([\[\] ])/g, '\\$1'));
 
         return {
             name: file,
@@ -1015,6 +1044,13 @@ app.get('/video/i', (req, res) => {
     const remove = req.query.remove;
     const tags = getTags();
     res.render('fileList', { files: files, tags: tags, remove: remove });
+});
+
+app.get('/video/voice', (req, res) => {
+    let files = listVoices();
+    const remove = req.query.remove;
+    var resp = JSON.stringify({ files, remove });
+    res.send(resp);
 });
 app.post('/video/tag', (req, res) => {
     info("files=" + req.body.files, req.threadId)
@@ -4152,6 +4188,45 @@ app.get('/video/download/:filename', (req, res) => {
         });
 
         const file = fs.createReadStream(videoPath);
+        file.pipe(res);
+    }
+});
+
+app.get('/video/voice/:filename', (req, res) => {
+    const fileName = req.params.filename;
+    const filePath = path.join(directoryPath, "/voice/"+fileName);
+    info("voicePath:" + filePath, req.threadId)
+    const stat = fs.statSync(filePath);
+    const fileSize = stat.size;
+
+    // 获取范围头
+    const range = req.headers.range;
+    const contentType = mime.getType(filePath);
+    if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunkSize = (end - start) + 1;
+        const file = fs.createReadStream(filePath, { start, end });
+
+        // 设置响应头
+        res.writeHead(206, {
+            "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+            "Accept-Ranges": "bytes",
+            "Content-Length": chunkSize,
+            "Content-Type": contentType // 替换为适当的 MIME 类型
+        });
+
+        // 将视频文件流传递给响应对象
+        file.pipe(res);
+    } else {
+        // 如果没有范围头，则正常提供整个视频文件
+        res.writeHead(200, {
+            "Content-Length": fileSize,
+            "Content-Type": contentType // 替换为适当的 MIME 类型
+        });
+
+        const file = fs.createReadStream(filePath);
         file.pipe(res);
     }
 });

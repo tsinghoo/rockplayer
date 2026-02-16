@@ -1,0 +1,152 @@
+<html>
+
+
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no,viewport-fit=cover">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: app:; 
+        frame-src 'self' app: gap: *;
+        img-src * 'self' data: cdvfile: android-webview-video-poster:;
+        style-src 'self' 'unsafe-inline' *; 
+        script-src * 'self' 'unsafe-inline' 'unsafe-eval';">
+    <!-- jsCss start -->
+    <link rel="stylesheet" href="vendor/normalize.css">
+    <link rel="stylesheet" href="vendor/bootstrap-5.3.3-dist/css/bootstrap.css">
+    <link rel="stylesheet" href="vendor/bootstrap5-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+    <link rel="stylesheet" href="vendor/lqh.css">
+    <link href="css/jquery.enhsplitter.css" rel="stylesheet">
+    </link>
+    <!--[if lt IE 9]>
+<link type="text/css" href="vendor/jquery-ui-bootstrap-v0.5/css/custom-theme/jquery-ui-1.10.0.ie.css" />
+<![endif]-->
+    <script src="vendor/math.uuid.js"></script>
+    <script src="vendor/jsQR.js"></script>
+    <script src="vendor/jquery.js" defer="defer"></script>
+    <script src="vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
+    <script src="vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+    <script src="vendor/jquery.form.js" defer="defer"></script>
+    <script src="vendor/jquery.lazyload.js" defer="defer"></script>
+    <script src="vendor/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js" defer="defer"></script>
+    <script src="vendor/bootstrap5-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript"
+        defer="defer"></script>
+    <script src="vendor/detectmobilebrowser.js" defer="defer"></script>
+    <script src="vendor/mustache.js"></script>
+    <script src="vendor/way.js"></script>
+    <script src="vendor/jquery.enhsplitter.js" defer="defer"></script>
+    <script src="vendor/store.legacy.min.js"></script>
+    <script src="vendor/purify.js"></script>
+    <script src="js/common.js"></script>
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="vendor/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="vendor/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <!-- jsCss end -->
+</head>
+
+<body>
+    <div id="holder" class="flexrow height100p" style="background-color:gray;">
+        <div class="width100p height100p">
+            <div class="width100p height100p" style="position: relative;">
+
+                <div id="items" class="width100p height100p" style="position:absolute;left:10;top:10;">
+
+                </div>
+            </div>
+        </div>
+        <div class="flexcolumn height100p">
+            <div class="flexrow margintb6" style="margin-top:24px;">
+                <div>
+                    关闭视频
+                    <input id="maskCheckbox" type="checkbox">
+                    <button id="buttonReplace" type="button" class="btn btn-info btn-sm marginlr2">替换</button>
+                </div>
+                <input id="replaceWords" type="text" class="marginlr2 flexrow center bg_gray">
+                <div>
+                    <div class="flexrow">
+                        <button id="buttonStart" class="btn btn-info btn-sm marginlr2">[</button>
+                        <button id="buttonEnd" class="btn btn-info btn-sm marginlr2">]</button>
+                        <div id="segmentNameDiv" class="hide flexrow">
+                            <input type="text" class="" id="segmentName" placeholder="片段名">
+                            <button id="buttonAddSegment" class="btn btn-info btn-sm marginlr2">+</button>
+                        </div>
+                        <button id="buttonSegments" class="btn btn-info btn-sm marginlr2">...</button>
+                    </div>
+                </div>
+            </div>
+            <div id="replacerContainer" class="hide">
+                <div>
+                    <button id="buttonReplacerClose" class="btn btn-info btn-sm marginlr2">关闭</button>
+                    <button id="buttonReplacerConfirm" class="btn btn-info btn-sm marginlr2">替换</button>
+                </div>
+                <div id="replacers" class="flexcolumn"></div>
+            </div>
+            <div id="script" class="flexcolumn bg_black gray "
+                style="overflow: auto;padding-right: 80px;padding-left:120px;font-family:serif;">
+                无字幕
+            </div>
+        </div>
+    </div>
+    <div id="recent" class="hide"></div>
+    <div id="scriptTemplate" class="hide">
+        <div id="script_#id#" class="scriptLine">
+            #script#
+        </div>
+    </div>
+    <div id="editorTemplate" class="hide">
+        <div class="flexrow">
+            #time#
+            <input type="text" class="scriptInput" id="input_#id#" value="#script#">
+        </div>
+    </div>
+    <div id="recentTemplate" class="hide">
+        <div id="recent_#id#" class="recentItem">
+            #name#
+        </div>
+    </div>
+</body>
+
+</html>
+<div id="templateReplacer">
+    <div class="flexrow left">
+        <input data="#data#" type="checkbox" checked>
+        <div class="replacerContent widthauto">#content#</div>
+    </div>
+</div>
+<div id="templateVoice" style="display: none">
+    <div id="player_#id#" class="player flexrow font12">
+        <div class="fileName">#fileName#</div>
+        <div class="flexrow widthauto">
+            <div id="voiceIcon_#id#" class="voiceIcon"></div>
+            <div class="paddinglr10 flexcolumn widthauto">
+                <div class="flexcolumn width100p height4"></div>
+                <div id="voice_#id#" class="flexrow widthauto">
+                    <div id="voiceBody_#id#" class="voiceDuration separator flexcolumn widthauto height20"
+                        style="width: _width_px">
+                        <div id="progressBar_#id#" class="progressBar center" style="width: 0"></div>
+                    </div>
+                    <div id="voiceDuration_#id#" class="font12 marginlr2">#duration#</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<audio id="audio" preload="preload" style="width: 0px; height: 0px;"></audio>
+<div id="templateActionSheetButton" style="display:none">
+    <button id="actionSheetButton_#id#" type="button" class="btn btn-info btn-sm widthAuto margintb6">
+        #name#
+    </button>
+</div>
+<div id="templateActionSheet" class="hide">
+    <div class="row text-center">#content#</div>
+    <br>
+    <div id="actionSheetButtons" class="flexcolumn">
+        #buttons#
+    </div>
+</div>
+<script src="./js/share.js" defer="defer"></script>
+<script src="./js/voice.js" defer="defer"></script>

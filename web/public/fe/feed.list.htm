@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" class="fullHeight fullHeightInset">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no,viewport-fit=cover">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>密友</title>
+        <!-- jsCss start -->
+        <link rel="stylesheet" href="vendor/bootstrap-5.3.3-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="vendor/bootstrap5-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+        <link rel="stylesheet" href="vendor/lqh.css">
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/glyphicon.css">
+        <!--[if lt IE 9]>
+<link type="text/css" href="vendor/jquery-ui-bootstrap-v0.5/css/custom-theme/jquery-ui-1.10.0.ie.css" />
+<![endif]-->
+        <script src="vendor/math.uuid.js"></script>
+        <script src="vendor/jquery.js" defer="defer"></script>
+        <script src="vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
+        <script src="vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+        <script src="vendor/jquery.form.js" defer="defer"></script>
+        <script src="vendor/jquery.lazyload.js" defer="defer"></script>
+        <script src="vendor/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js" defer="defer"></script>
+        <script src="vendor/bootstrap5-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
+        <script src="vendor/detectmobilebrowser.js" defer="defer"></script>
+        <script src="vendor/mustache.js"></script>
+        <script src="vendor/way.js"></script>
+        <script src="vendor/store.legacy.min.js"></script>
+        <script src="vendor/sockjs.min.js"></script>
+        <script src="js/common.js"></script>
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+      <script src="vendor/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="vendor/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+        <!-- jsCss end -->
+        <style>
+        
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+            font-size: 16px;
+        }
+
+        .vote-count {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .image-item {
+            display: flex;
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin-right: 2px;
+            cursor: pointer;
+        }
+
+        .image-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            object-position: center;
+            border-radius: 4px;
+        }
+
+        .video-item {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .video-item video {
+            max-width: 300px;
+            max-height: 240px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .close-button {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 24px;
+            height: 24px;
+            background-color: #ff4d4d;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 14px;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+        }
+
+        .close-button:hover {
+            background-color: #ff1a1a;
+        }
+
+        .add-media-button {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #ccc;
+            background-color: #f9f9f9;
+        }
+
+        .add-media-button:hover {
+            border-color: #007bff;
+            color: #007bff;
+            background-color: #e6f0ff;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .comment-text{
+            margin:0 0 0 2px;
+            color:darkgray;
+            overflow-y:hidden;
+        }
+        </style>
+    </head>
+    <body style="overflow-x: hidden;">
+        <div id="templateActionSheet" style="display: none">
+            <div class="row hcenter">#content#</div>
+            <br>
+            <div id="actionSheetButtons" class="flexcolumn">
+                #buttons#
+            </div>
+        </div>
+        <script type="text/javascript" src="js/string.js"></script>
+        <script type="text/javascript" src="js/share.js" defer="defer"></script>
+        <script type="text/javascript">
+		window.shareBuffer = null;
+        </script>
+        <div id="loading" class="flexrow center">加载中，请稍候...</div>
+        <div id="body" style="display: none; overflow-x: hidden;">
+            <div id="homepage" class="hide" href="./chat.list.htm"></div>
+            <div class="container">
+                <div class="flexrow center">
+                    <div class="col-12 col-sm-11 col-md-10 col-lg-8">
+                        <div class="flexcolumn center">
+                            <div class="height6"></div>
+                            <div class="selectedFollowing flexrow col-12 hide">
+                                <div style="width:68px; height:68px;">
+                                    <div class="header margin4 enlarge2">
+                                        <div class="seal-img"></div>
+                                    </div>
+                                </div>
+                                <div class="flexcolumn widthauto marginlr2">
+                                    <div class="flexrow justify">
+                                        <div class="left blue overflow-hidden font20 selectedFollowingName"></div>
+                                    </div>
+                                    <div class="flexrow tags"></div>
+                                </div>
+                            </div>
+                            <div class="z1000 paddinglr4 bg_white col-12 col-sm-10 col-lg-8">
+                                <div class="flexrow vcenter">
+                                    <div class="form-floating widthauto">
+                                        <input
+                                            style="height:20px;"
+                                            id="searchName"
+                                            name="searchName"
+                                            class="borderGreen form-control"
+                                            placeholder="&nbsp;"
+                                        >
+                                        <label id="searchNameHint" for="input_message" style="color:lightgray">搜索关注</label>
+                                    </div>
+                                    <a id="buttonAddFeed" class="paginationAddButton" style="min-width:30px; height:30px;margin:2px 2px 2px 4px">
+                                        <span class="glyphicon glyphicon-plus-sign"></span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="height10"></div>
+                            <div class="notification font12 flexrow clickable center hide">
+                                <div class="notificationText"></div>
+                                <span class="glyphicon glyphicon-menu-right"></span>
+                            </div>
+                            <div id="list" class="paddinglr4 col-12"></div>
+                        </div>
+                        <div style="height:120px;"></div>
+                        <script type="text/javascript" src="js/pagination.js" defer></script>
+                        <script type="text/javascript" src="js/feed.list.js" defer></script>
+                        <div id="log" style="overflow-x: hidden"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="emptyList" style="display: none">
+                <div class="row widthauto">
+                    <center>
+                        <img src="img/empty.png">
+                    </center>
+                </div>
+                <br>
+                <div class="row widthauto">
+                    <center>
+                        <span class="gray emptyList">空空如也</span>
+                    </center>
+                </div>
+            </div>
+            <div id="connecting">
+                <div class="row widthauto">
+                    <center>
+                        <span class="gray loading4"></span>
+                    </center>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<!---->

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" class="fullHeight fullHeightInset">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1,user-scalable=no,viewport-fit=cover">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>密友</title>
+        <!-- jsCss start -->
+        <link rel="stylesheet" href="vendor/bootstrap-5.3.3-dist/css/bootstrap.css">
+        <link rel="stylesheet" href="vendor/bootstrap5-dialog-master/dist/css/bootstrap-dialog.css" rel="stylesheet">
+        <link rel="stylesheet" href="vendor/lqh.css">
+        <link rel="stylesheet" href="vendor/bootstrap-3.3.7-dist/css/glyphicon.css">
+        <!--[if lt IE 9]>
+<link type="text/css" href="vendor/jquery-ui-bootstrap-v0.5/css/custom-theme/jquery-ui-1.10.0.ie.css" />
+<![endif]-->
+        <script src="vendor/math.uuid.js"></script>
+        <script src="vendor/jquery.js" defer="defer"></script>
+        <script src="vendor/floating-ui/core-1.6.7.js" defer="defer"></script>
+        <script src="vendor/floating-ui/dom-1.6.10.js" defer="defer"></script>
+        <script src="vendor/jquery.form.js" defer="defer"></script>
+        <script src="vendor/jquery.lazyload.js" defer="defer"></script>
+        <script src="vendor/bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js" defer="defer"></script>
+        <script src="vendor/bootstrap5-dialog-master/dist/js/bootstrap-dialog.js" type="text/javascript" defer="defer"></script>
+        <script src="vendor/detectmobilebrowser.js" defer="defer"></script>
+        <script src="vendor/mustache.js"></script>
+        <script src="vendor/way.js"></script>
+        <script src="vendor/store.legacy.min.js"></script>
+        <script src="vendor/sockjs.min.js"></script>
+        <script src="js/common.js"></script>
+        <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+      <script src="vendor/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="vendor/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+        <!-- jsCss end -->
+    </head>
+    <body style="overflow-x: hidden;">
+        <div id="templateActionSheet" style="display: none">
+            <div class="row hcenter">#content#</div>
+            <br>
+            <div id="actionSheetButtons" class="flexcolumn">
+                #buttons#
+            </div>
+        </div>
+        <script type="text/javascript" src="js/string.js"></script>
+        <script type="text/javascript" src="js/share.js" defer="defer"></script>
+        <script type="text/javascript">
+		window.shareBuffer = null;
+        </script>
+        <div id="loading" class="flexrow center">加载中，请稍候...</div>
+        <div id="body" style="display: none; overflow-x: hidden;">
+            <div id="homepage" class="hide" href="./chat.list.htm"></div>
+            <div class="container">
+                <div class="flexrow center">
+                    <div class="col-12 col-sm-11 col-md-10 col-lg-8">
+                        <div class="flexcolumn center">
+                            <div class="height6"></div>
+                            <div class="z1000 paddinglr4 bg_white col-12 col-sm-10 col-lg-8">
+                                <div class="flexrow center">
+                                    <input
+                                        id="searchName"
+                                        name="searchName"
+                                        class="borderGreen form-control"
+                                        placeholder="搜索群友"
+                                    >
+                                    <a id="buttonAddMember" class="paginationAddButton" style="min-width:30px; height:30px;margin:2px 2px 2px 4px">
+                                        <span class="glyphicon glyphicon-plus-sign"></span>
+                                    </a>
+                                </div>
+                            </div>
+                            <div id="list" class="list col-12"></div>
+                        </div>
+                        <div style="height:120px;"></div>
+                        <div id="template" style="display: none">
+                            <div id="item_#id#" class="listItem flexrow">
+                                <div class="flexrow marginlr4 widthauto">
+                                    <div id="header_#id#" class="header #redpoint# margin4 #headerBackgroundColor#">
+                                        <div class="star"></div>
+                                        #header#
+                                    </div>
+                                    <div class="flexcolumn widthauto">
+                                        <div class="flexrow justify">
+                                            <div class="left overflow-hidden">#comment#</div>
+                                            <div class="right overflow-hidden font12 gray">#status#</div>
+                                        </div>
+                                        <div class="flexrow justify">
+                                            <div class="left overflow-hidden maxHeight40 gray">#email#</div>
+                                            <div class="right overflow-hidden font12 gray">#role#</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="templateDetail" style="display: none">
+                            <div class="flexcolumn">
+                                <div class="input-group vcenter">
+                                    <div class="form-floating margintb4 widthauto">
+                                        <input type="text" class="form-control detailGroupNick h20" placeholder="群昵称">
+                                        <label id="groupNameHint" for="name" class="">#groupNameHint:groupNameHint:群昵称</label>
+                                    </div>
+                                    <button type="button" class="btn btn-primary detailConfirm" aria-label="Help">
+                                        <span class="glyphicon glyphicon-ok"></span>
+                                    </button>
+                                </div>
+                                <div class="input-group">
+                                    <div class="form-floating margintb4 widthauto">
+                                        <input type="text" readonly class="form-control left detailNick h20"></input>
+                                        <label
+                                            id="aliasHint"
+                                            for="name"
+                                            class="floating-label"
+                                            style="color: lightgray !important;"
+                                        >#aliasHint:aliasHint:昵称</label>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <div class="form-floating margintb4 widthauto">
+                                        <input type="text" readonly class="form-control left detailEmail h20"></input>
+                                        <label
+                                            id="emailHint"
+                                            for="name"
+                                            class="floating-label"
+                                            style="color: lightgray !important;"
+                                        >#emailHint:emailHint:邮箱</label>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <div class="form-floating margintb4 widthauto">
+                                        <input type="text" readonly class="form-control clickable left detailForbiddenTime h20"></input>
+                                        <label id="forbidHint" for="forbidTime" class="gray">#forbidHint:forbidHint:忽略</label>
+                                    </div>
+                                </div>
+                                <button id="buttonAddFriend#id#" type="button" class="btn btn-primary btn-sm widthAuto buttonAddFriend margin4">
+                                    加为好友
+                                </button>
+                                <button id="buttonSetOwner#id#" type="button" class="btn btn-primary btn-sm widthAuto buttonSetOwner margin4">
+                                    设为新群主
+                                </button>
+                                <button id="buttonDelete#id#" type="button" class="btn btn-primary btn-sm widthAuto buttonDelete margin4">
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                        <script type="text/javascript" src="js/pagination.js" defer></script>
+                        <script type="text/javascript" src="js/member.list.js" defer></script>
+                        <div id="log" style="overflow-x: hidden"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="emptyList" style="display: none">
+                <div class="row widthauto">
+                    <center>
+                        <img src="img/empty.png">
+                    </center>
+                </div>
+                <br>
+                <div class="row widthauto">
+                    <center>
+                        <span class="gray emptyList">空空如也</span>
+                    </center>
+                </div>
+            </div>
+            <div id="connecting">
+                <div class="row widthauto">
+                    <center>
+                        <span class="gray loading4"></span>
+                    </center>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
+<!---->
