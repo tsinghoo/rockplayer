@@ -59,31 +59,9 @@
             </div>
         </div>
         <div class="flexcolumn height100p">
-            <div class="flexrow margintb6" style="margin-top:24px;">
-                <div>
-                    关闭视频
-                    <input id="maskCheckbox" type="checkbox">
-                    <button id="buttonReplace" type="button" class="btn btn-info btn-sm marginlr2">替换</button>
+            <div class="flexrow margintb2" style="margin-top:24px;">
+                <div>脚本
                 </div>
-                <input id="replaceWords" type="text" class="marginlr2 flexrow center bg_gray">
-                <div>
-                    <div class="flexrow">
-                        <button id="buttonStart" class="btn btn-info btn-sm marginlr2">[</button>
-                        <button id="buttonEnd" class="btn btn-info btn-sm marginlr2">]</button>
-                        <div id="segmentNameDiv" class="hide flexrow">
-                            <input type="text" class="" id="segmentName" placeholder="片段名">
-                            <button id="buttonAddSegment" class="btn btn-info btn-sm marginlr2">+</button>
-                        </div>
-                        <button id="buttonSegments" class="btn btn-info btn-sm marginlr2">...</button>
-                    </div>
-                </div>
-            </div>
-            <div id="replacerContainer" class="hide">
-                <div>
-                    <button id="buttonReplacerClose" class="btn btn-info btn-sm marginlr2">关闭</button>
-                    <button id="buttonReplacerConfirm" class="btn btn-info btn-sm marginlr2">替换</button>
-                </div>
-                <div id="replacers" class="flexcolumn"></div>
             </div>
             <div id="script" class="flexcolumn bg_black gray "
                 style="overflow: auto;padding-right: 80px;padding-left:120px;font-family:serif;">
@@ -119,7 +97,7 @@
 </div>
 <div id="templateVoice" style="display: none">
     <div id="player_#id#" class="player flexcolumn font12">
-        <div class="fileName">#fileName#</div>
+        <div class="fileName clickable">#fileName#</div>
         <div class="flexrow widthauto">
             <div id="voiceIcon_#id#" class="voiceIcon"></div>
             <div class="paddinglr10 flexcolumn widthauto">

@@ -4838,7 +4838,7 @@ window.mhgl_share =
             return value;
           }
         } else {
-          let defaultVal = window.AllinEmail.string.en[key];
+          let defaultVal = window.AllinEmail == null ? null : window.AllinEmail.string.en[key];
 
           return defaultVal ? defaultVal : key;
         }

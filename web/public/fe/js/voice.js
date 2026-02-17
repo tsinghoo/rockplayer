@@ -30,6 +30,7 @@ window.voice = window.voice || (function () {
                 var files = data.files;
                 self.data.newMessages = files;
                 for (let i = 0; i < files.length; ++i) {
+
                     var templateVoice = $("#templateVoice").html();
                     message = templateVoice.replace(/#id#/g, i);
                     message = message.replace(/#fileName#/g, files[i].name);
@@ -37,13 +38,13 @@ window.voice = window.voice || (function () {
                     files[i].duration = parseInt(strs[2]) * 60 + parseInt(strs[3]);
                     message = message.replace(/ _width_/g, self.getVoiceWidth__(files[i].duration));
                     message = message.replace(/#duration#/g, share.getDurationText__(files[i].duration));
-
                     voiceHtmls.push(message);
                 }
 
 
                 $("#items").html(voiceHtmls.join(""));
                 share.onClick__($(".voiceIcon"), self.voiceIconClicked__);
+                share.onClick__($(".fileName"), self.fileNameClicked__);
                 $(".voiceDuration").off("mousedown").on("mousedown", self.voiceDurationTouchStart__);
                 $(".voiceDuration").off("mousemove").on("mousemove", self.voiceDurationTouchMove__);
                 $(".voiceDuration").off("mouseup").on("mouseup", self.voiceDurationTouchEnd__);
@@ -187,6 +188,42 @@ window.voice = window.voice || (function () {
 
             self.playVoice__(index);
 
+        },
+        fileNameClicked__: function (e) {
+            var id = $(this).parents(".player")[0].id;
+            share.debug__("fileName clicked:" + id);
+            var index = id.split("_")[1];
+            var si = self.data.newMessages[index];
+            var fileName = $(this).html();
+            var url = "../video/voice/" + fileName + ".txt";
+
+            var params = {
+            };
+
+            var success = function (data) {
+            };
+
+            var fail = function (e) {
+                share.toastError__(e);
+            };
+
+            $.get(url, function (data) {
+                share.closeDialog__();
+                var script = data.split("\n");
+
+                let template = $("#scriptTemplate").html();
+                let htmls = [];
+                for (let i = 0; i < script.length; ++i) {
+                    let line = script[i].replace(/-->.*\] /g, "");
+                    line = line.replace(/ <br>/g, "");
+                    line = line.replace(/\[/g, "");
+                    let html = template.replace(/#script#/g, line);
+                    html = html.replace(/#id#/g, i);
+                    htmls.push(html);
+                }
+
+                $("#script").html(htmls.join(""));
+            });
         },
         getAudio__: function () {
             return $("#audio");
