@@ -3049,6 +3049,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
                 }
             }
 
+            if (rc.buy * rc.buyAmount < 10000) {
+                rc.broker = "国信"
+            }
+
             setSellPriceByBuy(rc, maxDelta);
         }
     } else if (trade.operationDirection.indexOf("买") >= 0) {
@@ -4194,7 +4198,7 @@ app.get('/video/download/:filename', (req, res) => {
 
 app.get('/video/voice/:filename', (req, res) => {
     const fileName = req.params.filename;
-    const filePath = path.join(directoryPath, "/voice/"+fileName);
+    const filePath = path.join(directoryPath, "/voice/" + fileName);
     info("voicePath:" + filePath, req.threadId)
     const stat = fs.statSync(filePath);
     const fileSize = stat.size;
