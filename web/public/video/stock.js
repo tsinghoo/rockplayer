@@ -1213,13 +1213,14 @@ window.stock_list = window.stock_list || (function () {
                 broker = "国金";
             }
 
-            if (buyAmount == null || buyAmount == 0 || isNaN(buyAmount)) {
-                buyAmount = 1;
+            if (sellAmount == null || sellAmount == 0 || isNaN(sellAmount)) {
+                sellAmount = Math.abs(self.selectedData["数量"]);
             }
 
             if (sellAmount == null || sellAmount == 0 || isNaN(sellAmount)) {
                 sellAmount = 1;
             }
+            buyAmount = sellAmount;
 
             let toModify = false;
 
