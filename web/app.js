@@ -606,7 +606,6 @@ async function reloadRule(r, req) {
         info("r.rule:" + JSON.stringify(r.rule), req.threadId)
         r.rule = JSON.parse(r.rule);
     } catch (e) {
-        info(e.message, req.threadId)
         info(e.stack, req.threadId)
     }
 
@@ -3846,13 +3845,11 @@ app.post('/stock/deal/update', async (req, res) => {
 
 
 app.post('/stock/rule/action/ordered', async (req, res) => {
-    info(`rule/action/ordered:${JSON.stringify(req.body)}`, req.threadId)
-
     let scode = req.body.scode;
     let broker = req.body.broker;
     let status = req.body.status;
     let orderNo = req.body.orderNo;
-
+    scode = scode.split(".")[0];
     let r;
     if (status == 56) {
         r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
