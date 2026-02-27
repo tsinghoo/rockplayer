@@ -630,26 +630,20 @@ async function reloadRule(r, req) {
         } else if (ra.done == -1) {
             r.status = "cancelled";
         } else if (ra.done == 1) {
-            if (1 == 0 && ra.action == "buy") {
-                r.status = "toSell";
-            } else if (1 == 0 && ra.action == "sell") {
-                r.status = "toBuy";
-            } else {
-                info("rule done", req.threadId)
-                r.status = "done";
-                await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
-                delete rules[r.scode][r.broker];
-                setTimeout(async () => {
-                    let res = await autoCreateRule(r.scode, req.threadId, null, true);
-                    if (res.error == null) {
-                        await saveCreateRuleFailure(r.scode, "");
-                        reloadRule(res.rule, req);
-                    } else {
-                        error(res.error, req.threadId)
-                        await saveCreateRuleFailure(r.scode, res.error);
-                    }
-                }, 100);
-            }
+            info("rule done", req.threadId)
+            r.status = "done";
+            await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
+            delete rules[r.scode][r.broker];
+            setTimeout(async () => {
+                let res = await autoCreateRule(r.scode, req.threadId, null, true);
+                if (res.error == null) {
+                    await saveCreateRuleFailure(r.scode, "");
+                    reloadRule(res.rule, req);
+                } else {
+                    error(res.error, req.threadId)
+                    await saveCreateRuleFailure(r.scode, res.error);
+                }
+            }, 100);
         } else {
 
         }
@@ -1012,10 +1006,7 @@ app.use((req, res, next) => {
     const url = req.url;
     const queryParams = JSON.stringify(req.query);
     const bodyParams = JSON.stringify(req.body);
-    info(`${method} ${url}`, req.threadId)
-    if (method.toLowerCase() == "post") {
-        info(`body:${bodyParams}`, req.threadId)
-    }
+    info(`${method} ${url} body:${bodyParams}`, req.threadId)
     try {
         next();
     } catch (e) {
@@ -3876,8 +3867,11 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
         info(r.error, req.threadId)
         resp = { error: r.error };
     } else {
+        info("update succeeded", req.threadId);
         if (rules[scode]) {
             reloadRule(rules[scode][broker], req);
+        } else {
+            info(`no rule exists for ${scode}`);
         }
     }
 
