@@ -505,6 +505,47 @@ def getCciCrossUpDay(cci, dayStart, dayEnd):
     return 0
 
 
+def getLatestTradingDay():
+    """
+    获取最近的开市日（排除周末和节假日）
+    如果今天是周末，返回上周五
+    如果今天是节假日，返回上一个交易日
+    """
+    today = datetime.datetime.now()
+    # 尝试获取最近的开市日，最多回溯10天
+    for i in range(10):
+        check_date = today - datetime.timedelta(days=i)
+        weekday = check_date.weekday()
+        # 周一到周五是0-4
+        if weekday < 5:
+            # 转换为字符串格式 YYYYMMDD
+            return check_date.strftime("%Y%m%d")
+    return today.strftime("%Y%m%d")
+
+
+def isStockSuspended(prices):
+    """
+    判断股票是否停牌
+    通过检查最后一条日线的日期是否是最近的开市日
+    """
+    if prices is None or len(prices) == 0:
+        return True
+
+    # 获取最后一条日线的日期
+    last_date = prices.index[-1]
+    # 转换为 YYYYMMDD 格式
+    if isinstance(last_date, str):
+        last_date_str = last_date.replace("-", "").replace("/", "")
+    else:
+        last_date_str = last_date.strftime("%Y%m%d")
+
+    # 获取最近的开市日
+    latest_trading_day = getLatestTradingDay()
+
+    # 比较：如果最后一条日线日期不是最近的开市日，则认为停牌
+    return last_date_str != latest_trading_day
+
+
 def getCandidateList():
     # 从test1获取股票列表
     info("getCandidateList")
@@ -602,6 +643,11 @@ def findStock(sector):
             prices = df[scode]
             # debug("prices:", prices)
             if prices is None or len(prices['high']) < 3:
+                continue
+
+            # 过滤停牌的股票：检查最后一条日线日期是否是最近的开市日
+            if isStockSuspended(prices):
+                info(f"{scode} 已停牌，跳过")
                 continue
 
             high_prices = prices['high']
