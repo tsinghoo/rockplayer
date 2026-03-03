@@ -2132,7 +2132,7 @@ app.post('/stock/quotes.mini', async (req, res) => {
         }
     })
 
-    setTimeout(function () { checkRule(Object.keys(data)) }, 100);
+    setTimeout(function () { checkRule(Object.keys(data), req) }, 100);
 
     res.send("ok");
 });
