@@ -1233,6 +1233,22 @@ window.stock_list = window.stock_list || (function () {
 
             c.find(".sname").val(`${self.selectedData["名称"]}`);
             c.find(".scode").val(`${self.selectedData["代码"]}`);
+            //添加.sname或.scode发生变化时的事件处理
+
+            let onchanged = function () {
+                let input = $(this).val().trim();
+                //如果新内容是"北大荒(SH:600598)"这种格式，则将.scode的内容设置成"600598",将.sname的内容设置成"北大荒",请使用正则表达式并考虑"SH:"的处理
+                let match = input.match(/^(.+?)\(([A-Z]+:)?(\d+)\)$/);
+                if (match) {
+                    let sname = match[1].trim();
+                    let scode = match[3]; // 股票代码
+                    c.find(".scode").val(scode);
+                    c.find(".sname").val(sname);
+                }
+            };
+            
+            c.find(".sname").change(onchanged);
+            c.find(".scode").change(onchanged);
             c.find(".operationName").val(`${broker}`);
             c.find(".expireHours").val("12");
             let np = self.selectedData.curPrice;
@@ -4159,10 +4175,3 @@ window.stock_list = window.stock_list || (function () {
 
     return self;
 })();
-
-
-
-
-
-
-
