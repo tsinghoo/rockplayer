@@ -618,7 +618,7 @@ async function reloadRule(r, req) {
     if (sb != null) {
         r.rule.currentPrice = sb.buy;
     }
-    
+
     r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`, [], threadId);
@@ -3521,60 +3521,17 @@ app.get('/stock/price/current', async (req, res) => {
     res.send(resp);
 });
 
-app.get('/stock/pair', async (req, res) => {
-    let js = req.query.js;
-    let reset = req.query.reset;
-
-    let sql = `select * from tstock where tamount<0 and tpair is null or tpair='' order by tday desc, ttime desc`;
-    if (reset) {
-        info("reset before pair", req.threadId)
-        await db.runSync(`update tstock set tpair=''`);
-        sql = "select * from tstock where tamount<0 order by tday desc, ttime desc";
-    }
-    let r = await db.allSync(sql, [], req.threadId);
-    let sells = r.rows;
-    info(`${sells.length} sells`, req.threadId)
-    for (var i = 0; i < sells.length; ++i) {
-        let sell = sells[i];
-        info(`${sell.sname}(${sell.scode}):${sell.tid}`, req.threadId)
-        let r = await db.allSync("select * from tstock where tamount=? and scode=? and operationName=? and tprice<? and (tpair='' or tpair is null) order by tday desc , ttime desc",
-            [sell.tamount * -1, sell.scode, sell.operationName, sell.tprice], req.threadId);
-        let buys = r.rows;
-        if (buys.length > 0) {
-            let buy = buys[0];
-            info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req.threadId)
-            await db.runSync(`update tstock set tpair=? where tid=?`, [buy.tid, sell.tid]);
-            await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
-        } else {
-            let r = await db.allSync("select * from tstock where tamount=? and scode=? and tprice<? and (tpair='' or tpair is null) order by tday desc, ttime desc",
-                [sell.tamount * -1, sell.scode, sell.tprice], req.threadId);
-            let buys = r.rows;
-            if (buys.length > 0) {
-                let buy = buys[0];
-                info(`${sell.sname}(${sell.scode}):${sell.tid} <==> ${buy.tid}`, req.threadId)
-                await db.runSync(`update tstock set tpair=? where tid=?`, [buy.tid, sell.tid]);
-                await db.runSync(`update tstock set tpair=? where tid=?`, [sell.tid, buy.tid]);
-            }
-        }
-
-    };
-
-    var resp = `${js}(${JSON.stringify({ data: "success" })})`;
-    res.send(resp);
-});
-
-app.get('/stock/delete/auto', async (req, res) => {
-    let js = req.query.js;
-    let scode = req.query.scode;
-    let delta = req.query.delta;
+async function autoDelete(delta, scode, req) {
+    info("auto delete", req.threadId);
     if (delta != 1) {
-        info("reset before pair", req.threadId)
+        info("reset before pair", req.threadId);
         await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
     }
+
     let sql = `select * from tstock where scode=? and deleted=0 order by tday , ttime`;
     let r = await db.allSync(sql, [scode], req.threadId);
     let trades = r.rows;
-    info(`${trades.length} trades`, req.threadId)
+    info(`${trades.length} trades`, req.threadId);
     for (let i = 0; i < trades.length - 2; ++i) {
         let t1 = trades[i];
         if (t1.deleted) {
@@ -3606,6 +3563,13 @@ app.get('/stock/delete/auto', async (req, res) => {
             break;
         }
     };
+}
+
+app.get('/stock/delete/auto', async (req, res) => {
+    let js = req.query.js;
+    let scode = req.query.scode;
+    let delta = req.query.delta;
+    await autoDelete(delta, scode, req);
 
     var resp = `${js}(${JSON.stringify({ data: "success" })})`;
     res.send(resp);
@@ -3832,6 +3796,8 @@ app.post('/stock/deal/update', async (req, res) => {
     if (r == null || r.error == null) {
         r = db.runSync(`update tStock set lastOperationTime=? where scode=?`, [deal.lastOperationTime, deal.scode]);
     }
+
+    autoDelete(0, deal.scode, req);
 
     let resp = {};
     if (r.error) {

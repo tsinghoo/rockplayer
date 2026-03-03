@@ -161,14 +161,6 @@ window.stock_list = window.stock_list || (function () {
                     }
                 },
                 {
-                    text: "增量配对",
-                    onTap: function () { self.toPair(0) }
-                },
-                {
-                    text: "重新配对",
-                    onTap: function () { self.toPair(1) }
-                },
-                {
                     text: "精简",
                     onTap: function () {
                         let trs = $(`.repeatCode`);
@@ -239,15 +231,6 @@ window.stock_list = window.stock_list || (function () {
 
             popup = await share.popupAction__("", buttons);
 
-        },
-        toPair: async function (reset) {
-            share.closePopup__();
-            let res = await share.getSync__("/stock/pair", { reset });
-            if (res.error) {
-                share.toastError__(res.error);
-            } else {
-                share.toastSuccess__("pair success", 1000);
-            }
         },
         bindEvents: function () {
             $(".addButton").click(function () {
