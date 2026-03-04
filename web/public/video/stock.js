@@ -205,7 +205,7 @@ window.stock_list = window.stock_list || (function () {
                                 c.find(".failedRules").html(failed);
                                 let done = res.done;
                                 if (done) {
-                                    share.toastSuccess__("finished", 2000);
+                                    share.toastSuccess__("finished");
                                 } else {
                                     setTimeout(function () { toCreateRule(type); }, 2000);
                                 }
