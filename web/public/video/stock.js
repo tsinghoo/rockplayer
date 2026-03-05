@@ -1229,7 +1229,7 @@ window.stock_list = window.stock_list || (function () {
                     c.find(".sname").val(sname);
                 }
             };
-            
+
             c.find(".sname").change(onchanged);
             c.find(".scode").change(onchanged);
             c.find(".operationName").val(`${broker}`);
@@ -3310,6 +3310,16 @@ window.stock_list = window.stock_list || (function () {
                     'Boll中': bollSel,
                     'Boll下': bollSel
                 };
+                
+                if (bollSel) {
+                    option.legend.selected.MA5 = false;
+                    option.legend.selected.MA10 = false;
+                    option.legend.selected.MA20 = false;
+                    option.legend.selected.MA60 = false;
+                } else {
+                    option.legend.selected.MA5 = true;
+                    option.legend.selected.MA10 = true;
+                }
 
                 chart.setOption(option);
 
