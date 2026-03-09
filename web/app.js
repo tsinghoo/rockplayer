@@ -861,6 +861,8 @@ async function checkRule(scodes, req) {
                 }
             }
         }
+
+        debug("checkRule:" + scode + " end", req.threadId);
     }
 
     debug("checkRule end", req.threadId)

@@ -2867,7 +2867,7 @@ window.stock_list = window.stock_list || (function () {
                 },
                 visualMap: {
                     show: false,
-                    seriesIndex: 5,
+                    seriesIndex: 8,
                     dimension: 2,
                     pieces: [
                         {
@@ -3374,9 +3374,26 @@ window.stock_list = window.stock_list || (function () {
             }
             let data = { categoryData, values, volumes };
             const kdjData = self.calculateKDJ(values);
+            const bollData = self.calculateBOLL(values);
             // 配置项
             var option = {
                 animation: false,
+                legend: {
+                    show: false,
+                    bottom: 2,
+                    left: 'center',
+                    data: ['1d', 'kdJ', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
+                    selected: {
+                        "MA20": false,
+                        "MA60": false,
+                        'Kdj': true,
+                        'kDj': true,
+                        'kdJ': true,
+                        'Boll': true,
+                        'Boll中': true,
+                        'Boll下': true
+                    }
+                },
                 graphic: {
                     type: 'text',
                     right: 20,
@@ -3469,7 +3486,7 @@ window.stock_list = window.stock_list || (function () {
                 },
                 visualMap: {
                     show: false,
-                    seriesIndex: 5,
+                    seriesIndex: 8,
                     dimension: 2,
                     pieces: [
                         {
@@ -3672,6 +3689,39 @@ window.stock_list = window.stock_list || (function () {
                         lineStyle: {
                             opacity: 0.5
                         }
+                    },
+                    {
+                        name: 'Boll中',
+                        type: 'line',
+                        data: bollData.mid,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                            color: '#333333'
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'Boll',
+                        type: 'line',
+                        data: bollData.upper,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                            color: '#ff7f50'
+                        },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'Boll下',
+                        type: 'line',
+                        data: bollData.lower,
+                        smooth: true,
+                        lineStyle: {
+                            width: 1,
+                            color: '#87cefa'
+                        },
+                        symbol: 'none'
                     },
                     {
                         name: 'Volume',
