@@ -3536,17 +3536,22 @@ async function autoDelete(delta, scode, req) {
     info(`${trades.length} trades`, req.threadId);
     for (let i = 0; i < trades.length - 2; ++i) {
         let t1 = trades[i];
+        info(`${i}: ${t1.tprice} * ${t1.tamount}`, req.threadId);
         if (t1.deleted) {
+            info(`${i} deleted`, req.threadId);
             continue;
         }
 
         for (let j = i + 1; j < trades.length - 1; ++j) {
             let t2 = trades[j];
+            info(`${j}: ${t2.tprice} * ${t2.tamount}`, req.threadId);
             if (t2.deleted) {
+                info(`${j} deleted`, req.threadId);
                 continue;
             }
 
             if (t2.tamount + t1.tamount != 0) {
+                info(`t2.tamount + t1.tamount != 0`, req.threadId);
                 continue;
             }
 
