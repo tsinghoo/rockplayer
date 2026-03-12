@@ -2815,6 +2815,7 @@ app.get('/stock/rule/actions', async (req, res) => {
 app.get('/stock/action/done', async (req, res) => {
     let js = req.query.js;
     let id = req.query.id;
+    let threadId = req.threadId;
     let sql = `update tRuleAction set done=1 where id=?`;
     let r = await db.runSync(sql, [id]);
     let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`, [], threadId);
