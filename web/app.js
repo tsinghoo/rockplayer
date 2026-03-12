@@ -3830,9 +3830,10 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
         let err = orderNo;
         r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, err, scode, broker]);
     } else {
+        
     }
     let resp = {};
-    if (r.error) {
+    if (r && r.error) {
         info(r.error, req.threadId)
         resp = { error: r.error };
     } else {
