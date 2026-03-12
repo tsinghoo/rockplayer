@@ -2817,6 +2817,14 @@ app.get('/stock/action/done', async (req, res) => {
     let id = req.query.id;
     let sql = `update tRuleAction set done=1 where id=?`;
     let r = await db.runSync(sql, [id]);
+    let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`, [], threadId);
+    if (ra) {
+        let scode = ra.scode;
+        let broker = ra.broker;
+        if (rules[scode] && rules[scode][broker]) {
+            rules[scode][broker].status = "ordered";
+        }
+    }
 
     var resp = JSON.stringify({});
 
