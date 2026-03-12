@@ -3824,24 +3824,26 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
     let orderNo = req.body.orderNo;
     scode = scode.split(".")[0];
     let r;
-    if (status == 56) {
+    let resp = {};
+    if (status == 56 || status == 53 || status == 54 || status == 57) {
         r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
     } else if (status == 10) {
-        let err = orderNo;
-        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, err, scode, broker]);
+        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
     } else {
-        
+        info(`status ${status} skipped`, req.threadId);
+        res.send(JSON.stringify(resp));
+        return;
     }
-    let resp = {};
     if (r && r.error) {
         info(r.error, req.threadId)
         resp = { error: r.error };
     } else {
         info("update succeeded", req.threadId);
         if (rules[scode]) {
+            info(`${JSON.stringify(rules[scode])}`, req.threadId);
             reloadRule(rules[scode][broker], req);
         } else {
-            info(`no rule exists for ${scode}`);
+            info(`no rule exists for ${scode}`, req.threadId);
         }
     }
 
