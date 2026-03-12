@@ -49,7 +49,7 @@ runGetActionTask = 1
 
 g.baseUrl = "http://test1.91taogu.com"
 g.baseUrl = "http://192.168.66.165:3001"
-g.baseUrl = "http://192.168.66.205:3001"
+g.baseUrl = "http://152.136.244.225"
 
 
 logPathPrefix = os.getenv("logPathPrefix")
@@ -223,6 +223,7 @@ def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
             "Content-Type": "application/json"
         }
 
+        info("POST " + url, data) 
         # 发送 POST 请求
         response = requests.post(url, data=json.dumps(data), headers=headers)
 
@@ -683,7 +684,9 @@ def obj2Json(obj, max_depth=4, current_depth=1):
         # 跳过魔术方法（如 __init__, __str__ 等）
         if attr_name.startswith('__') and attr_name.endswith('__'):
             continue
-
+        #跳过纯数字方法(如 "123")
+        if attr_name.isdigit():
+            continue
         try:
             attr_value = getattr(obj, attr_name)
 
@@ -696,12 +699,12 @@ def obj2Json(obj, max_depth=4, current_depth=1):
                 attr_value, max_depth, current_depth + 1)
 
         except Exception as e:
-            result[attr_name] = f"<无法获取属性值: {str(e)}>"
-
+            # result[attr_name] = f"<无法获取属性值: {str(e)}>"
+            continue
     return result
 
 
-def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
+def obj2JsonString(obj, max_depth=4, indent=0, ensure_ascii=False):
     """
     最终转换为 JSON 字符串
     """
