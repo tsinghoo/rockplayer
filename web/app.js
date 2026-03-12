@@ -629,6 +629,8 @@ async function reloadRule(r, req) {
         } else if (ra.done == -1) {
             r.status = "cancelled";
         } else if (ra.done == 1) {
+            r.status = "ordered";
+        } else if (ra.done == 2) {
             info("rule done", req.threadId)
             r.status = "done";
             await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
@@ -3825,9 +3827,9 @@ app.post('/stock/rule/action/ordered', async (req, res) => {
     scode = scode.split(".")[0];
     let r;
     let resp = {};
-    if (status == 56 || status == 53 || status == 54 || status == 57) {
-        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
-    } else if (status == 10) {
+    if (status == 56 || status == 53 || status == 54) {
+        r = await db.runSync("update tRuleAction set done = 2, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
+    } else if (status == 10 || status == 50 || status == 57) {
         r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
     } else {
         info(`status ${status} skipped`, req.threadId);
