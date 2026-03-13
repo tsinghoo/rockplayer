@@ -635,16 +635,18 @@ async function reloadRule(r, req) {
             r.status = "done";
             await db.runSync(`update tTradeRule set closed=1 where id = '${r.id}'`);
             delete rules[r.scode][r.broker];
-            setTimeout(async () => {
-                let res = await autoCreateRule(r.scode, req.threadId, null, true);
-                if (res.error == null) {
-                    await saveCreateRuleFailure(r.scode, "");
-                    reloadRule(res.rule, req);
-                } else {
-                    error(res.error, req.threadId)
-                    await saveCreateRuleFailure(r.scode, res.error);
-                }
-            }, 100);
+            if (r.rule.buyAmount > 0 && r.rule.sellAmount > 0) {
+                setTimeout(async () => {
+                    let res = await autoCreateRule(r.scode, req.threadId, null, true);
+                    if (res.error == null) {
+                        await saveCreateRuleFailure(r.scode, "");
+                        reloadRule(res.rule, req);
+                    } else {
+                        error(res.error, req.threadId)
+                        await saveCreateRuleFailure(r.scode, res.error);
+                    }
+                }, 100);
+            }
         } else {
 
         }
@@ -2901,8 +2903,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
     //如果已经存在rule,则跳过
     let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName], threadId);
-    if (oldRule != null && oldRule.closed == 0) {
-        return { error: `I:exists`, sname };
+    if (oldRule != null) {
+        if (oldRule.closed == 0) {
+            return { error: `I:exists`, sname };
+        }
     }
 
     //获取scode对应的当前价格
