@@ -727,7 +727,7 @@ def getActions():
                             "strategy_name",
                             "remark",
                         )
-                        print(order_id)
+                        info("order_id:", order_id)
                         info(
                             "已卖出",
                             act["sname"],
