@@ -74,7 +74,8 @@ def main():
         os.environ['proxy'] = proxy
         
         while True:
-            print("1. qmt.mini.py")
+            print("1. qmt.mini.action.py")
+            print("2. qmt.mini.data.py")
             print("2. qmt.mini.find.py")
             print("q. quit")
             
@@ -82,10 +83,15 @@ def main():
             
             if user_input == "1":
                 try:
-                    subprocess.run([sys.executable, "qmt.mini.py"], check=True)
+                    subprocess.run([sys.executable, "qmt.mini.action.py"], check=True)
                 except subprocess.CalledProcessError as e:
                     print(f"脚本执行失败: {e}")
             elif user_input == "2":
+                try:
+                    subprocess.run([sys.executable, "qmt.mini.data.py"], check=True)
+                except subprocess.CalledProcessError as e:
+                    print(f"脚本执行失败: {e}")
+            elif user_input == "3":
                 try:
                     subprocess.run([sys.executable, "qmt.mini.find.py"], check=True)
                 except subprocess.CalledProcessError as e:

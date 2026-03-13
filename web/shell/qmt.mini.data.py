@@ -58,244 +58,6 @@ today = datetime.datetime.now().date()
 threadLocal = threading.local()
 
 
-async def websocket_client():
-    info("start websocket_client")
-    uri = g.baseUrl.replace("http", "ws")
-    uri = f"{uri}/stock/ws"
-    info(f"websocket connecting to {uri}")
-    try:
-        # 连接到 WebSocket 服务器
-        async with websockets.connect(uri) as wsc:
-            info(f"websocket connected to {uri}")
-            g.websocketFailedTime = 0
-            while True:
-                resetThreadId("ws")
-                response = await wsc.recv()
-                info(f"websocket received: {response}")
-                # 解析 JSON 消息
-                try:
-                    message = json.loads(response)
-                    # 处理消息
-                    if message["func"] == "register":
-                        response = {
-                            "id": message["id"],
-                            "result": {
-                                "clientId": g.broker,
-                            },
-                        }
-
-                        await wsc.send(json.dumps(response))
-                        info(f"websocket发送消息: {response}")
-
-                    elif message["func"] == "reloadStockCodes":
-                        params = message["params"]
-                        response = {"id": message["id"]}
-
-                        await wsc.send(json.dumps(response))
-                        info(f"websocket发送消息: {response}")
-
-                        g.stocklist = getStockList()
-                        resubscribe()
-                    elif message["func"] == "updateDetail":
-                        params = message["params"]
-                        scode = params["scode"]
-                        detail = getStockDetail(scode)
-                        if detail is not None:
-                            uploadDetail([detail])
-
-                        info("updateDetail done")
-                        response = {"id": message["id"]}
-
-                        await wsc.send(json.dumps(response))
-                        info(f"websocket发送消息: {response}")
-                    elif message["func"] == "forceUpdate1d":
-                        params = message["params"]
-                        scode = params["scode"]
-                        update1d([scode])
-                        info("update1d done")
-                        response = {"id": message["id"]}
-
-                        await wsc.send(json.dumps(response))
-                        info(f"websocket发送消息: {response}")
-                    elif message["func"] == "forceUpdate1m":
-                        params = message["params"]
-                        scode = params["scode"]
-                        update1m([scode])
-                        info("update1m done")
-                        response = {"id": message["id"]}
-
-                        await wsc.send(json.dumps(response))
-                        info(f"websocket发送消息: {response}")
-                    else:
-                        error(f"websocket未知消息类型")
-                except json.JSONDecodeError:
-                    error(f"websocket decode error: {response}")
-                    continue
-
-                await asyncio.sleep(1)
-    except websockets.exceptions.ConnectionClosed:
-        error(f"websocket closed {g.websocketFailedTime}")
-        if g.websocketFailedTime < 6:
-            g.websocketFailedTime += 1
-            await websocket_client()
-    except Exception as e:
-        error(f"websocket connect error {g.websocketFailedTime}: {e}")
-        if g.websocketFailedTime < 6:
-            g.websocketFailedTime += 1
-            await websocket_client()
-
-
-class MyXtQuantTraderCallback(XtQuantTraderCallback):
-    def on_disconnected(self):
-        """
-        连接状态回调
-        :return:
-        """
-        info("connection lost callback")
-
-    def on_account_status(self, status):
-        """
-        账号状态信息推送
-        :param response: XtAccountStatus 对象
-        :return:
-        """
-        info("on_account_status callback")
-        info(status.account_id, status.account_type, status.status)
-
-    def on_stock_asset(self, asset):
-        """
-        资金信息推送  注意，该回调函数目前不生效
-        :param asset: XtAsset对象
-        :return:
-        """
-        resetThreadId("osa")
-        info("on asset callback")
-        info(object_to_json(asset))
-        info(asset.account_id, asset.cash, asset.total_asset)
-
-    def on_stock_order(self, order):
-        """
-        委托信息推送
-        :param order: XtOrder对象
-        :return:
-        """
-        resetThreadId("oto")
-        info("on order callback:")
-        info(object_to_json(order))
-        updateActionOrdered(
-            order.stock_code,
-            order.order_type,
-            order.order_status,
-            order.traded_price,
-            order.order_sysid,
-            order.status_msg,
-        )
-        # print(order.stock_code, order.order_status, order.order_sysid)
-
-    def on_stock_trade(self, trade):
-        """
-        成交信息推送
-        :param trade: XtTrade对象
-        :return: 17571235 01009714 0102000023061100
-        """
-        # resetThreadId("st")
-        resetThreadId("ost")
-        info("on_stock_trade callback:")
-        try:
-            js = obj2Json(trade, 1)
-            info(object_to_json(trade))
-            # js["traded_time"]是时间戳，将它转换成时间字符串
-            tradeTime = datetime.datetime.fromtimestamp(js["traded_time"])
-
-            deal = {
-                "tprice": js["traded_price"],
-                "scode": js["m_strStockCode"],
-                "sname": "",
-                "market": "",
-                "operationDirection": "买入" if js["order_type"] == 23 else "卖出",
-                "operationName": g.broker,
-                "tday": tradeTime.strftime("%Y-%m-%d"),
-                "ttime": tradeTime.strftime("%H:%M:%S"),
-                # "tid": js["m_strTradeID"],
-                "tid": js["m_strTradedID"],
-                "tcash": js["traded_amount"],
-                "tamount": js["traded_volume"],
-                "tpair": "",
-            }
-
-            if deal["operationDirection"].find("卖") != -1:
-                deal["tamount"] = -deal["tamount"]
-
-            info(json.dumps(deal, indent=2))
-
-            updateDeal(deal)
-
-            updateActionOrdered(
-                deal["scode"],
-                js["order_type"],
-                56,
-                deal["tprice"],
-                js["order_sysid"],
-                "",
-            )
-
-            updatePositions()
-        except Exception as e:
-            error("on_stock_trade 出错:", traceback.format_exc())
-
-    # print(trade.account_id, trade.stock_code, trade.order_id)
-
-    def on_order_error(self, order_error):
-        """
-        下单失败信息推送
-        :param order_error:XtOrderError 对象
-        :return:
-        """
-        info("on order_error callback")
-        info(order_error.order_id, order_error.error_id, order_error.error_msg)
-
-    def on_stock_position(self, position):
-        """
-        持仓信息推送  注意，该回调函数目前不生效
-        :param position: XtPosition对象
-        :return:
-        """
-        info("on position callback")
-        info(position.stock_code, position.volume)
-
-    def on_cancel_error(self, cancel_error):
-        """
-        撤单失败信息推送
-        :param cancel_error: XtCancelError 对象
-        :return:
-        """
-        print("on cancel_error callback")
-        print(cancel_error.order_id, cancel_error.error_id, cancel_error.error_msg)
-
-    def on_order_stock_async_response(self, response):
-        """
-        异步下单回报推送
-        :param response: XtOrderResponse 对象
-        :return:
-        """
-        info("on_order_stock_async_response callback")
-        info(response.account_id, response.order_id, response.seq)
-
-    def on_smt_appointment_async_response(self, response):
-        """
-        :param response: XtAppointmentResponse 对象
-        :return:
-        """
-        info("on_smt_appointment_async_response callback")
-        info(
-            response.account_id,
-            response.order_sysid,
-            response.error_id,
-            response.error_msg,
-            response.seq,
-        )
-
-
 def updateDeal(deal):
     try:
         info("updateDeal:", deal)
@@ -1440,7 +1202,7 @@ def log2File(toPrint, file, sep=" ", end="\n", flush=True, mode="a", encoding="u
 def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
-        log2File(toPrint, f"{g.logPathPrefix}\\qmt.mini")
+        log2File(toPrint, f"{g.logPathPrefix}\\qmt.mini.data")
         while len(toPrint) > 0:
             item = toPrint.pop(0)
             print(*item[0], **item[1])
@@ -1527,44 +1289,44 @@ if __name__ == "__main__":
     g.config["sessionId"] = g.config["sessionId"] + 1
     saveConfig()
 
-    xt_trader = XtQuantTrader(path, g.config["sessionId"])
-    callback = MyXtQuantTraderCallback()
-    xt_trader.register_callback(callback)
-    # 启动本地客户端
-    print("start xt_trader")
-    xt_trader.start()
+    # xt_trader = XtQuantTrader(path, g.config["sessionId"])
+    # callback = MyXtQuantTraderCallback()
+    # xt_trader.register_callback(callback)
+    # # 启动本地客户端
+    # print("start xt_trader")
+    # xt_trader.start()
 
-    print("connect xt_trader")
-    # 建立交易连接，返回0表示连接成功
-    connect_result = xt_trader.connect()
-    if connect_result != 0:
-        info("连接失败")
-        xt_trader.stop()
-        sys.exit(1)
-    else:
-        info("连接成功")
+    # print("connect xt_trader")
+    # # 建立交易连接，返回0表示连接成功
+    # connect_result = xt_trader.connect()
+    # if connect_result != 0:
+    #     info("连接失败")
+    #     xt_trader.stop()
+    #     sys.exit(1)
+    # else:
+    #     info("连接成功")
 
-    subscribe_result = xt_trader.subscribe(stockAccount)
-    if subscribe_result == 0:
-        info("订阅成功")
-    else:
-        info("订阅失败")
-        xt_trader.stop()
-        sys.exit(1)
-    subscribe_result = xt_trader.subscribe(stockAccountHgt)
-    if subscribe_result == 0:
-        info("订阅成功")
-    else:
-        info("订阅失败")
-        xt_trader.stop()
-        sys.exit(1)
+    # subscribe_result = xt_trader.subscribe(stockAccount)
+    # if subscribe_result == 0:
+    #     info("订阅成功")
+    # else:
+    #     info("订阅失败")
+    #     xt_trader.stop()
+    #     sys.exit(1)
+    # subscribe_result = xt_trader.subscribe(stockAccountHgt)
+    # if subscribe_result == 0:
+    #     info("订阅成功")
+    # else:
+    #     info("订阅失败")
+    #     xt_trader.stop()
+    #     sys.exit(1)
 
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
 
-    # 查询当日所有的委托
-    orders = xt_trader.query_stock_orders(stockAccountHgt, False)
-    info("orders:", obj2JsonString(orders))
+    # # 查询当日所有的委托
+    # orders = xt_trader.query_stock_orders(stockAccountHgt, False)
+    # info("orders:", obj2JsonString(orders))
 
     # stock_list = xtdata.get_stock_list_in_sector('上证A股')
     # print(stock_list)
@@ -1578,9 +1340,9 @@ if __name__ == "__main__":
     info("持仓市值", xt_asset.market_value)
     info("总资产", xt_asset.total_asset)
 
-    info("start updateDetailTask")
-    t0 = Thread(target=updateDetailTask)
-    t0.start()
+    # info("start updateDetailTask")
+    # t0 = Thread(target=updateDetailTask)
+    # t0.start()
     t3 = Thread(target=printTask)
     t3.start()
 
@@ -1588,8 +1350,8 @@ if __name__ == "__main__":
     #     info(".")
     #     time.sleep(1)
 
-    startUpdatePositions()
-    connectWebSocket()
+    # startUpdatePositions()
+    # connectWebSocket()
     # deals = getDeals(stockAccount)
     # info("deals A:", len(deals))
     # js = python_to_json(deals)
@@ -1600,7 +1362,7 @@ if __name__ == "__main__":
     # js = python_to_json(deals)
     # info("deals HGT:", js)
 
-    resubscribe()
+    # resubscribe()
     # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
     t1 = Thread(target=update1dTask)
@@ -1609,11 +1371,15 @@ if __name__ == "__main__":
     t2 = Thread(target=update1mTask)
     t2.start()
 
-    t4 = Thread(target=getActionsTask)
-    t4.start()
+    # t4 = Thread(target=getActionsTask)
+    # t4.start()
 
-    t5 = Thread(target=updatePriceTask)
-    t5.start()
+    # t5 = Thread(target=updatePriceTask)
+    # t5.start()
     
     # 阻塞主线程退出
-    xt_trader.run_forever()
+    # xt_trader.run_forever()
+    while True:
+        time.sleep(2)
+
+
