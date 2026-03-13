@@ -1331,14 +1331,14 @@ if __name__ == "__main__":
     # stock_list = xtdata.get_stock_list_in_sector('上证A股')
     # print(stock_list)
 
-    xt_asset = xt_trader.query_stock_asset(stockAccount)
+    # xt_asset = xt_trader.query_stock_asset(stockAccount)
 
-    info("账号类型", xt_asset.account_type)
-    info("资金账号", xt_asset.account_id)
-    info("可用金额", xt_asset.cash)
-    info("冻结金额", xt_asset.frozen_cash)
-    info("持仓市值", xt_asset.market_value)
-    info("总资产", xt_asset.total_asset)
+    # info("账号类型", xt_asset.account_type)
+    # info("资金账号", xt_asset.account_id)
+    # info("可用金额", xt_asset.cash)
+    # info("冻结金额", xt_asset.frozen_cash)
+    # info("持仓市值", xt_asset.market_value)
+    # info("总资产", xt_asset.total_asset)
 
     # info("start updateDetailTask")
     # t0 = Thread(target=updateDetailTask)
