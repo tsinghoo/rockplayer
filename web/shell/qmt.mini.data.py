@@ -644,6 +644,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                             row["kdj_k"],
                             row["kdj_d"],
                             row["kdj_j"],
+                            row["boll_u"],
+                            row["boll_m"],
+                            row["boll_l"],
                         ]
                     )
                 elif idx == dataStartTime:
@@ -661,6 +664,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                             row["kdj_k"],
                             row["kdj_d"],
                             row["kdj_j"],
+                            row["boll_u"],
+                            row["boll_m"],
+                            row["boll_l"],
                         ]
                     )
                 else:
@@ -715,6 +721,22 @@ def KDJ(table):
         table["kdj_d"].values[i] = round(table["kdj_d"].values[i], 3)
         table["kdj_j"].values[i] = round(table["kdj_j"].values[i], 3)
 
+
+def BOLL(table, period=20, k=2):
+    table["boll_u"] = 0
+    table["boll_m"] = 0
+    table["boll_l"] = 0
+    for i in range(period, len(table)):
+        high = table["high"].values[i - period : i + 1]
+        low = table["low"].values[i - period : i + 1]
+        close = table["close"].values[i - period : i + 1]
+        boll_u = close.mean() + k * close.std()
+        boll_m = close.mean()
+        boll_l = close.mean() - k * close.std()
+
+        table["boll_u"].values[i] = round(boll_u, 2)
+        table["boll_m"].values[i] = round(boll_m, 2)
+        table["boll_l"].values[i] = round(boll_l, 2)
 
 def CCI(table):
     table["cci"] = 0
@@ -776,6 +798,7 @@ def get1dData(stocklist, index, startTime, endTime):
     # 计算cci
     CCI(table)
     KDJ(table)
+    BOLL(table)
 
     return table
 
@@ -1376,10 +1399,8 @@ if __name__ == "__main__":
 
     # t5 = Thread(target=updatePriceTask)
     # t5.start()
-    
+
     # 阻塞主线程退出
     # xt_trader.run_forever()
     while True:
         time.sleep(2)
-
-

@@ -1682,6 +1682,9 @@ async function upgradeDb(succ, fail) {
         `alter table t1d add column kdj_k real default 0;`,
         `alter table t1d add column kdj_d real default 0;`,
         `alter table t1d add column kdj_j real default 0;`,
+        `alter table t1d add column boll_u real default 0;`,
+        `alter table t1d add column boll_m real default 0;`,
+        `alter table t1d add column boll_l real default 0;`
     ];
 
     if (res == null || res.error) {
@@ -2907,6 +2910,12 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
         if (oldRule.closed == 0) {
             return { error: `I:exists`, sname };
         }
+        try {
+            oldRule.rule = JSON.parse(oldRule.rule);
+        } catch (e) {
+            info(e.stack, threadId);
+        }
+
     }
 
     //获取scode对应的当前价格
@@ -2990,6 +2999,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             return { error: `toSell`, sname };
         }
 
+        if (oldRule.rule.buyAmount < 1) {
+            return { error: `I:buy by hand`, sname };
+        }
+
         let all;
 
         all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
@@ -3065,6 +3078,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
     } else if (trade.operationDirection.indexOf("买") >= 0) {
         if (!notBatch && workerCreateRule.type == "toBuy") {
             return { error: `toBuy`, sname };
+        }
+
+        if (oldRule.rule.sellAmount < 1) {
+            return { error: `I:sell by hand`, sname };
         }
 
         rc = {
@@ -3710,6 +3727,9 @@ app.post('/stock/k/upload', async (req, res) => {
                 row.kdj_k = data[i][8];
                 row.kdj_d = data[i][9];
                 row.kdj_j = data[i][10];
+                row.boll_u = data[i][11];
+                row.boll_m = data[i][12];
+                row.boll_l = data[i][13];
             }
 
             if (row.volume < 0) {
