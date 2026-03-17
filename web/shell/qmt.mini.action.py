@@ -1259,6 +1259,7 @@ def getOrders(cancelable_only):
 
 
 def getPositions():
+    info("getPositions")
     all = xt_trader.query_stock_positions(StockAccount(g.account))
 
     positions = xt_trader.query_stock_positions(StockAccount(g.account, "HUGANGTONG"))
@@ -1462,6 +1463,7 @@ def refreshPositions():
 
 
 def updatePositions():
+    info("updatePositions")
     positions = getPositions()
 
     info("positions:", len(positions))
