@@ -2786,9 +2786,9 @@ window.stock_list = window.stock_list || (function () {
                         'Kdj': true,
                         'kDj': true,
                         'kdJ': true,
-                        'Boll': false,
-                        'Boll中': false,
-                        'Boll下': false
+                        'Boll': true,
+                        'Boll中': true,
+                        'Boll下': true
                     }
                 },
                 tooltip: {
