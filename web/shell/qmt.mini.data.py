@@ -325,7 +325,7 @@ def update1dTask():
     update1d(g.ruleCodes)
 
     while True:
-        time.sleep(60)
+        time.sleep(1)
         resetThreadId("u1d")
         reloadK1d, g.reloadK1d = g.reloadK1d, []
         if len(reloadK1d) > 0:
@@ -342,7 +342,7 @@ def update1dTask():
 
 def update1mTask():
     while True:
-        time.sleep(60)
+        time.sleep(1)
         resetThreadId("u1m")
         update1m(g.stocklist)
         # update1m(g.candidates)
