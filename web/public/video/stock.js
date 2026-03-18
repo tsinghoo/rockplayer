@@ -2807,7 +2807,7 @@ window.stock_list = window.stock_list || (function () {
                                 result.push('收盘: ' + parseFloat(item.value[2]).toFixed(3));
                                 result.push('最高: ' + parseFloat(item.value[3]).toFixed(3));
                                 result.push('最低: ' + parseFloat(item.value[4]).toFixed(3));
-                                result.push('振幅: ' + parseFloat(item.value[3]-item.value[4]).toFixed(3));
+                                result.push('振幅: ' + parseFloat(item.value[3] - item.value[4]).toFixed(3));
                                 result.push('均幅: ' + parseFloat(item.value[7]).toFixed(3));
                                 result.push('成交额: ' + parseFloat(item.value[6]));
                             } else {
@@ -3312,7 +3312,7 @@ window.stock_list = window.stock_list || (function () {
                     'Boll中': bollSel,
                     'Boll下': bollSel
                 };
-                
+
                 if (bollSel) {
                     option.legend.selected.MA5 = false;
                     option.legend.selected.MA10 = false;
@@ -3996,7 +3996,7 @@ window.stock_list = window.stock_list || (function () {
                     let minCount = 200;
                     for (let i = 0; i < minCount - rows.length; i++) {
                         categoryData.push("-");
-                        values.push([0, 0, 0, 0, 0, 0, 0]);
+                        values.push([0, 0, 0, 0, 0, 0, 0, 0]);
                         volumes.push([i, 0, 1]);
                     }
 

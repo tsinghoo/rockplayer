@@ -809,12 +809,12 @@ def get1dData(stocklist, index, startTime, endTime):
     )
     table = df[scode]
     table = table.query("suspendFlag != 1")
-    info("get1dData done")
     # 计算cci
     CCI(table)
     KDJ(table)
     BOLL(table)
     RANGE(table)
+    info("get1dData done")
     # 计算High-Low range
 
     return table
@@ -927,7 +927,7 @@ def update1m(stocklist, startTime=None):
                     "period": period,
                     "passcode": "995560",
                 }
-                debug("body:", body)
+                # debug("body:", body)
                 # 上传数据
                 try:
                     response = requests.post(
