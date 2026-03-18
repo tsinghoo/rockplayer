@@ -315,33 +315,31 @@ def resetThreadId(label=""):
 
 def update1dTask():
     info("update1dTask")
-    g.candidates = getCandidates()
-    resetThreadId("u1d")
-    # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
-    update1d(g.candidates)
+    try:
+        g.candidates = getCandidates()
+        resetThreadId("u1d")
+        # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
+        update1d(g.candidates)
 
-    g.ruleCodes = getRuleCodes()
-    resetThreadId("u1d")
-    update1d(g.ruleCodes)
+        g.ruleCodes = getRuleCodes()
+        resetThreadId("u1d")
+        update1d(g.ruleCodes)
 
-    while True:
-        time.sleep(1)
-        try:
+        resetThreadId("u1d")
+        reloadK1d, g.reloadK1d = g.reloadK1d, []
+        if len(reloadK1d) > 0:
+            info("reloading 1d data")
+            for scode in reloadK1d:
+                # updateActionOrdered(scode, "", "56", 0, "")
+                update1d([scode.replace(".HGT", ".HK")], "20210101", "")
+        g.stocklist = getStockList()
+        update1d(g.stocklist)
 
-            resetThreadId("u1d")
-            reloadK1d, g.reloadK1d = g.reloadK1d, []
-            if len(reloadK1d) > 0:
-                info("reloading 1d data")
-                for scode in reloadK1d:
-                    # updateActionOrdered(scode, "", "56", 0, "")
-                    update1d([scode.replace(".HGT", ".HK")], "20210101", "")
-            g.stocklist = getStockList()
-            update1d(g.stocklist)
+        updateLastStartTime1d()
+        saveConfig()
+    except Exception as e:
+        info("update1dTask error:", str(e))
 
-            updateLastStartTime1d()
-            saveConfig()
-        except Exception as e:
-            info("update1dTask error:", str(e))
 
 def update1mTask():
     while True:
@@ -800,7 +798,7 @@ def get1dData(stocklist, index, startTime, endTime):
         len(stocklist),
         ")",
     )
-    df = xtdata.get_market_data(
+    df = xtdata.get_market_data_ex(
         params,
         stock_list=[scode],
         period=period,
