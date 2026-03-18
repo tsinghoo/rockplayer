@@ -670,78 +670,80 @@ def update1d(stocklist=None, startTime=None, endTime=None):
 
     newData = 0
     for index, scode in enumerate(stocklist):
-        dataStartTime = startTime
-        if startTime is None:
-            lastDate = get1dLastDate(scode)
-            if lastDate:
-                dataStartTime = lastDate
-            else:
-                newData = 1
-                # 把dateStartTime设置为1年前
-                dataStartTime = (
-                    datetime.datetime.now() - datetime.timedelta(days=365)
-                ).strftime("%Y%m%d")
+        try:
 
-        # 把dateStartTime设置为30天前,为了计算cci
-        startTime = (
-            datetime.datetime.strptime(dataStartTime, "%Y%m%d")
-            - datetime.timedelta(days=30)
-        ).strftime("%Y%m%d")
-        period = "1d"
-        datas = get1dData(stocklist, index, startTime, endTime)
-        # print("所有列名:", df.keys())
-        # print("所有:", df.values())
-        columns = ["Time"] + datas.columns.tolist()
-        # print(columns)
-        info("", len(datas), "rows")
-
-        # 将datas的数据分批上传，每批100条
-        bsize = 50
-        foundStart = 0
-        for i in range(0, len(datas), bsize):
-            batch = datas.iloc[i : i + bsize]
-            info("上传", scode, period, "[", i, ",", i + bsize, "]", len(batch))
-            batch_data = []
-            for idx, row in batch.iterrows():
-                if newData == 1 or foundStart == 1:
-                    batch_data.append(
-                        [str(idx)]
-                        + [
-                            row["open"],
-                            row["close"],
-                            row["high"],
-                            row["low"],
-                            row["volume"],
-                            row["amount"],
-                        ]
-                    )
-                elif idx == dataStartTime:
-                    foundStart = 1
-                    batch_data.append(
-                        [str(idx)]
-                        + [
-                            row["open"],
-                            row["close"],
-                            row["high"],
-                            row["low"],
-                            row["volume"],
-                            row["amount"],
-                        ]
-                    )
+            dataStartTime = startTime
+            if startTime is None:
+                lastDate = get1dLastDate(scode)
+                info("lastDate:", lastDate)
+                if lastDate:
+                    dataStartTime = lastDate
                 else:
-                    info(
-                        f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}"
-                    )
-            if len(batch_data) > 0:
-                body = {
-                    "data": obj2Json(batch_data),
-                    "scode": scode,
-                    "period": period,
-                    "passcode": "995560",
-                }
-                # debug("body:", body)
-                # 上传数据
-                try:
+                    newData = 1
+                    # 把dateStartTime设置为1年前
+                    dataStartTime = (
+                        datetime.datetime.now() - datetime.timedelta(days=365)
+                    ).strftime("%Y%m%d")
+
+            # 把dateStartTime设置为30天前,为了计算cci
+            dataStartTime = (
+                datetime.datetime.strptime(dataStartTime, "%Y%m%d")
+                - datetime.timedelta(days=0)
+            ).strftime("%Y%m%d")
+            period = "1d"
+            datas = get1dData(stocklist, index, dataStartTime, endTime)
+            # print("所有列名:", df.keys())
+            # print("所有:", df.values())
+            columns = ["Time"] + datas.columns.tolist()
+            # print(columns)
+            info("", len(datas), "rows")
+
+            # 将datas的数据分批上传，每批100条
+            bsize = 50
+            foundStart = 0
+            for i in range(0, len(datas), bsize):
+                batch = datas.iloc[i : i + bsize]
+                info("上传", scode, period, "[", i, ",", i + bsize, "]", len(batch))
+                batch_data = []
+                for idx, row in batch.iterrows():
+                    if newData == 1 or foundStart == 1:
+                        batch_data.append(
+                            [str(idx)]
+                            + [
+                                row["open"],
+                                row["close"],
+                                row["high"],
+                                row["low"],
+                                row["volume"],
+                                row["amount"],
+                            ]
+                        )
+                    elif idx == dataStartTime:
+                        foundStart = 1
+                        batch_data.append(
+                            [str(idx)]
+                            + [
+                                row["open"],
+                                row["close"],
+                                row["high"],
+                                row["low"],
+                                row["volume"],
+                                row["amount"],
+                            ]
+                        )
+                    else:
+                        info(
+                            f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}"
+                        )
+                if len(batch_data) > 0:
+                    body = {
+                        "data": obj2Json(batch_data),
+                        "scode": scode,
+                        "period": period,
+                        "passcode": "995560",
+                    }
+                    # debug("body:", body)
+                    # 上传数据
                     response = requests.post(
                         g.baseUrl + "/stock/k/upload",
                         json=body,
@@ -755,8 +757,8 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                             "响应内容:",
                             response.text,
                         )
-                except Exception as e:
-                    error("上传失败:", traceback.format_exc())
+        except Exception as e:
+            error("update1d error:", traceback.format_exc())
 
 
 def KDJ(table):
