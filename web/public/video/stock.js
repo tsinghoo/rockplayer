@@ -2808,7 +2808,7 @@ window.stock_list = window.stock_list || (function () {
                                 result.push('最高: ' + parseFloat(item.value[3]).toFixed(3));
                                 result.push('最低: ' + parseFloat(item.value[4]).toFixed(3));
                                 result.push('振幅: ' + parseFloat(item.value[3] - item.value[4]).toFixed(3));
-                                result.push('均幅: ' + parseFloat(item.value[7]).toFixed(3));
+                                result.push('均幅: ' + parseFloat(item.value[8]).toFixed(3));
                                 result.push('成交额: ' + parseFloat(item.value[6]));
                             } else {
                                 result.push(item.seriesName + ': ' + item.value);
