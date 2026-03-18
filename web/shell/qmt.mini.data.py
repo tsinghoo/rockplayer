@@ -326,19 +326,22 @@ def update1dTask():
 
     while True:
         time.sleep(1)
-        resetThreadId("u1d")
-        reloadK1d, g.reloadK1d = g.reloadK1d, []
-        if len(reloadK1d) > 0:
-            info("reloading 1d data")
-            for scode in reloadK1d:
-                # updateActionOrdered(scode, "", "56", 0, "")
-                update1d([scode.replace(".HGT", ".HK")], "20210101", "")
-        g.stocklist = getStockList()
-        update1d(g.stocklist)
+        try:
 
-        updateLastStartTime1d()
-        saveConfig()
+            resetThreadId("u1d")
+            reloadK1d, g.reloadK1d = g.reloadK1d, []
+            if len(reloadK1d) > 0:
+                info("reloading 1d data")
+                for scode in reloadK1d:
+                    # updateActionOrdered(scode, "", "56", 0, "")
+                    update1d([scode.replace(".HGT", ".HK")], "20210101", "")
+            g.stocklist = getStockList()
+            update1d(g.stocklist)
 
+            updateLastStartTime1d()
+            saveConfig()
+        except Exception as e:
+            info("update1dTask error:", str(e))
 
 def update1mTask():
     while True:
