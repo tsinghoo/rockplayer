@@ -821,9 +821,7 @@ def RANGE(table, period=5):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
         delta = high - low
-        info("delta:", delta)
         mean = delta.mean()
-        info("delta.mean:", mean)
         table["range"].values[i] = mean
 
 def CCI(table):
