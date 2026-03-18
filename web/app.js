@@ -3724,14 +3724,14 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             if (period == "1d") {
-                row.cci = data[i][7];
-                row.kdj_k = data[i][8];
-                row.kdj_d = data[i][9];
-                row.kdj_j = data[i][10];
-                row.boll_u = data[i][11];
-                row.boll_m = data[i][12];
-                row.boll_l = data[i][13];
-                row.range = data[i][14];
+                row.cci = 0;
+                row.kdj_k = 0;
+                row.kdj_d = 0;
+                row.kdj_j = 0;
+                row.boll_u = 0;
+                row.boll_m = 0;
+                row.boll_l = 0;
+                row.range = 0;
             }
 
             if (row.volume < 0) {

@@ -713,14 +713,6 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                             row["low"],
                             row["volume"],
                             row["amount"],
-                            row["cci"],
-                            row["kdj_k"],
-                            row["kdj_d"],
-                            row["kdj_j"],
-                            row["boll_u"],
-                            row["boll_m"],
-                            row["boll_l"],
-                            row["range"],
                         ]
                     )
                 elif idx == dataStartTime:
@@ -734,14 +726,6 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                             row["low"],
                             row["volume"],
                             row["amount"],
-                            row["cci"],
-                            row["kdj_k"],
-                            row["kdj_d"],
-                            row["kdj_j"],
-                            row["boll_u"],
-                            row["boll_m"],
-                            row["boll_l"],
-                            row["range"],
                         ]
                     )
                 else:
@@ -776,9 +760,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
 
 
 def KDJ(table):
-    table["kdj_k"] = np.nan
-    table["kdj_d"] = np.nan
-    table["kdj_j"] = np.nan
+    table["kdj_k"] = 0.0000001
+    table["kdj_d"] = 0.0000001
+    table["kdj_j"] = 0.0000001
     for i in range(13, len(table)):
         high = table["high"].values[i - 13 : i + 1]
         low = table["low"].values[i - 13 : i + 1]
@@ -798,9 +782,9 @@ def KDJ(table):
 
 
 def BOLL(table, period=20, k=2):
-    table["boll_u"] = np.nan
-    table["boll_m"] = np.nan
-    table["boll_l"] = np.nan
+    table["boll_u"] = 0.0000001
+    table["boll_m"] = 0.0000001
+    table["boll_l"] = 0.0000001
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
@@ -816,7 +800,7 @@ def BOLL(table, period=20, k=2):
 
 
 def RANGE(table, period=5):
-    table["range"] = np.nan
+    table["range"] = 0.0000001
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
@@ -825,7 +809,7 @@ def RANGE(table, period=5):
         table["range"].values[i] = mean
 
 def CCI(table):
-    table["cci"] = np.nan
+    table["cci"] = 0.0000001
     for i in range(13, len(table)):
         high = table["high"].values[i - 13 : i + 1]
         low = table["low"].values[i - 13 : i + 1]
@@ -880,11 +864,6 @@ def get1dData(stocklist, index, startTime, endTime):
     )
     table = df[scode]
     table = table.query("suspendFlag != 1").copy()
-    # 计算cci
-    CCI(table)
-    KDJ(table)
-    BOLL(table)
-    RANGE(table)
     info("get1dData done")
     # 计算High-Low range
 
@@ -1479,8 +1458,8 @@ if __name__ == "__main__":
     t1 = Thread(target=update1dTask)
     t1.start()
 
-    t2 = Thread(target=update1mTask)
-    t2.start()
+    #t2 = Thread(target=update1mTask)
+    #t2.start()
 
     # t3 = Thread(target=updateTodayTask)
     # t3.start()
