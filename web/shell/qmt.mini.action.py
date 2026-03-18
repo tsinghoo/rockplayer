@@ -689,7 +689,8 @@ def getActions():
                         ):
                             # oper = xtconstant.ETF_PURCHASE
                             info("ETF", act["scode"])
-                        order_id = xt_trader.order_stock(
+
+                        order_seq = xt_trader.order_stock_async(
                             stockAccount,
                             act["scode"],
                             oper,
@@ -699,7 +700,7 @@ def getActions():
                             "strategy_name",
                             "remark",
                         )
-                        info("order_id:", order_id)
+                        info("order_seq:", order_seq)
 
                         info(
                             "已买入",
@@ -717,7 +718,7 @@ def getActions():
                             act["price"],
                             act["amount"],
                         )
-                        order_id = xt_trader.order_stock(
+                        order_seq = xt_trader.order_stock_async(
                             stockAccount,
                             act["scode"],
                             xtconstant.STOCK_SELL,
@@ -727,7 +728,7 @@ def getActions():
                             "strategy_name",
                             "remark",
                         )
-                        info("order_id:", order_id)
+                        info("order_seq:", order_seq)
                         info(
                             "已卖出",
                             act["sname"],
@@ -771,7 +772,7 @@ def cancelAction(scode):
             # 如果order["stock_code"]以 scode开始
             if order["stock_code"].startswith(scode) or scode == "":
                 info("cancel order for", scode, order["order_id"])
-                res = xt_trader.cancel_order_stock(account, order["order_id"])
+                res = xt_trader.cancel_order_stock_async(account, order["order_id"])
                 info("cancelled:", res)
 
     if scode in g.actions:
