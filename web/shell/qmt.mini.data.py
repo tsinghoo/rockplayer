@@ -776,9 +776,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
 
 
 def KDJ(table):
-    table["kdj_k"] = 0
-    table["kdj_d"] = 0
-    table["kdj_j"] = 0
+    table["kdj_k"] = np.nan
+    table["kdj_d"] = np.nan
+    table["kdj_j"] = np.nan
     for i in range(13, len(table)):
         high = table["high"].values[i - 13 : i + 1]
         low = table["low"].values[i - 13 : i + 1]
@@ -798,9 +798,9 @@ def KDJ(table):
 
 
 def BOLL(table, period=20, k=2):
-    table["boll_u"] = 0
-    table["boll_m"] = 0
-    table["boll_l"] = 0
+    table["boll_u"] = np.nan
+    table["boll_m"] = np.nan
+    table["boll_l"] = np.nan
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
@@ -816,7 +816,7 @@ def BOLL(table, period=20, k=2):
 
 
 def RANGE(table, period=5):
-    table["range"] = 0
+    table["range"] = np.nan
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
@@ -825,7 +825,7 @@ def RANGE(table, period=5):
         table["range"].values[i] = mean
 
 def CCI(table):
-    table["cci"] = 0
+    table["cci"] = np.nan
     for i in range(13, len(table)):
         high = table["high"].values[i - 13 : i + 1]
         low = table["low"].values[i - 13 : i + 1]
@@ -879,7 +879,7 @@ def get1dData(stocklist, index, startTime, endTime):
         fill_data=True,
     )
     table = df[scode]
-    table = table.query("suspendFlag != 1")
+    table = table.query("suspendFlag != 1").copy()
     # 计算cci
     CCI(table)
     KDJ(table)
