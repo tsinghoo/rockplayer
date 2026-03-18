@@ -551,31 +551,15 @@ def resetThreadId(label=""):
     )
 
 
-def update1dTask():
-    info("update1dTask")
-    g.candidates = getCandidates()
-    resetThreadId("u1d")
-    # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
-    update1d(g.candidates)
-
-    g.ruleCodes = getRuleCodes()
-    resetThreadId("u1d")
-    update1d(g.ruleCodes)
-
-    while True:
-        time.sleep(60)
-        resetThreadId("u1d")
-        reloadK1d, g.reloadK1d = g.reloadK1d, []
-        if len(reloadK1d) > 0:
-            info("reloading 1d data")
-            for scode in reloadK1d:
-                # updateActionOrdered(scode, "", "56", 0, "")
-                update1d([scode.replace(".HGT", ".HK")], "20210101", "")
-        g.stocklist = getStockList()
-        update1d(g.stocklist)
-
-        updateLastStartTime1d()
-        saveConfig()
+def reload1dTask():
+    info("reload1dTask")
+    
+    reloadK1d, g.reloadK1d = g.reloadK1d, []
+    if len(reloadK1d) > 0:
+        info("reloading 1d data")
+        for scode in reloadK1d:
+            # updateActionOrdered(scode, "", "56", 0, "")
+            update1d([scode.replace(".HGT", ".HK")], "20210101", "")
 
 
 def update1mTask():
@@ -739,6 +723,9 @@ def getActions():
                     elif act["action"] == "reloadK1d":
                         info("reloadK1d action for", act["scode"])
                         g.reloadK1d.append(act["scode"])
+                        
+                        t1 = Thread(target=reload1dTask)
+                        t1.start()
                     elif act["action"] == "connectWebSocket":
                         connectWebSocket()
                     elif act["action"] == "cancelAction":

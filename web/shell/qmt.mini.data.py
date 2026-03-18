@@ -340,6 +340,83 @@ def update1dTask():
     except Exception as e:
         info("update1dTask error:", str(e))
 
+def updateToday1d(stocklist=None):
+    info("updateToday1d")
+    if stocklist is None:
+        stocklist = g.stocklist
+
+    chunks = [stocklist[i:i + 10] for i in range(0, len(stocklist), 10)]
+
+    period = "1d"
+    params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
+    for index, chunk in enumerate(chunks):
+        datas=get_full_kline(params, chunk, period, start_time = '', end_time = '', count = 1, dividend_type = 'none', fill_data = True)
+
+        info("get_full_kline:", datas)
+        columns = ["Time"] + datas.columns.tolist()
+        # print(columns)
+        info("", len(datas), "rows")
+        batch_data = []
+        for idx, row in datas.iterrows():
+            batch_data.append(
+                    [str(idx)]
+                    + [
+                        row["open"],
+                        row["close"],
+                        row["high"],
+                        row["low"],
+                        row["volume"],
+                        row["amount"],
+                        row["cci"],
+                        row["kdj_k"],
+                        row["kdj_d"],
+                        row["kdj_j"],
+                        row["boll_u"],
+                        row["boll_m"],
+                        row["boll_l"],
+                        row["range"],
+                    ]
+                )
+        if len(batch_data) > 0:
+            body = {
+                "data": obj2Json(batch_data),
+                "scode": scode,
+                "period": period,
+                "passcode": "995560",
+            }
+            # debug("body:", body)
+            # 上传数据
+            try:
+                response = requests.post(
+                    g.baseUrl + "/stock/k/upload",
+                    json=body,
+                    verify=False,
+                    timeout=20,
+                )
+                if response.status_code != 200:
+                    error(
+                        "上传失败，状态码:",
+                        response.status_code,
+                        "响应内容:",
+                        response.text,
+                    )
+            except Exception as e:
+                error("上传失败:", str(e))
+
+
+def updateTodayTask():
+    info("updateTodayTask")
+    try:
+        resetThreadId("u1dt")
+        update1d(g.ruleCodes)
+
+        resetThreadId("u1d")
+        g.stocklist = getStockList()
+        updateToday1d(g.stocklist)
+
+    except Exception as e:
+        info("update1dTask error:", str(e))
+
 
 def update1mTask():
     while True:
@@ -1406,11 +1483,14 @@ if __name__ == "__main__":
     # resubscribe()
     # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
-    t1 = Thread(target=update1dTask)
-    t1.start()
+    # t1 = Thread(target=update1dTask)
+    # t1.start()
 
-    t2 = Thread(target=update1mTask)
-    t2.start()
+    # t2 = Thread(target=update1mTask)
+    # t2.start()
+
+    t3 = Thread(target=updateTodayTask)
+    t3.start()
 
     # t4 = Thread(target=getActionsTask)
     # t4.start()
