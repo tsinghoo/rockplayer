@@ -341,7 +341,7 @@ def update1dTask():
         info("update1dTask error:", str(e))
 
 def updateToday1d(stocklist=None):
-    info("updateToday1d")
+    info("updateToday1d") #todo
     if stocklist is None:
         stocklist = g.stocklist
 
@@ -350,11 +350,9 @@ def updateToday1d(stocklist=None):
     period = "1d"
     params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
     for index, chunk in enumerate(chunks):
-        datas=get_full_kline(params, chunk, period, start_time = '', end_time = '', count = 1, dividend_type = 'none', fill_data = True)
+        datas = xtdata.get_market_data_ex(params, chunk, period, start_time = '', end_time = '', count = 1, dividend_type = 'none', fill_data = True)
 
         info("get_full_kline:", datas)
-        columns = ["Time"] + datas.columns.tolist()
-        # print(columns)
         info("", len(datas), "rows")
         batch_data = []
         for idx, row in datas.iterrows():
@@ -408,9 +406,6 @@ def updateTodayTask():
     info("updateTodayTask")
     try:
         resetThreadId("u1dt")
-        update1d(g.ruleCodes)
-
-        resetThreadId("u1d")
         g.stocklist = getStockList()
         updateToday1d(g.stocklist)
 
@@ -1483,14 +1478,14 @@ if __name__ == "__main__":
     # resubscribe()
     # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
-    # t1 = Thread(target=update1dTask)
-    # t1.start()
+    t1 = Thread(target=update1dTask)
+    t1.start()
 
-    # t2 = Thread(target=update1mTask)
-    # t2.start()
+    t2 = Thread(target=update1mTask)
+    t2.start()
 
-    t3 = Thread(target=updateTodayTask)
-    t3.start()
+    # t3 = Thread(target=updateTodayTask)
+    # t3.start()
 
     # t4 = Thread(target=getActionsTask)
     # t4.start()
