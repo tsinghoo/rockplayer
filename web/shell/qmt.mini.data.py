@@ -748,7 +748,8 @@ def RANGE(table, period=5):
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
-        table["range"].values[i] = (high - low).mean()
+        delta = high - low
+        table["range"].values[i] = delta.mean()
 
 
 def CCI(table):
