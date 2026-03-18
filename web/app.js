@@ -1684,7 +1684,8 @@ async function upgradeDb(succ, fail) {
         `alter table t1d add column kdj_j real default 0;`,
         `alter table t1d add column boll_u real default 0;`,
         `alter table t1d add column boll_m real default 0;`,
-        `alter table t1d add column boll_l real default 0;`
+        `alter table t1d add column boll_l real default 0;`,
+        `alter table t1d add column range real default 0;`
     ];
 
     if (res == null || res.error) {
@@ -3730,6 +3731,7 @@ app.post('/stock/k/upload', async (req, res) => {
                 row.boll_u = data[i][11];
                 row.boll_m = data[i][12];
                 row.boll_l = data[i][13];
+                row.range = data[i][14];
             }
 
             if (row.volume < 0) {
