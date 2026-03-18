@@ -731,7 +731,7 @@ def BOLL(table, period=20, k=2):
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
-        
+
         close = table["close"].values[i - period : i + 1]
         boll_u = close.mean() + k * close.std()
         boll_m = close.mean()
@@ -741,12 +741,15 @@ def BOLL(table, period=20, k=2):
         table["boll_m"].values[i] = round(boll_m, 2)
         table["boll_l"].values[i] = round(boll_l, 2)
 
+
 def RANGE(table, period=5):
-    #计算最近period天的平均振幅
+    # 计算最近period天的平均振幅
+    table["range"] = 0
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
-        table["range"].values[i]=(high-low).mean()
+        table["range"].values[i] = (high - low).mean()
+
 
 def CCI(table):
     table["cci"] = 0
@@ -810,8 +813,7 @@ def get1dData(stocklist, index, startTime, endTime):
     KDJ(table)
     BOLL(table)
     RANGE(table)
-    #计算High-Low range
-
+    # 计算High-Low range
 
     return table
 
