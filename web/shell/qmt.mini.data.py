@@ -78,7 +78,7 @@ def updateDeal(deal):
         debug("response:", response.text)
 
     except Exception as e:
-        error("updateDeal 出错:", traceback.format_exc())
+        error("updateDeal error:", traceback.format_exc())
 
 
 def loadConfig():
@@ -113,7 +113,7 @@ def getStockList():
     try:
         response = requests.get(g.baseUrl + "/stock/codes", verify=False, timeout=5)
         if response.status_code != 200:
-            info("getStockList failed:", response.status_code)
+            info("getStockList error:", response.status_code)
             return g.stocklist
         else:
             info("getStockList success:", response.status_code)
@@ -127,7 +127,7 @@ def getStockList():
             return stocklist
 
     except Exception as e:
-        error("getStockList failed:", str(e))
+        error("getStockList error:", traceback.format_exc())
         return g.stocklist
 
 
@@ -137,7 +137,7 @@ def get1dLastDate(scode):
         debug("get", url)
         response = requests.get(url, verify=False, timeout=5)
         if response.status_code != 200:
-            error("getLast1dDate failed:", response.status_code)
+            error("getLast1dDate error:", response.status_code)
             return
         else:
             response.encoding = "utf-8"
@@ -146,7 +146,7 @@ def get1dLastDate(scode):
             return json.loads(content)["lastDate"]
 
     except Exception as e:
-        error("getLast1dDate failed:", str(e))
+        error("getLast1dDate error:", traceback.format_exc())
 
 
 def get1mLastMinute(scode):
@@ -165,7 +165,7 @@ def get1mLastMinute(scode):
 
     except Exception as e:
         error_info = traceback.format_exc()
-        error("getLast1dMinute failed:", error_info)
+        error("getLast1dMinute error:", error_info)
 
 
 def getCandidates():
@@ -185,7 +185,7 @@ def getCandidates():
             return json.loads(content)
 
     except Exception as e:
-        info("获取candidates失败:", str(e))
+        info("获取candidates失败:", traceback.format_exc())
 
 
 def getRuleCodes():
@@ -205,7 +205,7 @@ def getRuleCodes():
             return json.loads(content)
 
     except Exception as e:
-        info("getRuleCodes failed:", str(e))
+        info("getRuleCodes error:", traceback.format_exc())
 
 
 def uploadStockPrice():
@@ -231,7 +231,7 @@ def uploadStockPrice():
             response.encoding = "utf-8"
             # info("请求test1成功:", response.status_code, response.text)
     except Exception as e:
-        error("请求失败:", str(e))
+        error("请求失败:", traceback.format_exc())
 
 
 def getStockDetail(scode):
@@ -302,7 +302,7 @@ def uploadPosition(positions=None):
             response.encoding = "utf-8"
             info("上传持仓到test1成功:", response.status_code, response.text)
     except Exception as e:
-        info("请求失败:", str(e))
+        info("请求失败:", traceback.format_exc())
 
 
 def resetThreadId(label=""):
@@ -338,7 +338,7 @@ def update1dTask():
         updateLastStartTime1d()
         saveConfig()
     except Exception as e:
-        info("update1dTask error:", str(e))
+        info("update1dTask error:", traceback.format_exc())
 
 def updateToday1d(stocklist=None):
     info("updateToday1d") #todo
@@ -399,7 +399,7 @@ def updateToday1d(stocklist=None):
                         response.text,
                     )
             except Exception as e:
-                error("上传失败:", str(e))
+                error("上传失败:", traceback.format_exc())
 
 
 def updateTodayTask():
@@ -410,7 +410,7 @@ def updateTodayTask():
         updateToday1d(g.stocklist)
 
     except Exception as e:
-        info("update1dTask error:", str(e))
+        info("update1dTask error:", traceback.format_exc())
 
 
 def update1mTask():
@@ -444,7 +444,7 @@ def uploadDetail(details):
             response.encoding = "utf-8"
             info("上传详情到test1成功:", response.status_code, response.text)
     except Exception as e:
-        info("请求失败:", str(e))
+        info("请求失败:", traceback.format_exc())
 
 
 def updateDetailTask():
@@ -581,7 +581,7 @@ def getActions():
                     actionDone(act["id"])
 
     except Exception as e:
-        error("getActions出错:", traceback.format_exc())
+        error("getActions error:", traceback.format_exc())
 
 
 def connectWebSocket():
@@ -625,7 +625,7 @@ def actionDone(id):
                 "action done error:", response.status_code, "响应内容:", response.text
             )
     except Exception as e:
-        error("action done error:", str(e))
+        error("action done error:", traceback.format_exc())
 
 
 def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
@@ -658,7 +658,7 @@ def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
         debug("response:", response.text)
 
     except Exception as e:
-        error("updateActionStatus 出错:", traceback.format_exc())
+        error("updateActionStatus error:", traceback.format_exc())
 
 
 def update1d(stocklist=None, startTime=None, endTime=None):
@@ -772,7 +772,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                             response.text,
                         )
                 except Exception as e:
-                    error("上传失败:", str(e))
+                    error("上传失败:", traceback.format_exc())
 
 
 def KDJ(table):
@@ -849,8 +849,8 @@ def get1dData(stocklist, index, startTime, endTime):
     scode = stocklist[index]
     period = "1d"
     params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
-    info("downloading", period, "from", startTime, "for", scode)
-    xtdata.download_history_data(scode, period, startTime, endTime, True)
+    # info("downloading", period, "from", startTime, "for", scode)
+    # xtdata.download_history_data(scode, period, startTime, endTime, True)
     # download_history_data2 批量版本 todo
     # params = []
     info(
@@ -934,8 +934,8 @@ def update1m(stocklist, startTime=None):
             if period == "tick":
                 params = ["volume", "amount", "lastPrice"]
             # params = []
-            info("downloading", period, "for", scode, "from", dataStartTime)
-            xtdata.download_history_data(scode, period, dataStartTime, dataEndTime)
+            # info("downloading", period, "for", scode, "from", dataStartTime)
+            # xtdata.download_history_data(scode, period, dataStartTime, dataEndTime)
             info(
                 "get",
                 period,
@@ -1015,7 +1015,7 @@ def update1m(stocklist, startTime=None):
                             response.text,
                         )
                 except Exception as e:
-                    error("上传失败:", str(e))
+                    error("上传失败:", traceback.format_exc())
 
 
 def initLastStartTime1m():
@@ -1075,7 +1075,7 @@ def obj2Json(obj, max_depth=4, current_depth=1):
             result[attr_name] = obj2Json(attr_value, max_depth, current_depth + 1)
 
         except Exception as e:
-            result[attr_name] = f"<无法获取属性值: {str(e)}>"
+            result[attr_name] = f"<无法获取属性值: {traceback.format_exc()}>"
 
     return result
 
@@ -1210,7 +1210,7 @@ def object_to_json(obj, max_depth=3, current_depth=0):
             result[attr_name] = object_to_json(attr_value, max_depth, current_depth + 1)
 
         except Exception as e:
-            result[attr_name] = f"<无法获取属性值: {str(e)}>"
+            result[attr_name] = f"<无法获取属性值: {traceback.format_exc()}>"
 
     return result
 
