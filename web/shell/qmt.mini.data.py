@@ -317,12 +317,12 @@ def update1dTask():
     info("update1dTask")
     try:
         g.candidates = getCandidates()
-        resetThreadId("u1d")
+        resetThreadId("u1dc")
         # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
         update1d(g.candidates)
 
         g.ruleCodes = getRuleCodes()
-        resetThreadId("u1d")
+        resetThreadId("u1dr")
         update1d(g.ruleCodes)
 
         resetThreadId("u1d")
