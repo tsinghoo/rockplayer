@@ -746,15 +746,15 @@ def BOLL(table, period=20, k=2):
 
 
 def RANGE(table, period=5):
-    # 计算最近period天的平均振幅
     table["range"] = 0
     for i in range(period, len(table)):
         high = table["high"].values[i - period : i + 1]
         low = table["low"].values[i - period : i + 1]
         delta = high - low
         info("delta:", delta)
-        info("delta.mean:", delta.mean())
-        table["range"].values[i] = delta.mean()
+        mean = delta.mean()
+        info("delta.mean:", mean)
+        table["range"].values[i] = mean
 
 def CCI(table):
     table["cci"] = 0
@@ -782,7 +782,7 @@ def get1dData(stocklist, index, startTime, endTime):
     period = "1d"
     params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
     info("downloading", period, "from", startTime, "for", scode)
-    xtdata.download_history_data(scode, period, startTime, endTime)
+    xtdata.download_history_data(scode, period, startTime, endTime, True)
     # download_history_data2 批量版本 todo
     # params = []
     info(
@@ -800,7 +800,7 @@ def get1dData(stocklist, index, startTime, endTime):
         len(stocklist),
         ")",
     )
-    df = xtdata.get_market_data_ex(
+    df = xtdata.get_market_data(
         params,
         stock_list=[scode],
         period=period,
