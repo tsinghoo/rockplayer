@@ -3007,6 +3007,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
         let buyTrade = await db.getSync(`select * from tstock where scode=? and deleted=0 and tamount>0 order by tday desc, ttime desc limit 1`, [scode], threadId);
         let strictCheck = true;
         if (buyTrade != null && buyTrade.tprice > trade.tprice) {
+            info(`buy.tprice > sell.tprice (${buyTrade.tprice}>${trade.tprice})`, threadId);
             //割肉后逢底便入
             strictCheck = false;
         }
