@@ -11,10 +11,13 @@ def main():
         # 清屏
         os.system('cls' if os.name == 'nt' else 'clear')
         
-        print("0. start gjzqqmt")
-        print("q. quit")
-        user_input = input("Please select: ")
-        
+        user_input = os.environ['startGjzqqmt']
+
+        if user_input == "":
+            print("0. start gjzqqmt")
+            print("q. quit")
+            user_input = input("Please select: ")
+            
         if user_input == "0":
             # 启动XtItClient.exe
             exe_path = r"z:\data\soft\gjzqqmt\bin.x64\XtItClient.exe"
@@ -27,11 +30,15 @@ def main():
         else:
             print("no start")
         
-        print("1. wine")
-        print("2. windows")
-        print("q. quit")
-        
-        user_input = input("Please select: ")
+
+        user_input = os.environ['env']
+
+        if user_input == "":
+            print("1. wine")
+            print("2. windows")
+            print("q. quit")
+            
+            user_input = input("Please select: ")
         
         if user_input == "1":
             qmtpath = r"z:\data\soft\gjzqqmt\userdata_mini"
@@ -49,12 +56,14 @@ def main():
         else:
             continue
         
-        print("1. http://152.136.244.225 vbj")
-        print("2. http://test.labadida.com:3001")
-        print("3. http://192.168.66.205:3001")
-        print("q. quit")
-        
-        user_input = input("Please select: ")
+        user_input = os.environ['url']
+        if user_input == "":
+            print("1. http://152.136.244.225 vbj")
+            print("2. http://test.labadida.com:3001")
+            print("3. http://192.168.66.205:3001")
+            print("q. quit")
+            
+            user_input = input("Please select: ")
         
         if user_input == "1":
             proxy = "http://152.136.244.225"

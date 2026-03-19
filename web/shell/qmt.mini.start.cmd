@@ -6,6 +6,10 @@ cls
 
 set PATH=z:\data\soft\pythonwin3.6.8\;%PATH%
 @echo PATH=%PATH%
+set startGjzqqmt=0
+set env=2
+set url=1
+
 
 python .\qmt.mini.start.py 
 
