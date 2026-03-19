@@ -3661,7 +3661,7 @@ async function genCci(scode, req, all) {
         error(`${r.rows.length} < ${period} 1d data`, req.threadId)
         return;
     }
-    if (r.rows[0].cci == -200 && r.rows[1].cci == -200 && !all) {
+    if ((r.rows[0].cci == -200 || r.rows[1].cci == -200) && !all) {
         info(`need recalc all cci`, req.threadId);
         genCci(scode, req, 1);
         return;
@@ -3724,7 +3724,7 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             if (period == "1d") {
-                row.cci = 0;
+                row.cci = -200;
                 row.kdj_k = 0;
                 row.kdj_d = 0;
                 row.kdj_j = 0;
