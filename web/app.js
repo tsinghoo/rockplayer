@@ -3012,7 +3012,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             strictCheck = false;
         }
 
-        let all = {};
+        let all;
 
         if (strictCheck) {
             all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
@@ -3026,7 +3026,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
                 all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
             }
 
-            if (all.reason) {
+            if (all && all.reason) {
                 return { error: `${all.reason}`, sname };
             }
             let avgPrice = (currentPrice + all.rows[0].low) / 2;
@@ -3057,7 +3057,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
                 all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
             }
 
-            if (all.reason) {
+            if (all && all.reason) {
                 return { error: `${all.reason}`, sname };
             }
 
