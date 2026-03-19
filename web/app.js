@@ -3004,15 +3004,26 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             return { error: `I:buy by hand`, sname };
         }
 
-        let all;
+        let buyTrade = await db.getSync(`select * from tstock where scode=? and deleted=0 and tamount>0 order by tday desc, ttime desc limit 1`, [scode], threadId);
+        let strictCheck = true;
+        if (buyTrade != null && buyTrade.tprice > trade.tprice) {
+            //割肉后逢底便入
+            strictCheck = false;
+        }
 
-        all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
+        let all = {};
+
+        if (strictCheck) {
+            all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
+        }
 
         if (currentPrice <= buyPrice) {
             info(`currentPrice <= buyPrice(${currentPrice} <= ${buyPrice})`, threadId);
-            all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
-            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
-            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
+            if (strictCheck) {
+                all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
+                all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
+                all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
+            }
 
             if (all.reason) {
                 return { error: `${all.reason}`, sname };
@@ -3040,8 +3051,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             setSellPriceByBuy(rc, maxDelta);
         } else {
             info(`currentPrice > buyPrice(${currentPrice})>${buyPrice})`, threadId);
-            all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
-            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
+            if (strictCheck) {
+                all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 1);
+                all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
+            }
 
             if (all.reason) {
                 return { error: `${all.reason}`, sname };
