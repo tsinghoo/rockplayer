@@ -3012,7 +3012,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             strictCheck = false;
         }
 
-        let all = await ensureData1dIsEnough(scode, sname, threadId, prevRes);
+        let all = await ensureData1dIsEnough(scode, sname, threadId);
 
         if (strictCheck) {
             all = await ensureCciNotCrossDown100(scode, sname, threadId, all);
