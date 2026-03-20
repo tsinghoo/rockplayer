@@ -3049,6 +3049,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
                 expireHours: 12
             };
 
+            if (!strictCheck) {
+                rc.auto = 0;
+            }
+
             setSellPriceByBuy(rc, maxDelta);
         } else {
             info(`currentPrice > buyPrice(${currentPrice})>${buyPrice})`, threadId);
@@ -3075,6 +3079,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
                 auto: 1,
                 expireHours: 12
             };
+
+            if (!strictCheck) {
+                rc.auto = 0;
+            }
 
             if (currentPrice < buyPrice) {
                 info(`currentPrice < buyPrice(${currentPrice})<${buyPrice})`, threadId);
