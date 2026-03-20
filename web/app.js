@@ -1333,8 +1333,24 @@ app.post('/stock/update', async (req, resp) => {
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
             let tday = timeFormat(new Date(), "yyyyMMdd");
             let ttime = fields[0];
-            let res = await db.runSync(sql, [tday, ttime, fields[3], fields[2], fields[4], "国金", getMarket(fields[2]), fields[6], fields[5],
-                fields[7], fields[8], fields[1], '', tday + " " + ttime]);
+            let sname = fields[3];
+            let scode = fields[2];
+            let operationDirection = fields[4];
+            let operationName = "国金";
+            let market = getMarket(fields[2]);
+            let tprice = fields[5];
+            let tamount = fields[6];
+            let tcash = fields[7];
+            let taccount = fields[1];
+            let tid = `${tday}.${ttime}.${scode}.${tprice}`;
+            let tpair = "";
+
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
+            }
+
+            let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
+                tcash, tid, taccount, tpair, tday + " " + ttime]);
             if (res.error) {
                 info(res.error, req.threadId)
                 resp.send(res);
