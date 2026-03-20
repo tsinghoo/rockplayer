@@ -792,10 +792,6 @@ window.stock_list = window.stock_list || (function () {
                 $(".repeatCode").hide();
             }
 
-            if (keys.includes("K1d")) {
-                // self.showK1d();
-            }
-
             $(".ruleStatus").click(function (e) {
                 self.onTdClicked(this);
                 self.toUpdateRuleStatus();
@@ -1621,7 +1617,7 @@ window.stock_list = window.stock_list || (function () {
         updatePrices: async function () {
             let res = await share.getSync__(`/stock/price/current`);
             let tdHeight = 0;
-            let showRuleStatus = false;
+            let showRuleStatus = true;
             res.rows.forEach(row => {
                 self.currentPrices[row.scode] = row;
 
@@ -1632,7 +1628,7 @@ window.stock_list = window.stock_list || (function () {
                             let td = $(this);
                             if (tdHeight == 0) {
                                 tdHeight = td.innerHeight();
-                                showRuleStatus = tdHeight > 300;
+                                // showRuleStatus = tdHeight > 300;
                             }
                             let cpc = td.find(".curPrice");
                             let data = td.attr("data");
