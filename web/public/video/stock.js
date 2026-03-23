@@ -1101,6 +1101,8 @@ window.stock_list = window.stock_list || (function () {
                     let r = res.data[scode][broker];
                     if (r) {
                         self.showRuleStatus(r, td);
+                    } else {
+                        td.html("");
                     }
                 }
             }
