@@ -1915,7 +1915,7 @@ window.stock_list = window.stock_list || (function () {
         },
 
         onTdClicked: function (ele) {
-            let data = $(ele).parent("tr").attr("data");
+            let data = $(ele).parents("tr").attr("data");
             data = JSON.parse(data);
             self.selectedData = data;
             share.currentTarget = ele;
