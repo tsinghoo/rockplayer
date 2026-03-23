@@ -793,8 +793,11 @@ window.stock_list = window.stock_list || (function () {
             }
 
             $(".ruleStatus").click(function (e) {
-                self.onTdClicked(this);
-                self.toUpdateRuleStatus();
+                let data = $(this).parents("tr").attr("data");
+                data = JSON.parse(data);
+                self.selectedData = data;
+                share.currentTarget = this;
+                self.showMenu4RuleContent();
             })
 
             $(".thRule").click(function (e) {
