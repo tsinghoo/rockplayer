@@ -1301,6 +1301,49 @@ app.post('/stock/update', async (req, resp) => {
                 buy: fields[6],
                 updateTime: now
             });
+        } else if (broker == "国金流水") {
+            fields = fields.concat([""]);
+            let tday = fields[0];
+            let ttime = "00:00:00";
+            let sname = fields[2];
+            let scode = fields[1];
+            let operationDirection = fields[6];
+            let operationName = "国金";
+            let market = "HK";
+            let tprice = fields[4];
+            let tamount = fields[5];
+            let tcash = fields[7];
+            let taccount = fields[9];
+            let tpair = "";
+
+            scode = fixScode(scode);
+
+            if (operationDirection.indexOf("卖") >= 0 && tamount.substring(0, 1) != "-") {
+                tamount = "-" + tamount;
+            }
+
+            let tid = `${tday}.${ttime}.${scode}.${tprice}`;
+            let lastOperationTime = tday + " " + ttime;
+
+            var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
+            tcash,tid,taccount, tpair,lastOperationTime) 
+        values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
+            let res = await db.runSync(sql, [tday, ttime, sname, scode, operationDirection, operationName, market, tamount, tprice,
+                tcash, tid, taccount, tpair, lastOperationTime]);
+            if (res.error) {
+                info(res.error, req.threadId)
+                resp.send(res);
+                return;
+            } else {
+            }
+
+            await insertOrIgnore("tStockBasic", {
+                id: scode,
+                scode: scode,
+                sname: sname,
+                buy: tprice,
+                updateTime: now
+            });
         } else if (broker == "国金当日") {
             //tdx 国金证券
             fields = fields.concat([""]);
