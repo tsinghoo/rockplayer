@@ -2817,8 +2817,8 @@ app.get('/stock/rule/delete', async (req, res) => {
         delete rules[scode][broker];
     }
 
-    let sql = `delete from tTradeRule where id=?`;
-    let result = await db.runSync(sql, [id]);
+    let sql = `delete from tTradeRule where scode=? and broker=?`;
+    let result = await db.runSync(sql, [scode, broker]);
 
     if (result.error == null) {
         sql = `delete from tRuleAction where scode=? and broker=?`;
@@ -3059,7 +3059,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             return { error: `toSell`, sname };
         }
 
-        if (oldRule.rule.buyAmount < 1) {
+        if (oldRule && oldRule.rule.buyAmount < 1) {
             return { error: `I:buy by hand`, sname };
         }
 
@@ -3162,7 +3162,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             return { error: `toBuy`, sname };
         }
 
-        if (oldRule.rule.sellAmount < 1) {
+        if (oldRule && oldRule.rule.sellAmount < 1) {
             return { error: `I:sell by hand`, sname };
         }
 

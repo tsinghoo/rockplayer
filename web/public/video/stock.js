@@ -299,7 +299,7 @@ window.stock_list = window.stock_list || (function () {
                 share.toastError__(res.error);
             } else {
                 share.toastSuccess__("canceled", 1000);
-                self.exeSql(self.sqlRow, true);
+                // self.exeSql(self.sqlRow, true);
             }
         },
         toCancelRule: async function (all) {
@@ -308,7 +308,7 @@ window.stock_list = window.stock_list || (function () {
                 share.toastError__(res.error);
             } else {
                 share.toastSuccess__("canceled", 1000);
-                self.exeSql(self.sqlRow, true);
+                // self.exeSql(self.sqlRow, true);
             }
         },
         showMenu4RuleContent: async function () {
@@ -316,15 +316,6 @@ window.stock_list = window.stock_list || (function () {
             let guide = ``;
 
             let buttons = [
-                {
-                    text: "修改",
-                    onTap: function () {
-                        share.closePopup__();
-                        let rule = self.selectedData["规则"];
-                        rule = JSON.parse(rule);
-                        self.showBuySell(rule);
-                    }
-                },
                 {
                     text: "删除",
                     onTap: function () {
