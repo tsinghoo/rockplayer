@@ -2279,7 +2279,7 @@ app.get('/stock/rule/create', async (req, res) => {
     }
 
     if (json.buyDelta == null) {
-        json.buyDelta = json.sellPrice - json.buyPrice;
+        json.buyDelta = json.sell - json.buy;
     }
 
     if (json.sellDelta == null) {
