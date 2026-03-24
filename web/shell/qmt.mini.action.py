@@ -31,10 +31,11 @@ g = G()
 g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
 g.broker = "国金"
-g.lastUpdatePriceTime = time.time()
+g.lastUploadPriceTime = time.time()
 g.lastGetActionsTime = time.time()
 g.subscribeId = 0
 g.lastTicks = {}
+g.lastUpdatePriceTime={}
 g.changedTicks = {}
 g.actions = {}
 g.reloadK1d = []
@@ -454,14 +455,14 @@ def uploadStockPrice():
     sb, g.changedTicks = g.changedTicks, {}  # 这行是原子的
     if len(list(sb)) < 1:
         now = time.time()
-        if now - g.lastUpdatePriceTime > 10:
+        if now - g.lastUploadPriceTime > 10:
             info("0 stocks, skip upload")
-            g.lastUpdatePriceTime = now
+            g.lastUploadPriceTime = now
         return
     info("上传", len(list(sb)), "个股票价格")
     # 打印g.tick的所有key
     info(sb.keys())
-    g.lastUpdatePriceTime = time.time()
+    g.lastUploadPriceTime = time.time()
     # info(sb.keys())
     try:
         response = requests.post(
@@ -600,19 +601,27 @@ def updateTickTask():
                     info("skip", stock)
                     continue
                 if g.lastTicks.get(stock) is None:
+                    g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
                         "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
                 elif g.lastTicks[stock]["lastPrice"] != ticks[stock]["lastPrice"]:
+                    g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
                         "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
-                elif now - ticks[stock]["time"] > 5000:
-                    ticks[stock]["time"] = now
+                elif g.lastUpdatePriceTime.get(stock) is None:
+                    g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
-                        "time": ticks[stock]["time"],
+                        "time": now,
+                        "lastPrice": ticks[stock]["lastPrice"],
+                    }
+                elif now - g.lastUpdatePriceTime.get(stock) > 8000:
+                    g.lastUpdatePriceTime[stock] = now
+                    g.changedTicks[stock] = {
+                        "time": now,
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
 
