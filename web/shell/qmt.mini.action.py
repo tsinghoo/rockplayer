@@ -31,9 +31,11 @@ g = G()
 g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
 g.broker = "国金"
-
+g.lastUpdatePriceTime = time.time()
+g.lastGetActionsTime = time.time()
 g.subscribeId = 0
-g.tick = {}
+g.lastTicks = {}
+g.changedTicks = {}
 g.actions = {}
 g.reloadK1d = []
 g.uploading = 0
@@ -449,11 +451,17 @@ def getRuleCodes():
 def uploadStockPrice():
     # 组装成json对象post到test1.91taogu.com
     # 为data添加passcode属性
-    sb, g.tick = g.tick, {}  # 这行是原子的
+    sb, g.changedTicks = g.changedTicks, {}  # 这行是原子的
     if len(list(sb)) < 1:
-        info("0 stocks, skip upload")
+        now = time.time()
+        if now - g.lastUpdatePriceTime > 10:
+            info("0 stocks, skip upload")
+            g.lastUpdatePriceTime = now
         return
     info("上传", len(list(sb)), "个股票价格")
+    #打印g.tick的所有key
+    info(sb.keys())
+    g.lastUpdatePriceTime = time.time()
     # info(sb.keys())
     try:
         response = requests.post(
@@ -538,7 +546,7 @@ def uploadPosition(positions=None):
             return
         else:
             response.encoding = "utf-8"
-            info("上传持仓到test1成功:", response.status_code, response.text)
+            info("上传持仓成功:", response.status_code, response.text)
     except Exception as e:
         info("请求失败:", str(e))
 
@@ -553,7 +561,7 @@ def resetThreadId(label=""):
 
 def reload1dTask():
     info("reload1dTask")
-    
+
     reloadK1d, g.reloadK1d = g.reloadK1d, []
     if len(reloadK1d) > 0:
         info("reloading 1d data")
@@ -571,11 +579,30 @@ def update1mTask():
 
 
 def updatePriceTask():
-    info("upt")
+    resetThreadId("upt")
     while True:
         uploadStockPrice()
         time.sleep(0.1)
 
+def updateTickTask():
+    resetThreadId("utt")
+    while True:
+        time.sleep(0.1)
+        try:
+            ticks = xtdata.get_full_tick(g.stocklist)
+            #info("updateTickTask", ticks)
+            #逐个比较ticks和g.lastTicks的价格是否相等，如果不相等则更新到g.tick里
+            for stock in ticks:
+                if stock not in g.stocklist:
+                    info("skip", stock)
+                    continue
+                if g.lastTicks.get(stock) is None or g.lastTicks[stock]["lastPrice"] != ticks[stock]["lastPrice"]:
+                    info("changed", stock)
+                    g.changedTicks[stock] = ticks[stock]
+
+            g.lastTicks = ticks
+        except Exception as e:
+            error("updateTickTask error:",  traceback.format_exc())
 
 def uploadDetail(details):
     info("uploadDetail", (details))
@@ -645,8 +672,15 @@ def getActions():
         else:
             response.encoding = "utf-8"
             content = response.text
-            debug("getActions成功:", response.status_code, content)
             jso = json.loads(content)
+            #如果jso["data"]数组为空，则打印警告
+            if len(jso["data"]) == 0:
+                now = time.time()
+                if now - g.lastGetActionsTime > 60:
+                    g.lastGetActionsTime = time.time()
+                    debug("getActions成功:", content)
+            else:
+                debug("getActions成功:", content)
             for act in jso["data"]:
                 act["scode"] = act["scode"].replace(".HK", ".HGT")
                 # 如果act["scode"]里包含".HK",则用新的stockAccount
@@ -723,7 +757,7 @@ def getActions():
                     elif act["action"] == "reloadK1d":
                         info("reloadK1d action for", act["scode"])
                         g.reloadK1d.append(act["scode"])
-                        
+
                         t1 = Thread(target=reload1dTask)
                         t1.start()
                     elif act["action"] == "connectWebSocket":
@@ -889,10 +923,10 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                             row["kdj_j"],
                         ]
                     )
-                else:
-                    info(
-                        f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}"
-                    )
+                # else:
+                #     info(
+                #         f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}"
+                #     )
             if len(batch_data) > 0:
                 body = {
                     "data": obj2Json(batch_data),
@@ -1346,7 +1380,7 @@ def subscribe_whole_callback(data):
         for stock in data:
             if stock not in g.stocklist:
                 continue
-            g.tick[stock] = data[stock]
+            g.changedTicks[stock] = data[stock]
     except Exception as e:
         info(f"error:{e}")
 
@@ -1590,7 +1624,7 @@ if __name__ == "__main__":
     # js = python_to_json(deals)
     # info("deals HGT:", js)
 
-    resubscribe()
+    # resubscribe()
     # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
     # t1 = Thread(target=update1dTask)
@@ -1604,6 +1638,9 @@ if __name__ == "__main__":
 
     t5 = Thread(target=updatePriceTask)
     t5.start()
-    
+
+    t6 = Thread(target=updateTickTask)
+    t6.start()
+
     # 阻塞主线程退出
     xt_trader.run_forever()
