@@ -2464,7 +2464,12 @@ window.stock_list = window.stock_list || (function () {
 
             let res = await share.getSync__(`/stock/trades?scode=${scode}&all=${all}&type=${type}`);
             let trades = res.data;
-            let total = 0;
+            let cprice = 0;
+            if (self.currentPrices[scode]) {
+                cprice = self.currentPrices[scode].buy;
+            }
+            let cash = 0;
+            let positions = 0;
             let tr = trades.map(row => {
                 let html = `
                     <tr class="tradeHistoryTr clickable" data='${JSON.stringify(row)}'> 
@@ -2476,8 +2481,8 @@ window.stock_list = window.stock_list || (function () {
                         <td>${row.operationName}</td>
                     </tr>
                  `;
-                total -= row.tprice * row.tamount;
-
+                cash -= row.tprice * row.tamount;
+                positions += row.tamount;
                 if (row.deleted) {
                     html = `
                     <tr class="tradeHistoryTr clickable" data='${JSON.stringify(row)}'> 
@@ -2494,7 +2499,7 @@ window.stock_list = window.stock_list || (function () {
                 return html;
             });
 
-            let html = `<div>盈亏: ${total}</div>
+            let html = `<div>盈亏: ${cash + positions * cprice}</div>
                         <table class="table">
                             <thead>
                                 <tr class="tradeListHeader clickable">
