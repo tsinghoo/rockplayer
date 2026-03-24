@@ -2278,6 +2278,14 @@ app.get('/stock/rule/create', async (req, res) => {
         }
     }
 
+    if (json.buyDelta == null) {
+        json.buyDelta = json.sellPrice - json.buyPrice;
+    }
+
+    if (json.sellDelta == null) {
+        json.sellDelta = json.buyDelta;
+    }
+
     let result = await db.runSync(sql, [ruleId, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
     await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
     if (rules[json.scode] == null) {
@@ -3012,15 +3020,17 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
         dip = 10;
     }
 
+    let bounce = dip;
+
     let lastPrice = trade.tprice;
-    let buyPrice = lastPrice * (1 - 0.02);
+    let buyDelta = 0.02 * lastPrice;
+    let sellDelta = 0.02 * lastPrice;
+    let buyPrice = lastPrice - buyDelta;
     if (lastPrice - buyPrice < minDelta) {
         buyPrice = lastPrice - minDelta;
     }
 
-    buyPrice = parseFloat(buyPrice.toFixed(3));
-
-    let sellPrice = lastPrice * (1 + 0.02);
+    let sellPrice = lastPrice + sellDelta;
     if (sellPrice - lastPrice < minDelta) {
         sellPrice = lastPrice + minDelta;
     }
@@ -3029,6 +3039,22 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
         sellPrice = lastPrice + maxDelta;
     }
 
+    if (oldRule && oldRule.rule) {
+        bounce = oldRule.rule.bounce;
+        dip = oldRule.rule.dip;
+        if (oldRule.rule.buyDelta) {
+            buyDelta = oldRule.rule.buyDelta;
+            buyPrice = lastPrice - buyDelta;
+        }
+
+        if (oldRule.rule.sellDelta) {
+            sellDelta = oldRule.rule.sellDelta;
+            sellPrice = lastPrice + sellDelta;
+        }
+    }
+
+
+    buyPrice = parseFloat(buyPrice.toFixed(3));
     sellPrice = parseFloat(sellPrice.toFixed(3));
 
     let rc = null;
@@ -3092,9 +3118,12 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
             rc = {
                 buy: buyPrice,
-                bounce: dip,
+                bounce: bounce,
+                buyDelta,
+                sellDelta,
                 buyAmount: amount,
                 sell: currentPrice,
+
                 dip: dip,
                 sellAmount: amount,
                 scode: scode,
@@ -3123,7 +3152,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
             rc = {
                 buy: buyPrice,
-                bounce: dip,
+                bounce: bounce,
+                buyDelta,
+                sellDelta,
                 buyAmount: amount,
                 sell: lastPrice,
                 dip: dip,
@@ -3165,10 +3196,12 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
         rc = {
             buy: lastPrice,
-            bounce: "0.02",
+            bounce,
+            buyDelta,
+            sellDelta,
             buyAmount: amount,
             sell: sellPrice,
-            dip: "0.02",
+            dip: dip,
             sellAmount: amount,
             scode: scode,
             sname: trade.sname,
