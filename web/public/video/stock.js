@@ -2494,7 +2494,7 @@ window.stock_list = window.stock_list || (function () {
                 return html;
             });
 
-            let html = `<div>盈亏:${total}</div>
+            let html = `<div>盈亏: ${total}</div>
                         <table class="table">
                             <thead>
                                 <tr class="tradeListHeader clickable">
