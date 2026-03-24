@@ -2476,7 +2476,7 @@ window.stock_list = window.stock_list || (function () {
                         <td>${row.operationName}</td>
                     </tr>
                  `;
-                total += row.tprice * row.tamount;
+                total -= row.tprice * row.tamount;
 
                 if (row.deleted) {
                     html = `
