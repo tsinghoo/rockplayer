@@ -2765,10 +2765,10 @@ app.get('/stock/rule/cancel', async (req, res) => {
             sql = `update tRuleAction set done = -1 where scode in (select scode from tstockbasic where market in ('EC'))`;
             result = await db.runSync(sql, []);
         } else if (all == "待买") {
-            sql = `update tRuleAction set done = -1 where action='buy' )`;
+            sql = `update tRuleAction set done = -1 where action='buy'`;
             result = await db.runSync(sql, []);
         } else if (all == "待卖") {
-            sql = `update tRuleAction set done = -1 where action='sell' )`;
+            sql = `update tRuleAction set done = -1 where action='sell'`;
             result = await db.runSync(sql, []);
         } else {
             sql = `update tRuleAction set done = -1 where ruleId=?`;
