@@ -2188,10 +2188,7 @@ app.post('/stock/quotes.mini', async (req, res) => {
         let v1 = data[scode];
         scode = scode.split(".")[0];
         let updateTime = v1.time;
-        let price = v1.bidPrice[0];
-        if (price == 0) {
-            price = v1.askPrice[0];
-        }
+        let price = v1.lastPrice;
 
         if (price == 0) {
         } else {

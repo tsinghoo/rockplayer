@@ -459,7 +459,7 @@ def uploadStockPrice():
             g.lastUpdatePriceTime = now
         return
     info("上传", len(list(sb)), "个股票价格")
-    #打印g.tick的所有key
+    # 打印g.tick的所有key
     info(sb.keys())
     g.lastUpdatePriceTime = time.time()
     # info(sb.keys())
@@ -584,25 +584,42 @@ def updatePriceTask():
         uploadStockPrice()
         time.sleep(0.1)
 
+
 def updateTickTask():
     resetThreadId("utt")
     while True:
         time.sleep(0.1)
         try:
             ticks = xtdata.get_full_tick(g.stocklist)
-            #info("updateTickTask", ticks)
-            #逐个比较ticks和g.lastTicks的价格是否相等，如果不相等则更新到g.tick里
+
+            info("get", len(list(ticks)), "ticks")
+            now = int(time.time() * 1000)
+            # 逐个比较ticks和g.lastTicks的价格是否相等，如果不相等则更新到g.tick里
             for stock in ticks:
                 if stock not in g.stocklist:
                     info("skip", stock)
                     continue
-                if g.lastTicks.get(stock) is None or g.lastTicks[stock]["lastPrice"] != ticks[stock]["lastPrice"]:
-                    info("changed", stock)
-                    g.changedTicks[stock] = ticks[stock]
+                if g.lastTicks.get(stock) is None:
+                    g.changedTicks[stock] = {
+                        "time": ticks[stock]["time"],
+                        "lastPrice": ticks[stock]["lastPrice"],
+                    }
+                elif g.lastTicks[stock]["lastPrice"] != ticks[stock]["lastPrice"]:
+                    g.changedTicks[stock] = {
+                        "time": ticks[stock]["time"],
+                        "lastPrice": ticks[stock]["lastPrice"],
+                    }
+                elif now - ticks[stock]["time"] > 5000:
+                    ticks[stock]["time"] = now
+                    g.changedTicks[stock] = {
+                        "time": ticks[stock]["time"],
+                        "lastPrice": ticks[stock]["lastPrice"],
+                    }
 
             g.lastTicks = ticks
         except Exception as e:
-            error("updateTickTask error:",  traceback.format_exc())
+            error("updateTickTask error:", traceback.format_exc())
+
 
 def uploadDetail(details):
     info("uploadDetail", (details))
@@ -673,7 +690,7 @@ def getActions():
             response.encoding = "utf-8"
             content = response.text
             jso = json.loads(content)
-            #如果jso["data"]数组为空，则打印警告
+            # 如果jso["data"]数组为空，则打印警告
             if len(jso["data"]) == 0:
                 now = time.time()
                 if now - g.lastGetActionsTime > 60:
