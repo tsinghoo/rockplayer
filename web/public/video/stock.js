@@ -1098,6 +1098,8 @@ window.stock_list = window.stock_list || (function () {
                     } else {
                         td.html("");
                     }
+                } else {
+                    td.html("");
                 }
             }
 
