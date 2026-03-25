@@ -593,7 +593,7 @@ def updateTickTask():
         try:
             ticks = xtdata.get_full_tick(g.stocklist)
 
-            info("get", len(list(ticks)), "ticks")
+            # info("get", len(list(ticks)), "ticks")
             now = int(time.time() * 1000)
             # 逐个比较ticks和g.lastTicks的价格是否相等，如果不相等则更新到g.tick里
             for stock in ticks:
