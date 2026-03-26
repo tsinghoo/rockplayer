@@ -618,7 +618,7 @@ def updateTickTask():
                         "time": now,
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
-                elif now - g.lastUpdatePriceTime.get(stock) > 8000:
+                elif now - g.lastUpdatePriceTime.get(stock) > 30000:
                     g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
                         "time": now,
