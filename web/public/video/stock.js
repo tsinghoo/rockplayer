@@ -3465,12 +3465,11 @@ window.stock_list = window.stock_list || (function () {
                 toolbox: {
                     feature: {
                         myCustomTool: {
-                            show: true,
-                            title: '关闭',
-                            icon: 'path://M15 15 L25 25 M25 15 L15 25',
-                            onclick: function (e, i, name, event) {
-                                self.toCloseK1d(scode);
-                                event.event.stopPropagation();
+                            title: '重载',
+                            icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
+                            onclick: function (e, i, name, e) {
+                                self.showK1ds([scode]);
+                                e.event.stopPropagation();
                             }
                         },
                         dataZoom: {
