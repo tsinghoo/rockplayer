@@ -3008,10 +3008,14 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
     let currentPrice = stockBasicInfo.buy;
     if (currentPrice < 30) {
         dip = 0.005;
+        minDelta = 0.3;
+        maxDelta = 1;
     } else if (currentPrice < 300) {
         dip = 0.02;
     } else {
         dip = 0.1;
+        minDelta = 1;
+        maxDelta = 3;
     }
 
     if (trade.operationName == "BNB" || trade.operationName == "OKX") {
@@ -3037,20 +3041,6 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
     if (sellPrice - lastPrice > maxDelta) {
         sellPrice = lastPrice + maxDelta;
-    }
-
-    if (oldRule && oldRule.rule) {
-        bounce = oldRule.rule.bounce;
-        dip = oldRule.rule.dip;
-        if (oldRule.rule.buyDelta) {
-            buyDelta = oldRule.rule.buyDelta;
-            buyPrice = lastPrice - buyDelta;
-        }
-
-        if (oldRule.rule.sellDelta) {
-            sellDelta = oldRule.rule.sellDelta;
-            sellPrice = lastPrice + sellDelta;
-        }
     }
 
 
@@ -3103,7 +3093,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
         if (currentPrice <= buyPrice) {
             info(`currentPrice <= buyPrice(${currentPrice} <= ${buyPrice})`, threadId);
             if (strictCheck) {
-                all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 1, 2);
+                all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 0, 1);
                 all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
                 all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
             }
@@ -3213,11 +3203,11 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
         if (currentPrice > rc.sell) {
             info(`currentPrice > rc.sell(${currentPrice})>${rc.sell})`, threadId);
-            rc.sell = currentPrice * (1 + 0.001);
+            rc.sell = currentPrice * (1 + 0.02);
 
-            if (rc.sell - currentPrice > minDelta) {
+            if (rc.sell - currentPrice > maxDelta) {
                 info(`rc.sell - currentPrice > minDelta(${rc.sell} - ${currentPrice} > ${minDelta})`, threadId);
-                rc.sell = currentPrice + minDelta;
+                rc.sell = currentPrice + maxDelta;
             }
 
             setBuyPriceBySell(rc, maxDelta);
