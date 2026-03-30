@@ -3004,18 +3004,21 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
     let minDelta = 0.5;
     let maxDelta = 2;
     let dip = 0.02;
+    let deltaRatio = 0.02;
 
     let currentPrice = stockBasicInfo.buy;
     if (currentPrice < 30) {
         dip = 0.005;
         minDelta = 0.3;
         maxDelta = 1;
+        deltaRatio = 0.04;
     } else if (currentPrice < 300) {
         dip = 0.02;
     } else {
         dip = 0.1;
         minDelta = 1;
         maxDelta = 3;
+        deltaRatio = 0.01;
     }
 
     if (trade.operationName == "BNB" || trade.operationName == "OKX") {
@@ -3027,8 +3030,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
     let bounce = dip;
 
     let lastPrice = trade.tprice;
-    let buyDelta = 0.02 * lastPrice;
-    let sellDelta = 0.02 * lastPrice;
+    let buyDelta = deltaRatio * lastPrice;
+    let sellDelta = deltaRatio * lastPrice;
     let buyPrice = lastPrice - buyDelta;
     if (lastPrice - buyPrice < minDelta) {
         buyPrice = lastPrice - minDelta;
@@ -3201,9 +3204,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             expireHours: 12
         };
 
-        if (currentPrice > rc.sell) {
+        if (currentPrice > (rc.sell + lastPrice) / 2) {
             info(`currentPrice > rc.sell(${currentPrice})>${rc.sell})`, threadId);
-            rc.sell = currentPrice * (1 + 0.02);
+            rc.sell = currentPrice * (1 + deltaRatio);
 
             if (rc.sell - currentPrice > maxDelta / 2) {
                 info(`rc.sell - currentPrice > minDelta(${rc.sell} - ${currentPrice} > ${minDelta})`, threadId);
