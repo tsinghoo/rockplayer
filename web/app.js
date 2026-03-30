@@ -3205,9 +3205,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             info(`currentPrice > rc.sell(${currentPrice})>${rc.sell})`, threadId);
             rc.sell = currentPrice * (1 + 0.02);
 
-            if (rc.sell - currentPrice > maxDelta) {
+            if (rc.sell - currentPrice > maxDelta / 2) {
                 info(`rc.sell - currentPrice > minDelta(${rc.sell} - ${currentPrice} > ${minDelta})`, threadId);
-                rc.sell = currentPrice + maxDelta;
+                rc.sell = currentPrice + maxDelta / 2;
             }
 
             setBuyPriceBySell(rc, maxDelta);
