@@ -2262,6 +2262,13 @@ app.get('/stock/rule/create', async (req, res) => {
     let calc = eval(json.expireHours);
     let expireHours = parseFloat(calc);
     let expireTime = now + expireHours * 60 * 60 * 1000;
+    if (expireHours == 0) {
+        //将expireTime设置为当天15:01
+        expireTime = new Date();
+        expireTime.setHours(16, 10, 0, 0);
+        expireTime = expireTime.getTime();
+    }
+
     let ruleId = `${json.scode}.${broker}`;
 
     let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [json.scode], threadId);
@@ -3222,8 +3229,13 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
     let broker = rc.broker;
     let now = Date.now();
     let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, closed, expireTime) values(?,?,?,?,?,?,?,?)`;
-    let expireHours = 12;
-    let expireTime = now + expireHours * 60 * 60 * 1000;
+    //将expireTime设置为当天14:10
+    let expireTime = new Date();
+    expireTime.setHours(16);
+    expireTime.setMinutes(10);
+    expireTime = expireTime.getTime();
+
+
     let id = `${scode}.${broker}`;
     let rule = { id, broker, scode, sname, rule: JSON.stringify(rc), createTime: now, closed: 0, expireTime };
     await insertOrReplace("tTradeRule", rule);
