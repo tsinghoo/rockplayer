@@ -243,7 +243,7 @@ window.stock_list = window.stock_list || (function () {
             popup = await share.popupAction__("", buttons);
 
         },
-        showAutoActionStartTimeSetting: async function () {
+        showAutoActionStartTimeSetting: async function (target) {
             let res = await share.getSync__("/stock/rule/action/startTime");
             if (res.error) {
                 share.toastError__(res.error);
@@ -283,7 +283,7 @@ window.stock_list = window.stock_list || (function () {
                 </div>
             `;
 
-            let popup = await share.popup__(null, html);
+            let popup = await share.popup__(target ? target : null, html);
             let c = $(`#${popup.id}`);
 
             c.find(".setBoth0930").on("click", function () {
@@ -1297,7 +1297,8 @@ window.stock_list = window.stock_list || (function () {
             });
 
             item.on("click", async function () {
-                await self.showAutoActionStartTimeSetting();
+                share.currentTarget = this;
+                await self.showAutoActionStartTimeSetting(this);
             });
 
             item.append(close);
