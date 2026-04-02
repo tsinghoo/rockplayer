@@ -3358,8 +3358,9 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
                 return { error: `${all.reason}`, sname };
             }
             let avgPrice = (currentPrice + all.rows[0].low) / 2;
-            if (buyPrice > avgPrice) {
-                buyPrice = avgPrice;
+            let minPrice = Math.min(avgPrice, currentPrice * (1 - deltaRatio / 2));
+            if (buyPrice > minPrice) {
+                buyPrice = minPrice;
             }
 
             rc = {
