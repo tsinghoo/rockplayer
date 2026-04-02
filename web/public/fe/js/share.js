@@ -5845,28 +5845,9 @@ window.mhgl_share =
         }
 
         let point;
-
-        if (target == null) {
-          if (share.lastClick && share.lastClick.clientX != null) {
-            let x = share.lastClick.clientX;
-            let y = share.lastClick.clientY;
-            share.debug__(`use: x: ${x}, y: ${y}, ${document.location.href}`);
-            point = $(`<div>`, {
-              text: "",
-              css: {
-                position: "fixed",
-                left: `${x}px`,
-                top: `${y}px`,
-                width: `1px`,
-                height: `1px`
-              }
-            });
-
-            $("body", document).append(point);
-            target = point[0];
-          } else {
-            target = share.currentTarget;
-          }
+        let centerMode = (target == null && share.currentTarget == null);
+        if (target == null && share.currentTarget != null) {
+          target = share.currentTarget;
         }
 
         let popupId = share.uuid__();
@@ -5874,33 +5855,25 @@ window.mhgl_share =
         $("body", document).append(`<div id="bg${popupId}" class="modal-backdrop init"/>`);
         $("body", document).append(`<div id="${popupId}" class="popup" role="tooltip" />`);
         $(`#${popupId}`, document).html(content);
-        $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
+        if (!centerMode) {
+          $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
+        }
 
         async function setPosition() {
 
           let tooltip = $(`#${popupId}`, document)[0];
           let arrow = $(`#arrow${popupId}`, document)[0];
-          let showArrow = true;
-          if (target == null) {
-            showArrow = false;
-            let x = window.innerWidth / 2;
-            let y = window.innerHeight / 2;
-            y = y - tooltip.clientHeight / 2;
-
-            share.debug__(`use: x: ${x}, y: ${y}, ${document.location.href}`);
-            point = $(`<div>`, {
-              text: "",
-              css: {
-                position: "fixed",
-                left: `${x}px`,
-                top: `${y}px`,
-                width: `1px`,
-                height: `1px`
-              }
+          if (centerMode || target == null) {
+            let left = Math.max((window.innerWidth - tooltip.offsetWidth) / 2, 8);
+            let top = Math.max((window.innerHeight - tooltip.offsetHeight) / 2, 8);
+            Object.assign(tooltip.style, {
+              left: `${left}px`,
+              top: `${top}px`,
             });
-
-            $("body", document).append(point);
-            target = point[0];
+            if (arrow) {
+              arrow.style.display = "none";
+            }
+            return;
           }
 
           let res = await share.computePosition(target, tooltip, {
@@ -5919,7 +5892,8 @@ window.mhgl_share =
             //opacity: 0
           });
 
-          if (showArrow) {
+          if (arrow) {
+            arrow.style.display = "";
             const staticSide = {
               top: 'bottom',
               right: 'left',
@@ -5936,15 +5910,15 @@ window.mhgl_share =
               bottom: '',
               [staticSide]: '-4px',
             });
-          } else {
-            arrow.style.display = "none";
           }
         }
 
         await setPosition();
 
         share.rocktb__($(`#${popupId}`, document));
-        // share.rocktb__($(`#arrow${popupId}`, document));
+        if (!centerMode) {
+          // share.rocktb__($(`#arrow${popupId}`, document));
+        }
         $(`#bg${popupId}`, document).animate({ opacity: .2 }, 100);
         onShown && onShown(popupId);
 
@@ -5953,7 +5927,9 @@ window.mhgl_share =
           update: async function (newContent) {
             if (newContent != null) {
               $(`#${popupId}`, document).html(newContent);
-              $(`#${popupId}`, document).append(`<div class="arrow" ></div>`);
+              if (!centerMode) {
+                $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
+              }
               onShown && onShown();
             }
 
@@ -7292,7 +7268,4 @@ window.mhgl_share =
 
     return share;
   })();
-
-
-
 

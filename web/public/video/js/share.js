@@ -861,28 +861,9 @@ window.mhgl_share =
         }
 
         let point;
-
-        if (target == null) {
-          if (share.lastClick) {
-            let x = share.lastClick.clientX;
-            let y = share.lastClick.clientY;
-            share.debug__(`use: x: ${x}, y: ${y}, ${document.location.href}`);
-            point = $(`<div>`, {
-              text: "",
-              css: {
-                position: "fixed",
-                left: `${x}px`,
-                top: `${y}px`,
-                width: `1px`,
-                height: `1px`
-              }
-            });
-
-            $("body", document).append(point);
-            target = point[0];
-          } else {
-            target = share.currentTarget;
-          }
+        let centerMode = (target == null && share.currentTarget == null);
+        if (target == null && share.currentTarget != null) {
+          target = share.currentTarget;
         }
 
         let popupId = share.uuid__();
@@ -890,14 +871,27 @@ window.mhgl_share =
         $("body", document).append(`<div id="bg${popupId}" class="modal-backdrop init"/>`);
         $("body", document).append(`<div id="${popupId}" class="popup" role="tooltip" />`);
         $(`#${popupId}`, document).html(content);
-        $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
+        if (!centerMode) {
+          $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
+        }
 
         async function setPosition() {
-          if (target == null) {
-            return;
-          }
           let tooltip = $(`#${popupId}`, document)[0];
           let arrow = $(`#arrow${popupId}`, document)[0];
+
+          if (centerMode || target == null) {
+            let left = Math.max((window.innerWidth - tooltip.offsetWidth) / 2, 8);
+            let top = Math.max((window.innerHeight - tooltip.offsetHeight) / 2, 8);
+            Object.assign(tooltip.style, {
+              left: `${left}px`,
+              top: `${top}px`,
+            });
+            if (arrow) {
+              arrow.style.display = "none";
+            }
+            return;
+          }
+
           let res = await share.computePosition(target, tooltip, {
             placement: placement ? placement : "bottom",
             middleware: [
@@ -913,6 +907,10 @@ window.mhgl_share =
             top: `${res.y}px`,
             //opacity: 0
           });
+
+          if (arrow) {
+            arrow.style.display = "";
+          }
 
           const staticSide = {
             top: 'bottom',
@@ -935,7 +933,9 @@ window.mhgl_share =
         await setPosition();
 
         share.rocktb__($(`#${popupId}`, document));
-        share.rocktb__($(`#arrow${popupId}`, document));
+        if (!centerMode) {
+          share.rocktb__($(`#arrow${popupId}`, document));
+        }
         $(`#bg${popupId}`, document).animate({ opacity: .2 }, 100);
         onShown && onShown(popupId);
 
@@ -944,7 +944,9 @@ window.mhgl_share =
           update: async function (newContent) {
             if (newContent != null) {
               $(`#${popupId}`, document).html(newContent);
-              $(`#${popupId}`, document).append(`<div class="arrow" ></div>`);
+              if (!centerMode) {
+                $(`#${popupId}`, document).append(`<div id="arrow${popupId}" class="arrow" ></div>`);
+              }
               onShown && onShown();
             }
 
