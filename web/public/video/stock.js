@@ -1239,7 +1239,7 @@ window.stock_list = window.stock_list || (function () {
                     right: "8px",
                     width: "360px",
                     "max-width": "calc(100vw - 16px)",
-                    "z-index": 9999,
+                    "z-index": 1030,
                     display: "flex",
                     "flex-direction": "column",
                     gap: "8px"
