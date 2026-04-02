@@ -564,6 +564,7 @@ let autoActionBlockedInfo = {
     count: 0,
     lastAt: 0,
     lastScode: "",
+    lastSname: "",
     lastBroker: ""
 };
 
@@ -643,6 +644,7 @@ async function getAutoActionGateInfo(threadId) {
         blockCount: autoActionBlockedInfo.count,
         lastBlockedAt: autoActionBlockedInfo.lastAt,
         lastScode: autoActionBlockedInfo.lastScode,
+        lastSname: autoActionBlockedInfo.lastSname,
         lastBroker: autoActionBlockedInfo.lastBroker
     };
 }
@@ -668,6 +670,7 @@ async function allowAutoCreateAction(req, r) {
     autoActionBlockedInfo.count += 1;
     autoActionBlockedInfo.lastAt = Date.now();
     autoActionBlockedInfo.lastScode = r && r.scode ? r.scode : "";
+    autoActionBlockedInfo.lastSname = r && r.sname ? r.sname : (r && r.rule && r.rule.sname ? r.rule.sname : "");
     autoActionBlockedInfo.lastBroker = r && r.broker ? r.broker : "";
 
     return false;

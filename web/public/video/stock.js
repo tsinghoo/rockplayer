@@ -1199,7 +1199,14 @@ window.stock_list = window.stock_list || (function () {
                 return;
             }
             self.lastBlockedActionToastAt = now;
-            let target = gate.lastScode ? `${gate.lastScode}` : "当前规则";
+            let target = "当前规则";
+            if (gate.lastScode && gate.lastSname) {
+                target = `${gate.lastScode}.${gate.lastSname}`;
+            } else if (gate.lastScode) {
+                target = `${gate.lastScode}`;
+            } else if (gate.lastSname) {
+                target = `${gate.lastSname}`;
+            }
             let msg = `${target} 自动action被拦截，${gate.startTime}后才会自动生成`;
             share.toastWarning__(msg, 5000);
         },
