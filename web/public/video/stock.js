@@ -24,7 +24,8 @@ window.stock_list = window.stock_list || (function () {
         },
         autoActionGateInited: false,
         lastBlockedActionCount: 0,
-        lastBlockedActionToastAt: 0,
+        blockedActionMessageContainer: null,
+        maxBlockedActionMessages: 10,
         sql: { name: "" },
         currentPrices: {},
         init: async function () {
@@ -1211,11 +1212,6 @@ window.stock_list = window.stock_list || (function () {
             }
 
             self.lastBlockedActionCount = gate.blockCount;
-            let now = Date.now();
-            if (now - self.lastBlockedActionToastAt < 10 * 1000) {
-                return;
-            }
-            self.lastBlockedActionToastAt = now;
             let target = "当前规则";
             if (gate.lastScode && gate.lastSname) {
                 target = `${gate.lastScode}.${gate.lastSname}`;
@@ -1227,7 +1223,90 @@ window.stock_list = window.stock_list || (function () {
             let actionText = gate.lastActionType == "sell" ? "卖出" : "买入";
             let startTime = gate.startTime || "00:00";
             let msg = `${target} 自动${actionText}action被拦截，${startTime}后才会自动生成`;
-            share.toastWarning__(msg, 5000);
+            self.pushBlockedActionMessage(msg);
+        },
+        ensureBlockedActionMessageContainer: function () {
+            if (self.blockedActionMessageContainer && self.blockedActionMessageContainer.length > 0) {
+                return self.blockedActionMessageContainer;
+            }
+
+            let container = $("#blockedActionMessages");
+            if (container.length == 0) {
+                container = $("<div id='blockedActionMessages'>");
+                container.css({
+                    position: "fixed",
+                    top: "8px",
+                    right: "8px",
+                    width: "360px",
+                    "max-width": "calc(100vw - 16px)",
+                    "z-index": 9999,
+                    display: "flex",
+                    "flex-direction": "column",
+                    gap: "8px"
+                });
+                $("body").append(container);
+            }
+
+            self.blockedActionMessageContainer = container;
+            return container;
+        },
+        pushBlockedActionMessage: function (message) {
+            let container = self.ensureBlockedActionMessageContainer();
+            let now = share.timeFormat__(new Date(), "hh:mm:ss");
+
+            let item = $("<div class='blockedActionMessageItem'>");
+            item.css({
+                position: "relative",
+                "padding-top": "10px",
+                padding: "10px 32px 10px 10px",
+                "border-radius": "6px",
+                border: "1px solid #f3d6a4",
+                background: "#fff8e8",
+                color: "#7a4e00",
+                "box-shadow": "0 2px 8px rgba(0,0,0,0.12)",
+                "font-size": "12px",
+                "line-height": "1.4"
+            });
+
+            let close = $("<button type='button' aria-label='Close'>&times;</button>");
+            close.css({
+                position: "absolute",
+                top: "2px",
+                right: "6px",
+                border: "none",
+                background: "transparent",
+                color: "#8a8a8a",
+                "font-size": "16px",
+                "line-height": "16px",
+                cursor: "pointer",
+                padding: 0
+            });
+
+            let msg = $("<div class='blockedActionMessageText'>");
+            msg.text(message);
+            let time = $("<div class='blockedActionMessageTime'>");
+            time.text(now);
+            time.css({
+                "font-size": "10px",
+                color: "#9a7b40",
+                "margin-top": "4px",
+                "text-align": "right"
+            });
+
+            close.on("click", function (e) {
+                e.stopPropagation();
+                item.remove();
+            });
+
+            item.append(close);
+            item.append(msg);
+            item.append(time);
+
+            container.prepend(item);
+            let children = container.children();
+            if (children.length > self.maxBlockedActionMessages) {
+                children.slice(self.maxBlockedActionMessages).remove();
+            }
         },
 
         autoPrice: function (changed, c) {
