@@ -1222,7 +1222,7 @@ window.stock_list = window.stock_list || (function () {
             }
             let actionText = gate.lastActionType == "sell" ? "卖出" : "买入";
             let startTime = gate.startTime || "00:00";
-            let msg = `${target} 自动${actionText}action被拦截，${startTime}后才会自动生成`;
+            let msg = `${target} 自动${actionText}${startTime}后才开始`;
             self.pushBlockedActionMessage(msg);
         },
         ensureBlockedActionMessageContainer: function () {
