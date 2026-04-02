@@ -560,6 +560,12 @@ let autoActionStartTime = {
     loadedAt: 0
 };
 let autoActionBlockedLogMinute = -1;
+let autoActionBlockedInfo = {
+    count: 0,
+    lastAt: 0,
+    lastScode: "",
+    lastBroker: ""
+};
 
 function normalizeAutoActionStartTime(value) {
     if (value == null) {
@@ -625,7 +631,23 @@ async function refreshAutoActionStartTime(threadId, force) {
     return autoActionStartTime;
 }
 
-async function allowAutoCreateAction(req) {
+async function getAutoActionGateInfo(threadId) {
+    await refreshAutoActionStartTime(threadId);
+    let now = new Date();
+    let minute = now.getHours() * 60 + now.getMinutes();
+    let blocked = autoActionStartTime.minutes > 0 && minute < autoActionStartTime.minutes;
+    return {
+        blocked,
+        startTime: autoActionStartTime.value,
+        currentTime: `${add0(now.getHours())}:${add0(now.getMinutes())}`,
+        blockCount: autoActionBlockedInfo.count,
+        lastBlockedAt: autoActionBlockedInfo.lastAt,
+        lastScode: autoActionBlockedInfo.lastScode,
+        lastBroker: autoActionBlockedInfo.lastBroker
+    };
+}
+
+async function allowAutoCreateAction(req, r) {
     let threadId = req ? req.threadId : null;
     await refreshAutoActionStartTime(threadId);
     if (autoActionStartTime.minutes <= 0) {
@@ -642,6 +664,11 @@ async function allowAutoCreateAction(req) {
         autoActionBlockedLogMinute = minute;
         info(`auto action paused, wait until ${autoActionStartTime.value}`, threadId);
     }
+
+    autoActionBlockedInfo.count += 1;
+    autoActionBlockedInfo.lastAt = Date.now();
+    autoActionBlockedInfo.lastScode = r && r.scode ? r.scode : "";
+    autoActionBlockedInfo.lastBroker = r && r.broker ? r.broker : "";
 
     return false;
 }
@@ -762,7 +789,7 @@ async function reloadRule(r, req) {
 
 async function tryToSell(r, req) {
     debug("tryToSell:" + JSON.stringify(r), req.threadId)
-    if (!await allowAutoCreateAction(req)) {
+    if (!await allowAutoCreateAction(req, r)) {
         return false;
     }
     let rule = r.rule;
@@ -810,7 +837,7 @@ async function tryToSell(r, req) {
 }
 async function tryToBuy(r, req) {
     debug("tryToBuy:" + JSON.stringify(r), req.threadId)
-    if (!await allowAutoCreateAction(req)) {
+    if (!await allowAutoCreateAction(req, r)) {
         return false;
     }
     let rule = r.rule;
@@ -3060,9 +3087,9 @@ app.get('/stock/rule/status', async (req, res) => {
     let js = req.query.js;
     let scode = req.query.scode;
     info("scode:" + scode, threadId);
-    var resp = null;
+    let result = {};
     if (scode == null) {
-        resp = JSON.stringify({ data: rules });
+        result.data = rules;
     } else if (rules[scode] == null || Object.keys(rules[scode]).length == 0) {
         info("no active rule for scode:" + scode, threadId);
         let res = await db.allSync(`select * from tTradeRule where scode=?`, [scode], threadId);
@@ -3071,18 +3098,20 @@ app.get('/stock/rule/status', async (req, res) => {
             let tsb = await db.getSync(`select * from tStockBasic where scode=?`, [scode], threadId);
             let data = res.rows[0];
             data.autoCreateRuleFail = tsb ? tsb.autoCreateRuleFail : "";
-            resp = JSON.stringify({ data });
+            result.data = data;
         } else {
-            resp = JSON.stringify({ data: null });
+            result.data = null;
         }
     } else {
         info("active rule exists", threadId);
-        resp = JSON.stringify({ data: Object.values(rules[scode])[0] });
+        result.data = Object.values(rules[scode])[0];
     }
+
+    result.autoActionGate = await getAutoActionGateInfo(threadId);
+    var resp = JSON.stringify(result);
     if (js) {
         resp = `${js}(${resp})`;
     }
-
     res.send(resp);
 });
 
@@ -4659,4 +4688,3 @@ async function init() {
 }
 
 init();
-

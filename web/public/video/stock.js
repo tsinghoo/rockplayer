@@ -22,6 +22,9 @@ window.stock_list = window.stock_list || (function () {
             "todo": "待命",
             "ordered": "已下单"
         },
+        autoActionGateInited: false,
+        lastBlockedActionCount: 0,
+        lastBlockedActionToastAt: 0,
         sql: { name: "" },
         currentPrices: {},
         init: async function () {
@@ -1143,6 +1146,7 @@ window.stock_list = window.stock_list || (function () {
 
         updateRuleStatus: async function () {
             let res = await share.getSync__("/stock/rule/status");
+            self.notifyBlockedAction(res.autoActionGate);
             let func = function () {
                 let td = $(this);
                 let data = td.parents("tr").attr("data");
@@ -1173,6 +1177,31 @@ window.stock_list = window.stock_list || (function () {
             if (self.showingRule) {
                 $(".tdRule").each(func);
             }
+        },
+        notifyBlockedAction: function (gate) {
+            if (gate == null || gate.blockCount == null) {
+                return;
+            }
+
+            if (!self.autoActionGateInited) {
+                self.autoActionGateInited = true;
+                self.lastBlockedActionCount = gate.blockCount;
+                return;
+            }
+
+            if (gate.blockCount <= self.lastBlockedActionCount) {
+                return;
+            }
+
+            self.lastBlockedActionCount = gate.blockCount;
+            let now = Date.now();
+            if (now - self.lastBlockedActionToastAt < 10 * 1000) {
+                return;
+            }
+            self.lastBlockedActionToastAt = now;
+            let target = gate.lastScode ? `${gate.lastScode}` : "当前规则";
+            let msg = `${target} 自动action被拦截，${gate.startTime}后才会自动生成`;
+            share.toastWarning__(msg, 5000);
         },
 
         autoPrice: function (changed, c) {
