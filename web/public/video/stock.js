@@ -308,12 +308,22 @@ window.stock_list = window.stock_list || (function () {
                     return;
                 }
 
-                let res = await share.postSync__("/stock/rule/action/startTime", { buyStartTime: buyValue, sellStartTime: sellValue });
-                if (res.error) {
-                    share.toastError__(res.error);
-                } else {
+                try {
+                    let res = await share.postSync__("/stock/rule/action/startTime", { buyStartTime: buyValue, sellStartTime: sellValue });
+                    if (res == null || res.error) {
+                        share.toastError__(res && res.error ? res.error : "保存失败");
+                        return;
+                    }
+
+                    if (res.data == null || res.data.buyStartTime == null || res.data.sellStartTime == null) {
+                        share.toastError__("保存失败");
+                        return;
+                    }
+
                     share.toastSuccess__(`已更新 买:${res.data.buyStartTime} 卖:${res.data.sellStartTime}`, 1000);
-                    popup.close();
+                    await popup.close();
+                } catch (e) {
+                    share.toastError__(e && e.message ? e.message : "保存失败");
                 }
             });
         },
