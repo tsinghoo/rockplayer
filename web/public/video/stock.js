@@ -1261,7 +1261,8 @@ window.stock_list = window.stock_list || (function () {
                 padding: "10px 32px 10px 10px",
                 "border-radius": "6px",
                 "font-size": "12px",
-                "line-height": "1.4"
+                "line-height": "1.4",
+                cursor: "pointer"
             });
 
             let close = $("<button type='button' aria-label='Close'>&times;</button>");
@@ -1293,6 +1294,10 @@ window.stock_list = window.stock_list || (function () {
                 e.stopPropagation();
                 item.remove();
                 self.refreshBlockedActionMessageStyles();
+            });
+
+            item.on("click", async function () {
+                await self.showAutoActionStartTimeSetting();
             });
 
             item.append(close);
