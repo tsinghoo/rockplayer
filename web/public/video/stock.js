@@ -263,7 +263,7 @@ window.stock_list = window.stock_list || (function () {
                             value="${buyStartTime}"
                             placeholder="09:30"
                         >
-                        <label class="floating-label">自动买入Action开始时间(HH:mm)</label>
+                        <label class="floating-label">自动买入开始时间(HH:mm)</label>
                     </div>
                     <div class="form-floating widthauto margin4">
                         <input
@@ -272,9 +272,9 @@ window.stock_list = window.stock_list || (function () {
                             value="${sellStartTime}"
                             placeholder="09:30"
                         >
-                        <label class="floating-label">自动卖出Action开始时间(HH:mm)</label>
+                        <label class="floating-label">自动卖出开始时间(HH:mm)</label>
                     </div>
-                    <div class="font12 gray margin4">当前时间: ${currentTime}。未到该时间不会自动生成买卖action。</div>
+                    <div class="font12 gray margin4">当前时间: ${currentTime}。未到所填时间不会自动买卖。</div>
                     <div class="flexrow center margintb4">
                         <button class="btn btn-secondary marginlr4 setBoth0930">买卖都09:30</button>
                         <button class="btn btn-secondary marginlr4 setBoth0000">买卖都00:00</button>
