@@ -226,11 +226,75 @@ window.stock_list = window.stock_list || (function () {
                             await toCreateRule("toSell");
                         });
                     }
+                },
+                {
+                    text: "自动Action开始时间",
+                    onTap: async function () {
+                        popup.close();
+                        await self.showAutoActionStartTimeSetting();
+                    }
                 }
             ];
 
             popup = await share.popupAction__("", buttons);
 
+        },
+        showAutoActionStartTimeSetting: async function () {
+            let res = await share.getSync__("/stock/rule/action/startTime");
+            if (res.error) {
+                share.toastError__(res.error);
+                return;
+            }
+
+            let data = res.data || {};
+            let startTime = data.startTime || "00:00";
+            let currentTime = data.currentTime || "";
+            let html = `
+                <div class="flexcolumn" style="width:320px;">
+                    <div class="form-floating widthauto margin4">
+                        <input
+                            type="text"
+                            class="form-control startTime h20"
+                            value="${startTime}"
+                            placeholder="09:30"
+                        >
+                        <label class="floating-label">自动生成Action开始时间(HH:mm)</label>
+                    </div>
+                    <div class="font12 gray margin4">当前时间: ${currentTime}。未到该时间不会自动生成买卖action。</div>
+                    <div class="flexrow center margintb4">
+                        <button class="btn btn-secondary marginlr4 set0930">09:30</button>
+                        <button class="btn btn-secondary marginlr4 set0000">00:00</button>
+                        <button class="btn btn-primary marginlr4 save">保存</button>
+                    </div>
+                </div>
+            `;
+
+            let popup = await share.popup__(null, html);
+            let c = $(`#${popup.id}`);
+
+            c.find(".set0930").on("click", function () {
+                c.find(".startTime").val("09:30");
+            });
+
+            c.find(".set0000").on("click", function () {
+                c.find(".startTime").val("00:00");
+            });
+
+            c.find(".save").on("click", async function () {
+                let value = c.find(".startTime").val().trim();
+                if (!/^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(value)) {
+                    share.toastError__("时间格式应为 HH:mm");
+                    return;
+                }
+
+                let res = await share.postSync__("/stock/rule/action/startTime", { startTime: value });
+                if (res.error) {
+                    share.toastError__(res.error);
+                } else {
+                    share.toastSuccess__(`已更新为 ${res.data.startTime}`, 1000);
+                    popup.close();
+                }
+            });
         },
         bindEvents: function () {
             $(".addButton").click(function () {

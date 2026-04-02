@@ -554,6 +554,97 @@ function add0(str, length) {
 }
 
 let rules = {};
+let autoActionStartTime = {
+    value: "00:00",
+    minutes: 0,
+    loadedAt: 0
+};
+let autoActionBlockedLogMinute = -1;
+
+function normalizeAutoActionStartTime(value) {
+    if (value == null) {
+        return {
+            value: "00:00",
+            minutes: 0
+        };
+    }
+
+    let text = `${value}`.trim();
+    if (text == "") {
+        return {
+            value: "00:00",
+            minutes: 0
+        };
+    }
+
+    let match = text.match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+    if (match == null) {
+        match = text.match(/^([01]?\d|2[0-3])([0-5]\d)$/);
+    }
+
+    if (match == null) {
+        return {
+            error: `bad startTime:${value}`
+        };
+    }
+
+    let hour = parseInt(match[1]);
+    let minute = parseInt(match[2]);
+    return {
+        value: `${add0(hour)}:${add0(minute)}`,
+        minutes: hour * 60 + minute
+    };
+}
+
+async function refreshAutoActionStartTime(threadId, force) {
+    if (force == null) {
+        force = false;
+    }
+    let now = Date.now();
+    if (!force && autoActionStartTime.loadedAt > 0 && now - autoActionStartTime.loadedAt < 60 * 1000) {
+        return autoActionStartTime;
+    }
+
+    let row = await db.getSync("select * from config where key=?", ["autoActionStartTime"], threadId);
+    if (row && row.value != null) {
+        let result = normalizeAutoActionStartTime(row.value);
+        if (result.error == null) {
+            autoActionStartTime.value = result.value;
+            autoActionStartTime.minutes = result.minutes;
+        } else {
+            error(result.error, threadId);
+            autoActionStartTime.value = "00:00";
+            autoActionStartTime.minutes = 0;
+        }
+    } else {
+        autoActionStartTime.value = "00:00";
+        autoActionStartTime.minutes = 0;
+    }
+
+    autoActionStartTime.loadedAt = now;
+    return autoActionStartTime;
+}
+
+async function allowAutoCreateAction(req) {
+    let threadId = req ? req.threadId : null;
+    await refreshAutoActionStartTime(threadId);
+    if (autoActionStartTime.minutes <= 0) {
+        return true;
+    }
+
+    let now = new Date();
+    let minute = now.getHours() * 60 + now.getMinutes();
+    if (minute >= autoActionStartTime.minutes) {
+        return true;
+    }
+
+    if (autoActionBlockedLogMinute != minute) {
+        autoActionBlockedLogMinute = minute;
+        info(`auto action paused, wait until ${autoActionStartTime.value}`, threadId);
+    }
+
+    return false;
+}
 
 async function reloadRules() {
     let req = {
@@ -671,6 +762,9 @@ async function reloadRule(r, req) {
 
 async function tryToSell(r, req) {
     debug("tryToSell:" + JSON.stringify(r), req.threadId)
+    if (!await allowAutoCreateAction(req)) {
+        return false;
+    }
     let rule = r.rule;
     let now = Date.now();
     let price = 0;
@@ -716,6 +810,9 @@ async function tryToSell(r, req) {
 }
 async function tryToBuy(r, req) {
     debug("tryToBuy:" + JSON.stringify(r), req.threadId)
+    if (!await allowAutoCreateAction(req)) {
+        return false;
+    }
     let rule = r.rule;
     let now = Date.now();
     let buy = 0;
@@ -1581,6 +1678,46 @@ app.get('/stock/account', async (req, res) => {
 
     var resp = `${js}(${r.value})`;
     res.send(resp);
+});
+
+app.get('/stock/rule/action/startTime', async (req, res) => {
+    let js = req.query.js;
+    await refreshAutoActionStartTime(req.threadId, true);
+    let now = new Date();
+    let currentTime = `${add0(now.getHours())}:${add0(now.getMinutes())}`;
+    let result = {
+        data: {
+            startTime: autoActionStartTime.value,
+            currentTime: currentTime
+        }
+    };
+    let resp = JSON.stringify(result);
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+    res.send(resp);
+});
+
+app.post('/stock/rule/action/startTime', async (req, res) => {
+    let startTime = req.body ? req.body.startTime : null;
+    let result = normalizeAutoActionStartTime(startTime);
+    if (result.error) {
+        res.send({ error: result.error });
+        return;
+    }
+
+    await db.runSync(`insert or replace into config (key, value) values (?, ?)`, ["autoActionStartTime", result.value]);
+
+    autoActionStartTime.value = result.value;
+    autoActionStartTime.minutes = result.minutes;
+    autoActionStartTime.loadedAt = Date.now();
+    autoActionBlockedLogMinute = -1;
+
+    res.send({
+        data: {
+            startTime: autoActionStartTime.value
+        }
+    });
 });
 
 app.get('/stock/moveUp', async (req, res) => {
@@ -4522,5 +4659,4 @@ async function init() {
 }
 
 init();
-
 
