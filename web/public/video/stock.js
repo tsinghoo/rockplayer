@@ -1252,7 +1252,7 @@ window.stock_list = window.stock_list || (function () {
         },
         pushBlockedActionMessage: function (message) {
             let container = self.ensureBlockedActionMessageContainer();
-            let now = share.timeFormat__(new Date(), "mm:ss");
+            let now = share.timeFormat__(new Date(), "hh:mm:ss");
 
             let item = $("<div class='blockedActionMessageItem'>");
             item.css({
