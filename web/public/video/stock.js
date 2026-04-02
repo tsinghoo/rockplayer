@@ -25,7 +25,7 @@ window.stock_list = window.stock_list || (function () {
         autoActionGateInited: false,
         lastBlockedActionCount: 0,
         blockedActionMessageContainer: null,
-        maxBlockedActionMessages: 10,
+        maxBlockedActionMessages: 5,
         sql: { name: "" },
         currentPrices: {},
         init: async function () {
@@ -1252,7 +1252,7 @@ window.stock_list = window.stock_list || (function () {
         },
         pushBlockedActionMessage: function (message) {
             let container = self.ensureBlockedActionMessageContainer();
-            let now = share.timeFormat__(new Date(), "hh:mm:ss");
+            let now = share.timeFormat__(new Date(), "mm:ss");
 
             let item = $("<div class='blockedActionMessageItem'>");
             item.css({
@@ -1260,10 +1260,6 @@ window.stock_list = window.stock_list || (function () {
                 "padding-top": "10px",
                 padding: "10px 32px 10px 10px",
                 "border-radius": "6px",
-                border: "1px solid #f3d6a4",
-                background: "#fff8e8",
-                color: "#7a4e00",
-                "box-shadow": "0 2px 8px rgba(0,0,0,0.12)",
                 "font-size": "12px",
                 "line-height": "1.4"
             });
@@ -1296,6 +1292,7 @@ window.stock_list = window.stock_list || (function () {
             close.on("click", function (e) {
                 e.stopPropagation();
                 item.remove();
+                self.refreshBlockedActionMessageStyles();
             });
 
             item.append(close);
@@ -1307,6 +1304,34 @@ window.stock_list = window.stock_list || (function () {
             if (children.length > self.maxBlockedActionMessages) {
                 children.slice(self.maxBlockedActionMessages).remove();
             }
+            self.refreshBlockedActionMessageStyles();
+        },
+        refreshBlockedActionMessageStyles: function () {
+            let container = self.ensureBlockedActionMessageContainer();
+            container.children().each(function (index) {
+                let c = $(this);
+                let close = c.find("button");
+                let time = c.find(".blockedActionMessageTime");
+                if (index == 0) {
+                    c.css({
+                        border: "1px solid #f3d6a4",
+                        background: "#fff8e8",
+                        color: "#7a4e00",
+                        "box-shadow": "0 2px 8px rgba(0,0,0,0.12)"
+                    });
+                    close.css({ color: "#8a8a8a" });
+                    time.css({ color: "#9a7b40" });
+                } else {
+                    c.css({
+                        border: "1px solid #d8d8d8",
+                        background: "#f2f2f2",
+                        color: "#7a7a7a",
+                        "box-shadow": "none"
+                    });
+                    close.css({ color: "#9d9d9d" });
+                    time.css({ color: "#9b9b9b" });
+                }
+            });
         },
 
         autoPrice: function (changed, c) {
