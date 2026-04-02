@@ -232,7 +232,7 @@ window.stock_list = window.stock_list || (function () {
                     }
                 },
                 {
-                    text: "自动Action开始时间",
+                    text: "自动买卖开始时间",
                     onTap: async function () {
                         popup.close();
                         await self.showAutoActionStartTimeSetting();
