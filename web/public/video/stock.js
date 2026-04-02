@@ -250,23 +250,33 @@ window.stock_list = window.stock_list || (function () {
             }
 
             let data = res.data || {};
-            let startTime = data.startTime || "00:00";
+            let buyStartTime = data.buyStartTime || data.startTime || "00:00";
+            let sellStartTime = data.sellStartTime || data.startTime || "00:00";
             let currentTime = data.currentTime || "";
             let html = `
-                <div class="flexcolumn" style="width:320px;">
+                <div class="flexcolumn" style="width:340px;">
                     <div class="form-floating widthauto margin4">
                         <input
                             type="text"
-                            class="form-control startTime h20"
-                            value="${startTime}"
+                            class="form-control buyStartTime h20"
+                            value="${buyStartTime}"
                             placeholder="09:30"
                         >
-                        <label class="floating-label">自动生成Action开始时间(HH:mm)</label>
+                        <label class="floating-label">自动买入Action开始时间(HH:mm)</label>
+                    </div>
+                    <div class="form-floating widthauto margin4">
+                        <input
+                            type="text"
+                            class="form-control sellStartTime h20"
+                            value="${sellStartTime}"
+                            placeholder="09:30"
+                        >
+                        <label class="floating-label">自动卖出Action开始时间(HH:mm)</label>
                     </div>
                     <div class="font12 gray margin4">当前时间: ${currentTime}。未到该时间不会自动生成买卖action。</div>
                     <div class="flexrow center margintb4">
-                        <button class="btn btn-secondary marginlr4 set0930">09:30</button>
-                        <button class="btn btn-secondary marginlr4 set0000">00:00</button>
+                        <button class="btn btn-secondary marginlr4 setBoth0930">买卖都09:30</button>
+                        <button class="btn btn-secondary marginlr4 setBoth0000">买卖都00:00</button>
                         <button class="btn btn-primary marginlr4 save">保存</button>
                     </div>
                 </div>
@@ -275,26 +285,33 @@ window.stock_list = window.stock_list || (function () {
             let popup = await share.popup__(null, html);
             let c = $(`#${popup.id}`);
 
-            c.find(".set0930").on("click", function () {
-                c.find(".startTime").val("09:30");
+            c.find(".setBoth0930").on("click", function () {
+                c.find(".buyStartTime").val("09:30");
+                c.find(".sellStartTime").val("09:30");
             });
 
-            c.find(".set0000").on("click", function () {
-                c.find(".startTime").val("00:00");
+            c.find(".setBoth0000").on("click", function () {
+                c.find(".buyStartTime").val("00:00");
+                c.find(".sellStartTime").val("00:00");
             });
 
             c.find(".save").on("click", async function () {
-                let value = c.find(".startTime").val().trim();
-                if (!/^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(value)) {
-                    share.toastError__("时间格式应为 HH:mm");
+                let buyValue = c.find(".buyStartTime").val().trim();
+                let sellValue = c.find(".sellStartTime").val().trim();
+                if (!/^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(buyValue)) {
+                    share.toastError__("买入时间格式应为 HH:mm");
+                    return;
+                }
+                if (!/^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(sellValue)) {
+                    share.toastError__("卖出时间格式应为 HH:mm");
                     return;
                 }
 
-                let res = await share.postSync__("/stock/rule/action/startTime", { startTime: value });
+                let res = await share.postSync__("/stock/rule/action/startTime", { buyStartTime: buyValue, sellStartTime: sellValue });
                 if (res.error) {
                     share.toastError__(res.error);
                 } else {
-                    share.toastSuccess__(`已更新为 ${res.data.startTime}`, 1000);
+                    share.toastSuccess__(`已更新 买:${res.data.buyStartTime} 卖:${res.data.sellStartTime}`, 1000);
                     popup.close();
                 }
             });
@@ -1207,7 +1224,9 @@ window.stock_list = window.stock_list || (function () {
             } else if (gate.lastSname) {
                 target = `${gate.lastSname}`;
             }
-            let msg = `${target} 自动action被拦截，${gate.startTime}后才会自动生成`;
+            let actionText = gate.lastActionType == "sell" ? "卖出" : "买入";
+            let startTime = gate.startTime || "00:00";
+            let msg = `${target} 自动${actionText}action被拦截，${startTime}后才会自动生成`;
             share.toastWarning__(msg, 5000);
         },
 

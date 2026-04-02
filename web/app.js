@@ -555,17 +555,28 @@ function add0(str, length) {
 
 let rules = {};
 let autoActionStartTime = {
-    value: "00:00",
-    minutes: 0,
+    buy: {
+        value: "00:00",
+        minutes: 0
+    },
+    sell: {
+        value: "00:00",
+        minutes: 0
+    },
     loadedAt: 0
 };
-let autoActionBlockedLogMinute = -1;
+let autoActionBlockedLogMinute = {
+    buy: -1,
+    sell: -1
+};
 let autoActionBlockedInfo = {
     count: 0,
     lastAt: 0,
     lastScode: "",
     lastSname: "",
-    lastBroker: ""
+    lastBroker: "",
+    lastActionType: "",
+    lastStartTime: ""
 };
 
 function normalizeAutoActionStartTime(value) {
@@ -612,20 +623,45 @@ async function refreshAutoActionStartTime(threadId, force) {
         return autoActionStartTime;
     }
 
-    let row = await db.getSync("select * from config where key=?", ["autoActionStartTime"], threadId);
-    if (row && row.value != null) {
-        let result = normalizeAutoActionStartTime(row.value);
+    let fallback = {
+        value: "00:00",
+        minutes: 0
+    };
+
+    let rowLegacy = await db.getSync("select * from config where key=?", ["autoActionStartTime"], threadId);
+    if (rowLegacy && rowLegacy.value != null) {
+        let result = normalizeAutoActionStartTime(rowLegacy.value);
         if (result.error == null) {
-            autoActionStartTime.value = result.value;
-            autoActionStartTime.minutes = result.minutes;
+            fallback = result;
         } else {
             error(result.error, threadId);
-            autoActionStartTime.value = "00:00";
-            autoActionStartTime.minutes = 0;
+        }
+    }
+
+    let rowBuy = await db.getSync("select * from config where key=?", ["autoActionStartTimeBuy"], threadId);
+    if (rowBuy && rowBuy.value != null) {
+        let result = normalizeAutoActionStartTime(rowBuy.value);
+        if (result.error == null) {
+            autoActionStartTime.buy = result;
+        } else {
+            error(result.error, threadId);
+            autoActionStartTime.buy = fallback;
         }
     } else {
-        autoActionStartTime.value = "00:00";
-        autoActionStartTime.minutes = 0;
+        autoActionStartTime.buy = fallback;
+    }
+
+    let rowSell = await db.getSync("select * from config where key=?", ["autoActionStartTimeSell"], threadId);
+    if (rowSell && rowSell.value != null) {
+        let result = normalizeAutoActionStartTime(rowSell.value);
+        if (result.error == null) {
+            autoActionStartTime.sell = result;
+        } else {
+            error(result.error, threadId);
+            autoActionStartTime.sell = fallback;
+        }
+    } else {
+        autoActionStartTime.sell = fallback;
     }
 
     autoActionStartTime.loadedAt = now;
@@ -636,35 +672,45 @@ async function getAutoActionGateInfo(threadId) {
     await refreshAutoActionStartTime(threadId);
     let now = new Date();
     let minute = now.getHours() * 60 + now.getMinutes();
-    let blocked = autoActionStartTime.minutes > 0 && minute < autoActionStartTime.minutes;
+    let blockedBuy = autoActionStartTime.buy.minutes > 0 && minute < autoActionStartTime.buy.minutes;
+    let blockedSell = autoActionStartTime.sell.minutes > 0 && minute < autoActionStartTime.sell.minutes;
     return {
-        blocked,
-        startTime: autoActionStartTime.value,
+        blocked: blockedBuy || blockedSell,
+        blockedBuy,
+        blockedSell,
+        buyStartTime: autoActionStartTime.buy.value,
+        sellStartTime: autoActionStartTime.sell.value,
+        startTime: autoActionBlockedInfo.lastStartTime,
         currentTime: `${add0(now.getHours())}:${add0(now.getMinutes())}`,
         blockCount: autoActionBlockedInfo.count,
         lastBlockedAt: autoActionBlockedInfo.lastAt,
         lastScode: autoActionBlockedInfo.lastScode,
         lastSname: autoActionBlockedInfo.lastSname,
-        lastBroker: autoActionBlockedInfo.lastBroker
+        lastBroker: autoActionBlockedInfo.lastBroker,
+        lastActionType: autoActionBlockedInfo.lastActionType
     };
 }
 
-async function allowAutoCreateAction(req, r) {
+async function allowAutoCreateAction(req, r, actionType) {
     let threadId = req ? req.threadId : null;
     await refreshAutoActionStartTime(threadId);
-    if (autoActionStartTime.minutes <= 0) {
+    if (actionType !== "buy" && actionType !== "sell") {
+        actionType = "buy";
+    }
+    let gate = actionType == "buy" ? autoActionStartTime.buy : autoActionStartTime.sell;
+    if (gate.minutes <= 0) {
         return true;
     }
 
     let now = new Date();
     let minute = now.getHours() * 60 + now.getMinutes();
-    if (minute >= autoActionStartTime.minutes) {
+    if (minute >= gate.minutes) {
         return true;
     }
 
-    if (autoActionBlockedLogMinute != minute) {
-        autoActionBlockedLogMinute = minute;
-        info(`auto action paused, wait until ${autoActionStartTime.value}`, threadId);
+    if (autoActionBlockedLogMinute[actionType] != minute) {
+        autoActionBlockedLogMinute[actionType] = minute;
+        info(`auto ${actionType} action paused, wait until ${gate.value}`, threadId);
     }
 
     autoActionBlockedInfo.count += 1;
@@ -672,6 +718,8 @@ async function allowAutoCreateAction(req, r) {
     autoActionBlockedInfo.lastScode = r && r.scode ? r.scode : "";
     autoActionBlockedInfo.lastSname = r && r.sname ? r.sname : (r && r.rule && r.rule.sname ? r.rule.sname : "");
     autoActionBlockedInfo.lastBroker = r && r.broker ? r.broker : "";
+    autoActionBlockedInfo.lastActionType = actionType;
+    autoActionBlockedInfo.lastStartTime = gate.value;
 
     return false;
 }
@@ -792,7 +840,7 @@ async function reloadRule(r, req) {
 
 async function tryToSell(r, req) {
     debug("tryToSell:" + JSON.stringify(r), req.threadId)
-    if (!await allowAutoCreateAction(req, r)) {
+    if (!await allowAutoCreateAction(req, r, "sell")) {
         return false;
     }
     let rule = r.rule;
@@ -840,7 +888,7 @@ async function tryToSell(r, req) {
 }
 async function tryToBuy(r, req) {
     debug("tryToBuy:" + JSON.stringify(r), req.threadId)
-    if (!await allowAutoCreateAction(req, r)) {
+    if (!await allowAutoCreateAction(req, r, "buy")) {
         return false;
     }
     let rule = r.rule;
@@ -1717,7 +1765,9 @@ app.get('/stock/rule/action/startTime', async (req, res) => {
     let currentTime = `${add0(now.getHours())}:${add0(now.getMinutes())}`;
     let result = {
         data: {
-            startTime: autoActionStartTime.value,
+            startTime: autoActionStartTime.buy.value,
+            buyStartTime: autoActionStartTime.buy.value,
+            sellStartTime: autoActionStartTime.sell.value,
             currentTime: currentTime
         }
     };
@@ -1729,23 +1779,50 @@ app.get('/stock/rule/action/startTime', async (req, res) => {
 });
 
 app.post('/stock/rule/action/startTime', async (req, res) => {
-    let startTime = req.body ? req.body.startTime : null;
-    let result = normalizeAutoActionStartTime(startTime);
-    if (result.error) {
-        res.send({ error: result.error });
+    await refreshAutoActionStartTime(req.threadId, true);
+    let buyStartTime = req.body ? req.body.buyStartTime : null;
+    let sellStartTime = req.body ? req.body.sellStartTime : null;
+
+    if (buyStartTime == null && sellStartTime == null) {
+        let startTime = req.body ? req.body.startTime : null;
+        buyStartTime = startTime;
+        sellStartTime = startTime;
+    }
+
+    if (buyStartTime == null) {
+        buyStartTime = autoActionStartTime.buy.value;
+    }
+    if (sellStartTime == null) {
+        sellStartTime = autoActionStartTime.sell.value;
+    }
+
+    let buyResult = normalizeAutoActionStartTime(buyStartTime);
+    if (buyResult.error) {
+        res.send({ error: buyResult.error });
+        return;
+    }
+    let sellResult = normalizeAutoActionStartTime(sellStartTime);
+    if (sellResult.error) {
+        res.send({ error: sellResult.error });
         return;
     }
 
-    await db.runSync(`insert or replace into config (key, value) values (?, ?)`, ["autoActionStartTime", result.value]);
+    await db.runSync(`insert or replace into config (key, value) values (?, ?)`, ["autoActionStartTimeBuy", buyResult.value]);
+    await db.runSync(`insert or replace into config (key, value) values (?, ?)`, ["autoActionStartTimeSell", sellResult.value]);
 
-    autoActionStartTime.value = result.value;
-    autoActionStartTime.minutes = result.minutes;
+    autoActionStartTime.buy = buyResult;
+    autoActionStartTime.sell = sellResult;
     autoActionStartTime.loadedAt = Date.now();
-    autoActionBlockedLogMinute = -1;
+    autoActionBlockedLogMinute = {
+        buy: -1,
+        sell: -1
+    };
 
     res.send({
         data: {
-            startTime: autoActionStartTime.value
+            startTime: autoActionStartTime.buy.value,
+            buyStartTime: autoActionStartTime.buy.value,
+            sellStartTime: autoActionStartTime.sell.value
         }
     });
 });
