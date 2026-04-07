@@ -4084,6 +4084,7 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             await insertOrReplace(`t${period}`, row);
+            await genCci(scode, req);
 
         }
     }
