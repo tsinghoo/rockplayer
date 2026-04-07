@@ -166,9 +166,8 @@ info("open stock.db");
 const dbFilePath = path.join(directoryPath, "stock.db");
 let db = new sqlite3.Database(dbFilePath);
 
-db.runSync = (sql, params) => {
-    info("runSync:" + sql);
-    info(JSON.stringify(params));
+db.runSync = (sql, params, threadId) => {
+    info(`runSync: ${sql}, ${JSON.stringify(params)}`, threadId);
     return new Promise((resolve, reject) => {
         db.run(sql, params, function (err) {
             if (err) {
@@ -2843,7 +2842,7 @@ app.get('/stock/k/1d', async (req, res) => {
     endDay = timeFormat(endDay, "yyyyMMdd");
     try {
         await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
-        await genCci(scode, req);
+        // await genCci(scode, req);
     } catch (e) {
         error(e.stack, req.threadId)
     }
@@ -4010,7 +4009,7 @@ async function genCci(scode, req, all) {
 
     let data = r.rows;
     await calc1dCci(data, period, async function (row) {
-        db.runSync(`update t1d set cci=? where id=?`, [row.cci, row.id]);
+        db.runSync(`update t1d set cci=? where id=?`, [row.cci, row.id], req.threadId);
     });
 }
 
