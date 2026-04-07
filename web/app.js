@@ -3637,7 +3637,7 @@ async function ensureCciNotCrossDown100(scode, sname, threadId, prevRes) {
         return prevRes;
     }
     let period = 14;
-    await calcCci(prevRes.rows, period);
+    await calc1dCci(prevRes.rows, period);
 
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci <= 100 && prevRes.rows[i + 1].cci >= 100) {
@@ -3657,7 +3657,7 @@ async function isCciCrossUpN100(scode, sname, threadId, prevRes) {
         return prevRes;
     }
     let period = 14;
-    await calcCci(prevRes.rows, period);
+    await calc1dCci(prevRes.rows, period);
 
     for (let i = 0; i < 2; ++i) {
         if (prevRes.rows[i].cci >= -100 && prevRes.rows[i + 1].cci <= -100) {
@@ -4009,7 +4009,7 @@ async function genCci(scode, req, all) {
     }
 
     let data = r.rows;
-    await calcCci(data, period, async function (row) {
+    await calc1dCci(data, period, async function (row) {
         db.runSync(`update t1d set cci=? where id=?`, [row.cci, row.id]);
     });
 }
@@ -4092,7 +4092,7 @@ app.post('/stock/k/upload', async (req, res) => {
     res.send(resp);
 });
 
-async function calcCci(data, period, onCalced) {
+async function calc1dCci(data, period, onCalced) {
     const typicalPrices = [];
     for (let i = 0; i < data.length; i++) {
         const high = data[i].high;
@@ -4103,7 +4103,7 @@ async function calcCci(data, period, onCalced) {
     }
 
     for (let i = 0; i <= data.length - period; i++) {
-        if (data[i].cci != -200) {
+        if (data[i].cci != -200 && i > 0) {
             continue;
         }
 
