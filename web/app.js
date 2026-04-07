@@ -1994,7 +1994,7 @@ async function upgradeDb(succ, fail) {
     if (res == null || res.error) {
         res = await db.runSync(`
 CREATE TABLE config(key varchar(50) primary key, value text);
-CREATE TABLE t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0, cci INTEGER DEFAULT -200);
+CREATE TABLE t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0, cci INTEGER DEFAULT -800);
 CREATE TABLE t1m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
 CREATE TABLE t5m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);
 CREATE TABLE tRuleAction(id text primary key, ruleId text, scode text,sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer, broker text default '', status text default '');
@@ -4002,7 +4002,7 @@ async function genCci(scode, req, all) {
         error(`${r.rows.length} < ${period} 1d data`, req.threadId)
         return;
     }
-    if ((r.rows[0].cci == -200 && r.rows[1].cci == -200) && !all) {
+    if ((r.rows[0].cci == -800 && r.rows[1].cci == -800) && !all) {
         info(`need recalc all cci`, req.threadId);
         genCci(scode, req, 1);
         return;
@@ -4065,7 +4065,7 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             if (period == "1d") {
-                row.cci = -200;
+                row.cci = -800;
                 row.kdj_k = 0;
                 row.kdj_d = 0;
                 row.kdj_j = 0;
@@ -4103,7 +4103,7 @@ async function calc1dCci(data, period, onCalced) {
     }
 
     for (let i = 0; i <= data.length - period; i++) {
-        if (data[i].cci != -200 && i > 0) {
+        if (data[i].cci != -800 && i > 0) {
             continue;
         }
 
