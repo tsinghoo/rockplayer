@@ -1474,7 +1474,7 @@ def log2File(toPrint, file, sep=" ", end="\n", flush=True, mode="a", encoding="u
         encoding: 文件编码(默认'utf-8')
     """
     # 在file文件名后边加上当天日期
-    file = f"{file}.{datetime.datetime.now().strftime('%Y%m%d')}.log.{g.config['sessionId']}"
+    file = f"{file}.{datetime.datetime.now().strftime('%Y%m%d')}.log.{g.config['sessionId']:02d}"
 
     with open(file, mode=mode, encoding=encoding) as f:
         for item in toPrint:
