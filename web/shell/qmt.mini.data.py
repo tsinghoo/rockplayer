@@ -836,8 +836,8 @@ def get1dData(stocklist, index, startTime, endTime):
     scode = stocklist[index]
     period = "1d"
     params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
-    # info("downloading", period, "from", startTime, "for", scode)
-    # xtdata.download_history_data(scode, period, startTime, endTime, True)
+    info("downloading", period, "from", startTime, "for", scode)
+    xtdata.download_history_data(scode, period, startTime, endTime, True)
     # download_history_data2 批量版本 todo
     # params = []
     info(
