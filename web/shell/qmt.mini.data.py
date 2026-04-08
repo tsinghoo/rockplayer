@@ -826,7 +826,7 @@ def CCI(table):
 
 
 def get1dData(stocklist, index, startTime, endTime):
-    info("get1dData", stocklist, index, startTime, endTime)
+    info("get1dData", index, startTime, endTime)
     if startTime is None:
         startTime = datetime.datetime.now().strftime("%Y%m%d")
 
