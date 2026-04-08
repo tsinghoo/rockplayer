@@ -418,7 +418,10 @@ def update1mTask():
     while True:
         time.sleep(1)
         resetThreadId("u1m")
-        update1m(g.stocklist)
+        try:
+            update1m(g.stocklist)
+        except Exception as e:
+            info("update1mTask error:", traceback.format_exc())
         # update1m(g.candidates)
 
 
