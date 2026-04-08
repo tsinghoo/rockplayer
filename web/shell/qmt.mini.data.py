@@ -913,7 +913,7 @@ def update1m(stocklist, startTime=None):
                 ).strftime("%Y%m%d%H%M%S")
         
         origTime = datetime.datetime.strptime(dataStartTime, "%Y%m%d%H%M%S")
-        today_930 = datetime.datetime.combine(datetime.datetime.now().date(), time(9, 30, 0))
+        today_930 = datetime.datetime.combine(datetime.datetime.now().date(), datetime.time(9, 30, 0))
     
         if origTime < today_930:
             dataStartTime= today_930.strftime("%Y%m%d%H%M%S")
