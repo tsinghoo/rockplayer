@@ -195,9 +195,48 @@ window.stock_list = window.stock_list || (function () {
                         popup = await share.popup__(null, autoResult);
                         let c = $(`#${popup.id}`);
 
+                        // 加载当前时间设置
+                        let timeRes = await share.getSync__("/stock/rule/action/startTime");
+                        if (timeRes && timeRes.data) {
+                            let d = timeRes.data;
+                            c.find(".buyStartTime").val(d.buyStartTime || d.startTime || "00:00");
+                            c.find(".sellStartTime").val(d.sellStartTime || d.startTime || "00:00");
+                        }
+
+                        c.find(".setBoth0930").on("click", function () {
+                            c.find(".buyStartTime").val("09:30");
+                            c.find(".sellStartTime").val("09:30");
+                        });
+
+                        c.find(".setBoth0000").on("click", function () {
+                            c.find(".buyStartTime").val("00:00");
+                            c.find(".sellStartTime").val("00:00");
+                        });
+
+                        async function saveStartTime() {
+                            let buyValue = c.find(".buyStartTime").val().trim();
+                            let sellValue = c.find(".sellStartTime").val().trim();
+                            if (!/^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(buyValue)) {
+                                share.toastError__("买入时间格式应为 HH:mm");
+                                return false;
+                            }
+                            if (!/^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(sellValue)) {
+                                share.toastError__("卖出时间格式应为 HH:mm");
+                                return false;
+                            }
+                            let res = await share.postSync__("/stock/rule/action/startTime", { buyStartTime: buyValue, sellStartTime: sellValue });
+                            if (res == null || res.error) {
+                                share.toastError__(res && res.error ? res.error : "时间保存失败");
+                                return false;
+                            }
+                            return true;
+                        }
+
                         async function toCreateRule(type) {
                             let maxCount = $(".maxCount", c).val().trim();
                             let priceDelay = $(".priceDelay", c).val().trim();
+
+                            if (!await saveStartTime()) return;
 
                             let res = await share.getSync__(`/stock/rule/create/auto?type=${type}&max=${maxCount}&priceDelay=${priceDelay}`);
                             if (res.error) {
@@ -229,13 +268,6 @@ window.stock_list = window.stock_list || (function () {
                         c.find(".buttonToSell").on("click", async function () {
                             await toCreateRule("toSell");
                         });
-                    }
-                },
-                {
-                    text: "自动买卖开始时间",
-                    onTap: async function () {
-                        popup.close();
-                        await self.showAutoActionStartTimeSetting();
                     }
                 }
             ];

@@ -840,7 +840,7 @@ async function reloadRule(r, req) {
 
 async function tryToSell(r, req) {
     debug("tryToSell:" + JSON.stringify(r), req.threadId)
-    // if (!await allowAutoCreateAction(req, { ...r, action: "sell" })) {
+    // if (!await allowAutoCreateAction(req, r, "sell")) {
     //     return false;
     // }
     let rule = r.rule;
@@ -888,7 +888,7 @@ async function tryToSell(r, req) {
 }
 async function tryToBuy(r, req) {
     debug("tryToBuy:" + JSON.stringify(r), req.threadId)
-    // if (!await allowAutoCreateAction(req, { ...r, action: "buy" })) {
+    // if (!await allowAutoCreateAction(req, r, "buy")) {
     //     return false;
     // }
     let rule = r.rule;

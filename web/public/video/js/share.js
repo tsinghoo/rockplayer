@@ -769,8 +769,10 @@ window.mhgl_share =
           headers: headers,
           //dataType: "jsonp",
           success: function (json) {
-            // share.log__("Response:" + JSON.stringify(json, null, 2));
-            json = JSON.parse(json);
+            //如果json是字符串则解析
+            if(typeof json === 'string'){
+              json = JSON.parse(json);
+            }
             dialog && dialog.close();
             if (json.d) {
               var str = share.decode__(json.d);
