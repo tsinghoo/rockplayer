@@ -694,7 +694,7 @@ async function allowAutoCreateAction(req, r, actionType) {
     let threadId = req ? req.threadId : null;
     await refreshAutoActionStartTime(threadId);
     if (actionType !== "buy" && actionType !== "sell") {
-        actionType = "buy";
+        return true;
     }
     let gate = actionType == "buy" ? autoActionStartTime.buy : autoActionStartTime.sell;
     if (gate.minutes <= 0) {
@@ -3118,7 +3118,14 @@ app.get('/stock/rule/actions', async (req, res) => {
         }
     }
 
-    var resp = JSON.stringify({ data: r.rows });
+    let filteredRows = [];
+    for (let row of r.rows) {
+        if (await allowAutoCreateAction(req, null, row.action)) {
+            filteredRows.push(row);
+        }
+    }
+
+    var resp = JSON.stringify({ data: filteredRows });
 
     if (r.error) {
         resp = r;
