@@ -204,8 +204,8 @@ window.stock_list = window.stock_list || (function () {
                         }
 
                         c.find(".setBoth0930").on("click", function () {
-                            c.find(".buyStartTime").val("09:30");
-                            c.find(".sellStartTime").val("09:30");
+                            c.find(".buyStartTime").val("10:00");
+                            c.find(".sellStartTime").val("10:00");
                         });
 
                         c.find(".setBoth0000").on("click", function () {
