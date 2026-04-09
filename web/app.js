@@ -690,9 +690,10 @@ async function getAutoActionGateInfo(threadId) {
     };
 }
 
-async function allowAutoCreateAction(req, r, actionType) {
+async function allowAutoCreateAction(req, row) {
     let threadId = req ? req.threadId : null;
     await refreshAutoActionStartTime(threadId);
+    let actionType = row && row.action ? row.action : null;
     if (actionType !== "buy" && actionType !== "sell") {
         return true;
     }
@@ -714,9 +715,9 @@ async function allowAutoCreateAction(req, r, actionType) {
 
     autoActionBlockedInfo.count += 1;
     autoActionBlockedInfo.lastAt = Date.now();
-    autoActionBlockedInfo.lastScode = r && r.scode ? r.scode : "";
-    autoActionBlockedInfo.lastSname = r && r.sname ? r.sname : (r && r.rule && r.rule.sname ? r.rule.sname : "");
-    autoActionBlockedInfo.lastBroker = r && r.broker ? r.broker : "";
+    autoActionBlockedInfo.lastScode = row && row.scode ? row.scode : "";
+    autoActionBlockedInfo.lastSname = row && row.sname ? row.sname : "";
+    autoActionBlockedInfo.lastBroker = row && row.broker ? row.broker : "";
     autoActionBlockedInfo.lastActionType = actionType;
     autoActionBlockedInfo.lastStartTime = gate.value;
 
@@ -839,7 +840,7 @@ async function reloadRule(r, req) {
 
 async function tryToSell(r, req) {
     debug("tryToSell:" + JSON.stringify(r), req.threadId)
-    // if (!await allowAutoCreateAction(req, r, "sell")) {
+    // if (!await allowAutoCreateAction(req, { ...r, action: "sell" })) {
     //     return false;
     // }
     let rule = r.rule;
@@ -887,7 +888,7 @@ async function tryToSell(r, req) {
 }
 async function tryToBuy(r, req) {
     debug("tryToBuy:" + JSON.stringify(r), req.threadId)
-    // if (!await allowAutoCreateAction(req, r, "buy")) {
+    // if (!await allowAutoCreateAction(req, { ...r, action: "buy" })) {
     //     return false;
     // }
     let rule = r.rule;
@@ -3120,7 +3121,7 @@ app.get('/stock/rule/actions', async (req, res) => {
 
     let filteredRows = [];
     for (let row of r.rows) {
-        if (await allowAutoCreateAction(req, null, row.action)) {
+        if (await allowAutoCreateAction(req, row)) {
             filteredRows.push(row);
         }
     }
