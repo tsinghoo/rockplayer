@@ -213,7 +213,7 @@ window.stock_list = window.stock_list || (function () {
                             c.find(".sellStartTime").val("00:00");
                         });
 
-                        async function saveStartTime() {
+                        async function saveStartTime(showSuccess) {
                             let buyValue = c.find(".buyStartTime").val().trim();
                             let sellValue = c.find(".sellStartTime").val().trim();
                             if (!/^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(buyValue)) {
@@ -229,8 +229,15 @@ window.stock_list = window.stock_list || (function () {
                                 share.toastError__(res && res.error ? res.error : "时间保存失败");
                                 return false;
                             }
+                            if (showSuccess) {
+                                share.toastSuccess__(`已更新 买:${buyValue} 卖:${sellValue}`, 1000);
+                            }
                             return true;
                         }
+
+                        c.find(".updateStartTime").on("click", async function () {
+                            await saveStartTime(true);
+                        });
 
                         async function toCreateRule(type) {
                             let maxCount = $(".maxCount", c).val().trim();
