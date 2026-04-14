@@ -1050,6 +1050,18 @@ window.stock_list = window.stock_list || (function () {
                 let popup;
                 let buttons = [
                     {
+                        text: "强置顶",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/forceMoveUp?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已强置顶", 1000);
+                            }
+                        }
+                    },
+                    {
                         text: "置顶",
                         onTap: async function () {
                             popup.close();
@@ -1070,6 +1082,18 @@ window.stock_list = window.stock_list || (function () {
                                 share.toastError__(res.error);
                             } else {
                                 share.toastSuccess__("已置底", 1000);
+                            }
+                        }
+                    },
+                    {
+                        text: "强置底",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/forceMoveDown?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已强置底", 1000);
                             }
                         }
                     }

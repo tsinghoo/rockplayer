@@ -1316,7 +1316,7 @@ app.post('/stock/update', async (req, resp) => {
             fields[5] = "广发";
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
-            let res = await db.runSync(sql, fields.concat([tday + " " + ttime]));
+            let res = await db.runSync(sql, fields.concat([Date.now()]));
             if (res.error) {
                 info(res.error, req.threadId)
                 resp.send(res);
@@ -1360,7 +1360,7 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             let tid = `${tday}.${ttime}.${scode}.${tprice}`;
-            let lastOperationTime = tday + " " + ttime;
+            let lastOperationTime = Date.now();
 
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
@@ -1389,7 +1389,7 @@ app.post('/stock/update', async (req, resp) => {
             let tday = timeFormat(new Date(), "yyyyMMdd");
             let ttime = fields[0];
             let res = await db.runSync(sql, [tday, ttime, fields[1], fields[0], fields[2], "国信", getMarket(fields[11]), fields[3], fields[4],
-                fields[5], fields[8], fields[10], '', tday + " " + ttime]);
+                fields[5], fields[8], fields[10], '', Date.now()]);
             if (res.error) {
                 info(res.error, req.threadId)
                 resp.send(res);
@@ -1455,7 +1455,7 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             let tid = `${tday}.${ttime}.${scode}.${tprice}`;
-            let lastOperationTime = tday + " " + ttime;
+            let lastOperationTime = Date.now();
 
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
@@ -1498,7 +1498,7 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             let tid = `${tday}.${ttime}.${scode}.${tprice}`;
-            let lastOperationTime = tday + " " + ttime;
+            let lastOperationTime = Date.now();
 
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
@@ -1610,7 +1610,7 @@ app.post('/stock/update', async (req, resp) => {
                 tid: tday + " " + ttime,
                 taccount: fields[7],
                 tpair: "",
-                lastOperationTime: tday + " " + ttime
+                lastOperationTime: Date.now()
             }
 
             let res = await insertOrReplace("tstock", obj);
@@ -1657,7 +1657,7 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             let tid = `${tday}.${ttime}.${scode}.${tprice}`;
-            let lastOperationTime = tday + " " + ttime;
+            let lastOperationTime = Date.now();
 
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
@@ -1705,7 +1705,7 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             let tid = `${tday}.${ttime}.${scode}.${tprice}`;
-            let lastOperationTime = tday + " " + ttime;
+            let lastOperationTime = Date.now();
 
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
@@ -1831,10 +1831,10 @@ app.get('/stock/moveUp', async (req, res) => {
     let js = req.query.js;
     let code = req.query.code;
     let sql = `update tstock set lastOperationTime=? where scode=? `;
-    let now = timeFormat(new Date(), "yyyyMMdd hh:mm:ss");
+    let now = Date.now();
     await db.runSync(sql, [now, code]);
-    await db.runSync(`update tStockBasic set priority=? where scode=?`, [new Date().getTime(), code]);
-    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [new Date().getTime(), code]);
+    await db.runSync(`update tStockBasic set priority=? where scode=?`, [now, code]);
+    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [now, code]);
     var resp = `${js}({})`;
     res.send(resp);
 });
@@ -1843,10 +1843,34 @@ app.get('/stock/moveDown', async (req, res) => {
     let js = req.query.js;
     let code = req.query.code;
     let sql = `update tstock set lastOperationTime=? where scode=? `;
-    let now = timeFormat(new Date(), "-yyyyMMdd hh:mm:ss");
+    let now = -1 * Date.now();
     await db.runSync(sql, [now, code]);
-    await db.runSync(`update tStockBasic set priority=? where scode=?`, [-1 * new Date().getTime(), code]);
-    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [-1 * new Date().getTime(), code]);
+    await db.runSync(`update tStockBasic set priority=? where scode=?`, [now, code]);
+    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [now, code]);
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
+app.get('/stock/forceMoveUp', async (req, res) => {
+    let js = req.query.js;
+    let code = req.query.code;
+    let sql = `update tstock set lastOperationTime=? where scode=? `;
+    let now = Date.now() + 20 * 365 * 24 * 60 * 60 * 1000;
+    await db.runSync(sql, [now, code]);
+    await db.runSync(`update tStockBasic set priority=? where scode=?`, [now, code]);
+    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [now, code]);
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
+app.get('/stock/forceMoveDown', async (req, res) => {
+    let js = req.query.js;
+    let code = req.query.code;
+    let sql = `update tstock set lastOperationTime=? where scode=? `;
+    let now = -1 * Date.now() - 20 * 365 * 24 * 60 * 60 * 1000;
+    await db.runSync(sql, [now, code]);
+    await db.runSync(`update tStockBasic set priority=? where scode=?`, [now, code]);
+    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [now, code]);
     var resp = `${js}({})`;
     res.send(resp);
 });
@@ -1988,7 +2012,9 @@ async function upgradeDb(succ, fail) {
         `alter table t1d add column boll_u real default 0;`,
         `alter table t1d add column boll_m real default 0;`,
         `alter table t1d add column boll_l real default 0;`,
-        `alter table t1d add column range real default 0;`
+        `alter table t1d add column range real default 0;`,
+        `alter table tstock drop column lastOperationTime;`,
+        `alter table tstock add column lastOperationTime int default 0;`,
     ];
 
     if (res == null || res.error) {
@@ -2580,7 +2606,7 @@ app.get('/stock/rule/create', async (req, res) => {
             taccount: "",
             tpair: "",
             deleted: 0,
-            lastOperationTime: tday + " " + ttime
+            lastOperationTime: Date.now()
         }
         await insertOrReplace("tstock", obj);
         await checkRule([json.scode], req);
@@ -4173,7 +4199,7 @@ app.post('/stock/deal/update', async (req, res) => {
     } else if (deal.ttime.length == 6) {
         deal.ttime = deal.ttime.substring(0, 2) + ":" + deal.ttime.substring(2, 4) + ":" + deal.ttime.substring(4, 6);
     }
-    deal.lastOperationTime = deal.tday + " " + deal.ttime;
+    deal.lastOperationTime = Date.now();
     deal.tprice = convertIfInteger(deal.tprice);
     deal.tid = `${deal.tday}.${deal.ttime}.${deal.scode}.${deal.tprice}`;
 
