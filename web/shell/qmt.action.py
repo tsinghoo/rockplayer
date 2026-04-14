@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import talib
 import inspect
+import re
 import requests
 import sys
 import traceback
@@ -73,6 +74,45 @@ g.actions = {}
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
+
+
+def strip_scode_suffix(scode):
+    scode = str(scode or "").strip().upper()
+    index = scode.rfind(".")
+    if index > 0:
+        return scode[:index]
+    return scode
+
+
+def get_scode_market(scode):
+    code = strip_scode_suffix(scode)
+    if not code:
+        return ""
+    if len(code) == 6:
+        if re.match(r"^(600|601|603|605|688|900|51|58|56)\d+$", code):
+            return "SH"
+        if re.match(r"^(000|001|002|003|30|15|16|12|3)\d+$", code):
+            return "SZ"
+        if re.match(r"^(8|43|83|87|88|92)\d+$", code):
+            return "BJ"
+    if re.match(r"^\d{4,5}$", code) or re.match(r"^0[0-9]\d{3}$", code):
+        return "HK"
+    if "USDT" in code or "BTC" in code or "ETH" in code:
+        return "EC"
+    return ""
+
+
+def normalize_scode(scode):
+    scode = str(scode or "").strip().upper()
+    if not scode:
+        return scode
+    if re.match(r"^[^.]+\.[A-Z]+$", scode):
+        return scode
+    code = strip_scode_suffix(scode)
+    market = get_scode_market(code)
+    if not market:
+        return code
+    return f"{code}.{market}"
 
 
 def printTask():
@@ -213,7 +253,7 @@ def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
         # 要发送的 JSON 数据（Python 字典）
         data = {
             "broker": broker,
-            "scode": scode,
+            "scode": normalize_scode(scode),
             "status": status,
             "orderNo": orderId
         }
@@ -257,7 +297,7 @@ def getActions(ContextInfo):
             debug("getActions成功:", response.status_code, content)
             jso = json.loads(content)
             for act in jso["data"]:
-                act["scode"] = act["scode"].replace(".HK", ".HGT")
+                act["scode"] = normalize_scode(act["scode"]).replace(".HK", ".HGT")
                 if act["scode"] in g.actions:
                     info("已存在", act["scode"], "的action")
                 else:
@@ -351,7 +391,7 @@ def syncPosition(accountType):
                 "on_road_volume": dt.m_nOnRoadVolume,
                 "floatProfit": getFloat(dt.m_dFloatProfit),
                 "open_price": dt.m_dOpenPrice,
-                "stock_code": dt.m_strInstrumentID,
+                "stock_code": normalize_scode(dt.m_strInstrumentID),
                 "volume": dt.m_nVolume
             }
 
@@ -444,7 +484,7 @@ def task_callback(ContextInfo, data):
     js = obj2Json(data)
     type = js["m_eOrderType"]
     status = js["m_eStatus"]
-    scode = js["m_stockCode"]
+    scode = normalize_scode(js["m_stockCode"])
     strMsg = js["m_strMsg"]
 
     updateActionOrdered(scode, type, status, 0, strMsg)
@@ -460,7 +500,7 @@ def order_callback(ContextInfo, data):
     status = js["m_nOrderStatus"]
     submitStatus = js["m_nOrderSubmitStatus"]
     price = js["m_dLimitPrice"]
-    scode = js["m_strInstrumentID"]
+    scode = normalize_scode(js["m_strInstrumentID"])
     amount = js["m_nVolumeTotalOriginal"]
     orderId = js["m_strOrderSysID"]
     cancelInfo = js["m_strCancelInfo"]
@@ -504,7 +544,7 @@ def deal_callback(ContextInfo, data):
 
     deal = {
         "tprice": js["m_dPrice"],
-        "scode": js["m_strInstrumentID"],
+        "scode": normalize_scode(js["m_strInstrumentID"]),
         "sname": js["m_strInstrumentName"],
         "market": js["m_strExchangeName"],
         "operationDirection": js["m_strOptName"],
@@ -549,7 +589,7 @@ def position_callback(ContextInfo, data):
         "on_road_volume": js["m_nOnRoadVolume"],
         "m_dFloatProfit": js["m_dFloatProfit"],
         "open_price": js["m_dLastPrice"],
-        "stock_code": js["m_strInstrumentID"],
+        "stock_code": normalize_scode(js["m_strInstrumentID"]),
         "volume": js["m_nVolume"]
     }
 
@@ -762,5 +802,4 @@ def handlebar(ContextInfo):
 
 def stop(ContextInfo):
     error('stop')
-
 

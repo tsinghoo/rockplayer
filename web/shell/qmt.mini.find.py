@@ -10,6 +10,7 @@ from xtquant import xtconstant
 import datetime
 import json
 import inspect
+import re
 import pandas as pd
 import numpy as np
 import requests
@@ -75,6 +76,45 @@ today = datetime.datetime.now().date()
 threadLocal = threading.local()
 
 
+def strip_scode_suffix(scode):
+    scode = str(scode or "").strip().upper()
+    index = scode.rfind(".")
+    if index > 0:
+        return scode[:index]
+    return scode
+
+
+def get_scode_market(scode):
+    code = strip_scode_suffix(scode)
+    if not code:
+        return ""
+    if len(code) == 6:
+        if re.match(r"^(600|601|603|605|688|900|51|58|56)\d+$", code):
+            return "SH"
+        if re.match(r"^(000|001|002|003|30|15|16|12|3)\d+$", code):
+            return "SZ"
+        if re.match(r"^(8|43|83|87|88|92)\d+$", code):
+            return "BJ"
+    if re.match(r"^\d{4,5}$", code) or re.match(r"^0[0-9]\d{3}$", code):
+        return "HK"
+    if "USDT" in code or "BTC" in code or "ETH" in code:
+        return "EC"
+    return ""
+
+
+def normalize_scode(scode):
+    scode = str(scode or "").strip().upper()
+    if not scode:
+        return scode
+    if re.match(r"^[^.]+\.[A-Z]+$", scode):
+        return scode
+    code = strip_scode_suffix(scode)
+    market = get_scode_market(code)
+    if not market:
+        return code
+    return f"{code}.{market}"
+
+
 def loadConfig():
     if not os.path.exists(g.configFile):
         g.config = {}
@@ -136,6 +176,7 @@ def KDJ(table):
 
 def get1dLastDate(scode):
     try:
+        scode = normalize_scode(scode)
         url = g.baseUrl + "/stock/1d/lastDate?scode=" + scode
         debug("get", url)
         response = requests.get(url, verify=False, timeout=5)
@@ -189,6 +230,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
         endTime = ""
 
     for index, scode in enumerate(stocklist):
+        scode = normalize_scode(scode)
         dataStartTime = startTime
         if (startTime is None):
             lastDate = get1dLastDate(scode)
@@ -220,7 +262,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                 batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
                                                 row["low"], row["volume"], row["amount"], row["cci"], row["kdj_k"], row["kdj_d"], row["kdj_j"]])
             body = {"data": obj2Json(
-                batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                batch_data), "scode": normalize_scode(scode), "period": period, "passcode": "995560"}
             debug("body:", body)
             # 上传数据到test1
             try:

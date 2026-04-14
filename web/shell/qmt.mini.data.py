@@ -11,6 +11,7 @@ from xtquant import xtconstant
 import datetime
 import json
 import inspect
+import re
 import pandas as pd
 import numpy as np
 import requests
@@ -56,6 +57,45 @@ g.log["level"] = g.log["debug"]
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
+
+
+def strip_scode_suffix(scode):
+    scode = str(scode or "").strip().upper()
+    index = scode.rfind(".")
+    if index > 0:
+        return scode[:index]
+    return scode
+
+
+def get_scode_market(scode):
+    code = strip_scode_suffix(scode)
+    if not code:
+        return ""
+    if len(code) == 6:
+        if re.match(r"^(600|601|603|605|688|900|51|58|56)\d+$", code):
+            return "SH"
+        if re.match(r"^(000|001|002|003|30|15|16|12|3)\d+$", code):
+            return "SZ"
+        if re.match(r"^(8|43|83|87|88|92)\d+$", code):
+            return "BJ"
+    if re.match(r"^\d{4,5}$", code) or re.match(r"^0[0-9]\d{3}$", code):
+        return "HK"
+    if "USDT" in code or "BTC" in code or "ETH" in code:
+        return "EC"
+    return ""
+
+
+def normalize_scode(scode):
+    scode = str(scode or "").strip().upper()
+    if not scode:
+        return scode
+    if re.match(r"^[^.]+\.[A-Z]+$", scode):
+        return scode
+    code = strip_scode_suffix(scode)
+    market = get_scode_market(code)
+    if not market:
+        return code
+    return f"{code}.{market}"
 
 
 def updateDeal(deal):
@@ -287,7 +327,7 @@ def uploadPosition(positions=None):
                     "market_value": position["market_value"],
                     "on_road_volume": position["on_road_volume"],
                     "open_price": position["open_price"],
-                    "stock_code": position["stock_code"],
+                    "stock_code": normalize_scode(position["stock_code"]),
                     "volume": position["volume"],
                 }
             )
@@ -503,7 +543,7 @@ def getActions():
             debug("getActions成功:", response.status_code, content)
             jso = json.loads(content)
             for act in jso["data"]:
-                act["scode"] = act["scode"].replace(".HK", ".HGT")
+                act["scode"] = normalize_scode(act["scode"]).replace(".HK", ".HGT")
                 # 如果act["scode"]里包含".HK",则用新的stockAccount
                 if act["scode"] in g.actions:
                     info("已存在", act["scode"], "的action")
@@ -644,7 +684,7 @@ def updateActionOrdered(scode, type, status, price, orderId, statusMessage=""):
         # 要发送的 JSON 数据（Python 字典）
         data = {
             "broker": g.broker,
-            "scode": scode.split(".")[0],
+            "scode": normalize_scode(scode),
             "status": status,
             "orderNo": orderId,
         }

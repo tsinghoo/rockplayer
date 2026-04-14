@@ -4,6 +4,7 @@
 '''
 import datetime
 import json
+import re
 import pandas as pd
 import numpy as np
 import talib
@@ -46,6 +47,45 @@ g.log["level"] = g.log["debug"]
 
 g.actions = {}
 stocks = {}
+
+
+def strip_scode_suffix(scode):
+    scode = str(scode or "").strip().upper()
+    index = scode.rfind(".")
+    if index > 0:
+        return scode[:index]
+    return scode
+
+
+def get_scode_market(scode):
+    code = strip_scode_suffix(scode)
+    if not code:
+        return ""
+    if len(code) == 6:
+        if re.match(r"^(600|601|603|605|688|900|51|58|56)\d+$", code):
+            return "SH"
+        if re.match(r"^(000|001|002|003|30|15|16|12|3)\d+$", code):
+            return "SZ"
+        if re.match(r"^(8|43|83|87|88|92)\d+$", code):
+            return "BJ"
+    if re.match(r"^\d{4,5}$", code) or re.match(r"^0[0-9]\d{3}$", code):
+        return "HK"
+    if "USDT" in code or "BTC" in code or "ETH" in code:
+        return "EC"
+    return ""
+
+
+def normalize_scode(scode):
+    scode = str(scode or "").strip().upper()
+    if not scode:
+        return scode
+    if re.match(r"^[^.]+\.[A-Z]+$", scode):
+        return scode
+    code = strip_scode_suffix(scode)
+    market = get_scode_market(code)
+    if not market:
+        return code
+    return f"{code}.{market}"
 # 初始化函数 - 策略运行开始时调用一次
 
 
@@ -84,6 +124,7 @@ def after_init(ContextInfo):
     # periods = ["1d"]
     # 打印subs有多少个股票
     for scode in stocklist:
+        scode = normalize_scode(scode)
         for period in periods:
             params = ['open', 'close', 'high', 'low', 'volume', 'amount']
             if period == "tick":
@@ -111,7 +152,7 @@ def after_init(ContextInfo):
                               for idx, row in batch.iterrows()]
                 # print(obj2JsonString(batch_data, indent=None))
                 body = {"data": obj2Json(
-                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
+                    batch_data), "scode": normalize_scode(scode), "period": period, "passcode": "995560"}
                 # 上传数据到test1
                 try:
                     response = requests.post(
