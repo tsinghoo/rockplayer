@@ -226,6 +226,106 @@ function getRuleId(scode, broker) {
     return `${scode}.${broker}`;
 }
 
+function stripScodeSuffix(scode) {
+    if (scode == null) {
+        return scode;
+    }
+    scode = String(scode).trim();
+    let index = scode.lastIndexOf(".");
+    if (index > 0) {
+        return scode.substring(0, index);
+    }
+
+    return scode;
+}
+
+function hasScodeSuffix(scode) {
+    if (scode == null) {
+        return false;
+    }
+    scode = String(scode).trim();
+    return /^[^.]+\.[A-Za-z]+$/.test(scode);
+}
+
+function normalizeScode(scode, minLength) {
+    if (scode == null) {
+        return scode;
+    }
+    if (minLength == null) {
+        minLength = 5;
+    }
+
+    scode = String(scode).trim();
+    if (scode == "") {
+        return scode;
+    }
+
+    if (hasScodeSuffix(scode)) {
+        let fields = scode.split(".");
+        let code = fields[0];
+        let suffix = fields[1].toUpperCase();
+        if (/^\d+$/.test(code) && code.length < minLength) {
+            code = "000000".substring(0, minLength - code.length) + code;
+        }
+        return `${code}.${suffix}`;
+    }
+
+    let code = scode;
+    if (/^\d+$/.test(code) && code.length < minLength) {
+        code = "000000".substring(0, minLength - code.length) + code;
+    }
+
+    let suffix = getMarket(code);
+    if (suffix == null || suffix == "" || suffix == "未知") {
+        return code;
+    }
+
+    return `${code}.${suffix}`;
+}
+
+function getScodeAliases(scode, minLength) {
+    let values = [];
+    let normalized = normalizeScode(scode, minLength);
+    let raw = stripScodeSuffix(scode);
+    if (normalized) {
+        values.push(normalized);
+    }
+    if (raw && !values.includes(raw)) {
+        values.push(raw);
+    }
+
+    return values;
+}
+
+function normalizeDbRowScodes(row) {
+    if (row == null) {
+        return row;
+    }
+    if (row.scode != null) {
+        row.scode = normalizeScode(row.scode);
+    }
+    if (row.stock_code != null) {
+        row.stock_code = normalizeScode(row.stock_code);
+    }
+
+    return row;
+}
+
+function normalizeDbRowsScodes(rows) {
+    if (rows == null) {
+        return rows;
+    }
+    rows.forEach((row) => normalizeDbRowScodes(row));
+    return rows;
+}
+
+async function updateStockBasicByScode(assignments, values, scode) {
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let sql = `update tStockBasic set ${assignments} where scode in (${placeholders}) or id in (${placeholders})`;
+    return await db.runSync(sql, values.concat(aliases, aliases));
+}
+
 function log(msg) {
     g.logs.push(msg);
 }
@@ -737,6 +837,7 @@ async function reloadRules() {
 
     for (let i = 0; i < ruleList.rows.length; i++) {
         let rule = ruleList.rows[i];
+        normalizeDbRowScodes(rule);
         await reloadRule(rule, req);
     }
 }
@@ -746,6 +847,7 @@ async function reloadRule(r, req) {
         return;
     }
     let threadId = req.threadId;
+    normalizeDbRowScodes(r);
 
     info("reloadRule:" + r.scode + r.sname, req.threadId)
 
@@ -783,7 +885,10 @@ async function reloadRule(r, req) {
     }
     rules[r.scode][r.broker] = r;
 
-    let sb = await db.getSync(`select * from tStockBasic where scode = '${r.scode}'`, [], threadId);
+    let aliases = getScodeAliases(r.scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let sb = await db.getSync(`select * from tStockBasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), threadId);
+    normalizeDbRowScodes(sb);
     if (sb != null) {
         r.rule.currentPrice = sb.buy;
     }
@@ -792,6 +897,7 @@ async function reloadRule(r, req) {
     //从 truleaction 里读取响应股票的最近一条执行记录
     let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`, [], threadId);
     if (ra) {
+        normalizeDbRowScodes(ra);
         info("${r.scode} ${r.sname} ra:" + JSON.stringify(ra), req.threadId)
         if (ra.done == 0) {
             r.status = "ordered";
@@ -995,7 +1101,7 @@ async function checkRule(scodes, req) {
     let now = Date.now();
     //遍历 scodes 里的每一个元素 scode,检查响应的 rule 是否满足条件，
     for (let i = 0; i < scodes.length; i++) {
-        let scode = scodes[i].split(".")[0];
+        let scode = normalizeScode(scodes[i]);
         let rs = rules[scode];
         debug("checkRule:" + scode, req.threadId);
         if (rs == null) {
@@ -1313,6 +1419,7 @@ app.post('/stock/update', async (req, resp) => {
         if (broker == "广发历史") {
             //广发证券
             fields = fields.concat([""]);
+            fields[3] = normalizeScode(fields[3]);
             fields[5] = "广发";
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
@@ -1375,14 +1482,15 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             await insertOrIgnore("tStockBasic", {
-                id: fields[2],
-                scode: fields[2],
+                id: scode,
+                scode: scode,
                 sname: fields[3],
                 buy: fields[6],
                 updateTime: now
             });
         } else if (broker == "国信当日") {
             fields = fields.concat([""]);
+            fields[0] = normalizeScode(fields[0]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
@@ -1407,6 +1515,7 @@ app.post('/stock/update', async (req, resp) => {
         } else if (broker == "国金历史") {
             //tdx 国金证券
             fields = fields.concat([""]);
+            fields[2] = normalizeScode(fields[2]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
@@ -1470,10 +1579,10 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             await insertOrIgnore("tStockBasic", {
-                id: fields[2],
-                scode: fields[2],
-                sname: fields[3],
-                buy: fields[6],
+                id: scode,
+                scode: scode,
+                sname: sname,
+                buy: tprice,
                 updateTime: now
             });
         } else if (broker == "国金流水") {
@@ -1522,6 +1631,7 @@ app.post('/stock/update', async (req, resp) => {
         } else if (broker == "国金当日") {
             //tdx 国金证券
             fields = fields.concat([""]);
+            fields[1] = normalizeScode(fields[1]);
             var sql = `insert or ignore into tstock (tday, ttime, sname,scode,operationDirection, operationName,market,tamount,tprice,
             tcash,tid,taccount, tpair,lastOperationTime) 
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
@@ -1552,7 +1662,7 @@ app.post('/stock/update', async (req, resp) => {
             let tday = timeFormat(new Date(), "yyyyMMdd");
             let ttime = fields[0];
             let sname = fields[3];
-            let scode = fields[2];
+            let scode = normalizeScode(fields[2]);
             let operationDirection = fields[4];
             let operationName = "国金";
             let market = getMarket(fields[2]);
@@ -1576,9 +1686,9 @@ app.post('/stock/update', async (req, resp) => {
             } else {
             }
             await insertOrReplace("tStockBasic", {
-                id: fields[1],
-                scode: fields[1],
-                sname: fields[2],
+                id: scode,
+                scode: scode,
+                sname: sname,
                 buy: fields[5],
                 updateTime: now
             });
@@ -1591,6 +1701,7 @@ app.post('/stock/update', async (req, resp) => {
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
             let tday = timeFormat(new Date(), "yyyyMMdd");
             let ttime = fields[0];
+            fields[2] = normalizeScode(fields[2]);
 
             // let res = await db.runSync(sql, [tday, ttime, fields[1], fields[2], fields[3], "广发", getMarket(fields[2]), fields[4], fields[5],
             // fields[6], tday + " " + ttime, fields[7], '', tday + " " + ttime]);
@@ -1720,10 +1831,10 @@ app.post('/stock/update', async (req, resp) => {
             }
 
             await insertOrIgnore("tStockBasic", {
-                id: fields[2],
-                scode: fields[2],
-                sname: fields[3],
-                buy: fields[6],
+                id: scode,
+                scode: scode,
+                sname: sname,
+                buy: tprice,
                 updateTime: now
             });
 
@@ -1878,7 +1989,7 @@ app.get('/stock/forceMoveDown', async (req, res) => {
 
 app.get('/stock/updatePrice', async (req, res) => {
     let js = req.query.js;
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     let price = req.query.price;
     let time = req.query.time;
     if (time == null) {
@@ -1886,8 +1997,7 @@ app.get('/stock/updatePrice', async (req, res) => {
     }
 
     updatePriceToRule(scode, price);
-    let sql = `update tStockBasic set buy=?, updateTime=? where id=?`;
-    await db.runSync(sql, [price, time, scode]);
+    await updateStockBasicByScode(`buy=?, updateTime=?`, [price, time], scode);
     checkRule([scode], req);
     var resp = `${js}({})`;
     res.send(resp);
@@ -1895,7 +2005,7 @@ app.get('/stock/updatePrice', async (req, res) => {
 
 app.get('/stock/updatePrice/option', async (req, res) => {
     let js = req.query.js;
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     let price = req.query.price;
     let time = req.query.time;
     if (time == null) {
@@ -1904,8 +2014,7 @@ app.get('/stock/updatePrice/option', async (req, res) => {
 
     //updatePriceToRule(scode, price);
 
-    let sql = `update tStockBasic set optionPrice=?, optionUpdateTime=? where id=?`;
-    await db.runSync(sql, [price, time, scode]);
+    await updateStockBasicByScode(`optionPrice=?, optionUpdateTime=?`, [price, time], scode);
     //checkRule([scode]);
     var resp = `${js}({})`;
     res.send(resp);
@@ -1962,14 +2071,7 @@ app.post('/stock/account', async (req, res) => {
 
 
 function fixScode(scode, minLength) {
-    if (minLength == null) {
-        minLength = 5;
-    }
-    if (scode.length < minLength) {
-        scode = "000000".substring(0, minLength - scode.length) + scode;
-    }
-
-    return scode;
+    return normalizeScode(scode, minLength);
 }
 
 async function dbCall(options) {
@@ -2235,6 +2337,7 @@ app.post('/stock/prices', async (req, res) => {
     let prices = req.body;
     for (let i = 0; i < prices.length; i++) {
         let price = prices[i];
+        price.scode = normalizeScode(price.scode);
         let now = Date.now();
         price.id = `${price.scode}_${now}`;
         price.updateTime = now;
@@ -2258,6 +2361,7 @@ app.post('/stock/basic/update', async (req, res) => {
     let stocks = req.data;
     for (let i = 0; i < stocks.length; i++) {
         let stock = stocks[i];
+        stock.scode = normalizeScode(stock.scode);
         let now = Date.now();
         stock.id = `${stock.scode}`;
         stock.updateTime = now;
@@ -2278,7 +2382,7 @@ app.post('/stock/candidates', async (req, res) => {
     now = parseInt(now);
     for (let i = 0; i < stocks.length; i++) {
         let stock = stocks[i];
-        let scode = stock[0].split(".")[0];
+        let scode = normalizeScode(stock[0]);
         let row = {
             id: scode,
             scode: scode,
@@ -2322,7 +2426,7 @@ app.post('/stock/positions', async (req, res) => {
         let pos = positions[i];
         let now = Date.now();
 
-        pos.stock_code = pos.stock_code.split(".")[0]
+        pos.stock_code = normalizeScode(pos.stock_code);
         pos.id = `${pos.broker}_${pos.account_id}_${pos.stock_code}_${type}`;
         pos.updateTime = now;
         pos.type = type;
@@ -2340,9 +2444,13 @@ app.get('/stock/positions', async (req, res) => {
     var resp = null;
     if (scode == null) {
         resp = await db.allSync(`select * from tPositions`, [], req.threadId);
+        normalizeDbRowsScodes(resp.rows);
         resp = JSON.stringify({ data: resp.rows });
     } else {
-        resp = await db.allSync(`select * from tPositions where stock_code=?`, [scode], req.threadId);
+        let aliases = getScodeAliases(scode);
+        let placeholders = aliases.map(() => "?").join(",");
+        resp = await db.allSync(`select * from tPositions where stock_code in (${placeholders})`, aliases, req.threadId);
+        normalizeDbRowsScodes(resp.rows);
         resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {
@@ -2365,13 +2473,17 @@ app.get('/stock/trades', async (req, res) => {
     var resp = null;
     if (scode == null) {
         resp = await db.allSync(`select * from tstock`, [], req.threadId);
+        normalizeDbRowsScodes(resp.rows);
         resp = JSON.stringify({ data: resp.rows });
     } else {
-        let sql = `select * from tstock where scode=? and type=? and deleted=0 order by tday desc, ttime desc`;
+        let aliases = getScodeAliases(scode);
+        let placeholders = aliases.map(() => "?").join(",");
+        let sql = `select * from tstock where scode in (${placeholders}) and type=? and deleted=0 order by tday desc, ttime desc`;
         if (all == 1) {
-            sql = `select * from tstock where scode=? and type=? order by tday desc, ttime desc`;
+            sql = `select * from tstock where scode in (${placeholders}) and type=? order by tday desc, ttime desc`;
         }
-        resp = await db.allSync(sql, [scode, type], req.threadId);
+        resp = await db.allSync(sql, aliases.concat([type]), req.threadId);
+        normalizeDbRowsScodes(resp.rows);
         resp = JSON.stringify({ data: resp.rows });
     }
     if (js) {
@@ -2409,7 +2521,7 @@ app.post('/stock/quotes', async (req, res) => {
     let data = req.body.data;
     Object.keys(data).forEach(async (scode) => {
         let v = data[scode];
-        scode = scode.split(".")[0];
+        scode = normalizeScode(scode);
         Object.keys(v).forEach(async (time) => {
             let v1 = v[time];
             let updateTime = parseTime(time).getTime();
@@ -2418,8 +2530,7 @@ app.post('/stock/quotes', async (req, res) => {
 
             } else {
                 updatePriceToRule(scode, price);
-                let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
-                await db.runSync(sql, [price, updateTime, scode]);
+                await updateStockBasicByScode(`buy=?,updateTime=?`, [price, updateTime], scode);
 
                 delete v1["stime"];
                 delete v1["pvolume"];
@@ -2456,15 +2567,14 @@ app.post('/stock/quotes.mini', async (req, res) => {
     let data = req.body.data;
     Object.keys(data).forEach(async (scode) => {
         let v1 = data[scode];
-        scode = scode.split(".")[0];
+        scode = normalizeScode(scode);
         let updateTime = v1.time;
         let price = v1.lastPrice;
 
         if (price == 0) {
         } else {
             updatePriceToRule(scode, price);
-            let sql = `update tStockBasic set buy=?,updateTime=? where id=?`;
-            await db.runSync(sql, [price, updateTime, scode]);
+            await updateStockBasicByScode(`buy=?,updateTime=?`, [price, updateTime], scode);
         }
     })
 
@@ -2490,8 +2600,8 @@ app.post('/stock/details', async (req, res) => {
         MinLimitOrderVolume=?, 
         bNotProfitable=?,
         updateTime=? 
-        where scode=?`;
-        await db.runSync(sql, [row.sname, row.ExchangeID, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, row.MinLimitOrderVolume, row.bNotProfitable, updateTime, row.scode.split(".")[0]]);
+        where scode in (${getScodeAliases(row.scode).map(() => "?").join(",")})`;
+        await db.runSync(sql, [row.sname, row.ExchangeID, row.LastVolume, row.TotalVolume, row.FloatVolume, row.UpStopPrice, row.DownStopPrice, row.VolumeMultiple, row.MinLimitOrderVolume, row.bNotProfitable, updateTime].concat(getScodeAliases(row.scode)));
     })
 
     if (data.length < 1) {
@@ -2525,6 +2635,7 @@ app.get('/stock/rule/create', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
     let json = JSON.parse(req.query.json);
+    json.scode = normalizeScode(json.scode);
     let now = Date.now();
 
     let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime) values(?,?,?,?,?,?,?)`;
@@ -2541,7 +2652,10 @@ app.get('/stock/rule/create', async (req, res) => {
 
     let ruleId = `${json.scode}.${broker}`;
 
-    let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [json.scode], threadId);
+    let aliases = getScodeAliases(json.scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let stockBasicInfo = await db.getSync(`select * from tstockbasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), threadId);
+    normalizeDbRowScodes(stockBasicInfo);
     if (stockBasicInfo && broker != "OKX" && broker != "BNB") {
         if (stockBasicInfo.volumeMultiple == 1) {
             stockBasicInfo.volumeMultiple = 100;
@@ -2564,12 +2678,12 @@ app.get('/stock/rule/create', async (req, res) => {
     }
 
     let result = await db.runSync(sql, [ruleId, broker, json.scode, json.sname, JSON.stringify(json), now, expireTime]);
-    await db.runSync(`delete from tRuleAction where scode=? and broker=?`, [json.scode, broker]);
+    await db.runSync(`delete from tRuleAction where scode in (${placeholders}) and broker=?`, aliases.concat([broker]));
     if (rules[json.scode] == null) {
         rules[json.scode] = {};
     }
 
-    rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [json.scode, broker], threadId);
+    rules[json.scode][broker] = await db.getSync(`select * from tTradeRule where scode in (${placeholders}) and broker=?`, aliases.concat([broker]), threadId);
     await reloadRule(rules[json.scode][broker], req);
 
     let market = getMarket(json.scode);
@@ -2587,7 +2701,7 @@ app.get('/stock/rule/create', async (req, res) => {
         updateTime: now
     });
 
-    let r = await db.allSync(`select * from tStock where scode=? and deleted=0 and tamount<>0`, [json.scode], threadId);
+    let r = await db.allSync(`select * from tStock where scode in (${placeholders}) and deleted=0 and tamount<>0`, aliases, threadId);
     if (r.rows.length == 0) {
         let tday = timeFormat(now, "yyyyMMdd");
         let ttime = timeFormat(now, "hh:mm:ss");
@@ -2768,7 +2882,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
 app.get('/stock/k/1m', async (req, res) => {
     let js = req.query.js;
     info(JSON.stringify(req.query), req.threadId);
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     let type = req.query.type;
     let day = req.query.day;
     if (day == null) {
@@ -2787,8 +2901,11 @@ app.get('/stock/k/1m', async (req, res) => {
     let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
     day = timeFormat(day, "yyyyMMdd")
     nextDay = timeFormat(nextDay, "yyyyMMdd")
-    let sql = `select * from t1m where scode=? and type=? and time > ? and time < ? order by scode, time`;
-    let result = await db.allSync(sql, [scode, type, day, nextDay], req.threadId);
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let sql = `select * from t1m where scode in (${placeholders}) and type=? and time > ? and time < ? order by scode, time`;
+    let result = await db.allSync(sql, aliases.concat([type, day, nextDay]), req.threadId);
+    normalizeDbRowsScodes(result.rows);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
@@ -2805,7 +2922,7 @@ app.get('/stock/k/1m', async (req, res) => {
 app.get('/stock/reload/k1d', async (req, res) => {
     let js = req.query.js;
     info(JSON.stringify(req.query), req.threadId)
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     let broker = req.query.broker;
     let now = Date.now();
     let action = {
@@ -2841,7 +2958,7 @@ app.get('/stock/k/1d', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
     info(JSON.stringify(req.query), req.threadId)
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     let type = req.query.type;
     let max = req.query.max;
     let startDay = req.query.startDay;
@@ -2874,12 +2991,16 @@ app.get('/stock/k/1d', async (req, res) => {
         error(e.stack, req.threadId)
     }
 
-    let sql = `select * from t1d where scode=? and type=? and time >= ? and time <= ? order by time`;
-    let result = await db.allSync(sql, [scode, type, startDay, endDay], threadId);
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let sql = `select * from t1d where scode in (${placeholders}) and type=? and time >= ? and time <= ? order by time`;
+    let result = await db.allSync(sql, aliases.concat([type, startDay, endDay]), threadId);
+    normalizeDbRowsScodes(result.rows);
     if (result.error) {
         resp = JSON.stringify(result);
     } else {
-        let sb = await db.getSync("select * from tStockBasic where scode=?", [scode], threadId);
+        let sb = await db.getSync(`select * from tStockBasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), threadId);
+        normalizeDbRowScodes(sb);
         resp = JSON.stringify({
             stockBasic: sb,
             rows: result.rows
@@ -2917,8 +3038,17 @@ app.get('/stock/k/1ds', async (req, res) => {
     startDay = timeFormat(startDay, "yyyyMMdd");
     endDay = timeFormat(endDay, "yyyyMMdd");
 
-    let sql = `select * from t1d where scode in ('${scodes.split(',').join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
+    let queryScodes = [];
+    scodes.split(',').forEach((scode) => {
+        getScodeAliases(scode).forEach((item) => {
+            if (!queryScodes.includes(item)) {
+                queryScodes.push(item);
+            }
+        });
+    });
+    let sql = `select * from t1d where scode in ('${queryScodes.join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
     let result = await db.allSync(sql, [type, startDay, endDay], req.threadId);
+    normalizeDbRowsScodes(result.rows);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
@@ -2950,8 +3080,17 @@ app.get('/stock/k/1ms', async (req, res) => {
     day = timeFormat(day, "yyyyMMdd")
     nextDay = timeFormat(nextDay, "yyyyMMdd")
 
-    let sql = `select * from t1m where scode in ('${scodes.split(',').join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
+    let queryScodes = [];
+    scodes.split(',').forEach((scode) => {
+        getScodeAliases(scode).forEach((item) => {
+            if (!queryScodes.includes(item)) {
+                queryScodes.push(item);
+            }
+        });
+    });
+    let sql = `select * from t1m where scode in ('${queryScodes.join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
     let result = await db.allSync(sql, [type, day, nextDay], req.threadId);
+    normalizeDbRowsScodes(result.rows);
 
     var resp = JSON.stringify(result.rows);
     if (result.error) {
@@ -2992,7 +3131,7 @@ async function cancelAction(rule) {
 app.get('/stock/rule/cancel', async (req, res) => {
     info(JSON.stringify(req.query), req.threadId)
     let js = req.query.js;
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     let broker = req.query.broker;
     let all = req.query.all;
     let now = Date.now();
@@ -3092,19 +3231,21 @@ app.get('/stock/rule/cancel', async (req, res) => {
 app.get('/stock/rule/delete', async (req, res) => {
     let js = req.query.js;
     let id = req.query.id;
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     let broker = req.query.broker;
     let now = Date.now();
     if (rules[scode] && rules[scode][broker]) {
         delete rules[scode][broker];
     }
 
-    let sql = `delete from tTradeRule where scode=? and broker=?`;
-    let result = await db.runSync(sql, [scode, broker]);
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let sql = `delete from tTradeRule where scode in (${placeholders}) and broker=?`;
+    let result = await db.runSync(sql, aliases.concat([broker]));
 
     if (result.error == null) {
-        sql = `delete from tRuleAction where scode=? and broker=?`;
-        result = await db.runSync(sql, [scode, broker]);
+        sql = `delete from tRuleAction where scode in (${placeholders}) and broker=?`;
+        result = await db.runSync(sql, aliases.concat([broker]));
     }
 
     var resp = JSON.stringify({});
@@ -3198,18 +3339,22 @@ app.get('/stock/action/done', async (req, res) => {
 app.get('/stock/rule/status', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     info("scode:" + scode, threadId);
     let result = {};
     if (scode == null) {
         result.data = rules;
     } else if (rules[scode] == null || Object.keys(rules[scode]).length == 0) {
         info("no active rule for scode:" + scode, threadId);
-        let res = await db.allSync(`select * from tTradeRule where scode=?`, [scode], threadId);
+        let aliases = getScodeAliases(scode);
+        let placeholders = aliases.map(() => "?").join(",");
+        let res = await db.allSync(`select * from tTradeRule where scode in (${placeholders})`, aliases, threadId);
 
         if (res.rows.length > 0) {
-            let tsb = await db.getSync(`select * from tStockBasic where scode=?`, [scode], threadId);
+            let tsb = await db.getSync(`select * from tStockBasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), threadId);
             let data = res.rows[0];
+            normalizeDbRowScodes(data);
+            normalizeDbRowScodes(tsb);
             data.autoCreateRuleFail = tsb ? tsb.autoCreateRuleFail : "";
             result.data = data;
         } else {
@@ -3239,24 +3384,33 @@ app.get('/stock/fe/user/login', async (req, res) => {
 });
 
 async function saveCreateRuleFailure(scode, error) {
-    await db.runSync(`update tStockBasic set autoCreateRuleFail=? where scode=?`, [error, scode]);
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    await db.runSync(`update tStockBasic set autoCreateRuleFail=? where scode in (${placeholders}) or id in (${placeholders})`, [error].concat(aliases, aliases));
 }
 async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
+    scode = normalizeScode(scode);
     if (stockBasicInfo == null) {
-        stockBasicInfo = await db.getSync(`select * from tstockbasic where scode=?`, [scode], threadId);
+        let aliases = getScodeAliases(scode);
+        let placeholders = aliases.map(() => "?").join(",");
+        stockBasicInfo = await db.getSync(`select * from tstockbasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), threadId);
     }
+    normalizeDbRowScodes(stockBasicInfo);
 
     let sname = stockBasicInfo.sname;
     info(`${sname}: auto creating rule`, threadId)
     let failed = 0;
     //获取tstock里对应scode的最后一条记录
-    let trade = await db.getSync(`select * from tstock where scode=? and deleted=0 order by tday desc, ttime desc limit 1`, [scode], threadId);
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let trade = await db.getSync(`select * from tstock where scode in (${placeholders}) and deleted=0 order by tday desc, ttime desc limit 1`, aliases, threadId);
     if (trade == null) {
         return { error: `no trade history`, sname };
     }
+    normalizeDbRowScodes(trade);
 
     //如果已经存在rule,则跳过
-    let oldRule = await db.getSync(`select * from tTradeRule where scode=? and broker=?`, [scode, trade.operationName], threadId);
+    let oldRule = await db.getSync(`select * from tTradeRule where scode in (${placeholders}) and broker=?`, aliases.concat([trade.operationName]), threadId);
     if (oldRule != null) {
         if (oldRule.closed == 0) {
             return { error: `I:exists`, sname };
@@ -3338,7 +3492,8 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
     let rc = null;
 
-    let all = await db.allSync(`select * from tPositions where stock_code=? and broker=?`, [scode, trade.operationName], threadId);
+    let all = await db.allSync(`select * from tPositions where stock_code in (${placeholders}) and broker=?`, aliases.concat([trade.operationName]), threadId);
+    normalizeDbRowsScodes(all.rows);
     let position = 0;
     if (all.rows && all.rows.length > 0) {
         position = all.rows[0].volume;
@@ -3729,7 +3884,7 @@ function updatePriceToRule(scode, price) {
 }
 function getMarket(stockCode) {
     // 转换为字符串并去除空格
-    const code = String(stockCode).trim();
+    const code = stripScodeSuffix(stockCode) == null ? "" : String(stripScodeSuffix(stockCode)).trim();
 
     // 检查代码是否有效
     if (!code) {
@@ -3758,38 +3913,13 @@ function getMarket(stockCode) {
 }
 
 function formatScode(stockCode) {
-    // 转换为字符串并去除空格
-    const code = String(stockCode).trim();
-
-    // 检查代码是否有效
-    if (!code) {
+    let code = normalizeScode(stockCode);
+    if (code == null || code == "" || !hasScodeSuffix(code)) {
+        info(`error scode：${stockCode}`);
         return null;
     }
 
-    let suffix = "";
-    if (code.length == 6) {
-        if (/^(600|601|603|605|688|900|51|58|56)\d+$/.test(code)) {
-            suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
-        } else if (/^(000|001|002|003|30|15|16|12|3)\d+$/.test(code)) {
-            suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
-        } else if (/^(8|43|83|87|88|920)\d+$/.test(code)) {
-            suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
-        }
-    } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
-        suffix = "HK"; // 港交所（4-5位数字，或 08 开头）
-    } else if (code.indexOf("USDT") >= 0 || code.indexOf("BTC") >= 0 || code.indexOf("ETH") >= 0) {
-        suffix = "EC";
-    } else {
-        info(`未知：${code}`);
-    }
-
-    if (suffix == "") {
-        info(`error scode：${code}`);
-        return null;
-    }
-
-    // 返回格式化结果（如 600023.SH）
-    return `${code}.${suffix}`;
+    return code;
 }
 
 
@@ -3887,10 +4017,11 @@ app.get('/stock/candidates', async (req, res) => {
 app.get('/stock/1d/lastDate', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     info("scode:" + scode, req.threadId)
-    let sql = `select max(time) as lastDate from t1d where scode=?`;
-    let r = await db.getSync(sql, [scode.split(".")[0]], threadId);
+    let aliases = getScodeAliases(scode);
+    let sql = `select max(time) as lastDate from t1d where scode in (${aliases.map(() => "?").join(",")})`;
+    let r = await db.getSync(sql, aliases, threadId);
 
     var resp = JSON.stringify(r);
     if (js != null) {
@@ -3903,10 +4034,11 @@ app.get('/stock/1d/lastDate', async (req, res) => {
 app.get('/stock/1m/lastMinute', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
-    let scode = req.query.scode;
+    let scode = normalizeScode(req.query.scode);
     info("scode:" + scode, req.threadId)
-    let sql = `select max(time) as lastMinute from t1m where scode=?`;
-    let r = await db.getSync(sql, [scode.split(".")[0]], threadId);
+    let aliases = getScodeAliases(scode);
+    let sql = `select max(time) as lastMinute from t1m where scode in (${aliases.map(() => "?").join(",")})`;
+    let r = await db.getSync(sql, aliases, threadId);
 
     var resp = JSON.stringify(r);
     if (js != null) {
@@ -3921,6 +4053,7 @@ app.get('/stock/price/current', async (req, res) => {
 
     let sql = `select * from tstockbasic `;
     let r = await db.allSync(sql, [], req.threadId);
+    normalizeDbRowsScodes(r.rows);
 
     var resp = JSON.stringify({ rows: r.rows });
     if (js != null) {
@@ -4050,7 +4183,7 @@ async function genCci(scode, req, all) {
 app.post('/stock/k/upload', async (req, res) => {
     info(`/stock/k/upload`, req.threadId)
     let data = req.body.data;
-    let scode = req.body.scode.split(".")[0];
+    let scode = normalizeScode(req.body.scode);
     let period = req.body.period;
     let type = req.body.type;
     if (type == null) {
@@ -4166,8 +4299,11 @@ async function calc1dCci(data, period, onCalced) {
 
 async function getDealName(scode, req) {
     let name = scode;
-    let r = await db.allSync(`select * from tstockbasic where scode=?`, [scode], req.threadId);
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let r = await db.allSync(`select * from tstockbasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), req.threadId);
     if (r.rows.length > 0) {
+        normalizeDbRowScodes(r.rows[0]);
         name = r.rows[0].sname;
     }
 
@@ -4185,8 +4321,8 @@ app.post('/stock/deal/update', async (req, res) => {
     let threadId = req.threadId;
     info(`/stock/deal/update:${JSON.stringify(req.body)}`, req.threadId)
     let deal = req.body;
-    let ocode = deal.scode.split(".");
-    deal.scode = ocode[0];
+    let ocode = normalizeScode(deal.scode).split(".");
+    deal.scode = `${ocode[0]}.${ocode[1]}`;
     if ("" == deal.sname) {
         deal.sname = await getDealName(deal.scode, req);
     }
@@ -4230,17 +4366,18 @@ app.post('/stock/deal/update', async (req, res) => {
 
 
 app.post('/stock/rule/action/ordered', async (req, res) => {
-    let scode = req.body.scode;
+    let scode = normalizeScode(req.body.scode);
     let broker = req.body.broker;
     let status = req.body.status;
     let orderNo = req.body.orderNo;
-    scode = scode.split(".")[0];
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
     let r;
     let resp = {};
     if (status == 56 || status == 53 || status == 54) {
-        r = await db.runSync("update tRuleAction set done = 2, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
+        r = await db.runSync(`update tRuleAction set done = 2, status=?, orderNo=? where scode in (${placeholders}) and broker=? `, [status, orderNo].concat(aliases, [broker]));
     } else if (status == 10 || status == 50 || status == 57) {
-        r = await db.runSync("update tRuleAction set done = 1, status=?, orderNo=? where scode=? and broker=? ", [status, orderNo, scode, broker]);
+        r = await db.runSync(`update tRuleAction set done = 1, status=?, orderNo=? where scode in (${placeholders}) and broker=? `, [status, orderNo].concat(aliases, [broker]));
     } else {
         info(`status ${status} skipped`, req.threadId);
         res.send(JSON.stringify(resp));

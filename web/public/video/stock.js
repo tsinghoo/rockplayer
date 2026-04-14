@@ -1511,18 +1511,20 @@ window.stock_list = window.stock_list || (function () {
             }
 
             c.find(".sname").val(`${self.selectedData["名称"]}`);
-            c.find(".scode").val(`${self.selectedData["代码"]}`);
+            c.find(".scode").val(`${self.normalizeScode(self.selectedData["代码"])}`);
             //添加.sname或.scode发生变化时的事件处理
 
             let onchanged = function () {
                 let input = $(this).val().trim();
                 //如果新内容是"北大荒(SH:600598)"这种格式，则将.scode的内容设置成"600598",将.sname的内容设置成"北大荒",请使用正则表达式并考虑"SH:"的处理
-                let match = input.match(/^(.+?)\(([A-Z]+:)?(\d+)\)$/);
+                let match = input.match(/^(.+?)\(([A-Z]+:)?([A-Z0-9.-]+)\)$/);
                 if (match) {
                     let sname = match[1].trim();
-                    let scode = match[3]; // 股票代码
-                    c.find(".scode").val(scode);
+                    let scode = match[2] ? `${match[3]}.${match[2].replace(":", "")}` : match[3];
+                    c.find(".scode").val(self.normalizeScode(scode));
                     c.find(".sname").val(sname);
+                } else if ($(this).hasClass("scode")) {
+                    c.find(".scode").val(self.normalizeScode(input));
                 }
             };
 
@@ -1658,7 +1660,7 @@ window.stock_list = window.stock_list || (function () {
                 let bounce = c.find(".bounce").val().trim();
                 let sell = c.find(".sell").val().trim();
                 let dip = c.find(".dip").val().trim();
-                let scode = c.find(".scode").val().trim();
+                let scode = self.normalizeScode(c.find(".scode").val().trim());
                 let sname = c.find(".sname").val().trim();
                 let sellAmount = c.find(".sellAmount").val().trim();
                 let buyAmount = c.find(".buyAmount").val().trim();
@@ -1747,7 +1749,7 @@ window.stock_list = window.stock_list || (function () {
             c.find(".buttonAuto").click(async function (ele) {
                 let broker = c.find(".operationName").val().trim();
                 self.lastBroker = broker;
-                let scode = c.find(".scode").val().trim();
+                let scode = self.normalizeScode(c.find(".scode").val().trim());
                 let type = 0;
                 let maxCount = 5;
                 let priceDelay = 10000000;
@@ -1834,38 +1836,46 @@ window.stock_list = window.stock_list || (function () {
         },
 
 
-        formatScode: function (stockCode) {
-            // 转换为字符串并去除空格
-            const code = String(stockCode).trim();
+        stripScodeSuffix: function (stockCode) {
+            const code = String(stockCode || "").trim();
+            const index = code.lastIndexOf(".");
+            if (index > 0) {
+                return code.substring(0, index);
+            }
+            return code;
+        },
 
-            // 检查代码是否有效
+        normalizeScode: function (stockCode) {
+            let code = String(stockCode || "").trim().toUpperCase();
             if (!code) {
                 throw new Error("股票代码不能为空");
             }
 
-            let suffix = "";
-            if (code.length == 6) {
-                if (/^(600|601|603|605|688|900|51)\d+$/.test(code)) {
-                    suffix = "SH"; // 上交所（600/601/603/605/688/900 开头）
-                } else if (/^(000|001|002|003|30|15|16|12|3)\d+$/.test(code)) {
-                    suffix = "SZ"; // 深交所（000/001/002/003/300 开头）
-                } else if (/^(8|43|83|87|88|92)\d+$/.test(code)) {
-                    suffix = "BJ"; // 北交所（8/43/83/87/88 开头）
-                }
-            } else if (/^\d{4,5}$/.test(code) || /^0[0-9]\d{3}$/.test(code)) {
-                suffix = ""; // 港交所（4-5位数字，或 08 开头）
-            } else if (code.indexOf("USDT") >= 0 || code.indexOf("BTC") >= 0 || code.indexOf("ETH") >= 0) {
-                suffix = "EC";
-            } else {
-                share.debug__(`未知：${code}`);
+            if (/^[^.]+\.[A-Z]+$/.test(code)) {
+                return code;
             }
 
-            // 返回格式化结果（如 600023.SH）
-            return `${suffix}${code}`;
+            code = self.stripScodeSuffix(code);
+            let market = self.getMarket(code);
+            if (market == null || market == "" || market == "未知") {
+                return code;
+            }
+
+            return `${code}.${market}`;
+        },
+
+        formatScode: function (stockCode) {
+            let scode = self.normalizeScode(stockCode);
+            let fields = scode.split(".");
+            if (fields.length < 2) {
+                return scode;
+            }
+
+            return `${fields[1]}${fields[0]}`;
         },
         getMarket: function (stockCode) {
             // 转换为字符串并去除空格
-            const code = String(stockCode).trim();
+            const code = self.stripScodeSuffix(stockCode);
 
             // 检查代码是否有效
             if (!code) {
@@ -2266,7 +2276,7 @@ window.stock_list = window.stock_list || (function () {
             c.find(".buttonConfirm").on("click", async function () {
                 let data = self.selectedData;
                 let price = c.find(".currentPrice").val().trim();
-                let res = await share.getSync__(`/stock/updatePrice?price=${price}&scode=${data["代码"]}`);
+                let res = await share.getSync__(`/stock/updatePrice?price=${price}&scode=${self.normalizeScode(data["代码"])}`);
                 if (res.error) {
                     share.toastError__(res.error);
                 } else {
@@ -2279,7 +2289,7 @@ window.stock_list = window.stock_list || (function () {
                 let rule = JSON.parse(data["规则"]);
                 let body = {
                     "broker": rule.broker,
-                    "scode": data["代码"],
+                    "scode": self.normalizeScode(data["代码"]),
                     "status": status,
                     "orderNo": "" + Date.now() + ""
                 };
