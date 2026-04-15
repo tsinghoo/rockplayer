@@ -4136,6 +4136,7 @@ app.post('/stock/query', async (req, res) => {
         res.send(JSON.stringify({ error: `${r.error}` }));
         return;
     }
+    normalizeDbRowsScodes(r.rows);
 
     if (name != null) {
         await db.runSync(`insert or replace into tsql (id, name, sql,params,lastUseTime) values (?,?,?,?,?)`,
