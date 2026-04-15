@@ -3162,6 +3162,7 @@ window.stock_list = window.stock_list || (function () {
                             title: '重载',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
                             onclick: function (e, i, name, event) {
+                                share.currentTarget = event.event.currentTarget;
                                 self.showK1dReloadMenu(
                                     async function () {
                                         self.toDrawK1dChart(scode, type, c);
@@ -3790,6 +3791,7 @@ window.stock_list = window.stock_list || (function () {
                             title: '重载',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
                             onclick: function (e, i, name, event) {
+                                share.currentTarget = event.event.currentTarget;
                                 self.showK1dReloadMenu(
                                     async function () {
                                         self.showK1ds([scode]);
