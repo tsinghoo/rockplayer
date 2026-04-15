@@ -319,6 +319,61 @@ function normalizeDbRowsScodes(rows) {
     return rows;
 }
 
+function quoteSqliteIdentifier(name) {
+    return `"${String(name).replace(/"/g, '""')}"`;
+}
+
+async function refreshTableScodeColumn(tableName, columnName, threadId) {
+    let tableSqlName = quoteSqliteIdentifier(tableName);
+    let columnSqlName = quoteSqliteIdentifier(columnName);
+    let r = await db.allSync(`select distinct ${columnSqlName} as scode from ${tableSqlName} where ${columnSqlName} is not null and trim(${columnSqlName})<>''`, [], threadId);
+    if (r.error) {
+        return r;
+    }
+
+    for (let i = 0; i < r.rows.length; i++) {
+        let oldScode = r.rows[i].scode;
+        let newScode = normalizeScode(oldScode);
+        if (newScode == null || newScode == "" || newScode == oldScode) {
+            continue;
+        }
+
+        let updateResult = await db.runSync(`update ${tableSqlName} set ${columnSqlName}=? where ${columnSqlName}=?`, [newScode, oldScode], threadId);
+        if (updateResult.error) {
+            return updateResult;
+        }
+    }
+
+    return {};
+}
+
+async function refreshAllTableScodes(threadId) {
+    let tables = await db.allSync(`select name from sqlite_master where type='table' and name not like 'sqlite_%'`, [], threadId);
+    if (tables.error) {
+        return tables;
+    }
+
+    for (let i = 0; i < tables.rows.length; i++) {
+        let tableName = tables.rows[i].name;
+        let columns = await db.allSync(`pragma table_info(${quoteSqliteIdentifier(tableName)})`, [], threadId);
+        if (columns.error) {
+            return columns;
+        }
+
+        let hasScode = columns.rows.some((column) => column.name == "scode");
+        if (!hasScode) {
+            continue;
+        }
+
+        let result = await refreshTableScodeColumn(tableName, "scode", threadId);
+        if (result.error) {
+            return result;
+        }
+    }
+
+    return {};
+}
+
 async function updateStockBasicByScode(assignments, values, scode) {
     let aliases = getScodeAliases(scode);
     let placeholders = aliases.map(() => "?").join(",");
@@ -4130,6 +4185,12 @@ app.post('/stock/query', async (req, res) => {
     let params = row.params;
     info(`/stock/query:${name}:sql:${sql}`, req.threadId)
     info(`/stock/query:${name}:params:${params}`, req.threadId)
+    let refreshResult = await refreshAllTableScodes(req.threadId);
+    if (refreshResult.error) {
+        info(refreshResult.error, req.threadId)
+        res.send(JSON.stringify({ error: `${refreshResult.error}` }));
+        return;
+    }
     let r = await db.allSync(sql, [], req.threadId);
     if (r.error) {
         info(r.error, req.threadId)
