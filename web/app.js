@@ -4177,6 +4177,15 @@ app.get('/stock/delete/auto', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stockUpdate', async (req, res) => { 
+    let refreshResult = await refreshAllTableScodes(req.threadId);
+    if (refreshResult.error) {
+        info(refreshResult.error, req.threadId)
+        res.send(JSON.stringify({ error: `${refreshResult.error}` }));
+        return;
+    }
+});
+
 app.post('/stock/query', async (req, res) => {
     let text = req.body.text;
     let row = JSON.parse(decodeURIComponent(atob(text)));
@@ -4185,12 +4194,6 @@ app.post('/stock/query', async (req, res) => {
     let params = row.params;
     info(`/stock/query:${name}:sql:${sql}`, req.threadId)
     info(`/stock/query:${name}:params:${params}`, req.threadId)
-    let refreshResult = await refreshAllTableScodes(req.threadId);
-    if (refreshResult.error) {
-        info(refreshResult.error, req.threadId)
-        res.send(JSON.stringify({ error: `${refreshResult.error}` }));
-        return;
-    }
     let r = await db.allSync(sql, [], req.threadId);
     if (r.error) {
         info(r.error, req.threadId)
