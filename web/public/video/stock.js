@@ -3162,7 +3162,17 @@ window.stock_list = window.stock_list || (function () {
                             title: '重载',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
                             onclick: function (e, i, name, event) {
-                                self.toDrawK1dChart(scode, type, c);
+                                self.showK1dReloadMenu(
+                                    async function () {
+                                        self.toDrawK1dChart(scode, type, c);
+                                    },
+                                    async function () {
+                                        let succeeded = await self.forceReloadK1d(scode);
+                                        if (succeeded) {
+                                            self.toDrawK1dChart(scode, type, c);
+                                        }
+                                    }
+                                );
                                 event.event.stopPropagation();
                             }
                         },
@@ -3779,9 +3789,19 @@ window.stock_list = window.stock_list || (function () {
                         myCustomTool: {
                             title: '重载',
                             icon: 'path://M23 4v6h-6, M1 20v-6h6, M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15',
-                            onclick: function (e, i, name, e) {
-                                self.showK1ds([scode]);
-                                e.event.stopPropagation();
+                            onclick: function (e, i, name, event) {
+                                self.showK1dReloadMenu(
+                                    async function () {
+                                        self.showK1ds([scode]);
+                                    },
+                                    async function () {
+                                        let succeeded = await self.forceReloadK1d(scode);
+                                        if (succeeded) {
+                                            self.showK1ds([scode]);
+                                        }
+                                    }
+                                );
+                                event.event.stopPropagation();
                             }
                         },
                         dataZoom: {
@@ -4362,6 +4382,36 @@ window.stock_list = window.stock_list || (function () {
                         k1d.text(err.stack);
                     }
                 );
+        },
+        showK1dReloadMenu: async function (onReload, onForceReload) {
+            let popup;
+            let buttons = [
+                {
+                    text: "重载",
+                    onTap: async function () {
+                        popup.close();
+                        await onReload();
+                    }
+                },
+                {
+                    text: "强制重载",
+                    onTap: async function () {
+                        popup.close();
+                        await onForceReload();
+                    }
+                }
+            ];
+            popup = await share.popupAction__("", buttons);
+        },
+        forceReloadK1d: async function (scode) {
+            let res = await share.getSync__(`/stock/reload/k1d?scode=${scode}&force=1`);
+            if (res.error) {
+                share.toastError__(res.error);
+                return false;
+            }
+
+            share.toastSuccess__("已清空并重载1d数据", 1000);
+            return true;
         },
         showChart: async function (rows) {
             let max = 0;

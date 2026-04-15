@@ -2979,7 +2979,22 @@ app.get('/stock/reload/k1d', async (req, res) => {
     info(JSON.stringify(req.query), req.threadId)
     let scode = normalizeScode(req.query.scode);
     let broker = req.query.broker;
+    let force = req.query.force == 1 || req.query.force == "1";
     let now = Date.now();
+    if (force) {
+        let aliases = getScodeAliases(scode);
+        let placeholders = aliases.map(() => "?").join(",");
+        let deleteResult = await db.runSync(`delete from t1d where scode in (${placeholders})`, aliases, req.threadId);
+        if (deleteResult && deleteResult.error) {
+            let resp = JSON.stringify(deleteResult);
+            if (js) {
+                resp = `${js}(${resp})`;
+            }
+            res.send(resp);
+            return;
+        }
+    }
+
     let action = {
         id: `${scode}-reloadK1d`,
         ruleId: scode,
