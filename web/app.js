@@ -4233,7 +4233,7 @@ async function genCci(scode, req, all) {
         error(`${r.rows.length} < ${period} 1d data`, req.threadId)
         return;
     }
-    if ((r.rows[0].cci == -800 && r.rows[1].cci == -800) && !all) {
+    if ((r.rows[0].cci == -800 || r.rows[1].cci == -800) && !all) {
         info(`need recalc all cci`, req.threadId);
         genCci(scode, req, 1);
         return;
