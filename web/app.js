@@ -4222,7 +4222,7 @@ async function genCci(scode, req, all) {
     info(`genCci:${scode},${all}`, req.threadId)
     let period = 14;
 
-    let sql = `select * from t1d where scode=? order by time desc ${all ? "" : "limit " + period}`;
+    let sql = `select * from t1d where scode=? order by time desc ${all ? "" : "limit " + (period+2)}`;
     let r = await db.allSync(sql, [scode], req.threadId);
     if (r.error) {
         error(r.error, req.threadId)
@@ -4233,7 +4233,7 @@ async function genCci(scode, req, all) {
         error(`${r.rows.length} < ${period} 1d data`, req.threadId)
         return;
     }
-    if ((r.rows[0].cci == -800 || r.rows[1].cci == -800) && !all) {
+    if ((r.rows[0].cci == -800 && r.rows[1].cci == -800) && !all) {
         info(`need recalc all cci`, req.threadId);
         genCci(scode, req, 1);
         return;
