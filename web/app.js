@@ -264,6 +264,8 @@ function normalizeScode(scode, minLength) {
         let fields = scode.split(".");
         let code = fields[0];
         let suffix = fields[1].toUpperCase();
+        suffix = suffix.replace(/HGT/g, "HK");
+        suffix = suffix.replace(/SGT/g, "HK");
         if (/^\d+$/.test(code) && code.length < minLength) {
             code = "000000".substring(0, minLength - code.length) + code;
         }
@@ -4192,7 +4194,7 @@ app.get('/stock/delete/auto', async (req, res) => {
     res.send(resp);
 });
 
-app.get('/stockUpdate', async (req, res) => { 
+app.get('/stockUpdate', async (req, res) => {
     let refreshResult = await refreshAllTableScodes(req.threadId);
     if (refreshResult.error) {
         info(refreshResult.error, req.threadId)
@@ -4237,7 +4239,7 @@ async function genCci(scode, req, all) {
     info(`genCci:${scode},${all}`, req.threadId)
     let period = 14;
 
-    let sql = `select * from t1d where scode=? order by time desc ${all ? "" : "limit " + (period+2)}`;
+    let sql = `select * from t1d where scode=? order by time desc ${all ? "" : "limit " + (period + 2)}`;
     let r = await db.allSync(sql, [scode], req.threadId);
     if (r.error) {
         error(r.error, req.threadId)
