@@ -1906,7 +1906,7 @@ window.stock_list = window.stock_list || (function () {
         showK: async function (code) {
             share.closePopup__();
             let fullCode = self.formatScode(code);
-            let link = `https://xueqiu.com/S/${fullCode}`;
+            let link = `https://xueqiu.com/S/${fullCode.split(".")[0]}`;
 
             self.openMiniBrowser(link, 1150, 790);
             //self.createFloatingWindow(link, 800);

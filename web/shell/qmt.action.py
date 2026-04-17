@@ -372,8 +372,17 @@ def syncPosition(accountType):
         "clean": 1,
         "passcode": "995560"
     }
-
-    if (accountType != "clean"):
+    if (accountType == "clean"):
+        info("body:", json.dumps(body, indent=None))
+        response = requests.post(
+            g.baseUrl + "/stock/positions", json=body, timeout=5)
+        if response.status_code != 200:
+            error("上传持仓失败，状态码:", response.status_code, response.content)
+            return
+        else:
+            response.encoding = 'utf-8'
+            info("上传持仓成功:", accountType)
+    else:
         data = get_trade_detail_data(account, accountType, 'position')
         info('查询持仓结果：')
         positions = []
@@ -406,7 +415,7 @@ def syncPosition(accountType):
             return
         else:
             response.encoding = 'utf-8'
-            info("上传持仓到test1成功:", accountType)
+            info("上传持仓成功:", accountType)
 
 
 def debug(*args, **kwargs):
