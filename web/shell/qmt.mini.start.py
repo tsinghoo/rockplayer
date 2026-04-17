@@ -85,7 +85,7 @@ def main():
         while True:
             print("1. qmt.mini.action.py")
             print("2. qmt.mini.data.py")
-            print("2. qmt.mini.find.py")
+            print("3. qmt.mini.find.py")
             print("q. quit")
             
             user_input = input("Please select: ")
