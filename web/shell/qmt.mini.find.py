@@ -71,6 +71,9 @@ g.low_percentile = 0.3    # 定义低位的百分位(30%分位数以下)
 g.min_price = 0           # 最低股价限制(元)
 g.max_price = 3000         # 最高股价限制(元)
 g.jiuzhuan_recent_days = 5  # 最近N天内出现下跌九转
+g.volume_ma_days = 5       # 放量判断使用的均量天数
+g.volume_ma_ratio = 1.5    # 今天成交量至少是最近均量的多少倍
+g.volume_compare_days = 3  # 今天成交量需要高于前几日
 
 
 today = datetime.datetime.now().date()
@@ -725,6 +728,25 @@ def isStrongToday(prices):
     return True
 
 
+def isVolumeStrongToday(prices, ma_days=5, ma_ratio=1.5, compare_days=3):
+    min_days = max(ma_days, compare_days) + 1
+    if prices is None or len(prices["volume"]) < min_days:
+        return False
+
+    volume_prices = prices["volume"].values
+    today_volume = volume_prices[-1]
+    recent_mean_volume = volume_prices[-(ma_days + 1):-1].mean()
+    prev_compare_volumes = volume_prices[-(compare_days + 1):-1]
+
+    if today_volume < recent_mean_volume * ma_ratio:
+        return False
+
+    if np.any(today_volume <= prev_compare_volumes):
+        return False
+
+    return True
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
@@ -780,6 +802,11 @@ def findStock(sector):
 
             if not isStrongToday(prices):
                 info(f"{scode} 今天未开始走强")
+                continue
+
+            if not isVolumeStrongToday(
+                prices, g.volume_ma_days, g.volume_ma_ratio, g.volume_compare_days):
+                info(f"{scode} 今天未放量走强")
                 continue
 
             jiuzhuan_date = prices.index[recent_jiuzhuan_down_day]
