@@ -70,6 +70,7 @@ g.position_ratio = 0.2    # 单只股票仓位比例
 g.low_percentile = 0.3    # 定义低位的百分位(30%分位数以下)
 g.min_price = 0           # 最低股价限制(元)
 g.max_price = 3000         # 最高股价限制(元)
+g.jiuzhuan_recent_days = 5  # 最近N天内出现下跌九转
 
 
 today = datetime.datetime.now().date()
@@ -680,7 +681,7 @@ def cciPassed(prices):
     return True
 
 
-def getPrevJiuzhuanDownDay(prices, min_days_ago=1):
+def getRecentJiuzhuanDownDay(prices, recent_days=5, min_days_ago=1):
     JIUZHUAN(prices)
     jiuzhuan_signal = prices["jiuzhuan_signal"].values
     last_index = len(jiuzhuan_signal) - 1
@@ -689,11 +690,39 @@ def getPrevJiuzhuanDownDay(prices, min_days_ago=1):
     if max_index < 0:
         return -1
 
-    for i in range(max_index, -1, -1):
+    min_index = max(0, last_index - recent_days)
+
+    for i in range(max_index, min_index - 1, -1):
         if jiuzhuan_signal[i] == 1:
             return i
 
     return -1
+
+
+def isStrongToday(prices):
+    if prices is None or len(prices["close"]) < 2:
+        return False
+
+    high_prices = prices["high"].values
+    close_prices = prices["close"].values
+    open_prices = prices["open"].values
+
+    today_high = high_prices[-1]
+    yesterday_high = high_prices[-2]
+    today_close = close_prices[-1]
+    yesterday_close = close_prices[-2]
+    today_open = open_prices[-1]
+
+    if today_close <= yesterday_close:
+        return False
+
+    if today_high <= yesterday_high:
+        return False
+
+    if today_close <= today_open:
+        return False
+
+    return True
 
 
 def findStock(sector):
@@ -743,12 +772,17 @@ def findStock(sector):
                 info(f"{scode} 已停牌，跳过")
                 continue
 
-            prev_jiuzhuan_down_day = getPrevJiuzhuanDownDay(prices, 1)
-            if prev_jiuzhuan_down_day < 0:
-                info(f"{scode} 未在前1天以上出现下跌九转")
+            recent_jiuzhuan_down_day = getRecentJiuzhuanDownDay(
+                prices, g.jiuzhuan_recent_days, 1)
+            if recent_jiuzhuan_down_day < 0:
+                info(f"{scode} 未在最近{g.jiuzhuan_recent_days}天内出现下跌九转")
                 continue
 
-            jiuzhuan_date = prices.index[prev_jiuzhuan_down_day]
+            if not isStrongToday(prices):
+                info(f"{scode} 今天未开始走强")
+                continue
+
+            jiuzhuan_date = prices.index[recent_jiuzhuan_down_day]
             info(f"{scode} 下跌九转日期:", jiuzhuan_date)
 
             high_prices = prices['high']
