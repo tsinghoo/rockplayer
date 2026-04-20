@@ -173,6 +173,40 @@ def KDJ(table):
             table["kdj_j"].values[i] = round(table["kdj_j"].values[i], 3)
 
 
+def JIUZHUAN(table, compare_days=4, max_count=9):
+    table["jiuzhuan_up"] = 0
+    table["jiuzhuan_down"] = 0
+    table["jiuzhuan_signal"] = 0
+
+    if len(table) <= compare_days:
+        return
+
+    close_values = table["close"].values
+    up_values = table["jiuzhuan_up"].values
+    down_values = table["jiuzhuan_down"].values
+    signal_values = table["jiuzhuan_signal"].values
+
+    for i in range(compare_days, len(table)):
+        current_close = close_values[i]
+        compare_close = close_values[i-compare_days]
+
+        if current_close > compare_close:
+            up_values[i] = min(up_values[i-1] + 1, max_count)
+            down_values[i] = 0
+        elif current_close < compare_close:
+            down_values[i] = min(down_values[i-1] + 1, max_count)
+            up_values[i] = 0
+        else:
+            up_values[i] = 0
+            down_values[i] = 0
+
+        # 下跌九转记为1，表示潜在反弹；上涨九转记为-1，表示潜在回调。
+        if down_values[i] == max_count:
+            signal_values[i] = 1
+        elif up_values[i] == max_count:
+            signal_values[i] = -1
+
+
 
 def get1dLastDate(scode):
     try:
@@ -218,6 +252,7 @@ def get1dData(stocklist, index, startTime, endTime):
     # 计算cci
     CCI(table)
     KDJ(table)
+    JIUZHUAN(table)
 
     return table
 
@@ -645,6 +680,22 @@ def cciPassed(prices):
     return True
 
 
+def getPrevJiuzhuanDownDay(prices, min_days_ago=1):
+    JIUZHUAN(prices)
+    jiuzhuan_signal = prices["jiuzhuan_signal"].values
+    last_index = len(jiuzhuan_signal) - 1
+    max_index = last_index - min_days_ago
+
+    if max_index < 0:
+        return -1
+
+    for i in range(max_index, -1, -1):
+        if jiuzhuan_signal[i] == 1:
+            return i
+
+    return -1
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
@@ -684,13 +735,21 @@ def findStock(sector):
                                            start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
             prices = df[scode]
             # debug("prices:", prices)
-            if prices is None or len(prices['high']) < 3:
+            if prices is None or len(prices['high']) < 13:
                 continue
 
             # 过滤停牌的股票：检查最后一条日线日期是否是最近的开市日
             if isStockSuspended(prices):
                 info(f"{scode} 已停牌，跳过")
                 continue
+
+            prev_jiuzhuan_down_day = getPrevJiuzhuanDownDay(prices, 1)
+            if prev_jiuzhuan_down_day < 0:
+                info(f"{scode} 未在前1天以上出现下跌九转")
+                continue
+
+            jiuzhuan_date = prices.index[prev_jiuzhuan_down_day]
+            info(f"{scode} 下跌九转日期:", jiuzhuan_date)
 
             high_prices = prices['high']
             low_prices = prices['low']
