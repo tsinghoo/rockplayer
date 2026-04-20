@@ -762,6 +762,24 @@ def getRecentJiuzhuanDownDay(prices, recent_days=5, min_days_ago=1):
     return -1
 
 
+def getRecentJiuzhuanUpDay(prices, recent_days=5, min_days_ago=1):
+    JIUZHUAN(prices)
+    jiuzhuan_signal = prices["jiuzhuan_signal"].values
+    last_index = len(jiuzhuan_signal) - 1
+    max_index = last_index - min_days_ago
+
+    if max_index < 0:
+        return -1
+
+    min_index = max(0, last_index - recent_days)
+
+    for i in range(max_index, min_index - 1, -1):
+        if jiuzhuan_signal[i] == -1:
+            return i
+
+    return -1
+
+
 def isStrongToday(prices):
     if prices is None or len(prices["close"]) < 2:
         return False
@@ -888,6 +906,10 @@ def findStock(sector):
                 fill_data=True,
             )
             prices = df[scode]
+            high_prices = prices["high"]
+            low_prices = prices["low"]
+            close_prices = prices["close"]
+            current_price = high_prices[-1]
             # debug("prices:", prices)
             if prices is None or len(prices["high"]) < 13:
                 continue
@@ -897,11 +919,29 @@ def findStock(sector):
                 info(f"{scode} 已停牌，跳过")
                 continue
 
-            recent_jiuzhuan_down_day = getRecentJiuzhuanDownDay(
+            # 检查股价是否在合理范围内
+            if current_price < g.min_price or current_price > g.max_price:
+                info("bad price:", current_price)
+                continue
+                        
+            lastDay = prices.index[-1]
+            if not isStrongToday(prices):
+                continue
+            info(f"{scode}:{lastDay}开始走强")
+
+            if not isVolumeStrongToday(
+                prices, g.volume_ma_days, g.volume_ma_ratio, g.volume_compare_days
+            ):
+                continue
+            info(f"{scode}:{lastDay}开始放量走强")
+
+            recent_jiuzhuan_up_day = getRecentJiuzhuanUpDay(
                 prices, g.jiuzhuan_recent_days, 1
             )
-            if recent_jiuzhuan_down_day < 0:
-                info(f"{scode} 未在最近{g.jiuzhuan_recent_days}天内出现下跌九转")
+
+            if recent_jiuzhuan_up_day >= 0:
+                jiuzhuan_up_date = prices.index[recent_jiuzhuan_up_day]
+                info(f"{scode} 最近发生过上涨九转，跳过:", jiuzhuan_up_date)
                 continue
 
             if not keepLowAfterRecentWindow(prices, g.keep_low_days, g.low_window_days):
@@ -909,29 +949,7 @@ def findStock(sector):
                     f"{scode} 最近{g.keep_low_days}天跌破最近{g.low_window_days}日低点"
                 )
                 continue
-            lastDay = prices.index[-1]
-            if not isStrongToday(prices):
-                info(f"{scode}:{lastDay}未开始走强")
-                continue
 
-            if not isVolumeStrongToday(
-                prices, g.volume_ma_days, g.volume_ma_ratio, g.volume_compare_days
-            ):
-                info(f"{scode} 今天未放量走强")
-                continue
-
-            jiuzhuan_date = prices.index[recent_jiuzhuan_down_day]
-            info(f"{scode} 下跌九转日期:", jiuzhuan_date)
-
-            high_prices = prices["high"]
-            low_prices = prices["low"]
-            close_prices = prices["close"]
-            current_price = high_prices[-1]
-
-            # 检查股价是否在合理范围内
-            if current_price < g.min_price or current_price > g.max_price:
-                info("bad price:", current_price)
-                continue
 
             # if not cciPassed(prices):
             #     continue
@@ -952,21 +970,20 @@ def findStock(sector):
             dayStart = -4
             dayEnd = -1
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
-            info(" high price increase:", count)
             if count < (dayEnd - dayStart):
                 continue
             # """
 
+            info(" high price increase:", count)
             # """
             # 最近几天收盘价连续上涨
             dayStart = -4
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
-            info(" close price increase:", count)
             if count < (dayEnd - dayStart):
                 continue
             # """
-
+            info(" close price increase:", count)
             # #计算high_prices中最近30天的最大值
             # days=30
             # if (len(high_prices) < days):
@@ -984,9 +1001,8 @@ def findStock(sector):
             count = getIncreaseDays(close_prices, dayStart, dayEnd, minRate * 0.01, 1)
             minIncreaseDays = 3
             if count < (minIncreaseDays):
-                info(f" increa6e {minRate}% days: {count} < {minIncreaseDays}")
                 continue
-            info(f" increase {minRate}% days: {count}")
+            info(f" increase {minRate}% days: {count}>{minIncreaseDays}")
             # """
 
             """
