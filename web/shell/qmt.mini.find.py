@@ -24,7 +24,7 @@ import akshare as ak
 colorama.init()
 
 
-class G():
+class G:
     pass
 
 
@@ -41,7 +41,7 @@ g.tick = {}
 g.actions = {}
 g.reloadK1d = []
 g.uploading = 0
-g.stocklist = ['000300.SH', '000004.SZ']
+g.stocklist = ["000300.SH", "000004.SZ"]
 
 g.baseUrl = "http://192.168.66.205:3001"
 g.baseUrl = "http://test1.91taogu.com"
@@ -61,19 +61,21 @@ g.log["level"] = g.log["debug"]
 g.toPrint = []
 
 g.start_date = "20230101"  # 回测开始日期
-g.end_date = "20251231"   # 回测结束日期
-g.stocklist = []         # 股票池
-g.hold_period = 5         # 持有周期(天)
+g.end_date = "20251231"  # 回测结束日期
+g.stocklist = []  # 股票池
+g.hold_period = 5  # 持有周期(天)
 
 # 设置回测参数
-g.position_ratio = 0.2    # 单只股票仓位比例
-g.low_percentile = 0.3    # 定义低位的百分位(30%分位数以下)
-g.min_price = 0           # 最低股价限制(元)
-g.max_price = 3000         # 最高股价限制(元)
+g.position_ratio = 0.2  # 单只股票仓位比例
+g.low_percentile = 0.3  # 定义低位的百分位(30%分位数以下)
+g.min_price = 0  # 最低股价限制(元)
+g.max_price = 3000  # 最高股价限制(元)
 g.jiuzhuan_recent_days = 5  # 最近N天内出现下跌九转
-g.volume_ma_days = 5       # 放量判断使用的均量天数
-g.volume_ma_ratio = 1.5    # 今天成交量至少是最近均量的多少倍
+g.volume_ma_days = 3  # 放量判断使用的均量天数
+g.volume_ma_ratio = 1.5  # 今天成交量至少是最近均量的多少倍
 g.volume_compare_days = 3  # 今天成交量需要高于前几日
+g.keep_low_days = 5  # 最近几天内不能跌破参考低点
+g.low_window_days = 20  # 最近N日最低点窗口
 
 
 today = datetime.datetime.now().date()
@@ -122,7 +124,7 @@ def normalize_scode(scode):
 def loadConfig():
     if not os.path.exists(g.configFile):
         g.config = {}
-        with open(g.configFile, 'w') as f:
+        with open(g.configFile, "w") as f:
             json.dump(g.config, f)
     else:
         with open(g.configFile) as f:
@@ -131,7 +133,7 @@ def loadConfig():
 
 
 def saveConfig():
-    with open(g.configFile, 'w') as f:
+    with open(g.configFile, "w") as f:
         json.dump(g.config, f)
 
 
@@ -142,39 +144,47 @@ def init():
 
 
 def resetThreadId(label=""):
-    threadLocal.id = label + datetime.datetime.now().strftime("%H%M%S") + \
-        str(random.randint(0, 1000))
+    threadLocal.id = (
+        label
+        + datetime.datetime.now().strftime("%H%M%S")
+        + str(random.randint(0, 1000))
+    )
 
 
 def CCI(table):
     table["cci"] = 0
     for i in range(13, len(table)):
-        high = table["high"].values[i-13:i+1]
-        low = table["low"].values[i-13:i+1]
-        close = table["close"].values[i-13:i+1]
+        high = table["high"].values[i - 13 : i + 1]
+        low = table["low"].values[i - 13 : i + 1]
+        close = table["close"].values[i - 13 : i + 1]
         tp = (high + low + close) / 3
         sma = tp.mean()
         mad = np.abs(tp - sma).mean()
         table["cci"].values[i] = (tp[-1] - sma) / (0.015 * mad)
         # 将cci的值保留小数点后2位
         table["cci"].values[i] = round(table["cci"].values[i], 2)
-        
+
+
 def KDJ(table):
-        table["kdj_k"] = 0
-        table["kdj_d"] = 0
-        table["kdj_j"] = 0
-        for i in range(13, len(table)):
-            high = table["high"].values[i-13:i+1]
-            low = table["low"].values[i-13:i+1]
-            close = table["close"].values[i-13:i+1]
-            rsv = (close[-1] - low.min()) / (high.max() - low.min())
-            table["kdj_k"].values[i] = 2/3 * table["kdj_k"].values[i-1] + 1/3 * rsv
-            table["kdj_d"].values[i] = 2/3 * table["kdj_d"].values[i-1] + 1/3 * table["kdj_k"].values[i]
-            table["kdj_j"].values[i] = 3 * table["kdj_k"].values[i] - 2 * table["kdj_d"].values[i]
-            # 将kdj的值保留小数点后2位
-            table["kdj_k"].values[i] = round(table["kdj_k"].values[i], 3)
-            table["kdj_d"].values[i] = round(table["kdj_d"].values[i], 3)
-            table["kdj_j"].values[i] = round(table["kdj_j"].values[i], 3)
+    table["kdj_k"] = 0
+    table["kdj_d"] = 0
+    table["kdj_j"] = 0
+    for i in range(13, len(table)):
+        high = table["high"].values[i - 13 : i + 1]
+        low = table["low"].values[i - 13 : i + 1]
+        close = table["close"].values[i - 13 : i + 1]
+        rsv = (close[-1] - low.min()) / (high.max() - low.min())
+        table["kdj_k"].values[i] = 2 / 3 * table["kdj_k"].values[i - 1] + 1 / 3 * rsv
+        table["kdj_d"].values[i] = (
+            2 / 3 * table["kdj_d"].values[i - 1] + 1 / 3 * table["kdj_k"].values[i]
+        )
+        table["kdj_j"].values[i] = (
+            3 * table["kdj_k"].values[i] - 2 * table["kdj_d"].values[i]
+        )
+        # 将kdj的值保留小数点后2位
+        table["kdj_k"].values[i] = round(table["kdj_k"].values[i], 3)
+        table["kdj_d"].values[i] = round(table["kdj_d"].values[i], 3)
+        table["kdj_j"].values[i] = round(table["kdj_j"].values[i], 3)
 
 
 def JIUZHUAN(table, compare_days=4, max_count=9):
@@ -192,13 +202,13 @@ def JIUZHUAN(table, compare_days=4, max_count=9):
 
     for i in range(compare_days, len(table)):
         current_close = close_values[i]
-        compare_close = close_values[i-compare_days]
+        compare_close = close_values[i - compare_days]
 
         if current_close > compare_close:
-            up_values[i] = min(up_values[i-1] + 1, max_count)
+            up_values[i] = min(up_values[i - 1] + 1, max_count)
             down_values[i] = 0
         elif current_close < compare_close:
-            down_values[i] = min(down_values[i-1] + 1, max_count)
+            down_values[i] = min(down_values[i - 1] + 1, max_count)
             up_values[i] = 0
         else:
             up_values[i] = 0
@@ -211,7 +221,6 @@ def JIUZHUAN(table, compare_days=4, max_count=9):
             signal_values[i] = -1
 
 
-
 def get1dLastDate(scode):
     try:
         scode = normalize_scode(scode)
@@ -222,7 +231,7 @@ def get1dLastDate(scode):
             error("getLast1dDate failed:", response.status_code)
             return
         else:
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             debug(content)
             return json.loads(content)["lastDate"]
@@ -233,25 +242,46 @@ def get1dLastDate(scode):
 
 def get1dData(stocklist, index, startTime, endTime):
     info("get1dData", stocklist, index, startTime, endTime)
-    if (startTime is None):
+    if startTime is None:
         startTime = datetime.datetime.now().strftime("%Y%m%d")
 
-    if (endTime is None):
+    if endTime is None:
         endTime = ""
 
     scode = stocklist[index]
-    period = '1d'
-    params = ['open', 'close', 'high', 'low', 'volume', 'amount', 'suspendFlag']
-    info('downloading', period, 'from', startTime, "for", scode)
+    period = "1d"
+    params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
+    info("downloading", period, "from", startTime, "for", scode)
     xtdata.download_history_data(scode, period, startTime, endTime)
     # download_history_data2 批量版本 todo
     # params = []
-    info('get', period, 'from', startTime, 'to', endTime,
-         'for', scode, "(", index, "/", len(stocklist), ")")
-    df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                   start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
+    info(
+        "get",
+        period,
+        "from",
+        startTime,
+        "to",
+        endTime,
+        "for",
+        scode,
+        "(",
+        index,
+        "/",
+        len(stocklist),
+        ")",
+    )
+    df = xtdata.get_market_data_ex(
+        params,
+        stock_list=[scode],
+        period=period,
+        start_time=startTime,
+        end_time=endTime,
+        count=-1,
+        dividend_type="none",
+        fill_data=True,
+    )
     table = df[scode]
-    table = table.query('suspendFlag != 1')
+    table = table.query("suspendFlag != 1")
     info("get1dData done")
     # 计算cci
     CCI(table)
@@ -263,53 +293,77 @@ def get1dData(stocklist, index, startTime, endTime):
 
 def update1d(stocklist=None, startTime=None, endTime=None):
     info("update1d")
-    if (stocklist is None):
+    if stocklist is None:
         stocklist = g.stocklist
-    if (endTime is None):
+    if endTime is None:
         endTime = ""
 
     for index, scode in enumerate(stocklist):
         scode = normalize_scode(scode)
         dataStartTime = startTime
-        if (startTime is None):
+        if startTime is None:
             lastDate = get1dLastDate(scode)
             if lastDate:
                 dataStartTime = lastDate
                 # 把dateStartTime设置为30天前
-                dataStartTime = (datetime.datetime.strptime(
-                    lastDate, "%Y%m%d") - datetime.timedelta(days=30)).strftime("%Y%m%d")
+                dataStartTime = (
+                    datetime.datetime.strptime(lastDate, "%Y%m%d")
+                    - datetime.timedelta(days=30)
+                ).strftime("%Y%m%d")
             else:
                 # 把dateStartTime设置为1年前
-                dataStartTime = (datetime.datetime.now() -
-                                 datetime.timedelta(days=365)).strftime("%Y%m%d")
-        period = '1d'
+                dataStartTime = (
+                    datetime.datetime.now() - datetime.timedelta(days=365)
+                ).strftime("%Y%m%d")
+        period = "1d"
         datas = get1dData(stocklist, index, dataStartTime, endTime)
         # print("所有列名:", df.keys())
         # print("所有:", df.values())
-        columns = ['Time'] + datas.columns.tolist()
+        columns = ["Time"] + datas.columns.tolist()
         # print(columns)
         info("", len(datas), "rows")
 
         # 将datas的数据分批上传，每批100条
         bsize = 50
         for i in range(0, len(datas), bsize):
-            batch = datas.iloc[i:i+bsize]
-            info("上传", scode, period,
-                 "[", i, ",", i+bsize, "]", len(batch))
+            batch = datas.iloc[i : i + bsize]
+            info("上传", scode, period, "[", i, ",", i + bsize, "]", len(batch))
             batch_data = []
             for idx, row in batch.iterrows():
-                batch_data.append([str(idx)] + [row["open"], row["close"], row["high"],
-                                                row["low"], row["volume"], row["amount"], row["cci"], row["kdj_k"], row["kdj_d"], row["kdj_j"]])
-            body = {"data": obj2Json(
-                batch_data), "scode": normalize_scode(scode), "period": period, "passcode": "995560"}
+                batch_data.append(
+                    [str(idx)]
+                    + [
+                        row["open"],
+                        row["close"],
+                        row["high"],
+                        row["low"],
+                        row["volume"],
+                        row["amount"],
+                        row["cci"],
+                        row["kdj_k"],
+                        row["kdj_d"],
+                        row["kdj_j"],
+                    ]
+                )
+            body = {
+                "data": obj2Json(batch_data),
+                "scode": normalize_scode(scode),
+                "period": period,
+                "passcode": "995560",
+            }
             debug("body:", body)
             # 上传数据到test1
             try:
                 response = requests.post(
-                    g.baseUrl+"/stock/k/upload", json=body, verify=False, timeout=20)
+                    g.baseUrl + "/stock/k/upload", json=body, verify=False, timeout=20
+                )
                 if response.status_code != 200:
-                    error("上传失败，状态码:", response.status_code,
-                          "响应内容:", response.text)
+                    error(
+                        "上传失败，状态码:",
+                        response.status_code,
+                        "响应内容:",
+                        response.text,
+                    )
             except Exception as e:
                 error("上传失败:", str(e))
 
@@ -349,7 +403,7 @@ def obj2Json(obj, max_depth=4, current_depth=1):
     result = {}
     for attr_name in dir(obj):
         # 跳过魔术方法（如 __init__, __str__ 等）
-        if attr_name.startswith('__') and attr_name.endswith('__'):
+        if attr_name.startswith("__") and attr_name.endswith("__"):
             continue
 
         try:
@@ -360,8 +414,7 @@ def obj2Json(obj, max_depth=4, current_depth=1):
                 continue
 
             # 递归处理属性值
-            result[attr_name] = obj2Json(
-                attr_value, max_depth, current_depth + 1)
+            result[attr_name] = obj2Json(attr_value, max_depth, current_depth + 1)
 
         except Exception as e:
             result[attr_name] = f"<无法获取属性值: {str(e)}>"
@@ -374,8 +427,7 @@ def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
     最终转换为 JSON 字符串
     """
     data = obj2Json(obj, max_depth=max_depth)
-    js = json.dumps(data, indent=indent,
-                    ensure_ascii=ensure_ascii)
+    js = json.dumps(data, indent=indent, ensure_ascii=ensure_ascii)
     return js
 
 
@@ -413,7 +465,7 @@ def object_to_json(obj, max_depth=3, current_depth=0):
     result = {}
     for attr_name in dir(obj):
         # 跳过魔术方法（如 __init__, __str__ 等）
-        if attr_name.startswith('__') and attr_name.endswith('__'):
+        if attr_name.startswith("__") and attr_name.endswith("__"):
             continue
 
         try:
@@ -424,8 +476,7 @@ def object_to_json(obj, max_depth=3, current_depth=0):
                 continue
 
             # 递归处理属性值
-            result[attr_name] = object_to_json(
-                attr_value, max_depth, current_depth + 1)
+            result[attr_name] = object_to_json(attr_value, max_depth, current_depth + 1)
 
         except Exception as e:
             result[attr_name] = f"<无法获取属性值: {str(e)}>"
@@ -434,7 +485,7 @@ def object_to_json(obj, max_depth=3, current_depth=0):
 
 
 def printObj(data, indent):
-    if (not indent):
+    if not indent:
         indent = ""
     dirs = dir(data)
     if not dirs:
@@ -451,19 +502,19 @@ def printObj(data, indent):
 
 
 def debug(*args, **kwargs):
-    if (g.log["level"] >= g.log["debug"]):
+    if g.log["level"] >= g.log["debug"]:
         all_args = (f"D",) + args
         log(*all_args, **kwargs)
 
 
 def info(*args, **kwargs):
-    if (g.log["level"] >= g.log["info"]):
+    if g.log["level"] >= g.log["info"]:
         all_args = (f"I",) + args
         log(*all_args, **kwargs)
 
 
 def error(*args, **kwargs):
-    if (g.log["level"] >= g.log["error"]):
+    if g.log["level"] >= g.log["error"]:
         all_args = (f"E",) + args
         log(*all_args, **kwargs)
 
@@ -472,7 +523,7 @@ def log(*args, **kwargs):
     """增强版log函数，完全模拟print的参数行为"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # 将时间作为第一个元素插入到输出中
-    if (hasattr(threadLocal, "id")):
+    if hasattr(threadLocal, "id"):
         time_header = f"[{current_time}][{threadLocal.id}]"
     else:
         time_header = f"[{current_time}]"
@@ -482,7 +533,7 @@ def log(*args, **kwargs):
     g.toPrint.append([all_args, kwargs])
 
 
-def log2File(toPrint, file, sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
+def log2File(toPrint, file, sep=" ", end="\n", flush=True, mode="a", encoding="utf-8"):
     """
     将打印内容输出到文件，参数与print()函数保持一致
 
@@ -527,9 +578,8 @@ def listStock(sector):
     # 将datas的数据分批上传，每批100条
     bsize = 200
     for i in range(0, len(stocks), bsize):
-        batch = stocks.iloc[i:i+bsize]
-        info("uploading stocks in", sector,
-             "[", i, ",", i+bsize, "]", len(batch))
+        batch = stocks.iloc[i : i + bsize]
+        info("uploading stocks in", sector, "[", i, ",", i + bsize, "]", len(batch))
         info(obj2JsonString(batch[0], indent=None))
 
         break
@@ -537,10 +587,15 @@ def listStock(sector):
         body = {"sector": sector, "data": batch}
         try:
             response = requests.post(
-                g.baseUrl+"/stock/basic/update", json=body, timeout=20)
+                g.baseUrl + "/stock/basic/update", json=body, timeout=20
+            )
             if response.status_code != 200:
-                error("上传失败，状态码:", response.status_code,
-                      "响应内容:", response.text)
+                error(
+                    "上传失败，状态码:",
+                    response.status_code,
+                    "响应内容:",
+                    response.text,
+                )
         except Exception as e:
             error("上传失败:", str(e))
 
@@ -553,20 +608,22 @@ def getStockName(scode):
 
 def getIncreaseDays(prices, rangeStart, rangeEnd, minRate, maxRate):
     count = 0
-    days = rangeEnd-rangeStart
+    days = rangeEnd - rangeStart
     if len(prices) < days:
         return 0
 
     for i in range(rangeEnd, rangeStart, -1):
-        if prices[i] > prices[i-1] * (1+minRate):
-            if prices[i] < prices[i-1] * (1+maxRate):
+        if prices[i] > prices[i - 1] * (1 + minRate):
+            if prices[i] < prices[i - 1] * (1 + maxRate):
                 count += 1
 
     return count
 
+
 def getCompanyInfo(scode):
     ci = ak.stock_individual_info_em(symbol=scode)
     info(ci)
+
 
 def test():
     # stock_individual_basic_info_hk_xq_df = ak.stock_individual_basic_info_hk_xq(symbol="02097")
@@ -574,14 +631,16 @@ def test():
 
     stock_individual_info_em_df = ak.stock_individual_info_em(symbol="000001")
     print(stock_individual_info_em_df)
-    
-    stock_individual_basic_info_xq_df = ak.stock_individual_basic_info_xq(symbol="SH601127")
+
+    stock_individual_basic_info_xq_df = ak.stock_individual_basic_info_xq(
+        symbol="SH601127"
+    )
     print(stock_individual_basic_info_xq_df)
 
-    
+
 def getCciCrossUpDay(cci, dayStart, dayEnd):
     for i in range(dayEnd, dayStart, -1):
-        if cci[i] >= -100 and cci[i-1] < -100:
+        if cci[i] >= -100 and cci[i - 1] < -100:
             return i
     return 0
 
@@ -632,13 +691,14 @@ def getCandidateList():
     info("getCandidateList")
     try:
         response = requests.get(
-            g.baseUrl + "/stock/candidates", verify=False, timeout=5)
+            g.baseUrl + "/stock/candidates", verify=False, timeout=5
+        )
         if response.status_code != 200:
             info("getCandidateList failed:", response.status_code)
             return g.stocklist
         else:
             info("getCandidateList success:", response.status_code)
-            response.encoding = 'utf-8'
+            response.encoding = "utf-8"
             content = response.text
             info("getCandidateList response:", content)
             stocklist = json.loads(content)
@@ -656,29 +716,29 @@ def cciPassed(prices):
     # 检查cci是否上穿-100线
     CCI(prices)
 
-    high_prices = prices['high']
-    low_prices = prices['low']
-    close_prices = prices['close']
+    high_prices = prices["high"]
+    low_prices = prices["low"]
+    close_prices = prices["close"]
     current_price = high_prices[-1]
-    cci = prices['cci']
+    cci = prices["cci"]
 
     dayStart = -5
     dayEnd = -1
     crossUpDay = getCciCrossUpDay(cci, dayStart, dayEnd)
     info("cciCrossUpDay:", crossUpDay)
-    if (crossUpDay == 0):
+    if crossUpDay == 0:
         return False
 
-    dayStart = crossUpDay-1
+    dayStart = crossUpDay - 1
     dayEnd = -1
     count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
     info(" high price increase:", count)
-    if (count < (dayEnd-dayStart)):
+    if count < (dayEnd - dayStart):
         return False
 
     count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
     info(" close price increase:", count)
-    if (count < (dayEnd-dayStart)):
+    if count < (dayEnd - dayStart):
         return False
 
     return True
@@ -735,8 +795,8 @@ def isVolumeStrongToday(prices, ma_days=5, ma_ratio=1.5, compare_days=3):
 
     volume_prices = prices["volume"].values
     today_volume = volume_prices[-1]
-    recent_mean_volume = volume_prices[-(ma_days + 1):-1].mean()
-    prev_compare_volumes = volume_prices[-(compare_days + 1):-1]
+    recent_mean_volume = volume_prices[-(ma_days + 1) : -1].mean()
+    prev_compare_volumes = volume_prices[-(compare_days + 1) : -1]
 
     if today_volume < recent_mean_volume * ma_ratio:
         return False
@@ -747,16 +807,36 @@ def isVolumeStrongToday(prices, ma_days=5, ma_ratio=1.5, compare_days=3):
     return True
 
 
+def keepLowAfterRecentWindow(prices, keep_days=5, low_window_days=20):
+    low_prices = prices["low"].values
+    if len(low_prices) < keep_days + low_window_days:
+        return False
+
+    current_index = len(low_prices) - 1
+    start_index = max(0, current_index - keep_days)
+    follow_lows = low_prices[start_index:]
+    reference_lows = low_prices[start_index - low_window_days : start_index]
+
+    if len(follow_lows) == 0 or len(reference_lows) == 0:
+        return False
+
+    reference_low = reference_lows.min()
+    if np.any(follow_lows < reference_low):
+        return False
+
+    return True
+
+
 def findStock(sector):
     # 获取全市场股票列表
     info("findStock", sector)
-    if sector == 'candidate':
+    if sector == "candidate":
         g.stocklist = getCandidateList()
     else:
         g.stocklist = xtdata.get_stock_list_in_sector(sector)
 
     info("stocklist:", g.stocklist)
-    period = '1d'
+    period = "1d"
     # 订阅行情数据
     xtdata.subscribe_whole_quote(g.stocklist)
 
@@ -766,27 +846,50 @@ def findStock(sector):
     candidate = []
     # dataStartTime设置为70天前
     startDays = 60
-    dataStartTime = (datetime.datetime.now() -
-                     datetime.timedelta(days=(startDays*3))).strftime("%Y%m%d")
+    dataStartTime = (
+        datetime.datetime.now() - datetime.timedelta(days=(startDays * 3))
+    ).strftime("%Y%m%d")
     dataEndTime = current_date
-    params = ['open', 'close', 'high', 'low', 'volume', 'amount']
+    params = ["open", "close", "high", "low", "volume", "amount"]
     for index, scode in enumerate(g.stocklist):
         try:
             sname = getStockName(scode)
-            if sname.startswith(('ST', '*ST', '退')):
+            if sname.startswith(("ST", "*ST", "退")):
                 continue
 
-            xtdata.download_history_data(
-                scode, period, dataStartTime, dataEndTime)
+            xtdata.download_history_data(scode, period, dataStartTime, dataEndTime)
             # download_history_data2 批量版本 todo
 
-            info('get', startDays, period, 'for', scode, 'from',
-                 '', 'to', current_date, "(", index, "/", len(g.stocklist), ")", sector)
-            df = xtdata.get_market_data_ex(params, stock_list=[scode], period=period,
-                                           start_time="", end_time=current_date, count=startDays, dividend_type='none', fill_data=True)
+            info(
+                "get",
+                startDays,
+                period,
+                "for",
+                scode,
+                "from",
+                "",
+                "to",
+                current_date,
+                "(",
+                index,
+                "/",
+                len(g.stocklist),
+                ")",
+                sector,
+            )
+            df = xtdata.get_market_data_ex(
+                params,
+                stock_list=[scode],
+                period=period,
+                start_time="",
+                end_time=current_date,
+                count=startDays,
+                dividend_type="none",
+                fill_data=True,
+            )
             prices = df[scode]
             # debug("prices:", prices)
-            if prices is None or len(prices['high']) < 13:
+            if prices is None or len(prices["high"]) < 13:
                 continue
 
             # 过滤停牌的股票：检查最后一条日线日期是否是最近的开市日
@@ -795,26 +898,34 @@ def findStock(sector):
                 continue
 
             recent_jiuzhuan_down_day = getRecentJiuzhuanDownDay(
-                prices, g.jiuzhuan_recent_days, 1)
+                prices, g.jiuzhuan_recent_days, 1
+            )
             if recent_jiuzhuan_down_day < 0:
                 info(f"{scode} 未在最近{g.jiuzhuan_recent_days}天内出现下跌九转")
                 continue
 
+            if not keepLowAfterRecentWindow(prices, g.keep_low_days, g.low_window_days):
+                info(
+                    f"{scode} 最近{g.keep_low_days}天跌破最近{g.low_window_days}日低点"
+                )
+                continue
+            lastDay = prices.index[-1]
             if not isStrongToday(prices):
-                info(f"{scode} 今天未开始走强")
+                info(f"{scode}:{lastDay}未开始走强")
                 continue
 
             if not isVolumeStrongToday(
-                prices, g.volume_ma_days, g.volume_ma_ratio, g.volume_compare_days):
+                prices, g.volume_ma_days, g.volume_ma_ratio, g.volume_compare_days
+            ):
                 info(f"{scode} 今天未放量走强")
                 continue
 
             jiuzhuan_date = prices.index[recent_jiuzhuan_down_day]
             info(f"{scode} 下跌九转日期:", jiuzhuan_date)
 
-            high_prices = prices['high']
-            low_prices = prices['low']
-            close_prices = prices['close']
+            high_prices = prices["high"]
+            low_prices = prices["low"]
+            close_prices = prices["close"]
             current_price = high_prices[-1]
 
             # 检查股价是否在合理范围内
@@ -842,7 +953,7 @@ def findStock(sector):
             dayEnd = -1
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
             info(" high price increase:", count)
-            if (count < (dayEnd-dayStart)):
+            if count < (dayEnd - dayStart):
                 continue
             # """
 
@@ -852,7 +963,7 @@ def findStock(sector):
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
             info(" close price increase:", count)
-            if (count < (dayEnd-dayStart)):
+            if count < (dayEnd - dayStart):
                 continue
             # """
 
@@ -870,10 +981,9 @@ def findStock(sector):
             dayStart = -30
             dayEnd = -1
             minRate = 7
-            count = getIncreaseDays(
-                close_prices, dayStart, dayEnd, minRate*0.01, 1)
+            count = getIncreaseDays(close_prices, dayStart, dayEnd, minRate * 0.01, 1)
             minIncreaseDays = 3
-            if (count < (minIncreaseDays)):
+            if count < (minIncreaseDays):
                 info(f" increa6e {minRate}% days: {count} < {minIncreaseDays}")
                 continue
             info(f" increase {minRate}% days: {count}")
@@ -903,8 +1013,8 @@ def findStock(sector):
 def uploadCandidates(stocks):
     bsize = 200
     for i in range(0, len(stocks), bsize):
-        batch = stocks[i:i + bsize]
-        info("uploading candidates", "[", i, ",", i+bsize, "]", len(batch))
+        batch = stocks[i : i + bsize]
+        info("uploading candidates", "[", i, ",", i + bsize, "]", len(batch))
 
         doUploadCandidates(batch)
 
@@ -913,16 +1023,15 @@ def doUploadCandidates(batch):
     body = {"data": batch}
     try:
         info("uploading candidates:", body)
-        response = requests.post(
-            g.baseUrl+"/stock/candidates", json=body, timeout=20)
+        response = requests.post(g.baseUrl + "/stock/candidates", json=body, timeout=20)
         if response.status_code != 200:
-            error("上传失败，状态码:", response.status_code,  "响应内容:", response.text)
+            error("上传失败，状态码:", response.status_code, "响应内容:", response.text)
     except Exception as e:
         error_info = traceback.format_exc()
         error("上传失败:", error_info)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Mini-QMT的userdata_mini路径
     # path = r'D:\国金证券QMT交易端\userdata_mini'
     path = os.getenv("qmtpath")
@@ -976,7 +1085,7 @@ if __name__ == '__main__':
 
     if "sessionId" not in g.config:
         g.config["sessionId"] = 0
-    g.config["sessionId"] = g.config["sessionId"]+1
+    g.config["sessionId"] = g.config["sessionId"] + 1
     saveConfig()
 
     # 生成session id 整数类型 同时运行的策略不能重复
@@ -1013,18 +1122,63 @@ if __name__ == '__main__':
         xt_trader.stop()
         sys.exit(1)
 
-    sector_list = ['上期所', '上证A股', '上证B股', '上证期权', '上证转债', '中金所', '创业板', '大商所', '沪市ETF', '沪市债券', '沪市基金', '沪市指数', '沪深A股', '沪深B股', '沪深ETF', '沪深债券', '沪深基金',
-                   '沪深指数', '沪深转债', '深市ETF', '深市债券', '深市基金', '深市指数', '深证A股', '深证B股', '深证期权', '深证转债', '科创板', '科创板CDR', '能源中心', '连续合约', '郑商所', '香港联交所指数', '香港联交所股票']
-    sector_list = ['上证A股', '上证B股', '创业板', '沪深A股', '沪深B股',
-                   '沪深ETF', '深市ETF', '深证A股', '深证B股', '科创板', '香港联交所股票']
-    sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板', '香港联交所股票']
+    sector_list = [
+        "上期所",
+        "上证A股",
+        "上证B股",
+        "上证期权",
+        "上证转债",
+        "中金所",
+        "创业板",
+        "大商所",
+        "沪市ETF",
+        "沪市债券",
+        "沪市基金",
+        "沪市指数",
+        "沪深A股",
+        "沪深B股",
+        "沪深ETF",
+        "沪深债券",
+        "沪深基金",
+        "沪深指数",
+        "沪深转债",
+        "深市ETF",
+        "深市债券",
+        "深市基金",
+        "深市指数",
+        "深证A股",
+        "深证B股",
+        "深证期权",
+        "深证转债",
+        "科创板",
+        "科创板CDR",
+        "能源中心",
+        "连续合约",
+        "郑商所",
+        "香港联交所指数",
+        "香港联交所股票",
+    ]
+    sector_list = [
+        "上证A股",
+        "上证B股",
+        "创业板",
+        "沪深A股",
+        "沪深B股",
+        "沪深ETF",
+        "深市ETF",
+        "深证A股",
+        "深证B股",
+        "科创板",
+        "香港联交所股票",
+    ]
+    sector_list = ["创业板", "沪深A股", "沪深ETF", "科创板", "香港联交所股票"]
 
     time.sleep(2)
 
     if ui == "A":
         # 先清空所有候选
         # doUploadCandidates([])
-        sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板', '香港联交所股票']
+        sector_list = ["创业板", "沪深A股", "沪深ETF", "科创板", "香港联交所股票"]
         # 对于每个sector,调用findStock
         for sector in sector_list:
             candidates = findStock(sector)
@@ -1037,7 +1191,7 @@ if __name__ == '__main__':
     if ui == "a":
         # 先清空所有候选
         # doUploadCandidates([])
-        sector_list = ['创业板', '沪深A股', '沪深ETF', '科创板']
+        sector_list = ["创业板", "沪深A股", "沪深ETF", "科创板"]
         # 对于每个sector,调用findStock
         for sector in sector_list:
             candidates = findStock(sector)
@@ -1049,7 +1203,7 @@ if __name__ == '__main__':
         info(f"{len(g.candidates)} candidates found")
     if ui == "h":
         # 对于每个sector,调用findStock
-        sector_list = ['香港联交所股票']
+        sector_list = ["香港联交所股票"]
         for sector in sector_list:
             candidates = findStock(sector)
             # 将candidates分批上传到test1
@@ -1057,7 +1211,7 @@ if __name__ == '__main__':
             update1d([c[0] for c in candidates])
     if ui == "c":
         # 对于每个sector,调用findStock
-        sector_list = ['candidate']
+        sector_list = ["candidate"]
         for sector in sector_list:
             candidates = findStock(sector)
             info(f"{len(candidates)} candidates found:{candidates}")
@@ -1070,7 +1224,7 @@ if __name__ == '__main__':
                 uploadCandidates(candidates)
                 update1d([c[0] for c in candidates])
     if ui == "t":
-        report_data = xtdata.get_financial_data(['688795.SH'])
+        report_data = xtdata.get_financial_data(["688795.SH"])
         info("test:", obj2JsonString(report_data, 4, 0))
     if ui == "2":
         # 对于每个sector,查询成分股
