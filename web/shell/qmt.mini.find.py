@@ -547,8 +547,7 @@ def log2File(toPrint, file, sep=" ", end="\n", flush=True, mode="a", encoding="u
         encoding: 文件编码(默认'utf-8')
     """
     # 在file文件名后边加上当天日期
-    file = f"{file}.{datetime.datetime.now().strftime('%Y%m%d')}.log.{g.config['sessionId']}"
-
+    file = f"{file}.{datetime.datetime.now().strftime('%Y%m%d')}.log.{g.config['sessionId']:02d}"
     with open(file, mode=mode, encoding=encoding) as f:
         for item in toPrint:
             args = item[0]
@@ -613,8 +612,8 @@ def getIncreaseDays(prices, rangeStart, rangeEnd, minRate, maxRate):
         return 0
 
     for i in range(rangeEnd, rangeStart, -1):
-        if prices[i] > prices[i - 1] * (1 + minRate):
-            if prices[i] < prices[i - 1] * (1 + maxRate):
+        if prices.iloc[i] > prices.iloc[i - 1] * (1 + minRate):
+            if prices.iloc[i] < prices.iloc[i - 1] * (1 + maxRate):
                 count += 1
 
     return count
@@ -666,24 +665,77 @@ def getLatestTradingDay():
 def isStockSuspended(prices):
     """
     判断股票是否停牌
-    通过检查最后一条日线的日期是否是最近的开市日
+    优先使用 suspendFlag；如果没有该字段，则根据最近日线的实际更新节奏动态判断。
+    日线在开盘前、盘中和长假后都可能还没有新 bar，因此这里按当前时段做缓冲，
+    避免把“还没生成新日线”误判为停牌。
     """
     if prices is None or len(prices) == 0:
         return True
 
-    # 获取最后一条日线的日期
-    last_date = prices.index[-1]
-    # 转换为 YYYYMMDD 格式
-    if isinstance(last_date, str):
-        last_date_str = last_date.replace("-", "").replace("/", "")
+    if "suspendFlag" in prices.columns:
+        suspend_flag = prices["suspendFlag"].iloc[-1]
+        if pd.notna(suspend_flag):
+            return int(suspend_flag) == 1
+
+    try:
+        trading_dates = pd.to_datetime(pd.Index(prices.index)).sort_values()
+    except Exception as e:
+        error("isStockSuspended parse date failed:", str(e))
+        return False
+
+    if len(trading_dates) == 0:
+        return True
+
+    last_date = trading_dates[-1].date()
+    now = datetime.datetime.now()
+    today = now.date()
+    days_since_last = (today - last_date).days
+
+    if days_since_last <= 0:
+        return False
+
+    recent_dates = trading_dates[-20:]
+    recent_gaps = recent_dates.to_series().diff().dt.days.dropna()
+    if len(recent_gaps) > 0:
+        max_gap = int(recent_gaps.max())
+        median_gap = int(recent_gaps.median())
     else:
-        last_date_str = last_date.strftime("%Y%m%d")
+        max_gap = 1
+        median_gap = 1
 
-    # 获取最近的开市日
-    latest_trading_day = getLatestTradingDay()
+    time_now = now.time()
+    market_open = datetime.time(9, 30)
+    market_close = datetime.time(15, 0)
 
-    # 比较：如果最后一条日线日期不是最近的开市日，则认为停牌
-    return last_date_str != latest_trading_day
+    if time_now < market_open:
+        session_buffer = 1
+    elif time_now < market_close:
+        session_buffer = 2
+    else:
+        session_buffer = 1
+
+    effective_gap = max(0, days_since_last - session_buffer)
+    allowed_gap = max(5, max_gap + 2, median_gap + 3)
+    allowed_gap = min(allowed_gap, 20)
+
+    if effective_gap > allowed_gap:
+        info(
+            "isStockSuspended stale bars:",
+            str(last_date),
+            "today:",
+            str(today),
+            "days_since_last:",
+            days_since_last,
+            "effective_gap:",
+            effective_gap,
+            "session_buffer:",
+            session_buffer,
+            "allowed_gap:",
+            allowed_gap,
+        )
+        return True
+
+    return False
 
 
 def getCandidateList():
@@ -719,7 +771,7 @@ def cciPassed(prices):
     high_prices = prices["high"]
     low_prices = prices["low"]
     close_prices = prices["close"]
-    current_price = high_prices[-1]
+    current_price = high_prices.iloc[-1]
     cci = prices["cci"]
 
     dayStart = -5
@@ -909,7 +961,7 @@ def findStock(sector):
             high_prices = prices["high"]
             low_prices = prices["low"]
             close_prices = prices["close"]
-            current_price = high_prices[-1]
+            current_price = high_prices.iloc[-1]
             # debug("prices:", prices)
             if prices is None or len(prices["high"]) < 13:
                 continue
@@ -927,13 +979,13 @@ def findStock(sector):
             lastDay = prices.index[-1]
             if not isStrongToday(prices):
                 continue
-            info(f"{scode}:{lastDay}开始走强")
+            info(f"{lastDay}开始走强")
 
             if not isVolumeStrongToday(
                 prices, g.volume_ma_days, g.volume_ma_ratio, g.volume_compare_days
             ):
                 continue
-            info(f"{scode}:{lastDay}开始放量走强")
+            info(f"{lastDay}开始放量")
 
             recent_jiuzhuan_up_day = getRecentJiuzhuanUpDay(
                 prices, g.jiuzhuan_recent_days, 1
@@ -941,14 +993,14 @@ def findStock(sector):
 
             if recent_jiuzhuan_up_day >= 0:
                 jiuzhuan_up_date = prices.index[recent_jiuzhuan_up_day]
-                info(f"{scode} 最近发生过上涨九转，跳过:", jiuzhuan_up_date)
+                info(f"跳过: 最近发生过上涨九转", jiuzhuan_up_date)
                 continue
 
-            if not keepLowAfterRecentWindow(prices, g.keep_low_days, g.low_window_days):
-                info(
-                    f"{scode} 最近{g.keep_low_days}天跌破最近{g.low_window_days}日低点"
-                )
-                continue
+            # if not keepLowAfterRecentWindow(prices, g.keep_low_days, g.low_window_days):
+            #     info(
+            #         f"{scode} 最近{g.keep_low_days}天跌破最近{g.low_window_days}日低点"
+            #     )
+            #     continue
 
 
             # if not cciPassed(prices):
@@ -967,20 +1019,22 @@ def findStock(sector):
 
             # """
             # 最近几天最高价连续上涨
-            dayStart = -4
+            dayStart = -3
             dayEnd = -1
             count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
             if count < (dayEnd - dayStart):
+                info(f"跳过:high price increase:{count}<{dayEnd-dayStart}")
                 continue
             # """
 
             info(" high price increase:", count)
             # """
             # 最近几天收盘价连续上涨
-            dayStart = -4
+            dayStart = -3
             dayEnd = -1
             count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
             if count < (dayEnd - dayStart):
+                info(f"跳过:close price increase:{count}<{dayEnd-dayStart}")
                 continue
             # """
             info(" close price increase:", count)
@@ -997,12 +1051,13 @@ def findStock(sector):
             # 最近30天较大涨幅天数
             dayStart = -30
             dayEnd = -1
-            minRate = 7
+            minRate = 5
             count = getIncreaseDays(close_prices, dayStart, dayEnd, minRate * 0.01, 1)
-            minIncreaseDays = 3
+            minIncreaseDays = 4
             if count < (minIncreaseDays):
+                info(f"跳过:increase {minRate}% days: {count}<{minIncreaseDays}")
                 continue
-            info(f" increase {minRate}% days: {count}>{minIncreaseDays}")
+            info(f" increase {minRate}% days: {count}>={minIncreaseDays}")
             # """
 
             """
