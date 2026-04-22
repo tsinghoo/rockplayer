@@ -2007,6 +2007,67 @@ app.get('/stock/moveUp', async (req, res) => {
     res.send(resp);
 });
 
+function getTradeTimestamp(tday, ttime) {
+    if (tday == null || ttime == null) {
+        return null;
+    }
+    tday = `${tday}`.trim();
+    ttime = `${ttime}`.trim();
+    if (!/^\d{8}$/.test(tday)) {
+        return null;
+    }
+
+    let parts = ttime.split(":");
+    if (parts.length !== 3) {
+        let digits = ttime.replace(/\D/g, "");
+        if (digits.length === 5) {
+            digits = "0" + digits;
+        }
+        if (digits.length < 6) {
+            digits = digits.padEnd(6, "0");
+        }
+        if (digits.length >= 6) {
+            parts = [digits.substring(0, 2), digits.substring(2, 4), digits.substring(4, 6)];
+        }
+    }
+    if (parts.length !== 3) {
+        return null;
+    }
+
+    let year = parseInt(tday.substring(0, 4));
+    let month = parseInt(tday.substring(4, 6));
+    let day = parseInt(tday.substring(6, 8));
+    let hours = parseInt(parts[0]) || 0;
+    let minutes = parseInt(parts[1]) || 0;
+    let seconds = parseInt(parts[2]) || 0;
+    return new Date(year, month - 1, day, hours, minutes, seconds).getTime();
+}
+
+app.get('/stock/resetMove', async (req, res) => {
+    let js = req.query.js;
+    let code = req.query.code;
+    let lastTrade = await db.getSync(`select tday, ttime from tstock where scode=? order by tday desc, ttime desc limit 1`, [code], req.threadId);
+    if (lastTrade == null) {
+        let resp = js ? `${js}(${JSON.stringify({ error: "未找到交易记录" })})` : JSON.stringify({ error: "未找到交易记录" });
+        res.send(resp);
+        return;
+    }
+
+    let lastOperationTime = getTradeTimestamp(lastTrade.tday, lastTrade.ttime);
+    if (lastOperationTime == null || Number.isNaN(lastOperationTime)) {
+        let resp = js ? `${js}(${JSON.stringify({ error: "交易时间格式无效" })})` : JSON.stringify({ error: "交易时间格式无效" });
+        res.send(resp);
+        return;
+    }
+
+    let sql = `update tstock set lastOperationTime=? where scode=? `;
+    await db.runSync(sql, [lastOperationTime, code]);
+    await db.runSync(`update tStockBasic set priority=? where scode=?`, [lastOperationTime, code]);
+    await db.runSync(`update tTradeRule set createTime=? where scode=?`, [lastOperationTime, code]);
+    var resp = `${js}({})`;
+    res.send(resp);
+});
+
 app.get('/stock/moveDown', async (req, res) => {
     let js = req.query.js;
     let code = req.query.code;

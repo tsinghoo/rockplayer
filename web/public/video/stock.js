@@ -1074,6 +1074,18 @@ window.stock_list = window.stock_list || (function () {
                         }
                     },
                     {
+                        text: "归位",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/resetMove?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已归位", 1000);
+                            }
+                        }
+                    },
+                    {
                         text: "置底",
                         onTap: async function () {
                             popup.close();
