@@ -153,6 +153,7 @@ function initWss() {
 
 const port = parseInt(args[2]);
 directoryPath = args[3];
+const openwrtClientsPath = path.join(directoryPath, "openwrt_clients.json");
 info(directoryPath);
 let suffix = [];
 if (args.length > 4) {
@@ -459,6 +460,36 @@ function error(msg, threadId) {
 
     let time = timeFormat(new Date(), "yyyy-MM-dd hh:mm:ss");
     log(`${time}[${threadId}]:${msg}`);
+}
+
+function readOpenwrtClients(threadId) {
+    try {
+        const text = fs.readFileSync(openwrtClientsPath, "utf-8");
+        const data = JSON.parse(text);
+        if (data && typeof data === "object") {
+            return data;
+        }
+    } catch (e) {
+        if (e.code !== "ENOENT") {
+            error(`readOpenwrtClients error:${e.message}`, threadId);
+        }
+    }
+
+    return {
+        router: "",
+        reportedAt: 0,
+        clients: []
+    };
+}
+
+function writeOpenwrtClients(data, threadId) {
+    try {
+        fs.writeFileSync(openwrtClientsPath, JSON.stringify(data, null, 4));
+        return { ok: 1 };
+    } catch (e) {
+        error(`writeOpenwrtClients error:${e.message}`, threadId);
+        return { error: e.message };
+    }
 }
 
 // 列出目录下的所有文件
@@ -4838,6 +4869,42 @@ app.get('/video/config', (req, res) => {
     var json = { data: JSON.parse(text) }
     var resp = req.query.js + "(" + JSON.stringify(json) + ");";
     res.send(resp);
+});
+
+app.get('/video/openwrt/clients', (req, res) => {
+    info("video/openwrt/clients", req.threadId);
+    const data = readOpenwrtClients(req.threadId);
+    res.send(JSON.stringify({ data }));
+});
+
+app.post('/video/openwrt/clients/upload', (req, res) => {
+    info(`video/openwrt/clients/upload:${JSON.stringify(req.body)}`, req.threadId);
+    const body = req.body || {};
+    const clients = Array.isArray(body.clients) ? body.clients : [];
+    const data = {
+        router: body.router || req.ip,
+        reportedAt: Number(body.reportedAt) || Date.now(),
+        clients: clients.map((item) => {
+            const leaseEnd = Number(item.leaseEnd);
+            return {
+                ip: item.ip || "",
+                mac: item.mac || "",
+                host: item.host || "-",
+                leaseEnd: Number.isFinite(leaseEnd) ? leaseEnd : 0
+            };
+        })
+    };
+    const result = writeOpenwrtClients(data, req.threadId);
+    if (result.error) {
+        res.status(500).send(JSON.stringify(result));
+        return;
+    }
+
+    res.send(JSON.stringify({
+        ok: 1,
+        count: data.clients.length,
+        reportedAt: data.reportedAt
+    }));
 });
 
 app.post('/video/ping', (req, res) => {

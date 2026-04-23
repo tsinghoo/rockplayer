@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpenWrt Devices</title>
+    <style>
+        :root {
+            --bg: #f2efe8;
+            --panel: #fffdf8;
+            --line: #d9d0c2;
+            --text: #2b241c;
+            --muted: #73685b;
+            --accent: #1f6b5d;
+            --warn: #a14a28;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "PingFang SC", "Noto Sans SC", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top right, #e2efe9 0, transparent 28%),
+                radial-gradient(circle at left bottom, #efe1d3 0, transparent 25%),
+                var(--bg);
+        }
+
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 18px 40px;
+        }
+
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 34px;
+            line-height: 1.1;
+        }
+
+        .sub {
+            margin-top: 8px;
+            color: var(--muted);
+        }
+
+        .panel {
+            background: rgba(255, 253, 248, 0.92);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(60, 40, 20, 0.06);
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .card {
+            padding: 16px 18px;
+        }
+
+        .label {
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .value {
+            margin-top: 6px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .status-ok {
+            color: var(--accent);
+        }
+
+        .status-warn {
+            color: var(--warn);
+        }
+
+        .table-panel {
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f7f1e6;
+            color: #5b5145;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .mono {
+            font-family: "SFMono-Regular", Consolas, monospace;
+        }
+
+        .empty {
+            padding: 28px 16px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        @media (max-width: 720px) {
+            .hero {
+                display: block;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            th,
+            td {
+                padding: 12px 10px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="hero">
+            <div>
+                <h1>OpenWrt Device Monitor</h1>
+                <div class="sub">页面每 3 秒自动刷新一次，展示服务端最新收到的 DHCP 租约列表。</div>
+            </div>
+            <div id="refreshText" class="sub">刷新中...</div>
+        </div>
+
+        <div class="summary">
+            <div class="panel card">
+                <div class="label">Router</div>
+                <div id="router" class="value">-</div>
+            </div>
+            <div class="panel card">
+                <div class="label">Devices</div>
+                <div id="deviceCount" class="value">0</div>
+            </div>
+            <div class="panel card">
+                <div class="label">Last Upload</div>
+                <div id="reportedAt" class="value" style="font-size:18px;">-</div>
+            </div>
+            <div class="panel card">
+                <div class="label">Status</div>
+                <div id="status" class="value status-warn" style="font-size:18px;">No Data</div>
+            </div>
+        </div>
+
+        <div class="panel table-panel">
+            <table>
+                <thead>
+                    <tr>
+                        <th>IP</th>
+                        <th>MAC</th>
+                        <th>Host</th>
+                        <th>Lease End</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td class="empty" colspan="4">暂无设备数据</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function formatTime(ts) {
+            if (!ts) {
+                return "-";
+            }
+            const date = new Date(Number(ts));
+            if (Number.isNaN(date.getTime())) {
+                return "-";
+            }
+            return date.toLocaleString();
+        }
+
+        function escapeHtml(text) {
+            return String(text == null ? "" : text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        async function loadClients() {
+            const refreshText = document.getElementById("refreshText");
+            refreshText.textContent = "刷新中...";
+            try {
+                const response = await fetch("/video/openwrt/clients", {
+                    cache: "no-store"
+                });
+                const json = await response.json();
+                const data = json.data || {};
+                const clients = Array.isArray(data.clients) ? data.clients : [];
+                document.getElementById("router").textContent = data.router || "-";
+                document.getElementById("deviceCount").textContent = String(clients.length);
+                document.getElementById("reportedAt").textContent = formatTime(data.reportedAt);
+
+                const stale = !data.reportedAt || Date.now() - Number(data.reportedAt) > 15000;
+                const status = document.getElementById("status");
+                status.textContent = stale ? "Stale" : "Online";
+                status.className = stale ? "value status-warn" : "value status-ok";
+
+                const tableBody = document.getElementById("tableBody");
+                if (clients.length === 0) {
+                    tableBody.innerHTML = '<tr><td class="empty" colspan="4">暂无设备数据</td></tr>';
+                } else {
+                    tableBody.innerHTML = clients.map(function (item) {
+                        return '<tr>'
+                            + '<td class="mono">' + escapeHtml(item.ip || "-") + '</td>'
+                            + '<td class="mono">' + escapeHtml(item.mac || "-") + '</td>'
+                            + '<td>' + escapeHtml(item.host || "-") + '</td>'
+                            + '<td>' + escapeHtml(formatTime(item.leaseEnd)) + '</td>'
+                            + '</tr>';
+                    }).join("");
+                }
+
+                refreshText.textContent = "最近刷新: " + new Date().toLocaleTimeString();
+            } catch (e) {
+                document.getElementById("status").textContent = "Error";
+                document.getElementById("status").className = "value status-warn";
+                refreshText.textContent = "刷新失败: " + e.message;
+            }
+        }
+
+        loadClients();
+        setInterval(loadClients, 3000);
+    </script>
+</body>
+</html>
