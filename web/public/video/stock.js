@@ -1416,6 +1416,22 @@ window.stock_list = window.stock_list || (function () {
                 }
             });
         },
+        clearBlockedActionMessagesByScode: function (scode) {
+            if (scode == null || scode === "") {
+                return;
+            }
+            let normalizedScode = `${scode}`.trim().toUpperCase();
+            let container = self.ensureBlockedActionMessageContainer();
+            container.children().each(function () {
+                let item = $(this);
+                let blockedAction = item.data("blockedAction") || {};
+                let itemScode = `${blockedAction.scode || ""}`.trim().toUpperCase();
+                if (itemScode === normalizedScode) {
+                    item.remove();
+                }
+            });
+            self.refreshBlockedActionMessageStyles();
+        },
         showBlockedActionMenu: async function (target) {
             let blockedAction = $(target).data("blockedAction") || {};
             let actionText = blockedAction.actionType == "sell" ? "卖出" : "买入";
@@ -1445,8 +1461,7 @@ window.stock_list = window.stock_list || (function () {
                         }
 
                         await share.closePopup__();
-                        $(target).remove();
-                        self.refreshBlockedActionMessageStyles();
+                        self.clearBlockedActionMessagesByScode(scode);
                         share.toastSuccess__(`${scode} 已加入临时放行白名单`, 1200);
                     }
                 }
