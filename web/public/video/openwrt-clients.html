@@ -30,9 +30,9 @@
         }
 
         .wrap {
-            max-width: 1100px;
+            max-width: 760px;
             margin: 0 auto;
-            padding: 28px 18px 40px;
+            padding: 18px 14px 28px;
         }
 
         .hero {
@@ -40,12 +40,12 @@
             justify-content: space-between;
             align-items: end;
             gap: 16px;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
 
         h1 {
             margin: 0;
-            font-size: 34px;
+            font-size: 28px;
             line-height: 1.1;
         }
 
@@ -64,12 +64,12 @@
         .summary {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-bottom: 18px;
+            gap: 10px;
+            margin-bottom: 14px;
         }
 
         .card {
-            padding: 16px 18px;
+            padding: 14px 14px;
         }
 
         .label {
@@ -81,7 +81,7 @@
 
         .value {
             margin-top: 6px;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
         }
 
@@ -104,7 +104,7 @@
 
         th,
         td {
-            padding: 14px 16px;
+            padding: 12px 14px;
             border-bottom: 1px solid var(--line);
             text-align: left;
             font-size: 14px;
@@ -122,14 +122,44 @@
             border-bottom: 0;
         }
 
-        .mono {
-            font-family: "SFMono-Regular", Consolas, monospace;
-        }
-
         .empty {
             padding: 28px 16px;
             text-align: center;
             color: var(--muted);
+        }
+
+        .mobile-list {
+            display: none;
+            gap: 10px;
+        }
+
+        .device-card {
+            padding: 14px;
+        }
+
+        .device-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .device-name {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .device-expire {
+            color: var(--muted);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .device-ip {
+            margin-top: 4px;
+            color: var(--accent);
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 15px;
         }
 
         @media (max-width: 720px) {
@@ -138,13 +168,27 @@
             }
 
             h1 {
-                font-size: 28px;
+                font-size: 24px;
             }
 
-            th,
-            td {
-                padding: 12px 10px;
-                font-size: 13px;
+            .wrap {
+                padding: 14px 10px 24px;
+            }
+
+            .summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .value {
+                font-size: 18px;
+            }
+
+            .table-panel {
+                display: none;
+            }
+
+            .mobile-list {
+                display: grid;
             }
         }
     </style>
@@ -183,17 +227,22 @@
                 <thead>
                     <tr>
                         <th>IP</th>
-                        <th>MAC</th>
                         <th>Host</th>
                         <th>Lease End</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td class="empty" colspan="4">暂无设备数据</td>
+                        <td class="empty" colspan="3">暂无设备数据</td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div id="mobileList" class="mobile-list">
+            <div class="panel device-card">
+                <div class="empty">暂无设备数据</div>
+            </div>
         </div>
     </div>
 
@@ -202,7 +251,14 @@
             if (!ts) {
                 return "-";
             }
-            const date = new Date(Number(ts));
+            let value = Number(ts);
+            if (!Number.isFinite(value) || value <= 0) {
+                return "-";
+            }
+            if (value < 1000000000000) {
+                value = value * 1000;
+            }
+            const date = new Date(value);
             if (Number.isNaN(date.getTime())) {
                 return "-";
             }
@@ -238,16 +294,26 @@
                 status.className = stale ? "value status-warn" : "value status-ok";
 
                 const tableBody = document.getElementById("tableBody");
+                const mobileList = document.getElementById("mobileList");
                 if (clients.length === 0) {
-                    tableBody.innerHTML = '<tr><td class="empty" colspan="4">暂无设备数据</td></tr>';
+                    tableBody.innerHTML = '<tr><td class="empty" colspan="3">暂无设备数据</td></tr>';
+                    mobileList.innerHTML = '<div class="panel device-card"><div class="empty">暂无设备数据</div></div>';
                 } else {
                     tableBody.innerHTML = clients.map(function (item) {
                         return '<tr>'
-                            + '<td class="mono">' + escapeHtml(item.ip || "-") + '</td>'
-                            + '<td class="mono">' + escapeHtml(item.mac || "-") + '</td>'
+                            + '<td>' + escapeHtml(item.ip || "-") + '</td>'
                             + '<td>' + escapeHtml(item.host || "-") + '</td>'
                             + '<td>' + escapeHtml(formatTime(item.leaseEnd)) + '</td>'
                             + '</tr>';
+                    }).join("");
+                    mobileList.innerHTML = clients.map(function (item) {
+                        return '<div class="panel device-card">'
+                            + '<div class="device-head">'
+                            + '<div class="device-name">' + escapeHtml(item.host || "-") + '</div>'
+                            + '<div class="device-expire">' + escapeHtml(formatTime(item.leaseEnd)) + '</div>'
+                            + '</div>'
+                            + '<div class="device-ip">' + escapeHtml(item.ip || "-") + '</div>'
+                            + '</div>';
                     }).join("");
                 }
 
