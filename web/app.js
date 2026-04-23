@@ -734,6 +734,30 @@ let autoActionBlockedInfo = {
     lastActionType: "",
     lastStartTime: ""
 };
+let tempAllowedAutoActions = {};
+
+function getTempAutoActionKey(scode) {
+    return normalizeScode(scode) || "";
+}
+
+function grantTempAutoAction(scode) {
+    let key = getTempAutoActionKey(scode);
+    tempAllowedAutoActions[key] = {
+        scode: normalizeScode(scode),
+        createdAt: Date.now()
+    };
+    return tempAllowedAutoActions[key];
+}
+
+function consumeTempAutoAction(scode) {
+    let key = getTempAutoActionKey(scode);
+    let item = tempAllowedAutoActions[key];
+    if (item == null) {
+        return null;
+    }
+    delete tempAllowedAutoActions[key];
+    return item;
+}
 
 function normalizeAutoActionStartTime(value) {
     if (value == null) {
@@ -862,6 +886,12 @@ async function allowAutoCreateAction(req, row) {
     let now = new Date();
     let minute = now.getHours() * 60 + now.getMinutes();
     if (minute >= gate.minutes) {
+        return true;
+    }
+
+    let tempAllowed = consumeTempAutoAction(row && row.scode ? row.scode : "");
+    if (tempAllowed != null) {
+        info(`auto ${actionType} action temp allowed for ${tempAllowed.scode}`, threadId);
         return true;
     }
 
@@ -1991,6 +2021,23 @@ app.post('/stock/rule/action/startTime', async (req, res) => {
             startTime: autoActionStartTime.buy.value,
             buyStartTime: autoActionStartTime.buy.value,
             sellStartTime: autoActionStartTime.sell.value
+        }
+    });
+});
+
+app.post('/stock/rule/action/tempAllow', async (req, res) => {
+    let scode = normalizeScode(req.body ? req.body.scode : null);
+
+    if (scode == null || scode === "") {
+        res.send({ error: "bad scode" });
+        return;
+    }
+
+    let result = grantTempAutoAction(scode);
+    info(`temp allow action for ${scode}`, req.threadId);
+    res.send({
+        data: {
+            scode: result.scode
         }
     });
 });

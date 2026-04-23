@@ -1293,7 +1293,7 @@ window.stock_list = window.stock_list || (function () {
             let actionText = gate.lastActionType == "sell" ? "卖出" : "买入";
             let startTime = gate.startTime || "00:00";
             let msg = `${target} 自动${actionText}${startTime}后才开始`;
-            self.pushBlockedActionMessage(msg);
+            self.pushBlockedActionMessage(msg, gate);
         },
         ensureBlockedActionMessageContainer: function () {
             if (self.blockedActionMessageContainer && self.blockedActionMessageContainer.length > 0) {
@@ -1320,11 +1320,18 @@ window.stock_list = window.stock_list || (function () {
             self.blockedActionMessageContainer = container;
             return container;
         },
-        pushBlockedActionMessage: function (message) {
+        pushBlockedActionMessage: function (message, gate) {
             let container = self.ensureBlockedActionMessageContainer();
             let now = share.timeFormat__(new Date(), "hh:mm:ss");
 
             let item = $("<div class='blockedActionMessageItem'>");
+            item.data("blockedAction", {
+                scode: gate && gate.lastScode ? gate.lastScode : "",
+                sname: gate && gate.lastSname ? gate.lastSname : "",
+                broker: gate && gate.lastBroker ? gate.lastBroker : "",
+                actionType: gate && gate.lastActionType ? gate.lastActionType : "",
+                startTime: gate && gate.startTime ? gate.startTime : "00:00"
+            });
             item.css({
                 position: "relative",
                 "padding-top": "10px",
@@ -1368,7 +1375,7 @@ window.stock_list = window.stock_list || (function () {
 
             item.on("click", async function () {
                 share.currentTarget = this;
-                await self.showAutoActionStartTimeSetting(this);
+                await self.showBlockedActionMenu(this);
             });
 
             item.append(close);
@@ -1408,6 +1415,44 @@ window.stock_list = window.stock_list || (function () {
                     time.css({ color: "#9b9b9b" });
                 }
             });
+        },
+        showBlockedActionMenu: async function (target) {
+            let blockedAction = $(target).data("blockedAction") || {};
+            let actionText = blockedAction.actionType == "sell" ? "卖出" : "买入";
+            let targetText = blockedAction.scode || blockedAction.sname || "当前规则";
+            let title = `${targetText} 自动${actionText}`;
+            let buttons = [
+                {
+                    text: "更改",
+                    onTap: async function () {
+                        await share.closePopup__();
+                        await self.showAutoActionStartTimeSetting(target);
+                    }
+                },
+                {
+                    text: "放行",
+                    onTap: async function () {
+                        let scode = blockedAction.scode || "";
+                        if (scode == "") {
+                            share.toastError__("缺少放行所需信息");
+                            return;
+                        }
+
+                        let res = await share.postSync__("/stock/rule/action/tempAllow", { scode });
+                        if (res == null || res.error) {
+                            share.toastError__(res && res.error ? res.error : "放行失败");
+                            return;
+                        }
+
+                        await share.closePopup__();
+                        $(target).remove();
+                        self.refreshBlockedActionMessageStyles();
+                        share.toastSuccess__(`${scode} 已加入临时放行白名单`, 1200);
+                    }
+                }
+            ];
+
+            await share.popupAction__(title, buttons);
         },
 
         autoPrice: function (changed, c) {
