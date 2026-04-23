@@ -57,6 +57,7 @@ g.log["level"] = g.log["debug"]
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
+g.k1dIndicatorLookbackDays = 30
 
 
 def strip_scode_suffix(scode):
@@ -712,9 +713,9 @@ def update1d(stocklist=None, startTime=None, endTime=None):
     if endTime is None:
         endTime = ""
 
-    newData = 0
     for index, scode in enumerate(stocklist):
         try:
+            newData = 0
 
             dataStartTime = startTime
             if startTime is None:
@@ -729,18 +730,26 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                         datetime.datetime.now() - datetime.timedelta(days=365)
                     ).strftime("%Y%m%d")
 
-            # 把dateStartTime设置为30天前,为了计算cci
-            dataStartTime = (
+            uploadStartTime = dataStartTime
+            fetchStartTime = (
                 datetime.datetime.strptime(dataStartTime, "%Y%m%d")
-                - datetime.timedelta(days=0)
+                - datetime.timedelta(days=g.k1dIndicatorLookbackDays)
             ).strftime("%Y%m%d")
             period = "1d"
-            datas = get1dData(stocklist, index, dataStartTime, endTime)
+            datas = get1dData(stocklist, index, fetchStartTime, endTime)
             # print("所有列名:", df.keys())
             # print("所有:", df.values())
             columns = ["Time"] + datas.columns.tolist()
             # print(columns)
-            info("", len(datas), "rows")
+            info(
+                "",
+                len(datas),
+                "rows",
+                "fetchStartTime:",
+                fetchStartTime,
+                "uploadStartTime:",
+                uploadStartTime,
+            )
 
             # 将datas的数据分批上传，每批100条
             bsize = 50
@@ -762,7 +771,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                                 row["amount"],
                             ]
                         )
-                    elif idx == dataStartTime:
+                    elif idx == uploadStartTime:
                         foundStart = 1
                         batch_data.append(
                             [str(idx)]
@@ -777,7 +786,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                         )
                     else:
                         info(
-                            f"newData={newData}, idx={idx}, foundStart={foundStart}, dataStartTime={dataStartTime}"
+                            f"newData={newData}, idx={idx}, foundStart={foundStart}, uploadStartTime={uploadStartTime}"
                         )
                 if len(batch_data) > 0:
                     body = {
@@ -911,7 +920,10 @@ def get1dData(stocklist, index, startTime, endTime):
     table = df[scode]
     table = table.query("suspendFlag != 1").copy()
     info("get1dData done")
-    # 计算High-Low range
+    CCI(table)
+    KDJ(table)
+    BOLL(table)
+    RANGE(table)
 
     return table
 
