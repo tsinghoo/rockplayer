@@ -381,13 +381,24 @@ def update1dTask():
     info("update1dTask")
     try:
         g.candidates = getCandidates()
+
+        g.stocklist = getStockList()
+        resetThreadId("u1mc")
+        update1mon(g.candidates)
+        resetThreadId("u1m")
+        update1mon(g.stocklist)
+
+        resetThreadId("u1wc")
+        update1w(g.candidates)
+        resetThreadId("u1w")
+        update1w(g.stocklist)
+
         resetThreadId("u1dc")
-        # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
         update1d(g.candidates)
 
-        g.ruleCodes = getRuleCodes()
-        resetThreadId("u1dr")
-        update1d(g.ruleCodes)
+        # g.ruleCodes = getRuleCodes()
+        # resetThreadId("u1dr")
+        # update1d(g.ruleCodes)
 
         while True:
             resetThreadId("u1d")

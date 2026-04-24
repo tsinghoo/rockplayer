@@ -2322,8 +2322,6 @@ async function upgradeDb(succ, fail) {
 CREATE TABLE config(key varchar(50) primary key, value text);
 CREATE TABLE t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0, cci INTEGER DEFAULT -800);
 CREATE TABLE t1m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
-CREATE TABLE t1w(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
-CREATE TABLE t1mon(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
 CREATE TABLE t5m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);
 CREATE TABLE tRuleAction(id text primary key, ruleId text, scode text,sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer, broker text default '', status text default '');
 CREATE TABLE tStockBasic (
