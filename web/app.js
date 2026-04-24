@@ -2313,6 +2313,8 @@ async function upgradeDb(succ, fail) {
         `alter table t1d add column range real default 0;`,
         `alter table tstock drop column lastOperationTime;`,
         `alter table tstock add column lastOperationTime int default 0;`,
+        `create table if not exists t1w(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
+        `create table if not exists t1mon(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
     ];
 
     if (res == null || res.error) {
@@ -2320,6 +2322,8 @@ async function upgradeDb(succ, fail) {
 CREATE TABLE config(key varchar(50) primary key, value text);
 CREATE TABLE t1d(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0, cci INTEGER DEFAULT -800);
 CREATE TABLE t1m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
+CREATE TABLE t1w(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
+CREATE TABLE t1mon(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);
 CREATE TABLE t5m(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real);
 CREATE TABLE tRuleAction(id text primary key, ruleId text, scode text,sname text, action text, price real, amount real, orderNo text, done int default 0, createTime integer, broker text default '', status text default '');
 CREATE TABLE tStockBasic (
@@ -3165,6 +3169,111 @@ app.get('/stock/reload/k1d', async (req, res) => {
     res.send(resp);
 });
 
+async function sendDayLikeKLine(res, req, tableName) {
+    let threadId = req.threadId;
+    let js = req.query.js;
+    info(JSON.stringify(req.query), req.threadId)
+    let scode = normalizeScode(req.query.scode);
+    let type = req.query.type;
+    let max = req.query.max;
+    let startDay = req.query.startDay;
+    let endDay = req.query.endDay;
+    if (endDay == null) {
+        endDay = new Date();
+    } else {
+        endDay = new Date(parseInt(endDay));
+    }
+
+    if (startDay == null) {
+        startDay = new Date();
+        if (max) {
+            startDay = new Date(startDay.getTime() - max * 24 * 60 * 60 * 1000);
+        } else {
+            startDay.setYear(endDay.getFullYear() - 4);
+        }
+    } else {
+        startDay = new Date(parseInt(startDay));
+    }
+
+    startDay = timeFormat(startDay, "yyyyMMdd");
+    endDay = timeFormat(endDay, "yyyyMMdd");
+
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let sql = `select * from ${tableName} where scode in (${placeholders}) and type=? and time >= ? and time <= ? order by time`;
+    let result = await db.allSync(sql, aliases.concat([type, startDay, endDay]), threadId);
+    normalizeDbRowsScodes(result.rows);
+    let resp;
+    if (result.error) {
+        resp = JSON.stringify(result);
+    } else {
+        let sb = await db.getSync(`select * from tStockBasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), threadId);
+        normalizeDbRowScodes(sb);
+        resp = JSON.stringify({
+            stockBasic: sb,
+            rows: result.rows
+        });
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+}
+
+async function sendDayLikeKLines(res, req, tableName) {
+    let js = req.query.js;
+    info(JSON.stringify(req.query), req.threadId)
+    let scodes = req.query.scodes;
+    let type = req.query.type;
+    let startDay = req.query.startDay;
+    let endDay = req.query.endDay;
+    if (endDay == null) {
+        endDay = new Date();
+    } else {
+        endDay = new Date(parseInt(endDay));
+    }
+
+    if (startDay == null) {
+        let days = 30;
+        if (tableName == "t1w") {
+            days = 365 * 3;
+        } else if (tableName == "t1mon") {
+            days = 365 * 8;
+        }
+        startDay = new Date(endDay.getTime() - days * 24 * 60 * 60 * 1000);
+    } else {
+        startDay = new Date(parseInt(startDay));
+    }
+
+    startDay = timeFormat(startDay, "yyyyMMdd");
+    endDay = timeFormat(endDay, "yyyyMMdd");
+
+    let queryScodes = [];
+    scodes.split(',').forEach((scode) => {
+        getScodeAliases(scode).forEach((item) => {
+            if (!queryScodes.includes(item)) {
+                queryScodes.push(item);
+            }
+        });
+    });
+    let sql = `select * from ${tableName} where scode in ('${queryScodes.join("','")}') and type=? and time >= ? and time <= ? order by scode,time`;
+    let result = await db.allSync(sql, [type, startDay, endDay], req.threadId);
+    normalizeDbRowsScodes(result.rows);
+
+    var resp = JSON.stringify(result.rows);
+    if (result.error) {
+        resp = JSON.stringify(result);
+    }
+
+    if (js) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+}
+
 app.get('/stock/k/1d', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
@@ -3225,6 +3334,14 @@ app.get('/stock/k/1d', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/k/1w', async (req, res) => {
+    await sendDayLikeKLine(res, req, "t1w");
+});
+
+app.get('/stock/k/1mon', async (req, res) => {
+    await sendDayLikeKLine(res, req, "t1mon");
+});
+
 app.get('/stock/k/1ds', async (req, res) => {
     let js = req.query.js;
     info(JSON.stringify(req.query), req.threadId)
@@ -3271,6 +3388,14 @@ app.get('/stock/k/1ds', async (req, res) => {
     }
 
     res.send(resp);
+});
+
+app.get('/stock/k/1ws', async (req, res) => {
+    await sendDayLikeKLines(res, req, "t1w");
+});
+
+app.get('/stock/k/1mons', async (req, res) => {
+    await sendDayLikeKLines(res, req, "t1mon");
 });
 
 app.get('/stock/k/1ms', async (req, res) => {
@@ -4242,6 +4367,31 @@ app.get('/stock/1d/lastDate', async (req, res) => {
     res.send(resp);
 });
 
+async function sendKLastDate(req, res, tableName) {
+    let threadId = req.threadId;
+    let js = req.query.js;
+    let scode = normalizeScode(req.query.scode);
+    info("scode:" + scode, req.threadId)
+    let aliases = getScodeAliases(scode);
+    let sql = `select max(time) as lastDate from ${tableName} where scode in (${aliases.map(() => "?").join(",")})`;
+    let r = await db.getSync(sql, aliases, threadId);
+
+    var resp = JSON.stringify(r);
+    if (js != null) {
+        resp = `${js}(${resp})`;
+    }
+
+    res.send(resp);
+}
+
+app.get('/stock/1w/lastDate', async (req, res) => {
+    await sendKLastDate(req, res, "t1w");
+});
+
+app.get('/stock/1mon/lastDate', async (req, res) => {
+    await sendKLastDate(req, res, "t1mon");
+});
+
 app.get('/stock/1m/lastMinute', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
@@ -4471,7 +4621,9 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             await insertOrReplace(`t${period}`, row);
-            await genCci(scode, req);
+            if (period == "1d") {
+                await genCci(scode, req);
+            }
 
         }
     }
