@@ -4452,14 +4452,14 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             if (period == "1d") {
-                row.cci = -800;
-                row.kdj_k = 0;
-                row.kdj_d = 0;
-                row.kdj_j = 0;
-                row.boll_u = 0;
-                row.boll_m = 0;
-                row.boll_l = 0;
-                row.range = 0;
+            //     row.cci = -800;
+            //     row.kdj_k = 0;
+            //     row.kdj_d = 0;
+            //     row.kdj_j = 0;
+            //     row.boll_u = 0;
+            //     row.boll_m = 0;
+            //     row.boll_l = 0;
+            //     row.range = 0;
             }
 
             if (row.volume < 0) {
