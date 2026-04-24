@@ -3181,11 +3181,17 @@ async function sendDayLikeKLine(res, req, tableName) {
     } else {
         endDay = new Date(parseInt(endDay));
     }
+    let interval = 24 * 60 * 60 * 1000;
+    if (tableName == "t1mon") {
+        interval = 31 * 24 * 60 * 60 * 1000;
+    } else if (tableName == "t1w") {
+        interval = 7 * 24 * 60 * 60 * 1000;
+    }
 
     if (startDay == null) {
         startDay = new Date();
         if (max) {
-            startDay = new Date(startDay.getTime() - max * 24 * 60 * 60 * 1000);
+            startDay = new Date(startDay.getTime() - max * interval);
         } else {
             startDay.setYear(endDay.getFullYear() - 4);
         }
@@ -4838,6 +4844,7 @@ app.get('/video/metadata', (req, res) => {
 const multer = require('multer');
 const { CLIENT_RENEG_WINDOW } = require('tls');
 const { warn } = require('console');
+const { setInterval } = require('timers/promises');
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         // 指定文件存储的目录
