@@ -629,14 +629,20 @@ window.stock_list = window.stock_list || (function () {
             codes.forEach(function (scode) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdK1d");
-                k1d = td.find(".k1d");
+                let period = self.getActiveKPeriod(td);
+                self.setActiveKPeriod(td, period);
+                let k1d = td.find(".k1d");
                 k1d.html("loading k1d");
                 k1d.removeClass("hide");
             });
 
+            let tr = $(`.firstCode[code="${scode}"]`);
+            let td = tr.find(".tdK1d");
+            let k1d = td.find(".k1d");
+            let period = self.getActiveKPeriod(td);
             let maxCount = 60;
-            //let ticks = await share.getSync__(`/stock/k/1m?scode=${codes.join(",")}&day=${Date.now()}`);
-            let data = await share.getSync__(`/stock/k/1d?scode=${scode}&type=0&max=${maxCount}`);
+            let endpoint = self.getKEndpoint(period);
+            let data = await share.getSync__(`${endpoint}?scode=${scode}&type=0&max=${maxCount}`);
             let rows = data.rows;
             let sb = data.stockBasic;
             let categoryData = [];
@@ -663,9 +669,8 @@ window.stock_list = window.stock_list || (function () {
             }
 
             if (values.length > 0) {
-                let tr = $(`.firstCode[code="${scode}"]`);
                 let c = tr.find(".tdK1d");
-                self.drawK1dChartSmall(scode, categoryData, values, volumes, c);
+                self.drawK1dChartSmall(scode, categoryData, values, volumes, c, self.getKPeriodLabel(period));
             }
         },
 
@@ -699,7 +704,11 @@ window.stock_list = window.stock_list || (function () {
             });
             for (let i = 0; i < keys.length; i++) {
                 let th = $("<th>");
-                th.text(keys[i]);
+                let title = keys[i];
+                if (keys[i] == "K1d") {
+                    title = "K线";
+                }
+                th.text(title);
                 tr.append(th);
                 th.addClass("nowrap");
                 if (keys[i] == "现价") {
@@ -872,11 +881,17 @@ window.stock_list = window.stock_list || (function () {
                         if (firstRow) {
                             td.addClass("tdK1d");
                             let html = `
-                            <div class="flexrow">
-                                <span class = "k1dCollapse gray clickable">+</span>
-                                <div class="flexcolumn">
-
+                            <div class="flexcolumn kPeriodPanel listPeriodPanel">
+                                <div class="flexrow font10 margin4">
+                                    <span class="kPeriodTab clickable active" data-period="1d">1d</span>
+                                    <span class="kPeriodTab clickable gray marginlr4" data-period="1w">1w</span>
+                                    <span class="kPeriodTab clickable gray" data-period="1mon">1m</span>
+                                </div>
+                                <div class="flexrow">
+                                    <span class = "k1dCollapse gray clickable">+</span>
+                                    <div class="flexcolumn">
                                     <div class="k1d hide"></div>
+                                    </div>
                                 </div>
                             </div>
                             `;
@@ -1030,6 +1045,32 @@ window.stock_list = window.stock_list || (function () {
                     $(this).addClass("hide");
                 } else {
                     k1d.addClass("hide");
+                }
+            })
+
+            $(".kPeriodTab").click(function (e) {
+                e.stopPropagation();
+                let tab = $(this);
+                let period = tab.attr("data-period");
+                let tr = tab.closest("tr");
+                if (tr.length > 0) {
+                    let td = tr.find(".tdK1d");
+                    self.setActiveKPeriod(td, period);
+                    let scode = tr.attr("code");
+                    self.showK1ds([scode]);
+                    return;
+                }
+
+                let popupRoot = tab.closest(".buySellPopupContent");
+                if (popupRoot.length > 0) {
+                    self.setActiveKPeriod(popupRoot, period);
+                    let type = self.selectedData && self.selectedData["type"] != null ? self.selectedData["type"] : 0;
+                    let scode = popupRoot.find(".scode").val().trim();
+                    if (scode == "" && self.selectedData) {
+                        scode = self.selectedData["代码"];
+                    }
+                    scode = self.normalizeScode(scode);
+                    self.toDrawK1dChart(scode, type, popupRoot, period);
                 }
             })
 
@@ -2137,7 +2178,7 @@ window.stock_list = window.stock_list || (function () {
             }
             let tbs = $("#templateBuySell").html();
             let html = `
-                    <div class="flexrow">
+                    <div class="flexrow buySellPopupContent">
                        <div class="tradeList">
                        </div>
                        <div class="flexcolumn border padding4 margin4">
@@ -2149,10 +2190,16 @@ window.stock_list = window.stock_list || (function () {
                             <div class="ruleStatus flexrow center margin4">
                             </div>
                        </div>
-                       <div class="flexcolumn">
+                       <div class="flexcolumn kPeriodPanel popupPeriodPanel">
                             <div class="kTick border margin4" style="width:480px; height:140px;">loading 1m</div>
+                            <div class="flexrow font10 margin4">
+                                <span class="kPeriodTab clickable active" data-period="1d">1d</span>
+                                <span class="kPeriodTab clickable gray marginlr4" data-period="1w">1w</span>
+                                <span class="kPeriodTab clickable gray" data-period="1mon">1m</span>
+                            </div>
                             <div class="flexrow margin4">
                                 <div class="day0Status flexrow width100p margin4 hide">
+                                    <div class="dayPeriod marginlr4">1d</div>
                                     <div class="day0"></div>
                                     <div style="width:10px;"></div> 
                                     <div class="downStopPrice"></div>
@@ -2171,6 +2218,17 @@ window.stock_list = window.stock_list || (function () {
             let popup = await share.popup__(null, html, "bottom");
 
             let c = $(`#${popup.id}`);
+            c.find(".kPeriodTab").click(function (e) {
+                e.stopPropagation();
+                let tab = $(this);
+                let period = tab.attr("data-period");
+                self.setActiveKPeriod(c, period);
+                let popupScode = c.find(".scode").val().trim();
+                if (popupScode == "") {
+                    popupScode = scode;
+                }
+                self.toDrawK1dChart(self.normalizeScode(popupScode), type, c, period);
+            });
             self.showPosition(null, c.find(".position"), scode);
             await self.showTradeList(c, scode, 0, type);
             self.showBuySell(null, popup);
@@ -2238,6 +2296,43 @@ window.stock_list = window.stock_list || (function () {
                 });
 
             self.toDrawK1dChart(scode, type, c);
+        },
+        getKEndpoint: function (period) {
+            if (period == "1w") {
+                return "/stock/k/1w";
+            }
+            if (period == "1mon") {
+                return "/stock/k/1mon";
+            }
+            return "/stock/k/1d";
+        },
+        getKPeriodLabel: function (period) {
+            if (period == "1w") {
+                return "1w";
+            }
+            if (period == "1mon") {
+                return "1m";
+            }
+            return "1d";
+        },
+        setActiveKPeriod: function (c, period) {
+            c.find(".kPeriodTab").each(function () {
+                let tab = $(this);
+                let active = tab.attr("data-period") == period;
+                tab.toggleClass("gray", !active);
+                tab.toggleClass("active", active);
+            });
+        },
+        getActiveKPeriod: function (c) {
+            let active = c.find(".kPeriodTab.active").first();
+            if (active.length > 0) {
+                return active.attr("data-period");
+            }
+            let first = c.find(".kPeriodTab").first();
+            if (first.length > 0) {
+                return first.attr("data-period");
+            }
+            return "1d";
         },
         splitData: function (rawData) {
             let categoryData = [];
@@ -3158,7 +3253,10 @@ window.stock_list = window.stock_list || (function () {
 
             return bollData;
         },
-        drawK1dChart: function (scode, type, categoryData, values, volumes, c) {
+        drawK1dChart: function (scode, type, categoryData, values, volumes, c, periodLabel) {
+            if (periodLabel == null) {
+                periodLabel = "1d";
+            }
             let k1d = c.find(".k1d");
             if (k1d == null) {
                 let tr = $(`.firstCode[code="${scode}"]`);
@@ -3185,7 +3283,7 @@ window.stock_list = window.stock_list || (function () {
                 legend: {
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'kdJ', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
+                    data: [periodLabel, 'kdJ', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
                     selected: {
                         "MA20": false,
                         "MA60": false,
@@ -3208,7 +3306,7 @@ window.stock_list = window.stock_list || (function () {
                     formatter: function (params) {
                         var result = [params[0].axisValue];
                         params.forEach(function (item) {
-                            if (item.seriesName === '1d') {
+                            if (item.seriesName === periodLabel) {
                                 result.push('开盘: ' + parseFloat(item.value[1]).toFixed(3));
                                 result.push('收盘: ' + parseFloat(item.value[2]).toFixed(3));
                                 result.push('最高: ' + parseFloat(item.value[3]).toFixed(3));
@@ -3454,7 +3552,7 @@ window.stock_list = window.stock_list || (function () {
                 ],
                 series: [
                     {
-                        name: '1d',
+                        name: periodLabel,
                         type: 'candlestick',
                         data: values,
                         itemStyle: {
@@ -3766,7 +3864,10 @@ window.stock_list = window.stock_list || (function () {
                 chart.resize();
             });
         },
-        drawK1dChartSmall: function (scode, categoryData, values, volumes, c) {
+        drawK1dChartSmall: function (scode, categoryData, values, volumes, c, periodLabel) {
+            if (periodLabel == null) {
+                periodLabel = "1d";
+            }
             c.find(".k1dCollapse").addClass("hide");
             let k1d = c.find(".k1d");
             if (k1d == null) {
@@ -3801,7 +3902,7 @@ window.stock_list = window.stock_list || (function () {
                     show: false,
                     bottom: 2,
                     left: 'center',
-                    data: ['1d', 'kdJ', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
+                    data: [periodLabel, 'kdJ', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
                     selected: {
                         "MA20": false,
                         "MA60": false,
@@ -3840,7 +3941,7 @@ window.stock_list = window.stock_list || (function () {
                     formatter: function (params) {
                         var result = [params[0].axisValue];
                         params.forEach(function (item) {
-                            if (item.seriesName === '1d') {
+                            if (item.seriesName === periodLabel) {
                                 result.push('开盘: ' + parseFloat(item.value[1]).toFixed(3));
                                 result.push('收盘: ' + parseFloat(item.value[2]).toFixed(3));
                                 result.push('最高: ' + parseFloat(item.value[3]).toFixed(3));
@@ -4068,7 +4169,7 @@ window.stock_list = window.stock_list || (function () {
                 ],
                 series: [
                     {
-                        name: '1d',
+                        name: periodLabel,
                         type: 'candlestick',
                         data: values,
                         itemStyle: {
@@ -4406,9 +4507,14 @@ window.stock_list = window.stock_list || (function () {
             `;
             c.html(html);
         },
-        toDrawK1dChart: function (scode, type, c) {
+        toDrawK1dChart: function (scode, type, c, period) {
+            if (period == null) {
+                period = self.getActiveKPeriod(c);
+            }
+            self.setActiveKPeriod(c, period);
+            let periodLabel = self.getKPeriodLabel(period);
             let k1d = c.find(".k1d");
-            share.getSync__(`/stock/k/1d?scode=${scode}&type=${type}`)
+            share.getSync__(`${self.getKEndpoint(period)}?scode=${scode}&type=${type}`)
                 .then((data) => {
                     let rows = data.rows;
                     let sb = data.stockBasic;
@@ -4435,7 +4541,7 @@ window.stock_list = window.stock_list || (function () {
                     }
 
                     if (values.length > 0) {
-                        self.drawK1dChart(scode, type, categoryData, values, volumes, c);
+                        self.drawK1dChart(scode, type, categoryData, values, volumes, c, periodLabel);
                     }
 
                     let lastDay = categoryData[categoryData.length - 1];
@@ -4443,6 +4549,8 @@ window.stock_list = window.stock_list || (function () {
                     let d0low = share.toFixed(d0v[3]);
                     let d0high = share.toFixed(d0v[2]);
                     let d0close = share.toFixed(d0v[1]);
+                    c.find(".dayPeriod").text(periodLabel);
+                    c.find(".day0").removeClass("bg_purple gray");
                     c.find(".day0").text(`${lastDay}:`);
 
                     let todayStr = share.timeFormat__(new Date(), "yyyyMMdd");
