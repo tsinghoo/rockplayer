@@ -885,7 +885,7 @@ window.stock_list = window.stock_list || (function () {
                                 <div class="flexrow font10 margin4">
                                     <span class="kPeriodTab clickable active" data-period="1d">1d</span>
                                     <span class="kPeriodTab clickable gray marginlr4" data-period="1w">1w</span>
-                                    <span class="kPeriodTab clickable gray" data-period="1mon">1m</span>
+                                    <span class="kPeriodTab clickable gray" data-period="1mon">1M</span>
                                 </div>
                                 <div class="flexrow">
                                     <span class = "k1dCollapse gray clickable">+</span>
@@ -2195,7 +2195,7 @@ window.stock_list = window.stock_list || (function () {
                             <div class="flexrow font10 margin4">
                                 <span class="kPeriodTab clickable active" data-period="1d">1d</span>
                                 <span class="kPeriodTab clickable gray marginlr4" data-period="1w">1w</span>
-                                <span class="kPeriodTab clickable gray" data-period="1mon">1m</span>
+                                <span class="kPeriodTab clickable gray" data-period="1mon">1M</span>
                             </div>
                             <div class="flexrow margin4">
                                 <div class="day0Status flexrow width100p margin4 hide">
