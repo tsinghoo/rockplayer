@@ -1432,12 +1432,47 @@ window.stock_list = window.stock_list || (function () {
             });
             self.refreshBlockedActionMessageStyles();
         },
+        findBuySellCellForBlockedAction: function (blockedAction) {
+            let scode = blockedAction && blockedAction.scode ? blockedAction.scode : "";
+            let normalizedScode = "";
+            try {
+                normalizedScode = self.normalizeScode(scode);
+            } catch (e) {
+                normalizedScode = `${scode || ""}`.trim().toUpperCase();
+            }
+
+            if (!normalizedScode) {
+                return $();
+            }
+
+            let tr = $(`tr[code="${normalizedScode}"]`).first();
+            if (tr.length == 0) {
+                tr = $(`tr[code="${self.stripScodeSuffix(normalizedScode)}"]`).first();
+            }
+            if (tr.length == 0) {
+                return $();
+            }
+
+            return tr.find(".tdBuySell").first();
+        },
         showBlockedActionMenu: async function (target) {
             let blockedAction = $(target).data("blockedAction") || {};
             let actionText = blockedAction.actionType == "sell" ? "卖出" : "买入";
             let targetText = blockedAction.scode || blockedAction.sname || "当前规则";
             let title = `${targetText} 自动${actionText}`;
             let buttons = [
+                {
+                    text: "买卖",
+                    onTap: async function () {
+                        await share.closePopup__();
+                        let buySellCell = self.findBuySellCellForBlockedAction(blockedAction);
+                        if (buySellCell.length > 0) {
+                            share.currentTarget = buySellCell[0];
+                            await self.onBuySellClicked(buySellCell[0]);
+                            return;
+                        }
+                    }
+                },
                 {
                     text: "更改",
                     onTap: async function () {
