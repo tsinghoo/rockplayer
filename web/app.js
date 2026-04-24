@@ -4452,7 +4452,7 @@ app.post('/stock/k/upload', async (req, res) => {
             }
 
             if (period == "1d") {
-            //     row.cci = -800;
+                row.cci = data[i][7];
             //     row.kdj_k = 0;
             //     row.kdj_d = 0;
             //     row.kdj_j = 0;

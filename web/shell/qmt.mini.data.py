@@ -769,6 +769,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                                 row["low"],
                                 row["volume"],
                                 row["amount"],
+                                row["cci"],
                             ]
                         )
                     elif idx == uploadStartTime:
@@ -782,6 +783,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                                 row["low"],
                                 row["volume"],
                                 row["amount"],
+                                row["cci"],
                             ]
                         )
                     else:
