@@ -72,8 +72,9 @@ g.min_price = 0  # 最低股价限制(元)
 g.max_price = 3000  # 最高股价限制(元)
 g.jiuzhuan_recent_days = 5  # 最近N天内出现下跌九转
 g.volume_ma_days = 3  # 放量判断使用的均量天数
-g.volume_ma_ratio = 1.5  # 今天成交量至少是最近均量的多少倍
+g.volume_ma_ratio = 1.6  # 今天成交量至少是最近均量的多少倍
 g.volume_compare_days = 3  # 今天成交量需要高于前几日
+g.volume_signal_recent_days = 10  # 最近N天内出现过放量参考日
 g.keep_low_days = 5  # 最近几天内不能跌破参考低点
 g.low_window_days = 20  # 最近N日最低点窗口
 
@@ -877,6 +878,75 @@ def isVolumeStrongToday(prices, ma_days=5, ma_ratio=1.5, compare_days=3):
     return True
 
 
+def findRecentVolumeSignalDay(prices, ma_days=3, ma_ratio=1.5, recent_days=20):
+    if prices is None or len(prices["volume"]) < ma_days + 2:
+        return -1
+
+    volume_prices = prices["volume"].values
+    high_prices = prices["high"].values
+    low_prices = prices["low"].values
+    last_index = len(volume_prices) - 1
+    max_index = last_index - 1
+    min_index = max(ma_days, last_index - recent_days)
+
+    for i in range(max_index, min_index - 1, -1):
+        prevVolumes = volume_prices[i - ma_days : i]
+
+        if np.any(prevVolumes >= volume_prices[i]):
+            continue
+
+        prev_mean_volume = prevVolumes.mean()
+        if prev_mean_volume <= 0:
+            continue
+
+        if volume_prices[i] <= prev_mean_volume * ma_ratio:
+            continue
+
+        prev_highs = high_prices[i - ma_days : i]
+        prev_lows = low_prices[i - ma_days : i]
+
+        if high_prices[i] <= prev_highs.max() * 1.01:
+            continue
+
+        if low_prices[i] <= prev_lows.max() * 1.01:
+            continue
+
+        return i
+
+    return -1
+
+
+def matchesRecentVolumeSupportStrategy(prices, ma_days=3, ma_ratio=1.5, recent_days=20):
+    if prices is None or len(prices["high"]) < max(ma_days + 2, 3):
+        return False, -1
+
+    high_prices = prices["high"].values
+    low_prices = prices["low"].values
+    last_index = len(high_prices) - 1
+
+    if high_prices[-1] <= high_prices[-2] * 1.01:
+        return False, -1
+
+    if low_prices[-1] <= low_prices[-2] * 1.01:
+        return False, -1
+
+    signal_day_index = findRecentVolumeSignalDay(
+        prices, ma_days=ma_days, ma_ratio=ma_ratio, recent_days=recent_days
+    )
+    if signal_day_index < 0:
+        return False, -1
+
+    signal_low = low_prices[signal_day_index]
+    follow_lows = low_prices[signal_day_index + 1 : last_index + 1]
+    if len(follow_lows) == 0:
+        return False, -1
+
+    if np.any(follow_lows < signal_low):
+        return False, signal_day_index
+
+    return True, signal_day_index
+
+
 def keepLowAfterRecentWindow(prices, keep_days=5, low_window_days=20):
     low_prices = prices["low"].values
     if len(low_prices) < keep_days + low_window_days:
@@ -975,90 +1045,25 @@ def findStock(sector):
             if current_price < g.min_price or current_price > g.max_price:
                 info("bad price:", current_price)
                 continue
-                        
-            lastDay = prices.index[-1]
-            if not isStrongToday(prices):
-                continue
-            info(f"{lastDay}开始走强")
 
-            if not isVolumeStrongToday(
-                prices, g.volume_ma_days, g.volume_ma_ratio, g.volume_compare_days
-            ):
-                continue
-            info(f"{lastDay}开始放量")
-
-            recent_jiuzhuan_up_day = getRecentJiuzhuanUpDay(
-                prices, g.jiuzhuan_recent_days, 1
+            passed, signal_day_index = matchesRecentVolumeSupportStrategy(
+                prices,
+                ma_days=g.volume_ma_days,
+                ma_ratio=g.volume_ma_ratio,
+                recent_days=g.volume_signal_recent_days,
             )
-
-            if recent_jiuzhuan_up_day >= 0:
-                jiuzhuan_up_date = prices.index[recent_jiuzhuan_up_day]
-                info(f"跳过: 最近发生过上涨九转", jiuzhuan_up_date)
+            if not passed:
                 continue
+
+            signal_day = prices.index[signal_day_index]
+            lastDay = prices.index[-1]
+            info(f"{scode} 命中策略: 放量参考日 {signal_day}, 最后交易日 {lastDay}")
 
             # if not keepLowAfterRecentWindow(prices, g.keep_low_days, g.low_window_days):
             #     info(
             #         f"{scode} 最近{g.keep_low_days}天跌破最近{g.low_window_days}日低点"
             #     )
             #     continue
-
-
-            # if not cciPassed(prices):
-            #     continue
-
-            # """
-
-            # 计算历史分位数判断是否低位
-            # hist_percentile = sum(
-            #     1 for price in close_prices if price < current_price) / len(close_prices)
-
-            # info(hist_percentile, "in", len(close_prices), "close_prices")
-            # if hist_percentile > g.low_percentile:
-            #     info("bad")
-            #     continue
-
-            # """
-            # 最近几天最高价连续上涨
-            dayStart = -3
-            dayEnd = -1
-            count = getIncreaseDays(high_prices, dayStart, dayEnd, 0, 1)
-            if count < (dayEnd - dayStart):
-                info(f"跳过:high price increase:{count}<{dayEnd-dayStart}")
-                continue
-            # """
-
-            info(" high price increase:", count)
-            # """
-            # 最近几天收盘价连续上涨
-            dayStart = -3
-            dayEnd = -1
-            count = getIncreaseDays(close_prices, dayStart, dayEnd, 0, 1)
-            if count < (dayEnd - dayStart):
-                info(f"跳过:close price increase:{count}<{dayEnd-dayStart}")
-                continue
-            # """
-            info(" close price increase:", count)
-            # #计算high_prices中最近30天的最大值
-            # days=30
-            # if (len(high_prices) < days):
-            #     days=len(high_prices)
-            # maxPrice = max(high_prices[-1*days:])
-            # minPrice = min(high_prices[-1*days:])
-            # if ((high_prices[-1]-minPrice) > (maxPrice-minPrice) * 0.3):
-            #     continue
-
-            # """
-            # 最近30天较大涨幅天数
-            dayStart = -30
-            dayEnd = -1
-            minRate = 5
-            count = getIncreaseDays(close_prices, dayStart, dayEnd, minRate * 0.01, 1)
-            minIncreaseDays = 4
-            if count < (minIncreaseDays):
-                info(f"跳过:increase {minRate}% days: {count}<{minIncreaseDays}")
-                continue
-            info(f" increase {minRate}% days: {count}>={minIncreaseDays}")
-            # """
 
             """
             # 最近60天较大跌幅天数
@@ -1280,6 +1285,7 @@ if __name__ == "__main__":
             # 将candidates分批上传到test1
             uploadCandidates(candidates)
             update1d([c[0] for c in candidates])
+        info(f"{len(g.candidates)} candidates found")
     if ui == "c":
         # 对于每个sector,调用findStock
         sector_list = ["candidate"]
