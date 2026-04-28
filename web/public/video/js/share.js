@@ -878,12 +878,13 @@ window.mhgl_share =
         }
 
         async function setPosition() {
+          let view = document.defaultView || window;
           let tooltip = $(`#${popupId}`, document)[0];
           let arrow = $(`#arrow${popupId}`, document)[0];
 
-          if (centerMode || target == null) {
-            let left = Math.max((window.innerWidth - tooltip.offsetWidth) / 2, 8);
-            let top = Math.max((window.innerHeight - tooltip.offsetHeight) / 2, 8);
+          let setCenterPosition = function () {
+            let left = Math.max((view.innerWidth - tooltip.offsetWidth) / 2, 8);
+            let top = Math.max((view.innerHeight - tooltip.offsetHeight) / 2, 8);
             Object.assign(tooltip.style, {
               left: `${left}px`,
               top: `${top}px`,
@@ -891,6 +892,10 @@ window.mhgl_share =
             if (arrow) {
               arrow.style.display = "none";
             }
+          };
+
+          if (centerMode || target == null) {
+            setCenterPosition();
             return;
           }
 
@@ -909,6 +914,18 @@ window.mhgl_share =
             top: `${res.y}px`,
             //opacity: 0
           });
+
+          let rect = tooltip.getBoundingClientRect();
+          let fallbackCentered =
+            rect.left < 0 ||
+            rect.top < 0 ||
+            rect.right > view.innerWidth ||
+            rect.bottom > view.innerHeight;
+
+          if (fallbackCentered) {
+            setCenterPosition();
+            return;
+          }
 
           if (arrow) {
             arrow.style.display = "";
