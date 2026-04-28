@@ -679,6 +679,11 @@ window.stock_list = window.stock_list || (function () {
             let rows = self.rows;
             self.data = {};
             table.empty();
+            let getRepeatRowsByCode = function (code) {
+                return $(`.repeatCode`).filter(function () {
+                    return $(this).attr("data-repeat-code") == code;
+                });
+            };
             let thead = $("<thead>");
             let tr = $("<tr>");
             let params = JSON.parse(self.sql.params);
@@ -795,7 +800,7 @@ window.stock_list = window.stock_list || (function () {
                             td.addClass("almostWhite");
                             self.data[row[key]].push(row);
                             tr.addClass("repeatCode");
-                            tr.addClass(`repeatCode${lastCode}`);
+                            tr.attr("data-repeat-code", row[key]);
                         }
 
                         tr.attr("code", row[key]);
@@ -1013,7 +1018,7 @@ window.stock_list = window.stock_list || (function () {
 
             $(".firstCode").click(function () {
                 let code = $(this).attr("code");
-                let trs = $(`.repeatCode${code}`);
+                let trs = getRepeatRowsByCode(code);
                 if (trs.is(":visible")) {
                     trs.hide();
                 } else {
@@ -1093,7 +1098,7 @@ window.stock_list = window.stock_list || (function () {
                 let rows = self.data[code];
                 share.currentTarget = this;
                 share.popupPlacement = "top";
-                let trs = $(`.repeatCode${code}`);
+                let trs = getRepeatRowsByCode(code);
                 trs.show();
                 self.showStockDetail(code);
                 //self.showChart(rows);
@@ -1105,7 +1110,7 @@ window.stock_list = window.stock_list || (function () {
                 let rows = self.data[code];
                 share.currentTarget = this;
                 share.popupPlacement = "top";
-                let trs = $(`.repeatCode${code}`);
+                let trs = getRepeatRowsByCode(code);
                 trs.show();
                 self.showK(code);
             })
