@@ -883,8 +883,10 @@ window.mhgl_share =
           let arrow = $(`#arrow${popupId}`, document)[0];
 
           let setCenterPosition = function () {
-            let left = Math.max((view.innerWidth - tooltip.offsetWidth) / 2, 8);
-            let top = Math.max((view.innerHeight - tooltip.offsetHeight) / 2, 8);
+            let scrollLeft = view.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0;
+            let scrollTop = view.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            let left = scrollLeft + Math.max((view.innerWidth - tooltip.offsetWidth) / 2, 8);
+            let top = scrollTop + Math.max((view.innerHeight - tooltip.offsetHeight) / 2, 8);
             Object.assign(tooltip.style, {
               left: `${left}px`,
               top: `${top}px`,
