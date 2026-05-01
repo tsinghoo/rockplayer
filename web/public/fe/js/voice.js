@@ -159,6 +159,7 @@ window.voice = window.voice || (function () {
 
                     var templateVoice = $("#templateVoice").html();
                     message = templateVoice.replace(/#id#/g, i);
+                    message = message.replace(/#index#/g, i + 1);
                     message = message.replace(/#fileName#/g, files[i].name);
                     let strs = files[i].name.split(".");
                     files[i].duration = parseInt(strs[2]) * 60 + parseInt(strs[3]);
