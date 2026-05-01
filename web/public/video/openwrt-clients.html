@@ -13,6 +13,8 @@
             --muted: #73685b;
             --accent: #1f6b5d;
             --warn: #a14a28;
+            --online: #2ecc71;
+            --offline: #e74c3c;
         }
 
         * {
@@ -30,7 +32,7 @@
         }
 
         .wrap {
-            max-width: 760px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 18px 14px 28px;
         }
@@ -47,6 +49,12 @@
             margin: 0;
             font-size: 28px;
             line-height: 1.1;
+        }
+
+        h2 {
+            margin: 16px 0 10px;
+            font-size: 18px;
+            color: var(--muted);
         }
 
         .sub {
@@ -162,6 +170,126 @@
             font-size: 15px;
         }
 
+        /* Timeline section */
+        .timeline-section {
+            margin-top: 20px;
+        }
+
+        .time-range {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .time-range button {
+            padding: 8px 16px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--panel);
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-range button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .time-range button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .device-timeline {
+            margin-bottom: 16px;
+            padding: 14px;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .timeline-device-name {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .timeline-device-info {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .timeline-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .legend-dot.online {
+            background: var(--online);
+        }
+
+        .legend-dot.offline {
+            background: var(--offline);
+        }
+
+        .timeline-chart {
+            position: relative;
+            height: 32px;
+            background: #f0ebe3;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .timeline-bar {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            transition: left 0.3s, width 0.3s;
+        }
+
+        .timeline-bar.online {
+            background: var(--online);
+        }
+
+        .timeline-bar.offline {
+            background: var(--offline);
+        }
+
+        .timeline-time-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .no-history {
+            padding: 20px;
+            text-align: center;
+            color: var(--muted);
+        }
+
         @media (max-width: 720px) {
             .hero {
                 display: block;
@@ -244,9 +372,25 @@
                 <div class="empty">暂无设备数据</div>
             </div>
         </div>
+
+        <div class="timeline-section">
+            <h2>在线/离线历史记录</h2>
+            <div class="time-range">
+                <button data-hours="1" class="active">1小时</button>
+                <button data-hours="6">6小时</button>
+                <button data-hours="24">24小时</button>
+                <button data-hours="168">7天</button>
+                <button data-hours="720">30天</button>
+            </div>
+            <div id="timelineContainer">
+                <div class="no-history">加载中...</div>
+            </div>
+        </div>
     </div>
 
     <script>
+        let currentTimeRange = 12; // hours
+
         function formatTime(ts) {
             if (!ts) {
                 return "-";
@@ -263,6 +407,15 @@
                 return "-";
             }
             return date.toLocaleString();
+        }
+
+        function formatTimeShort(ts) {
+            if (!ts) return "-";
+            let value = Number(ts);
+            if (value < 1000000000000) value = value * 1000;
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return "-";
+            return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
 
         function escapeHtml(text) {
@@ -325,8 +478,164 @@
             }
         }
 
+        async function loadHistory() {
+            const container = document.getElementById("timelineContainer");
+            container.innerHTML = '<div class="no-history">加载中...</div>';
+
+            try {
+                const endTime = Date.now();
+                const startTime = endTime - currentTimeRange * 60 * 60 * 1000;
+
+                const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, {
+                    cache: "no-store"
+                });
+                const json = await response.json();
+                const records = Array.isArray(json.data) ? json.data : [];
+
+                if (records.length === 0) {
+                    container.innerHTML = '<div class="no-history">暂无历史记录</div>';
+                    return;
+                }
+
+                // Group by IP
+                const byIP = {};
+                for (const r of records) {
+                    if (!byIP[r.ip]) {
+                        byIP[r.ip] = [];
+                    }
+                    byIP[r.ip].push(r);
+                }
+
+                // Sort IPs by host name
+                const ips = Object.keys(byIP).sort((a, b) => {
+                    const hostA = byIP[a][0]?.host || '';
+                    const hostB = byIP[b][0]?.host || '';
+                    return hostA.localeCompare(hostB);
+                });
+
+                container.innerHTML = ips.map(ip => {
+                    const deviceRecords = byIP[ip];
+                    const device = deviceRecords[0];
+                    return renderTimeline(ip, device);
+                }).join('');
+
+                // Render bars after DOM is ready
+                ips.forEach(ip => {
+                    const deviceRecords = byIP[ip];
+                    renderTimelineBars(ip, deviceRecords, startTime, endTime);
+                });
+
+            } catch (e) {
+                container.innerHTML = '<div class="no-history">加载失败: ' + escapeHtml(e.message) + '</div>';
+            }
+        }
+
+        function renderTimeline(ip, device) {
+            const host = device?.host || '-';
+            return `
+                <div class="panel device-timeline">
+                    <div class="timeline-header">
+                        <div class="timeline-device-name">${escapeHtml(host)}</div>
+                        <div class="timeline-device-info">${escapeHtml(ip)}</div>
+                    </div>
+                    <div class="timeline-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot online"></div>
+                            <span>在线</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot offline"></div>
+                            <span>离线</span>
+                        </div>
+                    </div>
+                    <div class="timeline-chart" data-ip="${escapeHtml(ip)}"></div>
+                    <div class="timeline-time-labels" data-ip="${escapeHtml(ip)}">
+                        <span class="label-start">-</span>
+                        <span class="label-end">-</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTimelineBars(ip, records, startTime, endTime) {
+            const chart = document.querySelector(`.timeline-chart[data-ip="${CSS.escape(ip)}"]`);
+            const labelStart = document.querySelector(`.timeline-time-labels[data-ip="${CSS.escape(ip)}"] .label-start`);
+            const labelEnd = document.querySelector(`.timeline-time-labels[data-ip="${CSS.escape(ip)}"] .label-end`);
+
+            if (!chart || !records.length) return;
+
+            const timeRange = endTime - startTime;
+            labelStart.textContent = formatTimeShort(startTime);
+            labelEnd.textContent = formatTimeShort(endTime);
+
+            // Clear existing bars
+            chart.innerHTML = '';
+
+            // Create segments for each minute
+            const segments = [];
+            let currentTime = startTime;
+            const minuteMs = 60000;
+
+            // Build a lookup for online status at each minute
+            const statusByMinute = {};
+            for (const r of records) {
+                const time = Number(r.time);
+                statusByMinute[time] = Number(r.online) === 1;
+            }
+
+            // Generate segments for each minute in the range
+            let inOnline = null;
+            let segmentStart = currentTime;
+
+            while (currentTime <= endTime) {
+                const isOnline = statusByMinute[currentTime] || false;
+
+                if (inOnline === null) {
+                    inOnline = isOnline;
+                    segmentStart = currentTime;
+                } else if (isOnline !== inOnline) {
+                    segments.push({ online: inOnline, start: segmentStart, end: currentTime });
+                    inOnline = isOnline;
+                    segmentStart = currentTime;
+                }
+
+                currentTime += minuteMs;
+            }
+
+            // Add final segment
+            if (inOnline !== null) {
+                segments.push({ online: inOnline, start: segmentStart, end: currentTime });
+            }
+
+            // Render segments
+            for (const seg of segments) {
+                const bar = document.createElement('div');
+                bar.className = `timeline-bar ${seg.online ? 'online' : 'offline'}`;
+
+                const left = ((seg.start - startTime) / timeRange) * 100;
+                const width = ((seg.end - seg.start) / timeRange) * 100;
+
+                bar.style.left = Math.max(0, left) + '%';
+                bar.style.width = Math.min(100 - left, width) + '%';
+
+                chart.appendChild(bar);
+            }
+        }
+
+        // Time range buttons
+        document.querySelectorAll('.time-range button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.time-range button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTimeRange = parseInt(btn.dataset.hours);
+                loadHistory();
+            });
+        });
+
         loadClients();
         setInterval(loadClients, 3000);
+        loadHistory();
+        setInterval(loadHistory, 30000); // Refresh history every 30 seconds
     </script>
 </body>
 </html>

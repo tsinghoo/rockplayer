@@ -2362,6 +2362,7 @@ CREATE TABLE tStockPrice (
 CREATE TABLE tTradeRule(id text primary key, scode text, sname text, rule text, createTime integer, closed integer default 0, broker text, expireTime int);
 CREATE TABLE tallstock(id text primary key, scode text, sname text, sector text, priority int default 0, updateTime integer);
 CREATE TABLE tcandidate(id text primary key, scode text, sname text, priority int default 0, updateTime integer);
+CREATE TABLE openwrt(id text primary key, ip text, mac text, host text, online int default 0, time integer);
 CREATE TABLE tpositions(id text primary key, broker text, account_id text, avg_price real, can_use_volume real, frozen_volume real, market_value real, on_road_volume real, open_price real, stock_code text, volume real, updateTime integer, floatProfit real default 0, type int default 0);
 CREATE TABLE tsql (
         id text primary key,
@@ -5075,11 +5076,73 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
         return;
     }
 
+    // Insert records into openwrt table (one record per minute per IP)
+    const minuteTime = Math.floor(Date.now() / 60000) * 60000; // Floor to minute
+    for (const client of data.clients) {
+        const id = `${client.ip}_${minuteTime}`;
+        db.runSync(
+            `INSERT OR REPLACE INTO openwrt (id, ip, mac, host, online, time) VALUES (?, ?, ?, ?, 1, ?)`,
+            [id, client.ip, client.mac, client.host, minuteTime],
+            req.threadId
+        );
+    }
+
+    // Mark IPs not in current clients as offline
+    const currentIPs = data.clients.map(c => c.ip);
+    if (currentIPs.length > 0) {
+        const placeholders = currentIPs.map(() => '?').join(',');
+        db.runSync(
+            `UPDATE openwrt SET online = 0 WHERE ip NOT IN (${placeholders}) AND time = ?`,
+            currentIPs.concat([minuteTime]),
+            req.threadId
+        );
+    }
+
     res.send(JSON.stringify({
         ok: 1,
         count: data.clients.length,
         reportedAt: data.reportedAt
     }));
+});
+
+app.get('/video/openwrt/history', async (req, res) => {
+    info("/video/openwrt/history", req.threadId);
+    const { ip, start, end } = req.query;
+
+    let sql = "SELECT ip, mac, host, online, time FROM openwrt";
+    const params = [];
+    const conditions = [];
+
+    if (ip) {
+        conditions.push("ip = ?");
+        params.push(ip);
+    }
+    if (start) {
+        conditions.push("time >= ?");
+        params.push(Number(start));
+    }
+    if (end) {
+        conditions.push("time <= ?");
+        params.push(Number(end));
+    }
+
+    if (conditions.length > 0) {
+        sql += " WHERE " + conditions.join(" AND ");
+    }
+    sql += " ORDER BY time ASC";
+
+    const rows = await db.allSync(sql, params, req.threadId);
+    res.send(JSON.stringify({ data: rows }));
+});
+
+app.get('/video/openwrt/devices', async (req, res) => {
+    info("/video/openwrt/devices", req.threadId);
+    const rows = await db.allSync(
+        "SELECT DISTINCT ip, mac, host FROM openwrt WHERE host IS NOT NULL AND host != '' AND host != '-' ORDER BY host",
+        [],
+        req.threadId
+    );
+    res.send(JSON.stringify({ data: rows }));
 });
 
 app.post('/voice/ping', (req, res) => {
