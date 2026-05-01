@@ -122,7 +122,7 @@ window.voice = window.voice || (function () {
             var targetTime = self.parseFileTime__(targetFile.name);
             var files = self.data.newMessages;
             var oldFiles = files.filter(function(f, i) {
-                return i !== index && self.parseFileTime__(f.name) < targetTime;
+                return i !== index && self.parseFileTime__(f.name) <= targetTime;
             }).map(function(f) {
                 return f.name;
             });
