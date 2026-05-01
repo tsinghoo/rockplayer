@@ -92,8 +92,10 @@ window.voice = window.voice || (function () {
             var parts = fileName.split(".");
             if (parts.length >= 2) {
                 var datePart = parts[0];
-                if (datePart.length === 6 && /^\d{6}$/.test(datePart)) {
-                    return parseInt(datePart);
+                var timePart = parts[1];
+                if (datePart.length === 6 && /^\d{6}$/.test(datePart) &&
+                    timePart && timePart.length === 6 && /^\d{6}$/.test(timePart)) {
+                    return parseInt(datePart + timePart);
                 }
             }
             return 0;
