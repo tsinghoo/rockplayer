@@ -90,32 +90,42 @@ window.voice = window.voice || (function () {
         },
         parseFileTime__: function(fileName) {
             var parts = fileName.split(".");
-            for (var i = 1; i < parts.length; i++) {
-                var part = parts[i];
-                if (/^\d{8}$/.test(part)) {
-                    return parseInt(part);
+            if (parts.length >= 2) {
+                var datePart = parts[0];
+                if (datePart.length === 6 && /^\d{6}$/.test(datePart)) {
+                    return parseInt(datePart);
                 }
             }
             return 0;
         },
-        deleteOldVoices__: function () {
-            var files = self.data.newMessages;
-            if (!files || files.length === 0) {
-                share.toast__("没有文件可删除");
+        getFileIndex__: function(e) {
+            var player = $(e.target).closest(".player");
+            if (player.length > 0) {
+                var id = player[0].id;
+                var match = id.match(/player_(\d+)/);
+                if (match) {
+                    return parseInt(match[1]);
+                }
+            }
+            return -1;
+        },
+        deleteOldVoices__: function (e) {
+            e.preventDefault();
+            var index = self.getFileIndex__(e);
+            if (index < 0 || !self.data.newMessages || !self.data.newMessages[index]) {
+                share.toast__("无法获取当前文件");
                 return;
             }
-            var maxTime = 0;
-            files.forEach(function(f) {
-                var t = self.parseFileTime__(f.name);
-                if (t > maxTime) maxTime = t;
-            });
-            var oldFiles = files.filter(function(f) {
-                return self.parseFileTime__(f.name) < maxTime;
+            var targetFile = self.data.newMessages[index];
+            var targetTime = self.parseFileTime__(targetFile.name);
+            var files = self.data.newMessages;
+            var oldFiles = files.filter(function(f, i) {
+                return i !== index && self.parseFileTime__(f.name) < targetTime;
             }).map(function(f) {
                 return f.name;
             });
             if (oldFiles.length === 0) {
-                share.toast__("没有更旧的文件");
+                share.toast__("没有比此文件更旧的文件");
                 return;
             }
             share.confirm__("确定删除 " + oldFiles.length + " 个旧文件？", function () {
