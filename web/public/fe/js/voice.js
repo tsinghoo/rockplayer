@@ -35,6 +35,7 @@ window.voice = window.voice || (function () {
                 $.get("/voice/ping", function(config) {
                     var info = "";
                     if (config) {
+			config = JSON.parse(config);
                         var keys = Object.keys(config);
                         if (keys.length > 0) {
                             var key = keys[0];
