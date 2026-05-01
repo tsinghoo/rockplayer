@@ -5082,13 +5082,13 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
     }));
 });
 
-app.post('/video/ping', (req, res) => {
-    const fp = path.join(directoryPath, "config.json");
+app.post('/voice/ping', (req, res) => {
+    const fp = path.join(directoryPath, "voice/ping.json");
     var text = "{}";
     try {
         text = fs.readFileSync(fp, "utf-8");
     } catch (e) {
-        error("error reading config.json:" + e.message, req.threadId)
+        error("error reading ping.json:" + e.message, req.threadId)
     }
     var config = JSON.parse(text);
     var bd = req.body
@@ -5102,6 +5102,17 @@ app.post('/video/ping', (req, res) => {
     config = JSON.stringify(config);
     fs.writeFileSync(fp, config);
     res.send(config);
+});
+
+app.get('/voice/ping', (req, res) => {
+    const fp = path.join(directoryPath, "voice/ping.json");
+    var text = "{}";
+    try {
+        text = fs.readFileSync(fp, "utf-8");
+    } catch (e) {
+        error("error reading ping.json:" + e.message, req.threadId)
+    }
+    res.send(text);
 });
 
 app.get('/video/download/:filename', (req, res) => {

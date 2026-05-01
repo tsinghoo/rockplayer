@@ -17,8 +17,38 @@ window.voice = window.voice || (function () {
 
         initialize__: function () {
             self.getVoices();
-
             self.initAudio__();
+            self.initHeartbeat__();
+        },
+        initHeartbeat__: function () {
+            var loadHeartbeatInfo = function() {
+                $.get("/voice/ping", function(config) {
+                    var info = "";
+                    if (config && config.heartbeat) {
+                        if (config.heartbeat.name) {
+                            info += config.heartbeat.name;
+                        }
+                        if (config.heartbeat.time) {
+                            if (info) info += " - ";
+                            info += config.heartbeat.time;
+                        }
+                        if (config.heartbeat.last) {
+                            if (info) info += " - ";
+                            info += "上次: " + config.heartbeat.last;
+                        }
+                    }
+                    if (info) {
+                        $("#heartbeatText").text(info);
+                        $("#heartbeat").show();
+                    } else {
+                        $("#heartbeat").hide();
+                    }
+                }).fail(function() {
+                    $("#heartbeat").hide();
+                });
+            };
+            loadHeartbeatInfo();
+            setInterval(loadHeartbeatInfo, 30000);
         },
         deleteSelectedVoices__: function (e) {
             e.preventDefault();
