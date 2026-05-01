@@ -88,6 +88,52 @@ window.voice = window.voice || (function () {
                 });
             });
         },
+        parseFileTime__: function(fileName) {
+            var parts = fileName.split(".");
+            for (var i = 1; i < parts.length; i++) {
+                var part = parts[i];
+                if (/^\d{8}$/.test(part)) {
+                    return parseInt(part);
+                }
+            }
+            return 0;
+        },
+        deleteOldVoices__: function () {
+            var files = self.data.newMessages;
+            if (!files || files.length === 0) {
+                share.toast__("没有文件可删除");
+                return;
+            }
+            var maxTime = 0;
+            files.forEach(function(f) {
+                var t = self.parseFileTime__(f.name);
+                if (t > maxTime) maxTime = t;
+            });
+            var oldFiles = files.filter(function(f) {
+                return self.parseFileTime__(f.name) < maxTime;
+            }).map(function(f) {
+                return f.name;
+            });
+            if (oldFiles.length === 0) {
+                share.toast__("没有更旧的文件");
+                return;
+            }
+            share.confirm__("确定删除 " + oldFiles.length + " 个旧文件？", function () {
+                $.ajax({
+                    url: "/video/voice",
+                    type: "DELETE",
+                    contentType: "application/json",
+                    data: JSON.stringify({ files: oldFiles }),
+                    success: function () {
+                        share.toast__("已删除 " + oldFiles.length + " 个文件");
+                        self.getVoices();
+                    },
+                    error: function (e) {
+                        share.toastError__(e);
+                    }
+                });
+            });
+        },
         getVoiceWidth__: function (duration) {
             return self.data.minVoiceWidth + 1.0 * duration / self.data.maxVoiceDuration * (self.data.maxVoiceWidth - self.data.minVoiceWidth);
         },
@@ -122,6 +168,7 @@ window.voice = window.voice || (function () {
                 $(".voiceDuration").off("touchend").on("touchend", self.voiceDurationTouchEnd__);
 
                 $(".voiceDeleteBtn").off("click").on("click", self.deleteSelectedVoices__);
+                $(".voiceDeleteOldBtn").off("click").on("click", self.deleteOldVoices__);
                 new bootstrap.Dropdown($(".voiceMoreBtn"));
             });
         },
