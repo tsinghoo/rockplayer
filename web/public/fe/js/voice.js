@@ -127,7 +127,7 @@ window.voice = window.voice || (function () {
                 return f.name;
             });
             if (oldFiles.length === 0) {
-                share.toast__("没有比此文件更旧的文件");
+                share.toastError__("没有比此文件更旧的文件", 2000);
                 return;
             }
             share.confirmOk__("确定删除 " + oldFiles.length + " 个旧文件？", function () {
@@ -137,7 +137,7 @@ window.voice = window.voice || (function () {
                     contentType: "application/json",
                     data: JSON.stringify({ files: oldFiles }),
                     success: function () {
-                        share.toast__("已删除 " + oldFiles.length + " 个文件", 3000);
+                        share.toastSuccess__("已删除 " + oldFiles.length + " 个文件", 2000);
                         self.getVoices();
                     },
                     error: function (e) {
