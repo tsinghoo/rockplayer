@@ -21,20 +21,28 @@ window.voice = window.voice || (function () {
             self.initHeartbeat__();
         },
         initHeartbeat__: function () {
+            var formatTime = function(ts) {
+                if (!ts) return "";
+                var d = new Date(ts);
+                return d.getFullYear() + "-" +
+                    String(d.getMonth() + 1).padStart(2, '0') + "-" +
+                    String(d.getDate()).padStart(2, '0') + " " +
+                    String(d.getHours()).padStart(2, '0') + ":" +
+                    String(d.getMinutes()).padStart(2, '0') + ":" +
+                    String(d.getSeconds()).padStart(2, '0');
+            };
             var loadHeartbeatInfo = function() {
                 $.get("/voice/ping", function(config) {
                     var info = "";
-                    if (config && config.heartbeat) {
-                        if (config.heartbeat.name) {
-                            info += config.heartbeat.name;
-                        }
-                        if (config.heartbeat.time) {
-                            if (info) info += " - ";
-                            info += config.heartbeat.time;
-                        }
-                        if (config.heartbeat.last) {
-                            if (info) info += " - ";
-                            info += "上次: " + config.heartbeat.last;
+                    if (config) {
+                        var keys = Object.keys(config);
+                        if (keys.length > 0) {
+                            var key = keys[0];
+                            var value = config[key];
+                            info = key;
+                            if (value && value.updateTime) {
+                                info += " - " + formatTime(value.updateTime);
+                            }
                         }
                     }
                     if (info) {
