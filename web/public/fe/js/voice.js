@@ -130,14 +130,14 @@ window.voice = window.voice || (function () {
                 share.toast__("没有比此文件更旧的文件");
                 return;
             }
-            share.confirm__("确定删除 " + oldFiles.length + " 个旧文件？", function () {
+            share.confirmOk__("确定删除 " + oldFiles.length + " 个旧文件？", function () {
                 $.ajax({
                     url: "/video/voice",
                     type: "DELETE",
                     contentType: "application/json",
                     data: JSON.stringify({ files: oldFiles }),
                     success: function () {
-                        share.toast__("已删除 " + oldFiles.length + " 个文件");
+                        share.toast__("已删除 " + oldFiles.length + " 个文件", 3000);
                         self.getVoices();
                     },
                     error: function (e) {
