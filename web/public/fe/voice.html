@@ -49,7 +49,7 @@
 </head>
 
 <body>
-    <div id="holder" class="flexrow height100p" style="background-color:gray;">
+    <div id="holder" class="flexrow height100p" style="background-color:lightgray;">
         <div class="width100p height100p">
             <div class="width100p height100p" style="position: relative;">
 
@@ -63,7 +63,7 @@
                 <div>脚本
                 </div>
             </div>
-            <div id="script" class="flexcolumn bg_black gray "
+            <div id="script" class="flexcolumn bg_gray gray "
                 style="overflow: auto;padding-right: 80px;padding-left:120px;font-family:serif;">
                 无字幕
             </div>
@@ -97,7 +97,20 @@
 </div>
 <div id="templateVoice" style="display: none">
     <div id="player_#id#" class="player flexcolumn font12">
-        <div class="fileName clickable">#fileName#</div>
+        <div class="flexrow width100p aligncenter">
+            <input type="checkbox" class="voiceCheckbox marginlr5" data-index="#id#">
+            <div class="flexrow center flexgrow1">
+                <div class="fileName clickable">#fileName#</div>
+                <div class="dropdown">
+                    <button class="btn btn-link text-decoration-none text-dark p-0 border-0 voiceMoreBtn" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                        ...
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item voiceDeleteBtn" href="#" data-index="#id#">删除</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
         <div class="flexrow widthauto">
             <div id="voiceIcon_#id#" class="voiceIcon"></div>
             <div class="paddinglr10 flexcolumn widthauto">

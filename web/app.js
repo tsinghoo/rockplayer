@@ -1447,6 +1447,24 @@ app.get('/video/voice', (req, res) => {
     var resp = JSON.stringify({ files, remove });
     res.send(resp);
 });
+app.delete('/video/voice', (req, res) => {
+    const { files } = req.body;
+    info("delete voice files:" + JSON.stringify(files));
+    const voiceDir = directoryPath + "/voice";
+    for (const fileName of files) {
+        const filePath = path.join(voiceDir, fileName);
+        try {
+            fs.unlinkSync(filePath);
+            const txtPath = filePath + ".txt";
+            if (fs.existsSync(txtPath)) {
+                fs.unlinkSync(txtPath);
+            }
+        } catch (err) {
+            console.error('Error deleting voice file:', err);
+        }
+    }
+    res.send(JSON.stringify({ success: true }));
+});
 app.post('/video/tag', (req, res) => {
     info("files=" + req.body.files, req.threadId)
     info("tags=" + req.body.tags, req.threadId)
@@ -3868,7 +3886,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             info(`currentPrice <= buyPrice(${currentPrice} <= ${buyPrice})`, threadId);
             all = await ensureHighPriceIncreasing(scode, sname, threadId, all, 0, 1);
             all = await ensureLowPriceIncreasing(scode, sname, threadId, all, 0, 2);
-            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 2);
+            all = await ensureAboveMa5(scode, sname, threadId, all, 0, 1);
 
             if (all && all.reason) {
                 return { error: `${all.reason}`, sname };

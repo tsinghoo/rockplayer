@@ -20,6 +20,35 @@ window.voice = window.voice || (function () {
 
             self.initAudio__();
         },
+        deleteSelectedVoices__: function (e) {
+            e.preventDefault();
+            var selectedIndexes = [];
+            $(".voiceCheckbox:checked").each(function () {
+                selectedIndexes.push($(this).data("index"));
+            });
+            if (selectedIndexes.length === 0) {
+                share.toast__("请先勾选要删除的语音");
+                return;
+            }
+            var fileNames = selectedIndexes.map(function (i) {
+                return self.data.newMessages[i].name;
+            });
+            share.confirm__(share.getString__("confirmDelete"), function () {
+                $.ajax({
+                    url: "/video/voice",
+                    type: "DELETE",
+                    contentType: "application/json",
+                    data: JSON.stringify({ files: fileNames }),
+                    success: function () {
+                        share.toast__(share.getString__("deleted"));
+                        self.getVoices();
+                    },
+                    error: function (e) {
+                        share.toastError__(e);
+                    }
+                });
+            });
+        },
         getVoiceWidth__: function (duration) {
             return self.data.minVoiceWidth + 1.0 * duration / self.data.maxVoiceDuration * (self.data.maxVoiceWidth - self.data.minVoiceWidth);
         },
@@ -52,6 +81,9 @@ window.voice = window.voice || (function () {
                 $(".voiceDuration").off("touchstart").on("touchstart", self.voiceDurationTouchStart__);
                 $(".voiceDuration").off("touchmove").on("touchmove", self.voiceDurationTouchMove__);
                 $(".voiceDuration").off("touchend").on("touchend", self.voiceDurationTouchEnd__);
+
+                $(".voiceDeleteBtn").off("click").on("click", self.deleteSelectedVoices__);
+                new bootstrap.Dropdown($(".voiceMoreBtn"));
             });
         },
         initAudio__: function () {
