@@ -5100,7 +5100,7 @@ app.get('/video/openwrt/clients', (req, res) => {
     res.send(JSON.stringify({ data }));
 });
 
-app.post('/video/openwrt/clients/upload', (req, res) => {
+app.post('/video/openwrt/clients/upload', async (req, res) => {
     info(`video/openwrt/clients/upload:${JSON.stringify(req.body)}`, req.threadId);
     const body = req.body || {};
     const clients = Array.isArray(body.clients) ? body.clients : [];
@@ -5128,12 +5128,12 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
     const currentIPs = new Set(data.clients.map(c => c.ip));
 
     // Check which IPs were online in previous minute
-    const prevOnlineRows = db.allSync(
+    const prevOnlineRows = await db.allSync(
         `SELECT ip FROM openwrt_onlines WHERE status = 'online' AND time = ?`,
         [prevMinute],
         req.threadId
     );
-    const prevOnlineIPs = new Set((prevOnlineRows || []).map(r => r.ip));
+    const prevOnlineIPs = new Set(((prevOnlineRows && prevOnlineRows.rows) || []).map(r => r.ip));
 
     // Process each current client
     for (const client of data.clients) {
@@ -5142,14 +5142,14 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
 
         if (wasOnline) {
             // Update last online time (continue being online)
-            db.runSync(
+            await db.runSync(
                 `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time) VALUES (?, ?, ?, ?, 'online', ?)`,
                 [id, client.ip, client.mac, client.host, currentMinute],
                 req.threadId
             );
         } else {
             // New online event (first time or reconnected after offline)
-            db.runSync(
+            await db.runSync(
                 `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time) VALUES (?, ?, ?, ?, 'online', ?)`,
                 [id, client.ip, client.mac, client.host, currentMinute],
                 req.threadId
@@ -5164,12 +5164,12 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
         if (!currentIPs.has(prevIP)) {
             const id = `${prevIP}_${currentMinute}`;
             // Get the device info from previous record
-            const prevRecord = db.getSync(
+            const prevRecord = await db.getSync(
                 `SELECT mac, host FROM openwrt_onlines WHERE ip = ? ORDER BY time DESC LIMIT 1`,
                 [prevIP],
                 req.threadId
             );
-            db.runSync(
+            await db.runSync(
                 `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time) VALUES (?, ?, ?, ?, 'offline', ?)`,
                 [id, prevIP, prevRecord?.mac || '', prevRecord?.host || '-', currentMinute],
                 req.threadId
@@ -5212,7 +5212,7 @@ app.get('/video/openwrt/history', async (req, res) => {
     sql += " ORDER BY time ASC, ip ASC";
 
     const rows = await db.allSync(sql, params, req.threadId);
-    res.send(JSON.stringify({ data: rows }));
+    res.send(JSON.stringify({ data: rows?.rows || [] }));
 });
 
 app.get('/video/openwrt/devices', async (req, res) => {
@@ -5222,7 +5222,7 @@ app.get('/video/openwrt/devices', async (req, res) => {
         [],
         req.threadId
     );
-    res.send(JSON.stringify({ data: rows }));
+    res.send(JSON.stringify({ data: rows?.rows || [] }));
 });
 
 app.post('/voice/ping', (req, res) => {
