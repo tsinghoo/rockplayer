@@ -116,7 +116,7 @@ function parseTimeToTimestamp(timeStr) {
     }
     // Fallback: treat as timestamp (ms or s)
     let num = Number(value);
-    if (isNaN(num)) return null;
+    if (isNaN(num) || num <= 0) return null;
     if (num < 1000000000000) num = num * 1000;
     return num;
 }
@@ -178,60 +178,59 @@ async function loadHistory() {
             const label = `${escapeHtml(host)} (${escapeHtml(ip)})`;
 
             let onlineStart = null;
-            let prevStatus = null;
+            let prevStatus = 'offline'; // 初始化为 offline，第一条记录如果是 online 就会被正确识别为开始
 
-            // Merge consecutive online records into periods
-            // Only set onlineStart when transitioning from offline to online
             for (let i = 0; i < events.length; i++) {
                 const evt = events[i];
 
                 if (evt.status === 'online' && prevStatus !== 'online') {
-                    // Only set start time when transitioning from offline (or first event) to online
+                    // 从 offline 转到 online 时才设置 start
                     onlineStart = evt.time;
-                } else if (evt.status === 'offline' && onlineStart !== null) {
-                    // End of an online period
-                    const onlineEnd = evt.time;
-                    const duration = Math.round((onlineEnd - onlineStart) / 60000);
+                } else if (evt.status === 'offline') {
+                    if (onlineStart !== null) {
+                        // 从 online 转到 offline 时画 bar
+                        const onlineEnd = evt.time;
 
-                    series.push({
-                        name: label,
-                        type: 'bar',
-                        yAxisIndex: 0,
-                        barMaxWidth: 40,
-                        itemStyle: { color: '#2ecc71' },
-                        data: [[onlineStart, idx], [onlineEnd, idx]],
-                        label: {
-                            show: true,
-                            formatter: function(p) {
-                                return duration + '分钟';
-                            },
-                            position: 'insideRight',
-                            fontSize: 11,
-                            color: '#fff'
-                        }
-                    });
+                        series.push({
+                            name: label,
+                            type: 'bar',
+                            yAxisIndex: 0,
+                            barMaxWidth: 40,
+                            itemStyle: { color: '#2ecc71' },
+                            data: [[onlineStart, idx], [onlineEnd, idx]],
+                            label: {
+                                show: true,
+                                formatter: function() {
+                                    const duration = Math.round((onlineEnd - onlineStart) / 60000);
+                                    return duration + '分钟';
+                                },
+                                position: 'insideRight',
+                                fontSize: 11,
+                                color: '#fff'
+                            }
+                        });
 
-                    // Mark as offline (gap)
-                    series.push({
-                        name: label,
-                        type: 'bar',
-                        yAxisIndex: 0,
-                        barMaxWidth: 5,
-                        itemStyle: { color: '#f0ebe3' },
-                        data: [[onlineEnd, idx], [onlineEnd, idx]],
-                        silent: true
-                    });
+                        // Mark as offline (gap marker)
+                        series.push({
+                            name: label,
+                            type: 'bar',
+                            yAxisIndex: 0,
+                            barMaxWidth: 5,
+                            itemStyle: { color: '#f0ebe3' },
+                            data: [[onlineEnd, idx], [onlineEnd, idx]],
+                            silent: true
+                        });
 
-                    onlineStart = null;
+                        onlineStart = null;
+                    }
                 }
 
                 prevStatus = evt.status;
             }
 
-            // If still online at the end, draw a bar to current time
+            // If still online at the end, draw a bar to endTime
             if (onlineStart !== null) {
                 const onlineEnd = endTime;
-                const duration = Math.round((onlineEnd - onlineStart) / 60000);
 
                 series.push({
                     name: label,
@@ -242,7 +241,8 @@ async function loadHistory() {
                     data: [[onlineStart, idx], [onlineEnd, idx]],
                     label: {
                         show: true,
-                        formatter: function(p) {
+                        formatter: function() {
+                            const duration = Math.round((onlineEnd - onlineStart) / 60000);
                             return duration + '分钟';
                         },
                         position: 'insideRight',
