@@ -2377,10 +2377,11 @@ async function upgradeDb(succ, fail) {
         `alter table t1d add column range real default 0;`,
         `alter table tstock drop column lastOperationTime;`,
         `alter table tstock add column lastOperationTime int default 0;`,
-        `create table if not exists t1w(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
-        `create table if not exists t1mon(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
-        `create table if not exists openwrt(id text primary key, ip text, mac text, host text, online int default 0, time integer);`,
-        `create table if not exists openwrt_onlines(id text primary key, ip text, mac text, host text, status text, time integer);`,
+        `create table t1w(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
+        `create table t1mon(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
+        `create table openwrt(id text primary key, ip text, mac text, host text, online int default 0, time integer);`,
+        `create table openwrt_onlines(id text primary key, ip text, mac text, host text, status text, time integer);`,
+        `alter table openwrt_onlines add column startTime integer;`,
     ];
 
     if (res == null || res.error) {
@@ -5137,24 +5138,32 @@ app.post('/video/openwrt/clients/upload', async (req, res) => {
 
     // Process each current client
     for (const client of data.clients) {
-        const id = `${client.ip}_${currentMinute}`;
-        const wasOnline = prevOnlineIPs.has(client.ip);
+        // Get the latest record for this IP
+        const latestRow = await db.getSync(
+            `SELECT status, time FROM openwrt_onlines WHERE ip = ? ORDER BY time DESC LIMIT 1`,
+            [client.ip],
+            req.threadId
+        );
 
-        if (wasOnline) {
-            // Update last online time (continue being online)
+        const isReconnect = latestRow && latestRow.status === 'online' &&
+                             currentMinute - parseInt(latestRow.time) <= 1;
+
+        if (isReconnect) {
+            // Continue same online session, just update time
+            const latestId = `${client.ip}_${latestRow.time}`;
             await db.runSync(
-                `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time) VALUES (?, ?, ?, ?, 'online', ?)`,
-                [id, client.ip, client.mac, client.host, currentMinute],
+                `UPDATE openwrt_onlines SET time = ?, mac = ?, host = ? WHERE id = ?`,
+                [currentMinute, client.mac, client.host, latestId],
                 req.threadId
             );
         } else {
-            // New online event (first time or reconnected after offline)
+            // New online session with startTime
+            const id = `${client.ip}_${currentMinute}`;
             await db.runSync(
-                `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time) VALUES (?, ?, ?, ?, 'online', ?)`,
-                [id, client.ip, client.mac, client.host, currentMinute],
+                `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time, startTime) VALUES (?, ?, ?, ?, 'online', ?, ?)`,
+                [id, client.ip, client.mac, client.host, currentMinute, currentMinute],
                 req.threadId
             );
-            // Log the online event
             info(`openwrt: ${client.host || client.ip} online at ${formatTimeStr(currentMinute)}`, req.threadId);
         }
     }
@@ -5165,13 +5174,13 @@ app.post('/video/openwrt/clients/upload', async (req, res) => {
             const id = `${prevIP}_${currentMinute}`;
             // Get the device info from previous record
             const prevRecord = await db.getSync(
-                `SELECT mac, host FROM openwrt_onlines WHERE ip = ? ORDER BY time DESC LIMIT 1`,
+                `SELECT mac, host, startTime FROM openwrt_onlines WHERE ip = ? ORDER BY time DESC LIMIT 1`,
                 [prevIP],
                 req.threadId
             );
             await db.runSync(
-                `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time) VALUES (?, ?, ?, ?, 'offline', ?)`,
-                [id, prevIP, prevRecord?.mac || '', prevRecord?.host || '-', currentMinute],
+                `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time, startTime) VALUES (?, ?, ?, ?, 'offline', ?, ?)`,
+                [id, prevIP, prevRecord?.mac || '', prevRecord?.host || '-', currentMinute, prevRecord?.startTime || currentMinute],
                 req.threadId
             );
             info(`openwrt: ${prevRecord?.host || prevIP} offline at ${formatTimeStr(currentMinute)}`, req.threadId);
@@ -5189,7 +5198,7 @@ app.get('/video/openwrt/history', async (req, res) => {
     info("/video/openwrt/history", req.threadId);
     const { ip, start, end } = req.query;
 
-    let sql = "SELECT ip, mac, host, status, time FROM openwrt_onlines";
+    let sql = "SELECT ip, mac, host, status, time, startTime FROM openwrt_onlines";
     const params = [];
     const conditions = [];
 

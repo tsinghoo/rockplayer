@@ -150,11 +150,13 @@ async function loadHistory() {
         const byIP = {};
         for (const r of records) {
             const ts = parseTimeToTimestamp(r.time);
-            if (ts === null) continue; // Skip invalid timestamps
+            const startTs = r.startTime ? parseTimeToTimestamp(r.startTime) : ts;
+            if (ts === null) continue;
             if (!byIP[r.ip]) byIP[r.ip] = [];
             byIP[r.ip].push({
                 status: r.status,
                 time: ts,
+                startTime: startTs,
                 host: r.host
             });
         }
@@ -177,79 +179,48 @@ async function loadHistory() {
             const host = events[0]?.host || '-';
             const label = `${escapeHtml(host)} (${escapeHtml(ip)})`;
 
-            let onlineStart = null;
-            let prevStatus = 'offline'; // 初始化为 offline，第一条记录如果是 online 就会被正确识别为开始
-
+            // Group events: each online/offline pair forms a period
+            // Use startTime for the bar start, time for the bar end
             for (let i = 0; i < events.length; i++) {
                 const evt = events[i];
 
-                if (evt.status === 'online' && prevStatus !== 'online') {
-                    // 从 offline 转到 online 时才设置 start
-                    onlineStart = evt.time;
-                } else if (evt.status === 'offline') {
-                    if (onlineStart !== null) {
-                        // 从 online 转到 offline 时画 bar
-                        const onlineEnd = evt.time;
+                // For online records, draw a bar from startTime to time
+                if (evt.status === 'online') {
+                    const barStart = evt.startTime || evt.time;
+                    const barEnd = evt.time;
 
-                        series.push({
-                            name: label,
-                            type: 'bar',
-                            yAxisIndex: 0,
-                            barMaxWidth: 40,
-                            itemStyle: { color: '#2ecc71' },
-                            data: [[onlineStart, idx], [onlineEnd, idx]],
-                            label: {
-                                show: true,
-                                formatter: function() {
-                                    const duration = Math.round((onlineEnd - onlineStart) / 60000);
-                                    return duration + '分钟';
-                                },
-                                position: 'insideRight',
-                                fontSize: 11,
-                                color: '#fff'
-                            }
-                        });
-
-                        // Mark as offline (gap marker)
-                        series.push({
-                            name: label,
-                            type: 'bar',
-                            yAxisIndex: 0,
-                            barMaxWidth: 5,
-                            itemStyle: { color: '#f0ebe3' },
-                            data: [[onlineEnd, idx], [onlineEnd, idx]],
-                            silent: true
-                        });
-
-                        onlineStart = null;
-                    }
+                    series.push({
+                        name: label,
+                        type: 'bar',
+                        yAxisIndex: 0,
+                        barMaxWidth: 40,
+                        itemStyle: { color: '#2ecc71' },
+                        data: [[barStart, idx], [barEnd, idx]],
+                        label: {
+                            show: true,
+                            formatter: function() {
+                                const duration = Math.round((barEnd - barStart) / 60000);
+                                return duration + '分钟';
+                            },
+                            position: 'insideRight',
+                            fontSize: 11,
+                            color: '#fff'
+                        }
+                    });
                 }
 
-                prevStatus = evt.status;
-            }
-
-            // If still online at the end, draw a bar to endTime
-            if (onlineStart !== null) {
-                const onlineEnd = endTime;
-
-                series.push({
-                    name: label,
-                    type: 'bar',
-                    yAxisIndex: 0,
-                    barMaxWidth: 40,
-                    itemStyle: { color: '#2ecc71' },
-                    data: [[onlineStart, idx], [onlineEnd, idx]],
-                    label: {
-                        show: true,
-                        formatter: function() {
-                            const duration = Math.round((onlineEnd - onlineStart) / 60000);
-                            return duration + '分钟';
-                        },
-                        position: 'insideRight',
-                        fontSize: 11,
-                        color: '#fff'
-                    }
-                });
+                // Mark the time when status changed (for offline, this is where the period ends)
+                if (evt.status === 'offline' || (i + 1 < events.length && events[i + 1].status === 'online')) {
+                    series.push({
+                        name: label,
+                        type: 'bar',
+                        yAxisIndex: 0,
+                        barMaxWidth: 5,
+                        itemStyle: { color: '#f0ebe3' },
+                        data: [[evt.time, idx], [evt.time, idx]],
+                        silent: true
+                    });
+                }
             }
         });
 
