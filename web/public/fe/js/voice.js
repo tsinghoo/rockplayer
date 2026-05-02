@@ -52,6 +52,7 @@ window.voice = window.voice || (function () {
                     } else {
                         $("#heartbeat").hide();
                     }
+                    self.getVoices();
                 }).fail(function() {
                     $("#heartbeat").hide();
                 });
