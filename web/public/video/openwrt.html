@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OpenWrt Devices</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        :root {
+            --bg: #f2efe8;
+            --panel: #fffdf8;
+            --line: #d9d0c2;
+            --text: #2b241c;
+            --muted: #73685b;
+            --accent: #1f6b5d;
+            --warn: #a14a28;
+            --online: #2ecc71;
+            --offline: #e74c3c;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "PingFang SC", "Noto Sans SC", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top right, #e2efe9 0, transparent 28%),
+                radial-gradient(circle at left bottom, #efe1d3 0, transparent 25%),
+                var(--bg);
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 18px 14px 28px;
+        }
+
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        h1 { margin: 0; font-size: 28px; line-height: 1.1; }
+        .sub { margin-top: 8px; color: var(--muted); }
+
+        .panel {
+            background: rgba(255, 253, 248, 0.92);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(60, 40, 20, 0.06);
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .card { padding: 14px 14px; }
+        .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .value { margin-top: 6px; font-size: 22px; font-weight: 700; }
+        .status-ok { color: var(--accent); }
+        .status-warn { color: var(--warn); }
+
+        .table-panel { overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 14px; }
+        th { background: #f7f1e6; color: #5b5145; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        tr:last-child td { border-bottom: 0; }
+        .empty { padding: 28px 16px; text-align: center; color: var(--muted); }
+
+        .mobile-list { display: none; gap: 10px; }
+        .device-card { padding: 14px; }
+        .device-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+        .device-name { font-size: 18px; font-weight: 700; }
+        .device-expire { color: var(--muted); font-size: 12px; white-space: nowrap; }
+        .device-ip { margin-top: 4px; color: var(--accent); font-family: "SFMono-Regular", Consolas, monospace; font-size: 15px; }
+
+        .time-range {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .time-range button {
+            padding: 8px 16px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--panel);
+            color: var(--text);
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-range button:hover { border-color: var(--accent); color: var(--accent); }
+        .time-range button.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .chart-container { width: 100%; height: 500px; margin-top: 14px; }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            padding: 14px;
+            margin-top: 14px;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+        .event-log {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+
+        .event-item {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-item:last-child { border-bottom: 0; }
+
+        .event-device { font-weight: 600; }
+        .event-time { color: var(--muted); font-size: 12px; }
+
+        .event-online { color: var(--online); }
+        .event-offline { color: var(--offline); }
+
+        @media (max-width: 720px) {
+            .hero { display: block; }
+            h1 { font-size: 24px; }
+            .wrap { padding: 14px 10px 24px; }
+            .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .value { font-size: 18px; }
+            .table-panel { display: none; }
+            .mobile-list { display: grid; }
+            .chart-container { height: 400px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="hero">
+            <div>
+                <h1>OpenWrt Device Monitor</h1>
+                <div class="sub">页面每 3 秒自动刷新一次，展示服务端最新收到的 DHCP 租约列表。</div>
+            </div>
+            <div id="refreshText" class="sub">刷新中...</div>
+        </div>
+
+        <div class="summary">
+            <div class="panel card">
+                <div class="label">Router</div>
+                <div id="router" class="value">-</div>
+            </div>
+            <div class="panel card">
+                <div class="label">Devices</div>
+                <div id="deviceCount" class="value">0</div>
+            </div>
+            <div class="panel card">
+                <div class="label">Last Upload</div>
+                <div id="reportedAt" class="value" style="font-size:18px;">-</div>
+            </div>
+            <div class="panel card">
+                <div class="label">Status</div>
+                <div id="status" class="value status-warn" style="font-size:18px;">No Data</div>
+            </div>
+        </div>
+
+        <div class="panel table-panel">
+            <table>
+                <thead>
+                    <tr><th>IP</th><th>Host</th><th>Lease End</th></tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td class="empty" colspan="3">暂无设备数据</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="mobileList" class="mobile-list">
+            <div class="panel device-card"><div class="empty">暂无设备数据</div></div>
+        </div>
+
+        <div class="panel">
+            <h2 style="padding: 14px 14px 0; margin: 0; font-size: 18px; color: var(--muted);">在线时段</h2>
+            <div class="time-range" style="padding: 0 14px; align-items: center;">
+                <button data-date="today" class="active">今天</button>
+                <button data-date="yesterday">昨天</button>
+                <button data-date="2daysago">前天</button>
+                <input type="date" id="customDate" style="padding: 8px 12px; border: 1px solid var(--line); border-radius: 20px; font-size: 13px; background: var(--panel);">
+            </div>
+            <div id="chart" class="chart-container"></div>
+            <h3 style="padding: 14px 14px 0; margin: 0; font-size: 16px; color: var(--muted);">事件记录</h3>
+            <div id="eventLog" class="event-log"></div>
+        </div>
+    </div>
+
+    <script src="openwrt.js"></script>
+</body>
+</html>
