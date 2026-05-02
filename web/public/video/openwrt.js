@@ -273,8 +273,7 @@ async function loadHistory() {
             .map(r => ({
                 deviceName: getDeviceName(r),
                 eventTime: parseTimeToTimestamp(r.time) || 0,
-                startTime: getEventStartTimestamp(r),
-                raw: r
+                startTime: getEventStartTimestamp(r)
             }))
             .sort((a, b) => {
                 const nameCompare = a.deviceName.localeCompare(b.deviceName, 'zh-CN', { numeric: true, sensitivity: 'base' });
@@ -288,17 +287,14 @@ async function loadHistory() {
             eventLog.innerHTML = '<div style="padding: 14px; color: var(--muted);">暂无事件记录</div>';
         } else {
             eventLog.innerHTML = recentEvents.map(ev => {
-                const isOnline = ev.raw.status === 'online';
-                const eventLabel = isOnline ? '上线' : '下线';
                 return '<div class="event-item">' +
                     '<div class="event-main">' +
-                    '<span class="event-device ' + (isOnline ? 'event-online' : 'event-offline') + '">' +
-                    (isOnline ? '↑' : '↓') + ' ' + escapeHtml(ev.deviceName) +
+                    '<span class="event-device">' +
+                    escapeHtml(ev.deviceName) +
                     '</span>' +
-                    '<span class="event-start">开始: ' + escapeHtml(formatTimeShort(ev.startTime)) + '</span>' +
                     '</div>' +
                     '<div class="event-times">' +
-                    '<span class="event-time">' + eventLabel + ': ' + escapeHtml(formatTimeShort(ev.eventTime)) + '</span>' +
+                    '<span class="event-time">' + escapeHtml(formatTimeShort(ev.startTime)) + ' ↔ ' + escapeHtml(formatTimeShort(ev.eventTime)) + '</span>' +
                     '</div>' +
                     '</div>';
             }).join('');
