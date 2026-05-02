@@ -18,9 +18,7 @@
             --offline: #e74c3c;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -46,16 +44,8 @@
             margin-bottom: 14px;
         }
 
-        h1 {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1.1;
-        }
-
-        .sub {
-            margin-top: 8px;
-            color: var(--muted);
-        }
+        h1 { margin: 0; font-size: 28px; line-height: 1.1; }
+        .sub { margin-top: 8px; color: var(--muted); }
 
         .panel {
             background: rgba(255, 253, 248, 0.92);
@@ -71,99 +61,25 @@
             margin-bottom: 14px;
         }
 
-        .card {
-            padding: 14px 14px;
-        }
+        .card { padding: 14px 14px; }
+        .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .value { margin-top: 6px; font-size: 22px; font-weight: 700; }
+        .status-ok { color: var(--accent); }
+        .status-warn { color: var(--warn); }
 
-        .label {
-            color: var(--muted);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
+        .table-panel { overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); text-align: left; font-size: 14px; }
+        th { background: #f7f1e6; color: #5b5145; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+        tr:last-child td { border-bottom: 0; }
+        .empty { padding: 28px 16px; text-align: center; color: var(--muted); }
 
-        .value {
-            margin-top: 6px;
-            font-size: 22px;
-            font-weight: 700;
-        }
-
-        .status-ok {
-            color: var(--accent);
-        }
-
-        .status-warn {
-            color: var(--warn);
-        }
-
-        .table-panel {
-            overflow: hidden;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
-            font-size: 14px;
-        }
-
-        th {
-            background: #f7f1e6;
-            color: #5b5145;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        tr:last-child td {
-            border-bottom: 0;
-        }
-
-        .empty {
-            padding: 28px 16px;
-            text-align: center;
-            color: var(--muted);
-        }
-
-        .mobile-list {
-            display: none;
-            gap: 10px;
-        }
-
-        .device-card {
-            padding: 14px;
-        }
-
-        .device-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 12px;
-        }
-
-        .device-name {
-            font-size: 18px;
-            font-weight: 700;
-        }
-
-        .device-expire {
-            color: var(--muted);
-            font-size: 12px;
-            white-space: nowrap;
-        }
-
-        .device-ip {
-            margin-top: 4px;
-            color: var(--accent);
-            font-family: "SFMono-Regular", Consolas, monospace;
-            font-size: 15px;
-        }
+        .mobile-list { display: none; gap: 10px; }
+        .device-card { padding: 14px; }
+        .device-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+        .device-name { font-size: 18px; font-weight: 700; }
+        .device-expire { color: var(--muted); font-size: 12px; white-space: nowrap; }
+        .device-ip { margin-top: 4px; color: var(--accent); font-family: "SFMono-Regular", Consolas, monospace; font-size: 15px; }
 
         .time-range {
             display: flex;
@@ -183,55 +99,32 @@
             transition: all 0.2s;
         }
 
-        .time-range button:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
+        .time-range button:hover { border-color: var(--accent); color: var(--accent); }
+        .time-range button.active { background: var(--accent); color: white; border-color: var(--accent); }
 
-        .time-range button.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
+        .chart-container { width: 100%; height: 400px; margin-top: 14px; }
 
-        .chart-container {
-            width: 100%;
-            height: 500px;
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            padding: 14px;
             margin-top: 14px;
         }
 
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
         @media (max-width: 720px) {
-            .hero {
-                display: block;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .wrap {
-                padding: 14px 10px 24px;
-            }
-
-            .summary {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .value {
-                font-size: 18px;
-            }
-
-            .table-panel {
-                display: none;
-            }
-
-            .mobile-list {
-                display: grid;
-            }
-
-            .chart-container {
-                height: 400px;
-            }
+            .hero { display: block; }
+            h1 { font-size: 24px; }
+            .wrap { padding: 14px 10px 24px; }
+            .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .value { font-size: 18px; }
+            .table-panel { display: none; }
+            .mobile-list { display: grid; }
+            .chart-container { height: 300px; }
         }
     </style>
 </head>
@@ -267,41 +160,32 @@
         <div class="panel table-panel">
             <table>
                 <thead>
-                    <tr>
-                        <th>IP</th>
-                        <th>Host</th>
-                        <th>Lease End</th>
-                    </tr>
+                    <tr><th>IP</th><th>Host</th><th>Lease End</th></tr>
                 </thead>
                 <tbody id="tableBody">
-                    <tr>
-                        <td class="empty" colspan="3">暂无设备数据</td>
-                    </tr>
+                    <tr><td class="empty" colspan="3">暂无设备数据</td></tr>
                 </tbody>
             </table>
         </div>
 
         <div id="mobileList" class="mobile-list">
-            <div class="panel device-card">
-                <div class="empty">暂无设备数据</div>
-            </div>
+            <div class="panel device-card"><div class="empty">暂无设备数据</div></div>
         </div>
 
         <div class="panel">
-            <h2 style="padding: 14px 14px 0; margin: 0; font-size: 18px; color: var(--muted);">在线记录 (点=在线，无点=离线)</h2>
+            <h2 style="padding: 14px 14px 0; margin: 0; font-size: 18px; color: var(--muted);">在线时段统计</h2>
             <div class="time-range" style="padding: 0 14px;">
-                <button data-hours="1" class="active">1小时</button>
-                <button data-hours="6">6小时</button>
-                <button data-hours="24">24小时</button>
-                <button data-hours="168">7天</button>
-                <button data-hours="720">30天</button>
+                <button data-days="1" class="active">最近1天</button>
+                <button data-days="2">最近2天</button>
+                <button data-days="3">最近3天</button>
             </div>
             <div id="chart" class="chart-container"></div>
+            <div id="stats" class="stats-panel"></div>
         </div>
     </div>
 
     <script>
-        let currentTimeRange = 1;
+        let currentDays = 1;
         let chart = null;
 
         function formatTime(ts) {
@@ -316,28 +200,8 @@
 
         function escapeHtml(text) {
             return String(text == null ? "" : text)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#39;");
-        }
-
-        function getIPLastDigit(ip) {
-            if (!ip) return 0;
-            const parts = ip.split('.');
-            return parts.length > 0 ? parseInt(parts[parts.length - 1], 10) : 0;
-        }
-
-        function formatTimeAxis(ts) {
-            const date = new Date(ts);
-            if (currentTimeRange <= 24) {
-                return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-            } else if (currentTimeRange <= 168) {
-                return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit' });
-            } else {
-                return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
-            }
+                .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
         }
 
         async function loadClients() {
@@ -370,7 +234,6 @@
                         return '<div class="panel device-card"><div class="device-head"><div class="device-name">' + escapeHtml(item.host || "-") + '</div><div class="device-expire">' + escapeHtml(formatTime(item.leaseEnd)) + '</div></div><div class="device-ip">' + escapeHtml(item.ip || "-") + '</div></div>';
                     }).join("");
                 }
-
                 refreshText.textContent = "最近刷新: " + new Date().toLocaleTimeString();
             } catch (e) {
                 document.getElementById("status").textContent = "Error";
@@ -382,11 +245,11 @@
         async function loadHistory() {
             try {
                 const endTime = Date.now();
-                const startTime = endTime - currentTimeRange * 60 * 60 * 1000;
+                const startTime = endTime - currentDays * 24 * 60 * 60 * 1000;
 
                 const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, { cache: "no-store" });
                 const json = await response.json();
-                const records = Array.isArray(json.data.rows) ? json.data.rows : [];
+                const records = Array.isArray(json.data) ? json.data : [];
 
                 // Group by IP
                 const byIP = {};
@@ -395,111 +258,187 @@
                     byIP[r.ip].push(r);
                 }
 
-                // Build series data
-                const seriesData = [];
-                const yAxisLabels = [];
-                const ipList = Object.keys(byIP).sort((a, b) => {
+                // Build online data per minute for each IP
+                const minuteMs = 60000;
+                const deviceList = Object.keys(byIP).sort((a, b) => {
                     const hostA = byIP[a][0]?.host || '';
                     const hostB = byIP[b][0]?.host || '';
                     return hostA.localeCompare(hostB);
                 });
 
-                // Assign Y position to each IP based on host name order
-                ipList.forEach((ip, idx) => {
-                    yAxisLabels.push(ip);
+                const series = [];
+                const stats = [];
+
+                deviceList.forEach((ip, idx) => {
+                    const deviceRecords = byIP[ip];
+                    const host = deviceRecords[0]?.host || '-';
+                    const label = `${escapeHtml(host)} (${escapeHtml(ip)})`;
+
+                    // Build set of online minutes
+                    const onlineMinutes = new Set();
+                    deviceRecords.forEach(r => {
+                        if (Number(r.online) === 1) {
+                            onlineMinutes.add(Number(r.time));
+                        }
+                    });
+
+                    // Find all segments (continuous online periods)
+                    const segments = [];
+                    let segStart = null;
+                    let currentTime = startTime;
+                    const endMinute = Math.floor(endTime / minuteMs) * minuteMs;
+                    const startMinute = Math.floor(startTime / minuteMs) * minuteMs;
+
+                    // Find first online minute
+                    let firstOnline = null;
+                    let lastOnline = null;
+                    for (const t of onlineMinutes) {
+                        if (t >= startMinute && t <= endMinute) {
+                            if (firstOnline === null || t < firstOnline) firstOnline = t;
+                            if (lastOnline === null || t > lastOnline) lastOnline = t;
+                        }
+                    }
+
+                    if (firstOnline !== null && lastOnline !== null) {
+                        // Find gaps and create segments
+                        let inSegment = false;
+                        let segStart = null;
+                        let t = firstOnline;
+
+                        while (t <= lastOnline) {
+                            const isOnline = onlineMinutes.has(t);
+
+                            if (isOnline && !inSegment) {
+                                inSegment = true;
+                                segStart = t;
+                            } else if (!isOnline && inSegment) {
+                                // Gap found, end segment
+                                segments.push({ start: segStart, end: t - minuteMs });
+                                inSegment = false;
+                            }
+
+                            t += minuteMs;
+                        }
+
+                        // Close final segment
+                        if (inSegment) {
+                            segments.push({ start: segStart, end: lastOnline + minuteMs });
+                        }
+                    }
+
+                    // Calculate stats
+                    const totalOnlineMinutes = onlineMinutes.size;
+                    const totalMinutes = Math.floor((endMinute - startMinute) / minuteMs) + 1;
+                    const onlineRate = totalMinutes > 0 ? (totalOnlineMinutes / totalMinutes * 100).toFixed(1) : 0;
+                    const onlineCount = segments.length;
+
+                    stats.push({
+                        ip: ip,
+                        host: host,
+                        label: label,
+                        totalMinutes: totalMinutes,
+                        onlineMinutes: totalOnlineMinutes,
+                        onlineRate: onlineRate,
+                        onlineCount: onlineCount,
+                        firstOnline: firstOnline,
+                        lastOnline: lastOnline
+                    });
+
+                    // Create bars for each segment
+                    segments.forEach((seg, sIdx) => {
+                        series.push({
+                            name: label,
+                            type: 'bar',
+                            stack: ip, // Same stack for same device
+                            barMaxWidth: 30,
+                            itemStyle: {
+                                color: sIdx === 0 ? '#2ecc71' : '#27ae60'
+                            },
+                            data: [[seg.start, 0], [seg.end, 0]],
+                            label: {
+                                show: true,
+                                formatter: function(p) {
+                                    const dur = Math.round((seg.end - seg.start) / minuteMs);
+                                    return dur + '分钟';
+                                },
+                                position: 'insideRight',
+                                fontSize: 11,
+                                color: '#fff'
+                            },
+                            encode: {
+                                x: [0, 1],
+                                y: idx
+                            }
+                        });
+                    });
                 });
 
-                // Filter online records only and create scatter data
-                for (const r of records) {
-                    if (Number(r.online) === 1) {
-                        const yPos = ipList.indexOf(r.ip);
-                        seriesData.push([Number(r.time), yPos]);
-                    }
+                // Render stats
+                const statsEl = document.getElementById('stats');
+                if (deviceList.length === 0) {
+                    statsEl.innerHTML = '<div class="stat-item"><div class="stat-value">无数据</div><div class="stat-label">无设备记录</div></div>';
+                } else {
+                    statsEl.innerHTML = stats.map(s => `
+                        <div class="stat-item">
+                            <div class="stat-value">${s.onlineRate}%</div>
+                            <div class="stat-label">${escapeHtml(s.host)} 在线率</div>
+                        </div>
+                    `).join('');
                 }
-
-                // Sort by time for proper line rendering
-                seriesData.sort((a, b) => a[0] - b[0]);
-
-                // Create series with line connecting points
-                const series = [{
-                    name: '在线',
-                    type: 'line',
-                    data: seriesData,
-                    symbol: 'circle',
-                    symbolSize: 6,
-                    lineStyle: {
-                        width: 1,
-                        color: '#2ecc71'
-                    },
-                    itemStyle: {
-                        color: '#2ecc71'
-                    },
-                    connectNulls: false,
-                    smooth: false
-                }];
-
-                // Calculate y-axis min/max
-                const yMin = 0;
-                const yMax = Math.max(ipList.length - 1, 1);
 
                 // Render chart
                 if (!chart) {
                     chart = echarts.init(document.getElementById('chart'));
                 }
 
+                const timeFormat = currentDays === 1 ? 'HH:mm' : (currentDays <= 2 ? 'MM-DD HH:mm' : 'MM-DD');
+
                 const option = {
                     tooltip: {
-                        trigger: 'item',
+                        trigger: 'axis',
+                        axisPointer: { type: 'shadow' },
                         formatter: function(params) {
-                            const time = new Date(params.value[0]).toLocaleString();
-                            const ip = yAxisLabels[params.value[1]] || '';
-                            const host = byIP[ip]?.[0]?.host || '-';
-                            return `${escapeHtml(host)} (${escapeHtml(ip)})<br/>在线时间: ${time}`;
+                            if (!params || params.length === 0) return '';
+                            const p = params[0];
+                            const start = new Date(p.data[0]).toLocaleString('zh-CN');
+                            const end = new Date(p.data[1]).toLocaleString('zh-CN');
+                            const dur = Math.round((p.data[1] - p.data[0]) / minuteMs);
+                            return `${p.seriesName}<br/>上线: ${start}<br/>下线: ${end}<br/>持续: ${dur}分钟`;
                         }
                     },
+                    legend: {
+                        type: 'scroll',
+                        width: '70%',
+                        pageTextStyle: { color: '#73685b' },
+                        textStyle: { color: '#2b241c', fontSize: 12 }
+                    },
                     grid: {
-                        left: '80',
-                        right: '20',
-                        top: '20',
-                        bottom: '60'
+                        left: '120',
+                        right: '80',
+                        top: 60,
+                        bottom: 40
                     },
                     xAxis: {
                         type: 'time',
                         axisLabel: {
                             formatter: function(value) {
-                                return formatTimeAxis(value);
+                                return new Date(value).toLocaleString('zh-CN', {
+                                    month: '2-digit', day: '2-digit',
+                                    hour: '2-digit', minute: '2-digit'
+                                });
                             },
-                            interval: Math.floor(currentTimeRange * 60 / 8)
+                            interval: currentDays === 1 ? 3600000 : (currentDays === 2 ? 10800000 : 21600000)
                         },
-                        splitLine: {
-                            show: true,
-                            lineStyle: {
-                                color: '#e8e0d0',
-                                type: 'dashed'
-                            }
-                        }
+                        splitLine: { show: true, lineStyle: { color: '#e8e0d0', type: 'dashed' } }
                     },
                     yAxis: {
                         type: 'category',
-                        data: yAxisLabels,
-                        inverse: false,
-                        axisLabel: {
-                            formatter: function(value) {
-                                const lastDigit = getIPLastDigit(value);
-                                const host = byIP[value]?.[0]?.host || '';
-                                const shortHost = host.length > 8 ? host.substring(0, 7) + '...' : host;
-                                return `${shortHost}[${lastDigit}]`;
-                            }
-                        },
-                        min: yMin - 0.5,
-                        max: yMax + 0.5
+                        data: deviceList.map(ip => `${escapeHtml(byIP[ip][0]?.host || '-')} (${escapeHtml(ip)})`),
+                        axisLabel: { fontSize: 11 },
+                        inverse: false
                     },
                     series: series,
-                    dataZoom: [{
-                        type: 'inside',
-                        xAxisIndex: 0,
-                        filterMode: 'none'
-                    }]
+                    dataZoom: [{ type: 'inside', xAxisIndex: 0, filterMode: 'none' }]
                 };
 
                 chart.setOption(option, true);
@@ -514,20 +453,17 @@
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.time-range button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentTimeRange = parseInt(btn.dataset.hours);
+                currentDays = parseInt(btn.dataset.days);
                 loadHistory();
             });
         });
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            if (chart) chart.resize();
-        });
+        window.addEventListener('resize', () => { if (chart) chart.resize(); });
 
         loadClients();
         setInterval(loadClients, 3000);
         loadHistory();
-        setInterval(loadHistory, 30000);
+        setInterval(loadHistory, 60000);
     </script>
 </body>
 </html>
