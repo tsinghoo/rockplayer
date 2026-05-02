@@ -5130,7 +5130,7 @@ app.post('/video/openwrt/clients/upload', async (req, res) => {
 
     // Check which IPs were online in previous minute
     const prevOnlineRows = await db.allSync(
-        `SELECT ip FROM openwrt_onlines WHERE status = 'online' AND time = ?`,
+        `SELECT ip FROM openwrt_onlines WHERE time = ?`,
         [prevMinute],
         req.threadId
     );
@@ -5140,17 +5140,17 @@ app.post('/video/openwrt/clients/upload', async (req, res) => {
     for (const client of data.clients) {
         // Get the latest record for this IP
         const latestRow = await db.getSync(
-            `SELECT status, time FROM openwrt_onlines WHERE ip = ? ORDER BY time DESC LIMIT 1`,
+            `SELECT startTime,time FROM openwrt_onlines WHERE ip = ? ORDER BY time DESC LIMIT 1`,
             [client.ip],
             req.threadId
         );
 
-        const isReconnect = latestRow && latestRow.status === 'online' &&
+        const isReconnect = latestRow &&
                              currentMinute - parseInt(latestRow.time) <= 1;
 
         if (isReconnect) {
             // Continue same online session, just update time
-            const latestId = `${client.ip}_${latestRow.time}`;
+            const latestId = `${client.ip}_${latestRow.startTime}`;
             await db.runSync(
                 `UPDATE openwrt_onlines SET time = ?, mac = ?, host = ? WHERE id = ?`,
                 [currentMinute, client.mac, client.host, latestId],
@@ -5165,25 +5165,6 @@ app.post('/video/openwrt/clients/upload', async (req, res) => {
                 req.threadId
             );
             info(`openwrt: ${client.host || client.ip} online at ${formatTimeStr(currentMinute)}`, req.threadId);
-        }
-    }
-
-    // Mark IPs that were online in previous minute but not in current clients as offline
-    for (const prevIP of prevOnlineIPs) {
-        if (!currentIPs.has(prevIP)) {
-            const id = `${prevIP}_${currentMinute}`;
-            // Get the device info from previous record
-            const prevRecord = await db.getSync(
-                `SELECT mac, host, startTime FROM openwrt_onlines WHERE ip = ? ORDER BY time DESC LIMIT 1`,
-                [prevIP],
-                req.threadId
-            );
-            await db.runSync(
-                `INSERT OR REPLACE INTO openwrt_onlines (id, ip, mac, host, status, time, startTime) VALUES (?, ?, ?, ?, 'offline', ?, ?)`,
-                [id, prevIP, prevRecord?.mac || '', prevRecord?.host || '-', currentMinute, prevRecord?.startTime || currentMinute],
-                req.threadId
-            );
-            info(`openwrt: ${prevRecord?.host || prevIP} offline at ${formatTimeStr(currentMinute)}`, req.threadId);
         }
     }
 
