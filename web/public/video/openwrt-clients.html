@@ -102,7 +102,7 @@
         .time-range button:hover { border-color: var(--accent); color: var(--accent); }
         .time-range button.active { background: var(--accent); color: white; border-color: var(--accent); }
 
-        .chart-container { width: 100%; height: 400px; margin-top: 14px; }
+        .chart-container { width: 100%; height: 500px; margin-top: 14px; }
 
         .stats-panel {
             display: grid;
@@ -116,6 +116,28 @@
         .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
         .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
 
+        .event-log {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+
+        .event-item {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-item:last-child { border-bottom: 0; }
+
+        .event-device { font-weight: 600; }
+        .event-time { color: var(--muted); font-size: 12px; }
+
+        .event-online { color: var(--online); }
+        .event-offline { color: var(--offline); }
+
         @media (max-width: 720px) {
             .hero { display: block; }
             h1 { font-size: 24px; }
@@ -124,7 +146,7 @@
             .value { font-size: 18px; }
             .table-panel { display: none; }
             .mobile-list { display: grid; }
-            .chart-container { height: 300px; }
+            .chart-container { height: 400px; }
         }
     </style>
 </head>
@@ -173,14 +195,15 @@
         </div>
 
         <div class="panel">
-            <h2 style="padding: 14px 14px 0; margin: 0; font-size: 18px; color: var(--muted);">在线时段统计</h2>
+            <h2 style="padding: 14px 14px 0; margin: 0; font-size: 18px; color: var(--muted);">在线时段</h2>
             <div class="time-range" style="padding: 0 14px;">
                 <button data-days="1" class="active">最近1天</button>
                 <button data-days="2">最近2天</button>
                 <button data-days="3">最近3天</button>
             </div>
             <div id="chart" class="chart-container"></div>
-            <div id="stats" class="stats-panel"></div>
+            <h3 style="padding: 14px 14px 0; margin: 0; font-size: 16px; color: var(--muted);">事件记录</h3>
+            <div id="eventLog" class="event-log"></div>
         </div>
     </div>
 
@@ -196,6 +219,15 @@
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) return "-";
             return date.toLocaleString();
+        }
+
+        function formatTimeShort(ts) {
+            if (!ts) return "-";
+            let value = Number(ts);
+            if (value < 1000000000000) value = value * 1000;
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return "-";
+            return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
 
         function escapeHtml(text) {
@@ -249,17 +281,26 @@
 
                 const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, { cache: "no-store" });
                 const json = await response.json();
-                const records = Array.isArray(json.data.rows) ? json.data.rows : [];
+                const records = Array.isArray(json.data) ? json.data : [];
 
-                // Group by IP
+                if (records.length === 0) {
+                    document.getElementById('eventLog').innerHTML = '<div class="event-item"><span class="empty">暂无记录</span></div>';
+                    if (chart) chart.clear();
+                    return;
+                }
+
+                // Group by IP and sort events chronologically
                 const byIP = {};
                 for (const r of records) {
                     if (!byIP[r.ip]) byIP[r.ip] = [];
-                    byIP[r.ip].push(r);
+                    byIP[r.ip].push({
+                        status: r.status,
+                        time: Number(r.time),
+                        host: r.host
+                    });
                 }
 
-                // Build online data per minute for each IP
-                const minuteMs = 60000;
+                // Process each IP to find online/offline periods
                 const deviceList = Object.keys(byIP).sort((a, b) => {
                     const hostA = byIP[a][0]?.host || '';
                     const hostB = byIP[b][0]?.host || '';
@@ -267,142 +308,115 @@
                 });
 
                 const series = [];
-                const stats = [];
 
                 deviceList.forEach((ip, idx) => {
-                    const deviceRecords = byIP[ip];
-                    const host = deviceRecords[0]?.host || '-';
+                    const events = byIP[ip].sort((a, b) => a.time - b.time);
+                    const host = events[0]?.host || '-';
                     const label = `${escapeHtml(host)} (${escapeHtml(ip)})`;
 
-                    // Build set of online minutes
-                    const onlineMinutes = new Set();
-                    deviceRecords.forEach(r => {
-                        if (Number(r.online) === 1) {
-                            onlineMinutes.add(Number(r.time));
-                        }
-                    });
+                    let onlineStart = null;
+                    let offlineCount = 0;
+                    let onlineCount = 0;
 
-                    // Find all segments (continuous online periods)
-                    const segments = [];
-                    let segStart = null;
-                    let currentTime = startTime;
-                    const endMinute = Math.floor(endTime / minuteMs) * minuteMs;
-                    const startMinute = Math.floor(startTime / minuteMs) * minuteMs;
+                    // Merge consecutive online records into periods
+                    for (let i = 0; i < events.length; i++) {
+                        const evt = events[i];
 
-                    // Find first online minute
-                    let firstOnline = null;
-                    let lastOnline = null;
-                    for (const t of onlineMinutes) {
-                        if (t >= startMinute && t <= endMinute) {
-                            if (firstOnline === null || t < firstOnline) firstOnline = t;
-                            if (lastOnline === null || t > lastOnline) lastOnline = t;
-                        }
-                    }
-
-                    if (firstOnline !== null && lastOnline !== null) {
-                        // Find gaps and create segments
-                        let inSegment = false;
-                        let segStart = null;
-                        let t = firstOnline;
-
-                        while (t <= lastOnline) {
-                            const isOnline = onlineMinutes.has(t);
-
-                            if (isOnline && !inSegment) {
-                                inSegment = true;
-                                segStart = t;
-                            } else if (!isOnline && inSegment) {
-                                // Gap found, end segment
-                                segments.push({ start: segStart, end: t - minuteMs });
-                                inSegment = false;
+                        if (evt.status === 'online') {
+                            onlineCount++;
+                            if (onlineStart === null) {
+                                onlineStart = evt.time;
                             }
+                        } else if (evt.status === 'offline') {
+                            offlineCount++;
+                            if (onlineStart !== null) {
+                                // End of an online period
+                                const onlineEnd = evt.time;
+                                const duration = Math.round((onlineEnd - onlineStart) / 60000);
 
-                            t += minuteMs;
-                        }
+                                series.push({
+                                    name: label,
+                                    type: 'bar',
+                                    barMaxWidth: 40,
+                                    itemStyle: { color: '#2ecc71' },
+                                    data: [[onlineStart, 1], [onlineEnd, 1]],
+                                    label: {
+                                        show: true,
+                                        formatter: function(p) {
+                                            return duration + '分钟';
+                                        },
+                                        position: 'insideRight',
+                                        fontSize: 11,
+                                        color: '#fff'
+                                    }
+                                });
 
-                        // Close final segment
-                        if (inSegment) {
-                            segments.push({ start: segStart, end: lastOnline + minuteMs });
+                                // Mark as offline (gap)
+                                series.push({
+                                    name: label,
+                                    type: 'bar',
+                                    barMaxWidth: 5,
+                                    itemStyle: { color: '#f0ebe3' },
+                                    data: [[onlineEnd, 1], [onlineEnd, 1]],
+                                    silent: true
+                                });
+
+                                onlineStart = null;
+                            }
                         }
                     }
 
-                    // Calculate stats
-                    const totalOnlineMinutes = onlineMinutes.size;
-                    const totalMinutes = Math.floor((endMinute - startMinute) / minuteMs) + 1;
-                    const onlineRate = totalMinutes > 0 ? (totalOnlineMinutes / totalMinutes * 100).toFixed(1) : 0;
-                    const onlineCount = segments.length;
+                    // If still online at the end, draw a bar to current time
+                    if (onlineStart !== null) {
+                        const onlineEnd = endTime;
+                        const duration = Math.round((onlineEnd - onlineStart) / 60000);
 
-                    stats.push({
-                        ip: ip,
-                        host: host,
-                        label: label,
-                        totalMinutes: totalMinutes,
-                        onlineMinutes: totalOnlineMinutes,
-                        onlineRate: onlineRate,
-                        onlineCount: onlineCount,
-                        firstOnline: firstOnline,
-                        lastOnline: lastOnline
-                    });
-
-                    // Create bars for each segment
-                    segments.forEach((seg, sIdx) => {
                         series.push({
                             name: label,
                             type: 'bar',
-                            stack: ip, // Same stack for same device
-                            barMaxWidth: 30,
-                            itemStyle: {
-                                color: sIdx === 0 ? '#2ecc71' : '#27ae60'
-                            },
-                            data: [[seg.start, 0], [seg.end, 0]],
+                            barMaxWidth: 40,
+                            itemStyle: { color: '#2ecc71' },
+                            data: [[onlineStart, 1], [onlineEnd, 1]],
                             label: {
                                 show: true,
                                 formatter: function(p) {
-                                    const dur = Math.round((seg.end - seg.start) / minuteMs);
-                                    return dur + '分钟';
+                                    return duration + '分钟';
                                 },
                                 position: 'insideRight',
                                 fontSize: 11,
                                 color: '#fff'
-                            },
-                            encode: {
-                                x: [0, 1],
-                                y: idx
                             }
                         });
-                    });
+                    }
                 });
 
-                // Render stats
-                const statsEl = document.getElementById('stats');
-                if (deviceList.length === 0) {
-                    statsEl.innerHTML = '<div class="stat-item"><div class="stat-value">无数据</div><div class="stat-label">无设备记录</div></div>';
-                } else {
-                    statsEl.innerHTML = stats.map(s => `
-                        <div class="stat-item">
-                            <div class="stat-value">${s.onlineRate}%</div>
-                            <div class="stat-label">${escapeHtml(s.host)} 在线率</div>
-                        </div>
-                    `).join('');
-                }
+                // Render event log
+                const eventLog = document.getElementById('eventLog');
+                const sortedEvents = records.sort((a, b) => b.time - a.time).slice(0, 50);
+                eventLog.innerHTML = sortedEvents.map(e => `
+                    <div class="event-item">
+                        <span class="event-device event-${e.status}">
+                            ${e.status === 'online' ? '↑' : '↓'} ${escapeHtml(e.host || '-')} (${escapeHtml(e.ip)})
+                        </span>
+                        <span class="event-time">${formatTimeShort(e.time)}</span>
+                    </div>
+                `).join('');
 
                 // Render chart
                 if (!chart) {
                     chart = echarts.init(document.getElementById('chart'));
                 }
 
-                const timeFormat = currentDays === 1 ? 'HH:mm' : (currentDays <= 2 ? 'MM-DD HH:mm' : 'MM-DD');
-
                 const option = {
                     tooltip: {
                         trigger: 'axis',
                         axisPointer: { type: 'shadow' },
                         formatter: function(params) {
-                            if (!params || params.length === 0) return '';
+                            if (!params || params.length === 0 || params[0].data[0] === params[0].data[1]) return '';
                             const p = params[0];
                             const start = new Date(p.data[0]).toLocaleString('zh-CN');
                             const end = new Date(p.data[1]).toLocaleString('zh-CN');
-                            const dur = Math.round((p.data[1] - p.data[0]) / minuteMs);
+                            const dur = Math.round((p.data[1] - p.data[0]) / 60000);
                             return `${p.seriesName}<br/>上线: ${start}<br/>下线: ${end}<br/>持续: ${dur}分钟`;
                         }
                     },
@@ -413,7 +427,7 @@
                         textStyle: { color: '#2b241c', fontSize: 12 }
                     },
                     grid: {
-                        left: '120',
+                        left: '140',
                         right: '80',
                         top: 60,
                         bottom: 40
