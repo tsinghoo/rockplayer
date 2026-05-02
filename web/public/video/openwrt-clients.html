@@ -196,10 +196,11 @@
 
         <div class="panel">
             <h2 style="padding: 14px 14px 0; margin: 0; font-size: 18px; color: var(--muted);">在线时段</h2>
-            <div class="time-range" style="padding: 0 14px;">
-                <button data-days="1" class="active">最近1天</button>
-                <button data-days="2">最近2天</button>
-                <button data-days="3">最近3天</button>
+            <div class="time-range" style="padding: 0 14px; align-items: center;">
+                <button data-date="today" class="active">今天</button>
+                <button data-date="yesterday">昨天</button>
+                <button data-date="2daysago">前天</button>
+                <input type="date" id="customDate" style="padding: 8px 12px; border: 1px solid var(--line); border-radius: 20px; font-size: 13px; background: var(--panel);">
             </div>
             <div id="chart" class="chart-container"></div>
             <h3 style="padding: 14px 14px 0; margin: 0; font-size: 16px; color: var(--muted);">事件记录</h3>
@@ -208,8 +209,30 @@
     </div>
 
     <script>
-        let currentDays = 1;
+        let currentDate = getTodayStr(); // YYMMDD format
         let chart = null;
+
+        // Get YYMMDD string for a date
+        function getDateStr(d = new Date()) {
+            const yy = String(d.getFullYear()).slice(-2);
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return yy + mm + dd;
+        }
+
+        // Get today in YYMMDD format
+        function getTodayStr() {
+            return getDateStr(new Date());
+        }
+
+        // Parse YYMMDD string to Date object
+        function parseDateStr(str) {
+            if (!str || !/^\d{6}$/.test(str)) return null;
+            const yy = parseInt(str.substring(0, 2)) + 2000;
+            const mm = parseInt(str.substring(2, 4));
+            const dd = parseInt(str.substring(4, 6));
+            return new Date(yy, mm - 1, dd);
+        }
 
         function formatTime(ts) {
             if (!ts) return "-";
@@ -307,8 +330,12 @@
 
         async function loadHistory() {
             try {
-                const endTime = Date.now();
-                const startTime = endTime - currentDays * 24 * 60 * 60 * 1000;
+                const date = parseDateStr(currentDate);
+                if (!date) return;
+                // Start: midnight of selected date
+                const startTime = date.getTime();
+                // End: midnight of next day (exclusive)
+                const endTime = startTime + 24 * 60 * 60 * 1000;
 
                 const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, { cache: "no-store" });
                 const json = await response.json();
@@ -472,7 +499,7 @@
                                     hour: '2-digit', minute: '2-digit'
                                 });
                             },
-                            interval: currentDays === 1 ? 3600000 : (currentDays === 2 ? 10800000 : 21600000)
+                            interval: 3600000 // 1 hour
                         },
                         splitLine: { show: true, lineStyle: { color: '#e8e0d0', type: 'dashed' } }
                     },
@@ -498,9 +525,28 @@
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.time-range button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                currentDays = parseInt(btn.dataset.days);
+                const dateAttr = btn.dataset.date;
+                if (dateAttr === 'today') {
+                    currentDate = getTodayStr();
+                } else if (dateAttr === 'yesterday') {
+                    currentDate = getDateStr(new Date(Date.now() - 86400000));
+                } else if (dateAttr === '2daysago') {
+                    currentDate = getDateStr(new Date(Date.now() - 2 * 86400000));
+                }
+                // Clear custom date input
+                document.getElementById('customDate').value = '';
                 loadHistory();
             });
+        });
+
+        // Custom date input
+        document.getElementById('customDate').addEventListener('change', (e) => {
+            const val = e.target.value; // YYYY-MM-DD
+            if (!val) return;
+            const [yyyy, mm, dd] = val.split('-');
+            currentDate = String(parseInt(yyyy) - 2000).padStart(2, '0') + mm + dd;
+            document.querySelectorAll('.time-range button').forEach(b => b.classList.remove('active'));
+            loadHistory();
         });
 
         window.addEventListener('resize', () => { if (chart) chart.resize(); });
