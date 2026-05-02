@@ -131,166 +131,154 @@ async function loadHistory() {
     try {
         const date = parseDateStr(currentDate);
         if (!date) return;
-        // Start: midnight of selected date
         const startTime = date.getTime();
-        // End: midnight of next day (exclusive)
         const endTime = startTime + 24 * 60 * 60 * 1000;
 
         const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, { cache: "no-store" });
         const json = await response.json();
         const records = Array.isArray(json.data) ? json.data : [];
 
-        if (records.length === 0) {
-            document.getElementById('eventLog').innerHTML = '<div class="event-item"><span class="empty">暂无记录</span></div>';
-            if (chart) chart.clear();
-            return;
-        }
-
-        // Group by IP and sort events chronologically
-        const byIP = {};
-        for (const r of records) {
-            const ts = parseTimeToTimestamp(r.time);
-            const startTs = r.startTime ? parseTimeToTimestamp(r.startTime) : ts;
-            if (ts === null) continue;
-            if (!byIP[r.ip]) byIP[r.ip] = [];
-            byIP[r.ip].push({
-                status: r.status,
-                time: ts,
-                startTime: startTs,
-                host: r.host
+        // Build device data: collect online/offline events
+        const deviceMap = new Map();
+        records.forEach(rec => {
+            const name = rec.host || rec.ip || 'Unknown';
+            if (!deviceMap.has(name)) {
+                deviceMap.set(name, []);
+            }
+            deviceMap.get(name).push({
+                status: rec.status,
+                time: parseTimeToTimestamp(rec.time),
+                startTime: parseTimeToTimestamp(rec.startTime)
             });
-        }
-
-        // Process each IP to find online/offline periods
-        const deviceList = Object.keys(byIP).sort((a, b) => {
-            const hostA = byIP[a][0]?.host || '';
-            const hostB = byIP[b][0]?.host || '';
-            return hostA.localeCompare(hostB);
         });
 
-        // Create index map for y-axis positioning
-        const ipToIndex = {};
-        deviceList.forEach((ip, idx) => { ipToIndex[ip] = idx; });
+        // Convert to Gantt-style data for ECharts
+        const seriesData = [];
+        const categories = [];
 
-        const series = [];
+        let idx = 0;
+        deviceMap.forEach((events, name) => {
+            categories.push(name);
 
-        deviceList.forEach((ip, idx) => {
-            const events = byIP[ip].sort((a, b) => a.time - b.time);
-            const host = events[0]?.host || '-';
-            const label = `${escapeHtml(host)} (${escapeHtml(ip)})`;
+            // Sort events by time
+            events.sort((a, b) => (a.time || 0) - (b.time || 0));
 
-            // Group events: each online/offline pair forms a period
-            // Use startTime for the bar start, time for the bar end
-            for (let i = 0; i < events.length; i++) {
-                const evt = events[i];
+            events.forEach(ev => {
+                if (ev.status === 'online') {
+                    // online event: start time is startTime if available, otherwise use the record's time
+                    const tStart = ev.startTime || ev.time;
+                    // Look ahead for the next offline event for this device
+                    const nextOffline = events.find(e => e.status === 'offline' && e.time > ev.time);
+                    const tEnd = nextOffline ? nextOffline.time : endTime;
 
-                // For online records, draw a bar from startTime to time
-                if (evt.status === 'online') {
-                    const barStart = evt.startTime || evt.time;
-                    const barEnd = evt.time;
-
-                    series.push({
-                        name: label,
-                        type: 'bar',
-                        yAxisIndex: 0,
-                        barMaxWidth: 40,
-                        itemStyle: { color: '#2ecc71' },
-                        data: [[barStart, idx], [barEnd, idx]],
-                        label: {
-                            show: true,
-                            formatter: function() {
-                                const duration = Math.round((barEnd - barStart) / 60000);
-                                return duration + '分钟';
-                            },
-                            position: 'insideRight',
-                            fontSize: 11,
-                            color: '#fff'
-                        }
-                    });
+                    if (tStart && tEnd && tStart < tEnd) {
+                        seriesData.push({
+                            name: name,
+                            value: [idx, tStart, tEnd],
+                            itemStyle: { color: '#2ecc71' }
+                        });
+                    }
                 }
+            });
+            idx++;
+        });
 
-                // Mark the time when status changed (for offline, this is where the period ends)
-                if (evt.status === 'offline' || (i + 1 < events.length && events[i + 1].status === 'online')) {
-                    series.push({
-                        name: label,
-                        type: 'bar',
-                        yAxisIndex: 0,
-                        barMaxWidth: 5,
-                        itemStyle: { color: '#f0ebe3' },
-                        data: [[evt.time, idx], [evt.time, idx]],
-                        silent: true
-                    });
+        // Render chart
+        const chartDom = document.getElementById('chart');
+        if (!chart) {
+            chart = echarts.init(chartDom);
+        }
+
+        const allTimestamps = seriesData.map(d => d.value[1]).concat(seriesData.map(d => d.value[2]));
+        const minTime = Math.min(...allTimestamps);
+        const maxTime = Math.max(...allTimestamps);
+
+        chart.setOption({
+            tooltip: {
+                formatter: function(params) {
+                    const start = new Date(params.value[1]).toLocaleString('zh-CN');
+                    const end = new Date(params.value[2]).toLocaleString('zh-CN');
+                    return params.data.name + '<br/>上线: ' + start + '<br/>下线: ' + end;
                 }
-            }
+            },
+            grid: {
+                left: '120',
+                right: '20',
+                top: '20',
+                bottom: '60'
+            },
+            xAxis: {
+                type: 'time',
+                min: minTime,
+                max: maxTime,
+                axisLabel: {
+                    formatter: function(value) {
+                        const d = new Date(value);
+                        return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+                    },
+                    rotate: 0,
+                    interval: Math.max(3600000, (maxTime - minTime) / 12) // at least 1 hour interval
+                },
+                splitLine: { show: true, lineStyle: { color: '#f0e8dc' } }
+            },
+            yAxis: {
+                type: 'category',
+                data: categories,
+                axisLine: { lineStyle: { color: '#d9d0c2' } },
+                axisLabel: { fontSize: 12 }
+            },
+            series: [{
+                type: 'custom',
+                renderItem: function(params, api) {
+                    const categoryIndex = api.value(0);
+                    const start = api.coord([api.value(1), categoryIndex]);
+                    const end = api.coord([api.value(2), categoryIndex]);
+                    const height = 20;
+
+                    return {
+                        type: 'rect',
+                        shape: {
+                            x: start[0],
+                            y: start[1] - height / 2,
+                            width: end[0] - start[0],
+                            height: height,
+                            r: 4
+                        },
+                        style: api.style(),
+                        styleOverrides: [{
+                            fill: '#2ecc71'
+                        }]
+                    };
+                },
+                encode: {
+                    x: [1, 2],
+                    y: 0
+                },
+                data: seriesData
+            }]
         });
 
         // Render event log
         const eventLog = document.getElementById('eventLog');
-        const sortedEvents = records.sort((a, b) => b.time - a.time).slice(0, 50);
-        eventLog.innerHTML = sortedEvents.map(e => `
-            <div class="event-item">
-                <span class="event-device event-${e.status}">
-                    ${e.status === 'online' ? '↑' : '↓'} ${escapeHtml(e.host || '-')} (${escapeHtml(e.ip)})
-                </span>
-                <span class="event-time">${formatTimeShort(e.time)}</span>
-            </div>
-        `).join('');
+        const recentEvents = records
+            .filter(r => r.status)
+            .sort((a, b) => (parseTimeToTimestamp(b.time) || 0) - (parseTimeToTimestamp(a.time) || 0))
+            .slice(0, 50);
 
-        // Render chart
-        if (!chart) {
-            chart = echarts.init(document.getElementById('chart'));
+        if (recentEvents.length === 0) {
+            eventLog.innerHTML = '<div style="padding: 14px; color: var(--muted);">暂无事件记录</div>';
+        } else {
+            eventLog.innerHTML = recentEvents.map(ev => {
+                const name = ev.host || ev.ip || 'Unknown';
+                const isOnline = ev.status === 'online';
+                return '<div class="event-item">' +
+                    '<span class="event-device ' + (isOnline ? 'event-online' : 'event-offline') + '">' +
+                    (isOnline ? '↑' : '↓') + ' ' + escapeHtml(name) +
+                    '</span>' +
+                    '<span class="event-time">' + formatTimeShort(ev.time) + '</span>' +
+                    '</div>';
+            }).join('');
         }
-
-        const option = {
-            tooltip: {
-                trigger: 'axis',
-                axisPointer: { type: 'shadow' },
-                formatter: function(params) {
-                    if (!params || params.length === 0 || params[0].data[0] === params[0].data[1]) return '';
-                    const p = params[0];
-                    const start = formatTimestamp(p.data[0]);
-                    const end = formatTimestamp(p.data[1]);
-                    const dur = Math.round((p.data[1] - p.data[0]) / 60000);
-                    const deviceName = p.seriesName;
-                    return `${deviceName}<br/>上线: ${start}<br/>下线: ${end}<br/>持续: ${dur}分钟`;
-                }
-            },
-            legend: {
-                type: 'plain',
-                bottom: 10,
-                textStyle: { color: '#2b241c', fontSize: 12 }
-            },
-            grid: {
-                left: '140',
-                right: '80',
-                top: 20,
-                bottom: 80
-            },
-            xAxis: {
-                type: 'time',
-                axisLabel: {
-                    formatter: function(value) {
-                        return new Date(value).toLocaleString('zh-CN', {
-                            month: '2-digit', day: '2-digit',
-                            hour: '2-digit', minute: '2-digit'
-                        });
-                    },
-                    interval: 3600000 // 1 hour
-                },
-                splitLine: { show: true, lineStyle: { color: '#e8e0d0', type: 'dashed' } }
-            },
-            yAxis: {
-                type: 'category',
-                data: deviceList.map(ip => escapeHtml(byIP[ip][0]?.host || '-')),
-                axisLabel: { fontSize: 11 },
-                inverse: false
-            },
-            series: series,
-            dataZoom: [{ type: 'inside', xAxisIndex: 0, filterMode: 'none' }]
-        };
-
-        chart.setOption(option, true);
-
     } catch (e) {
         console.error('Load history error:', e);
     }
