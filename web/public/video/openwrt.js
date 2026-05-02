@@ -177,7 +177,8 @@ async function loadHistory() {
                     const tStart = ev.startTime || ev.time;
                     // Look ahead for the next offline event for this device
                     const nextOffline = events.find(e => e.status === 'offline' && e.time > ev.time);
-                    const tEnd = nextOffline ? nextOffline.time : endTime;
+                    // If there is no offline record, end at the latest observed time in the data
+                    const tEnd = nextOffline ? nextOffline.time : (ev.time || endTime);
 
                     if (tStart && tEnd && tStart < tEnd) {
                         seriesData.push({
