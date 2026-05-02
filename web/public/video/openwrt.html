@@ -127,12 +127,27 @@
             border-bottom: 1px solid var(--line);
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 12px;
         }
 
         .event-item:last-child { border-bottom: 0; }
 
+        .event-main {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
         .event-device { font-weight: 600; }
+        .event-start { color: var(--muted); font-size: 12px; }
+        .event-times {
+            color: var(--muted);
+            font-size: 12px;
+            text-align: right;
+            white-space: nowrap;
+        }
         .event-time { color: var(--muted); font-size: 12px; }
 
         .event-online { color: var(--online); }

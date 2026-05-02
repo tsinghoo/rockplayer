@@ -127,6 +127,14 @@ function formatTimestamp(ts) {
     return new Date(ts).toLocaleString('zh-CN');
 }
 
+function getDeviceName(record) {
+    return record.host || record.ip || 'Unknown';
+}
+
+function getEventStartTimestamp(record) {
+    return parseTimeToTimestamp(record.startTime) || parseTimeToTimestamp(record.time) || 0;
+}
+
 async function loadHistory() {
     try {
         const date = parseDateStr(currentDate);
@@ -262,20 +270,36 @@ async function loadHistory() {
         const eventLog = document.getElementById('eventLog');
         const recentEvents = records
             .filter(r => r.status)
-            .sort((a, b) => (parseTimeToTimestamp(b.time) || 0) - (parseTimeToTimestamp(a.time) || 0))
+            .map(r => ({
+                deviceName: getDeviceName(r),
+                eventTime: parseTimeToTimestamp(r.time) || 0,
+                startTime: getEventStartTimestamp(r),
+                raw: r
+            }))
+            .sort((a, b) => {
+                const nameCompare = a.deviceName.localeCompare(b.deviceName, 'zh-CN', { numeric: true, sensitivity: 'base' });
+                if (nameCompare !== 0) return nameCompare;
+                if (b.startTime !== a.startTime) return b.startTime - a.startTime;
+                return b.eventTime - a.eventTime;
+            })
             .slice(0, 50);
 
         if (recentEvents.length === 0) {
             eventLog.innerHTML = '<div style="padding: 14px; color: var(--muted);">暂无事件记录</div>';
         } else {
             eventLog.innerHTML = recentEvents.map(ev => {
-                const name = ev.host || ev.ip || 'Unknown';
-                const isOnline = ev.status === 'online';
+                const isOnline = ev.raw.status === 'online';
+                const eventLabel = isOnline ? '上线' : '下线';
                 return '<div class="event-item">' +
+                    '<div class="event-main">' +
                     '<span class="event-device ' + (isOnline ? 'event-online' : 'event-offline') + '">' +
-                    (isOnline ? '↑' : '↓') + ' ' + escapeHtml(name) +
+                    (isOnline ? '↑' : '↓') + ' ' + escapeHtml(ev.deviceName) +
                     '</span>' +
-                    '<span class="event-time">' + formatTimeShort(ev.time) + '</span>' +
+                    '<span class="event-start">开始: ' + escapeHtml(formatTimeShort(ev.startTime)) + '</span>' +
+                    '</div>' +
+                    '<div class="event-times">' +
+                    '<span class="event-time">' + eventLabel + ': ' + escapeHtml(formatTimeShort(ev.eventTime)) + '</span>' +
+                    '</div>' +
                     '</div>';
             }).join('');
         }
