@@ -1411,6 +1411,30 @@ app.use((req, res, next) => {
     const queryParams = JSON.stringify(req.query);
     const bodyParams = JSON.stringify(req.body);
     info(`${method} ${url} body:${bodyParams}`, req.threadId)
+
+    // 拦截 response 的 send/end 方法来记录响应内容
+    const originalSend = res.send.bind(res);
+    const originalEnd = res.end.bind(res);
+    let responseLogged = false;
+
+    res.send = function(body, ...args) {
+        if (!responseLogged) {
+            responseLogged = true;
+            const respStr = body !== undefined ? (typeof body === 'string' ? body : JSON.stringify(body)) : '';
+            info(`${method} ${url} response:${respStr}`, req.threadId);
+        }
+        return originalSend(body, ...args);
+    };
+
+    res.end = function(chunk, ...args) {
+        if (!responseLogged && chunk) {
+            responseLogged = true;
+            const respStr = typeof chunk === 'string' ? chunk : JSON.stringify(chunk);
+            info(`${method} ${url} response:${respStr}`, req.threadId);
+        }
+        return originalEnd(chunk, ...args);
+    };
+
     try {
         next();
     } catch (e) {
