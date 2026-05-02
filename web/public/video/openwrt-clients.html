@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>OpenWrt Devices</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
     <style>
         :root {
             --bg: #f2efe8;
@@ -32,7 +33,7 @@
         }
 
         .wrap {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 18px 14px 28px;
         }
@@ -49,12 +50,6 @@
             margin: 0;
             font-size: 28px;
             line-height: 1.1;
-        }
-
-        h2 {
-            margin: 16px 0 10px;
-            font-size: 18px;
-            color: var(--muted);
         }
 
         .sub {
@@ -170,11 +165,6 @@
             font-size: 15px;
         }
 
-        /* Timeline section */
-        .timeline-section {
-            margin-top: 20px;
-        }
-
         .time-range {
             display: flex;
             gap: 10px;
@@ -204,90 +194,10 @@
             border-color: var(--accent);
         }
 
-        .device-timeline {
-            margin-bottom: 16px;
-            padding: 14px;
-        }
-
-        .timeline-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .timeline-device-name {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .timeline-device-info {
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .timeline-legend {
-            display: flex;
-            gap: 16px;
-            font-size: 12px;
-            margin-bottom: 10px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .legend-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
-        }
-
-        .legend-dot.online {
-            background: var(--online);
-        }
-
-        .legend-dot.offline {
-            background: var(--offline);
-        }
-
-        .timeline-chart {
-            position: relative;
-            height: 32px;
-            background: #f0ebe3;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .timeline-bar {
-            position: absolute;
-            top: 0;
-            height: 100%;
-            transition: left 0.3s, width 0.3s;
-        }
-
-        .timeline-bar.online {
-            background: var(--online);
-        }
-
-        .timeline-bar.offline {
-            background: var(--offline);
-        }
-
-        .timeline-time-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 4px;
-        }
-
-        .no-history {
-            padding: 20px;
-            text-align: center;
-            color: var(--muted);
+        .chart-container {
+            width: 100%;
+            height: 500px;
+            margin-top: 14px;
         }
 
         @media (max-width: 720px) {
@@ -317,6 +227,10 @@
 
             .mobile-list {
                 display: grid;
+            }
+
+            .chart-container {
+                height: 400px;
             }
         }
     </style>
@@ -373,49 +287,31 @@
             </div>
         </div>
 
-        <div class="timeline-section">
-            <h2>在线/离线历史记录</h2>
-            <div class="time-range">
+        <div class="panel">
+            <h2 style="padding: 14px 14px 0; margin: 0; font-size: 18px; color: var(--muted);">在线记录 (点=在线，无点=离线)</h2>
+            <div class="time-range" style="padding: 0 14px;">
                 <button data-hours="1" class="active">1小时</button>
                 <button data-hours="6">6小时</button>
                 <button data-hours="24">24小时</button>
                 <button data-hours="168">7天</button>
                 <button data-hours="720">30天</button>
             </div>
-            <div id="timelineContainer">
-                <div class="no-history">加载中...</div>
-            </div>
+            <div id="chart" class="chart-container"></div>
         </div>
     </div>
 
     <script>
-        let currentTimeRange = 12; // hours
+        let currentTimeRange = 1;
+        let chart = null;
 
         function formatTime(ts) {
-            if (!ts) {
-                return "-";
-            }
-            let value = Number(ts);
-            if (!Number.isFinite(value) || value <= 0) {
-                return "-";
-            }
-            if (value < 1000000000000) {
-                value = value * 1000;
-            }
-            const date = new Date(value);
-            if (Number.isNaN(date.getTime())) {
-                return "-";
-            }
-            return date.toLocaleString();
-        }
-
-        function formatTimeShort(ts) {
             if (!ts) return "-";
             let value = Number(ts);
+            if (!Number.isFinite(value) || value <= 0) return "-";
             if (value < 1000000000000) value = value * 1000;
             const date = new Date(value);
             if (Number.isNaN(date.getTime())) return "-";
-            return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            return date.toLocaleString();
         }
 
         function escapeHtml(text) {
@@ -427,13 +323,28 @@
                 .replace(/'/g, "&#39;");
         }
 
+        function getIPLastDigit(ip) {
+            if (!ip) return 0;
+            const parts = ip.split('.');
+            return parts.length > 0 ? parseInt(parts[parts.length - 1], 10) : 0;
+        }
+
+        function formatTimeAxis(ts) {
+            const date = new Date(ts);
+            if (currentTimeRange <= 24) {
+                return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            } else if (currentTimeRange <= 168) {
+                return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit' });
+            } else {
+                return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+            }
+        }
+
         async function loadClients() {
             const refreshText = document.getElementById("refreshText");
             refreshText.textContent = "刷新中...";
             try {
-                const response = await fetch("/video/openwrt/clients", {
-                    cache: "no-store"
-                });
+                const response = await fetch("/video/openwrt/clients", { cache: "no-store" });
                 const json = await response.json();
                 const data = json.data || {};
                 const clients = Array.isArray(data.clients) ? data.clients : [];
@@ -453,20 +364,10 @@
                     mobileList.innerHTML = '<div class="panel device-card"><div class="empty">暂无设备数据</div></div>';
                 } else {
                     tableBody.innerHTML = clients.map(function (item) {
-                        return '<tr>'
-                            + '<td>' + escapeHtml(item.ip || "-") + '</td>'
-                            + '<td>' + escapeHtml(item.host || "-") + '</td>'
-                            + '<td>' + escapeHtml(formatTime(item.leaseEnd)) + '</td>'
-                            + '</tr>';
+                        return '<tr><td>' + escapeHtml(item.ip || "-") + '</td><td>' + escapeHtml(item.host || "-") + '</td><td>' + escapeHtml(formatTime(item.leaseEnd)) + '</td></tr>';
                     }).join("");
                     mobileList.innerHTML = clients.map(function (item) {
-                        return '<div class="panel device-card">'
-                            + '<div class="device-head">'
-                            + '<div class="device-name">' + escapeHtml(item.host || "-") + '</div>'
-                            + '<div class="device-expire">' + escapeHtml(formatTime(item.leaseEnd)) + '</div>'
-                            + '</div>'
-                            + '<div class="device-ip">' + escapeHtml(item.ip || "-") + '</div>'
-                            + '</div>';
+                        return '<div class="panel device-card"><div class="device-head"><div class="device-name">' + escapeHtml(item.host || "-") + '</div><div class="device-expire">' + escapeHtml(formatTime(item.leaseEnd)) + '</div></div><div class="device-ip">' + escapeHtml(item.ip || "-") + '</div></div>';
                     }).join("");
                 }
 
@@ -479,146 +380,132 @@
         }
 
         async function loadHistory() {
-            const container = document.getElementById("timelineContainer");
-            container.innerHTML = '<div class="no-history">加载中...</div>';
-
             try {
                 const endTime = Date.now();
                 const startTime = endTime - currentTimeRange * 60 * 60 * 1000;
 
-                const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, {
-                    cache: "no-store"
-                });
+                const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, { cache: "no-store" });
                 const json = await response.json();
-                const records = Array.isArray(json.data.rows) ? json.data.rows : [];
-
-                if (records.length === 0) {
-                    container.innerHTML = '<div class="no-history">暂无历史记录</div>';
-                    return;
-                }
+                const records = Array.isArray(json.data) ? json.data : [];
 
                 // Group by IP
                 const byIP = {};
                 for (const r of records) {
-                    if (!byIP[r.ip]) {
-                        byIP[r.ip] = [];
-                    }
+                    if (!byIP[r.ip]) byIP[r.ip] = [];
                     byIP[r.ip].push(r);
                 }
 
-                // Sort IPs by host name
-                const ips = Object.keys(byIP).sort((a, b) => {
+                // Build series data
+                const seriesData = [];
+                const yAxisLabels = [];
+                const ipList = Object.keys(byIP).sort((a, b) => {
                     const hostA = byIP[a][0]?.host || '';
                     const hostB = byIP[b][0]?.host || '';
                     return hostA.localeCompare(hostB);
                 });
 
-                container.innerHTML = ips.map(ip => {
-                    const deviceRecords = byIP[ip];
-                    const device = deviceRecords[0];
-                    return renderTimeline(ip, device);
-                }).join('');
-
-                // Render bars after DOM is ready
-                ips.forEach(ip => {
-                    const deviceRecords = byIP[ip];
-                    renderTimelineBars(ip, deviceRecords, startTime, endTime);
+                // Assign Y position to each IP based on host name order
+                ipList.forEach((ip, idx) => {
+                    yAxisLabels.push(ip);
                 });
 
-            } catch (e) {
-                container.innerHTML = '<div class="no-history">加载失败: ' + escapeHtml(e.message) + '</div>';
-            }
-        }
-
-        function renderTimeline(ip, device) {
-            const host = device?.host || '-';
-            return `
-                <div class="panel device-timeline">
-                    <div class="timeline-header">
-                        <div class="timeline-device-name">${escapeHtml(host)}</div>
-                        <div class="timeline-device-info">${escapeHtml(ip)}</div>
-                    </div>
-                    <div class="timeline-legend">
-                        <div class="legend-item">
-                            <div class="legend-dot online"></div>
-                            <span>在线</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-dot offline"></div>
-                            <span>离线</span>
-                        </div>
-                    </div>
-                    <div class="timeline-chart" data-ip="${escapeHtml(ip)}"></div>
-                    <div class="timeline-time-labels" data-ip="${escapeHtml(ip)}">
-                        <span class="label-start">-</span>
-                        <span class="label-end">-</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderTimelineBars(ip, records, startTime, endTime) {
-            const chart = document.querySelector(`.timeline-chart[data-ip="${CSS.escape(ip)}"]`);
-            const labelStart = document.querySelector(`.timeline-time-labels[data-ip="${CSS.escape(ip)}"] .label-start`);
-            const labelEnd = document.querySelector(`.timeline-time-labels[data-ip="${CSS.escape(ip)}"] .label-end`);
-
-            if (!chart || !records.length) return;
-
-            const timeRange = endTime - startTime;
-            labelStart.textContent = formatTimeShort(startTime);
-            labelEnd.textContent = formatTimeShort(endTime);
-
-            // Clear existing bars
-            chart.innerHTML = '';
-
-            // Create segments for each minute
-            const segments = [];
-            let currentTime = startTime;
-            const minuteMs = 60000;
-
-            // Build a lookup for online status at each minute
-            const statusByMinute = {};
-            for (const r of records) {
-                const time = Number(r.time);
-                statusByMinute[time] = Number(r.online) === 1;
-            }
-
-            // Generate segments for each minute in the range
-            let inOnline = null;
-            let segmentStart = currentTime;
-
-            while (currentTime <= endTime) {
-                const isOnline = statusByMinute[currentTime] || false;
-
-                if (inOnline === null) {
-                    inOnline = isOnline;
-                    segmentStart = currentTime;
-                } else if (isOnline !== inOnline) {
-                    segments.push({ online: inOnline, start: segmentStart, end: currentTime });
-                    inOnline = isOnline;
-                    segmentStart = currentTime;
+                // Filter online records only and create scatter data
+                for (const r of records) {
+                    if (Number(r.online) === 1) {
+                        const yPos = ipList.indexOf(r.ip);
+                        seriesData.push([Number(r.time), yPos]);
+                    }
                 }
 
-                currentTime += minuteMs;
-            }
+                // Sort by time for proper line rendering
+                seriesData.sort((a, b) => a[0] - b[0]);
 
-            // Add final segment
-            if (inOnline !== null) {
-                segments.push({ online: inOnline, start: segmentStart, end: currentTime });
-            }
+                // Create series with line connecting points
+                const series = [{
+                    name: '在线',
+                    type: 'line',
+                    data: seriesData,
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    lineStyle: {
+                        width: 1,
+                        color: '#2ecc71'
+                    },
+                    itemStyle: {
+                        color: '#2ecc71'
+                    },
+                    connectNulls: false,
+                    smooth: false
+                }];
 
-            // Render segments
-            for (const seg of segments) {
-                const bar = document.createElement('div');
-                bar.className = `timeline-bar ${seg.online ? 'online' : 'offline'}`;
+                // Calculate y-axis min/max
+                const yMin = 0;
+                const yMax = Math.max(ipList.length - 1, 1);
 
-                const left = ((seg.start - startTime) / timeRange) * 100;
-                const width = ((seg.end - seg.start) / timeRange) * 100;
+                // Render chart
+                if (!chart) {
+                    chart = echarts.init(document.getElementById('chart'));
+                }
 
-                bar.style.left = Math.max(0, left) + '%';
-                bar.style.width = Math.min(100 - left, width) + '%';
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        formatter: function(params) {
+                            const time = new Date(params.value[0]).toLocaleString();
+                            const ip = yAxisLabels[params.value[1]] || '';
+                            const host = byIP[ip]?.[0]?.host || '-';
+                            return `${escapeHtml(host)} (${escapeHtml(ip)})<br/>在线时间: ${time}`;
+                        }
+                    },
+                    grid: {
+                        left: '80',
+                        right: '20',
+                        top: '20',
+                        bottom: '60'
+                    },
+                    xAxis: {
+                        type: 'time',
+                        axisLabel: {
+                            formatter: function(value) {
+                                return formatTimeAxis(value);
+                            },
+                            interval: Math.floor(currentTimeRange * 60 / 8)
+                        },
+                        splitLine: {
+                            show: true,
+                            lineStyle: {
+                                color: '#e8e0d0',
+                                type: 'dashed'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        type: 'category',
+                        data: yAxisLabels,
+                        inverse: false,
+                        axisLabel: {
+                            formatter: function(value) {
+                                const lastDigit = getIPLastDigit(value);
+                                const host = byIP[value]?.[0]?.host || '';
+                                const shortHost = host.length > 8 ? host.substring(0, 7) + '...' : host;
+                                return `${shortHost}[${lastDigit}]`;
+                            }
+                        },
+                        min: yMin - 0.5,
+                        max: yMax + 0.5
+                    },
+                    series: series,
+                    dataZoom: [{
+                        type: 'inside',
+                        xAxisIndex: 0,
+                        filterMode: 'none'
+                    }]
+                };
 
-                chart.appendChild(bar);
+                chart.setOption(option, true);
+
+            } catch (e) {
+                console.error('Load history error:', e);
             }
         }
 
@@ -632,10 +519,15 @@
             });
         });
 
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (chart) chart.resize();
+        });
+
         loadClients();
         setInterval(loadClients, 3000);
         loadHistory();
-        setInterval(loadHistory, 30000); // Refresh history every 30 seconds
+        setInterval(loadHistory, 30000);
     </script>
 </body>
 </html>
