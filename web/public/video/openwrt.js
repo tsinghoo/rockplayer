@@ -256,16 +256,15 @@ async function loadHistory() {
                 }
             },
             legend: {
-                type: 'scroll',
-                width: '70%',
-                pageTextStyle: { color: '#73685b' },
+                type: 'plain',
+                bottom: 10,
                 textStyle: { color: '#2b241c', fontSize: 12 }
             },
             grid: {
                 left: '140',
                 right: '80',
-                top: 60,
-                bottom: 40
+                top: 20,
+                bottom: 80
             },
             xAxis: {
                 type: 'time',
