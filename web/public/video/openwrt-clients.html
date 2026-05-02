@@ -249,7 +249,7 @@
 
                 const response = await fetch(`/video/openwrt/history?start=${startTime}&end=${endTime}`, { cache: "no-store" });
                 const json = await response.json();
-                const records = Array.isArray(json.data) ? json.data : [];
+                const records = Array.isArray(json.data.rows) ? json.data.rows : [];
 
                 // Group by IP
                 const byIP = {};
