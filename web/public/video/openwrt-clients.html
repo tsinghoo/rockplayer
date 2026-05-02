@@ -314,18 +314,28 @@
         function parseTimeToTimestamp(timeStr) {
             if (!timeStr) return null;
             const value = String(timeStr);
+            // YYMMDDHHmm format (10 digits, e.g., "2605021123")
             if (/^\d{10}$/.test(value)) {
                 const yy = parseInt(value.substring(0, 2)) + 2000;
                 const mm = parseInt(value.substring(2, 4));
                 const dd = parseInt(value.substring(4, 6));
                 const hh = parseInt(value.substring(6, 8));
                 const min = parseInt(value.substring(8, 10));
+                // Validate ranges
+                if (mm < 1 || mm > 12 || dd < 1 || dd > 31 || hh > 23 || min > 59) return null;
                 return new Date(yy, mm - 1, dd, hh, min).getTime();
             }
             // Fallback: treat as timestamp (ms or s)
             let num = Number(value);
+            if (isNaN(num)) return null;
             if (num < 1000000000000) num = num * 1000;
             return num;
+        }
+
+        // Format timestamp for display
+        function formatTimestamp(ts) {
+            if (!ts || !Number.isFinite(ts) || ts <= 0) return '-';
+            return new Date(ts).toLocaleString('zh-CN');
         }
 
         async function loadHistory() {
@@ -350,10 +360,12 @@
                 // Group by IP and sort events chronologically
                 const byIP = {};
                 for (const r of records) {
+                    const ts = parseTimeToTimestamp(r.time);
+                    if (ts === null) continue; // Skip invalid timestamps
                     if (!byIP[r.ip]) byIP[r.ip] = [];
                     byIP[r.ip].push({
                         status: r.status,
-                        time: parseTimeToTimestamp(r.time),
+                        time: ts,
                         host: r.host
                     });
                 }
@@ -365,6 +377,10 @@
                     return hostA.localeCompare(hostB);
                 });
 
+                // Create index map for y-axis positioning
+                const ipToIndex = {};
+                deviceList.forEach((ip, idx) => { ipToIndex[ip] = idx; });
+
                 const series = [];
 
                 deviceList.forEach((ip, idx) => {
@@ -373,20 +389,16 @@
                     const label = `${escapeHtml(host)} (${escapeHtml(ip)})`;
 
                     let onlineStart = null;
-                    let offlineCount = 0;
-                    let onlineCount = 0;
 
                     // Merge consecutive online records into periods
                     for (let i = 0; i < events.length; i++) {
                         const evt = events[i];
 
                         if (evt.status === 'online') {
-                            onlineCount++;
                             if (onlineStart === null) {
                                 onlineStart = evt.time;
                             }
                         } else if (evt.status === 'offline') {
-                            offlineCount++;
                             if (onlineStart !== null) {
                                 // End of an online period
                                 const onlineEnd = evt.time;
@@ -395,9 +407,10 @@
                                 series.push({
                                     name: label,
                                     type: 'bar',
+                                    yAxisIndex: 0,
                                     barMaxWidth: 40,
                                     itemStyle: { color: '#2ecc71' },
-                                    data: [[onlineStart, 1], [onlineEnd, 1]],
+                                    data: [[onlineStart, idx], [onlineEnd, idx]],
                                     label: {
                                         show: true,
                                         formatter: function(p) {
@@ -413,9 +426,10 @@
                                 series.push({
                                     name: label,
                                     type: 'bar',
+                                    yAxisIndex: 0,
                                     barMaxWidth: 5,
                                     itemStyle: { color: '#f0ebe3' },
-                                    data: [[onlineEnd, 1], [onlineEnd, 1]],
+                                    data: [[onlineEnd, idx], [onlineEnd, idx]],
                                     silent: true
                                 });
 
@@ -432,9 +446,10 @@
                         series.push({
                             name: label,
                             type: 'bar',
+                            yAxisIndex: 0,
                             barMaxWidth: 40,
                             itemStyle: { color: '#2ecc71' },
-                            data: [[onlineStart, 1], [onlineEnd, 1]],
+                            data: [[onlineStart, idx], [onlineEnd, idx]],
                             label: {
                                 show: true,
                                 formatter: function(p) {
@@ -472,10 +487,11 @@
                         formatter: function(params) {
                             if (!params || params.length === 0 || params[0].data[0] === params[0].data[1]) return '';
                             const p = params[0];
-                            const start = new Date(p.data[0]).toLocaleString('zh-CN');
-                            const end = new Date(p.data[1]).toLocaleString('zh-CN');
+                            const start = formatTimestamp(p.data[0]);
+                            const end = formatTimestamp(p.data[1]);
                             const dur = Math.round((p.data[1] - p.data[0]) / 60000);
-                            return `${p.seriesName}<br/>上线: ${start}<br/>下线: ${end}<br/>持续: ${dur}分钟`;
+                            const deviceName = p.seriesName;
+                            return `${deviceName}<br/>上线: ${start}<br/>下线: ${end}<br/>持续: ${dur}分钟`;
                         }
                     },
                     legend: {
