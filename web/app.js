@@ -2333,6 +2333,7 @@ async function upgradeDb(succ, fail) {
         `alter table tstock add column lastOperationTime int default 0;`,
         `create table if not exists t1w(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
         `create table if not exists t1mon(id text primary key, scode text, time text, open real, close real, high real, low real, volume int, amount real, type int default 0);`,
+        `create table if not exists openwrt(id text primary key, ip text, mac text, host text, online int default 0, time integer);`,
     ];
 
     if (res == null || res.error) {
@@ -2362,7 +2363,6 @@ CREATE TABLE tStockPrice (
 CREATE TABLE tTradeRule(id text primary key, scode text, sname text, rule text, createTime integer, closed integer default 0, broker text, expireTime int);
 CREATE TABLE tallstock(id text primary key, scode text, sname text, sector text, priority int default 0, updateTime integer);
 CREATE TABLE tcandidate(id text primary key, scode text, sname text, priority int default 0, updateTime integer);
-CREATE TABLE openwrt(id text primary key, ip text, mac text, host text, online int default 0, time integer);
 CREATE TABLE tpositions(id text primary key, broker text, account_id text, avg_price real, can_use_volume real, frozen_volume real, market_value real, on_road_volume real, open_price real, stock_code text, volume real, updateTime integer, floatProfit real default 0, type int default 0);
 CREATE TABLE tsql (
         id text primary key,
