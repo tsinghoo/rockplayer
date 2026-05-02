@@ -521,7 +521,7 @@
                     },
                     yAxis: {
                         type: 'category',
-                        data: deviceList.map(ip => `${escapeHtml(byIP[ip][0]?.host || '-')} (${escapeHtml(ip)})`),
+                        data: deviceList.map(ip => escapeHtml(byIP[ip][0]?.host || '-')),
                         axisLabel: { fontSize: 11 },
                         inverse: false
                     },
