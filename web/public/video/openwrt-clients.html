@@ -223,9 +223,22 @@
 
         function formatTimeShort(ts) {
             if (!ts) return "-";
-            let value = Number(ts);
-            if (value < 1000000000000) value = value * 1000;
-            const date = new Date(value);
+            let value = String(ts);
+            // Detect YYMMDDHHmm format (10 digits, e.g., "2605021123")
+            if (/^\d{10}$/.test(value)) {
+                const yy = parseInt(value.substring(0, 2)) + 2000;
+                const mm = parseInt(value.substring(2, 4));
+                const dd = parseInt(value.substring(4, 6));
+                const hh = parseInt(value.substring(6, 8));
+                const min = parseInt(value.substring(8, 10));
+                const date = new Date(yy, mm - 1, dd, hh, min);
+                if (Number.isNaN(date.getTime())) return "-";
+                return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+            }
+            // Fallback: treat as timestamp (ms or s)
+            let num = Number(value);
+            if (num < 1000000000000) num = num * 1000;
+            const date = new Date(num);
             if (Number.isNaN(date.getTime())) return "-";
             return date.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
         }
@@ -274,6 +287,24 @@
             }
         }
 
+        // Convert YYMMDDHHmm string to timestamp (ms) for chart processing
+        function parseTimeToTimestamp(timeStr) {
+            if (!timeStr) return null;
+            const value = String(timeStr);
+            if (/^\d{10}$/.test(value)) {
+                const yy = parseInt(value.substring(0, 2)) + 2000;
+                const mm = parseInt(value.substring(2, 4));
+                const dd = parseInt(value.substring(4, 6));
+                const hh = parseInt(value.substring(6, 8));
+                const min = parseInt(value.substring(8, 10));
+                return new Date(yy, mm - 1, dd, hh, min).getTime();
+            }
+            // Fallback: treat as timestamp (ms or s)
+            let num = Number(value);
+            if (num < 1000000000000) num = num * 1000;
+            return num;
+        }
+
         async function loadHistory() {
             try {
                 const endTime = Date.now();
@@ -295,7 +326,7 @@
                     if (!byIP[r.ip]) byIP[r.ip] = [];
                     byIP[r.ip].push({
                         status: r.status,
-                        time: Number(r.time),
+                        time: parseTimeToTimestamp(r.time),
                         host: r.host
                     });
                 }

@@ -23,6 +23,28 @@ async function getUuid() {
     return uuid();
 }
 
+// Helper function to generate time in YYMMDDHHmm format (e.g., "2605021123")
+function getTimeStr(timestamp = Date.now()) {
+    const d = new Date(timestamp);
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    return yy + mm + dd + hh + min;
+}
+
+// Helper function to parse YYMMDDHHmm string to formatted date string
+function formatTimeStr(timeStr) {
+    if (!timeStr || timeStr.length !== 10) return String(timeStr);
+    const yy = parseInt(timeStr.substring(0, 2)) + 2000;
+    const mm = parseInt(timeStr.substring(2, 4));
+    const dd = parseInt(timeStr.substring(4, 6));
+    const hh = parseInt(timeStr.substring(6, 8));
+    const min = parseInt(timeStr.substring(8, 10));
+    return `${yy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')} ${String(hh).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+}
+
 let g = {
     logs: [],
     actions: []
@@ -5101,8 +5123,8 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
         return;
     }
 
-    const currentMinute = Math.floor(Date.now() / 60000) * 60000;
-    const prevMinute = currentMinute - 60000;
+    const currentMinute = getTimeStr();
+    const prevMinute = getTimeStr(Date.now() - 60000);
     const currentIPs = new Set(data.clients.map(c => c.ip));
 
     // Check which IPs were online in previous minute
@@ -5133,7 +5155,7 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
                 req.threadId
             );
             // Log the online event
-            info(`openwrt: ${client.host || client.ip} online at ${new Date(currentMinute).toLocaleString()}`, req.threadId);
+            info(`openwrt: ${client.host || client.ip} online at ${formatTimeStr(currentMinute)}`, req.threadId);
         }
     }
 
@@ -5152,7 +5174,7 @@ app.post('/video/openwrt/clients/upload', (req, res) => {
                 [id, prevIP, prevRecord?.mac || '', prevRecord?.host || '-', currentMinute],
                 req.threadId
             );
-            info(`openwrt: ${prevRecord?.host || prevIP} offline at ${new Date(currentMinute).toLocaleString()}`, req.threadId);
+            info(`openwrt: ${prevRecord?.host || prevIP} offline at ${formatTimeStr(currentMinute)}`, req.threadId);
         }
     }
 
@@ -5177,11 +5199,11 @@ app.get('/video/openwrt/history', async (req, res) => {
     }
     if (start) {
         conditions.push("time >= ?");
-        params.push(Number(start));
+        params.push(getTimeStr(Number(start)));
     }
     if (end) {
         conditions.push("time <= ?");
-        params.push(Number(end));
+        params.push(getTimeStr(Number(end)));
     }
 
     if (conditions.length > 0) {
