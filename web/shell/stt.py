@@ -181,6 +181,7 @@ def genScript(file_name):
         txtFilePath = os.path.join(dir_path, txtFileName)
         srtFilePath = os.path.join(dir_path, srtFileName)
         filePath = os.path.join(dir_path, file_name)
+        outputDir = os.path.dirname(filePath) or dir_path
         if os.path.exists(txtFilePath):
             log("skipped")
         else:
@@ -215,10 +216,10 @@ def genScript(file_name):
                             srt2htm(srtFilePath)
                         else:
                             command = "whisper \"{}\" --output_dir \"{}\"  > \"{}\"".format(filePath.replace(
-                                "\"", "\\\""), dir_path, txtFilePath.replace("\"", "\\\"'")+".tmp")
+                                "\"", "\\\""), outputDir, txtFilePath.replace("\"", "\\\"'")+".tmp")
                             if (hasChinese(file_name)):
                                 command = "whisper \"{}\" --output_dir \"{}\" --language Chinese > \"{}\"".format(
-                                    filePath.replace("\"", "\\\""), dir_path, txtFilePath.replace("\"", "\\\"'")+".tmp")
+                                    filePath.replace("\"", "\\\""), outputDir, txtFilePath.replace("\"", "\\\"'")+".tmp")
                             log(command)
                             subprocess.call(command, shell=True)
                             log("done")
