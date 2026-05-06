@@ -21,7 +21,7 @@ window.voice = window.voice || (function () {
             self.initHeartbeat__();
         },
         initHeartbeat__: function () {
-            var formatTime = function(ts) {
+            var formatTime = function (ts) {
                 if (!ts) return "";
                 var d = new Date(ts);
                 return d.getFullYear() + "-" +
@@ -31,11 +31,11 @@ window.voice = window.voice || (function () {
                     String(d.getMinutes()).padStart(2, '0') + ":" +
                     String(d.getSeconds()).padStart(2, '0');
             };
-            var loadHeartbeatInfo = function() {
-                $.get("/voice/ping", function(config) {
+            var loadHeartbeatInfo = function () {
+                $.get("/voice/ping", function (config) {
                     var info = "";
                     if (config) {
-			config = JSON.parse(config);
+                        config = JSON.parse(config);
                         var keys = Object.keys(config);
                         if (keys.length > 0) {
                             var key = keys[0];
@@ -53,7 +53,7 @@ window.voice = window.voice || (function () {
                         $("#heartbeat").hide();
                     }
                     self.getVoices();
-                }).fail(function() {
+                }).fail(function () {
                     $("#heartbeat").hide();
                 });
             };
@@ -89,7 +89,7 @@ window.voice = window.voice || (function () {
                 });
             });
         },
-        parseFileTime__: function(fileName) {
+        parseFileTime__: function (fileName) {
             var parts = fileName.split(".");
             if (parts.length >= 2) {
                 var datePart = parts[0];
@@ -101,7 +101,7 @@ window.voice = window.voice || (function () {
             }
             return 0;
         },
-        getFileIndex__: function(e) {
+        getFileIndex__: function (e) {
             var player = $(e.target).closest(".player");
             if (player.length > 0) {
                 var id = player[0].id;
@@ -122,9 +122,9 @@ window.voice = window.voice || (function () {
             var targetFile = self.data.newMessages[index];
             var targetTime = self.parseFileTime__(targetFile.name);
             var files = self.data.newMessages;
-            var oldFiles = files.filter(function(f, i) {
+            var oldFiles = files.filter(function (f, i) {
                 return self.parseFileTime__(f.name) <= targetTime;
-            }).map(function(f) {
+            }).map(function (f) {
                 return f.name;
             });
             if (oldFiles.length === 0) {
@@ -399,20 +399,22 @@ window.voice = window.voice || (function () {
                     lineHtml = lineHtml.replace(/#voiceIndex#/g, i);
                     lineHtml = lineHtml.replace(/#start#/g, lines[j].start);
                     lineHtml = lineHtml.replace(/#time#/g, self.escapeHtml__(lines[j].timeText));
+                    lineHtml = lineHtml.replace(/#index#/g, i + 1);
                     lineHtml = lineHtml.replace(/#script#/g, self.escapeHtml__(lines[j].text));
                     lineHtmls.push(lineHtml);
                     nextId += 1;
                 }
 
-                if (lineHtmls.length === 0) {
-                    lineHtmls.push('<div class="scriptEmpty">无字幕</div>');
-                }
-
                 var blockHtml = blockTemplate.replace(/#voiceIndex#/g, i);
                 blockHtml = blockHtml.replace(/#index#/g, i + 1);
-                blockHtml = blockHtml.replace(/#fileName#/g, self.escapeHtml__(files[i].name));
                 blockHtml = blockHtml.replace(/#content#/g, lineHtmls.join(""));
                 blockHtmls.push(blockHtml);
+                if (lineHtmls.length === 0) {
+                    let ele = $(blockHtml);
+                    ele.html("");
+                    blockHtml = ele[0].outerHTML;
+                }
+
             }
 
             self.data.scriptLineMap = scriptLineMap;

@@ -88,14 +88,6 @@
             box-shadow: 0 0 0 1px #198754 inset;
         }
 
-        .scriptBlockTitle {
-            padding: 10px 14px;
-            background: #f6f6f6;
-            color: #444;
-            font-weight: 600;
-            border-bottom: 1px solid #e7e7e7;
-        }
-
         .scriptLine {
             display: flex;
             align-items: flex-start;
@@ -189,12 +181,12 @@
     <div id="recent" class="hide"></div>
     <div id="scriptBlockTemplate" class="hide">
         <div id="scriptBlock_#voiceIndex#" class="scriptBlock">
-            <div class="scriptBlockTitle">#index#. #fileName#</div>
             <div class="scriptBlockBody">#content#</div>
         </div>
     </div>
     <div id="scriptTemplate" class="hide">
         <div id="script_#id#" class="scriptLine" data-id="#id#" data-voice-index="#voiceIndex#" data-start="#start#">
+            <div class="scriptIndex">[#index#]</div>
             <div class="scriptTime">#time#</div>
             <div class="scriptText">#script#</div>
         </div>
