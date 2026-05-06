@@ -235,7 +235,7 @@ window.voice = window.voice || (function () {
                     scripts.push({
                         start: self.parseScriptTime__(match[1]),
                         end: self.parseScriptTime__(match[2]),
-                        timeText: start + " - " + end,
+                        timeText: start + "-" + end,
                         text: text
                     });
                 }
