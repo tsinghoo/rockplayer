@@ -408,14 +408,14 @@ window.voice = window.voice || (function () {
                 var blockHtml = blockTemplate.replace(/#voiceIndex#/g, i);
                 blockHtml = blockHtml.replace(/#index#/g, i + 1);
                 blockHtml = blockHtml.replace(/#content#/g, lineHtmls.join(""));
-                blockHtmls.push(blockHtml);
                 if (lineHtmls.length === 0) {
                     let ele = $(blockHtml);
                     ele.html("");
                     ele.addClass("hide");
                     blockHtml = ele[0].outerHTML;
                 }
-
+                
+                blockHtmls.push(blockHtml);
             }
 
             self.data.scriptLineMap = scriptLineMap;
