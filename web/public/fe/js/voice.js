@@ -227,10 +227,15 @@ window.voice = window.voice || (function () {
                     .replace(/\s+/g, " ")
                     .trim();
                 if (text) {
+                    let start = match[1].split(":");
+                    let end = match[2].split(":");
+                    start = start[1] + ":" + start[2];
+                    end = end[1] + ":" + end[2];
+
                     scripts.push({
                         start: self.parseScriptTime__(match[1]),
                         end: self.parseScriptTime__(match[2]),
-                        timeText: match[1] + " --> " + match[2],
+                        timeText: start + " - " + end,
                         text: text
                     });
                 }
@@ -414,7 +419,7 @@ window.voice = window.voice || (function () {
                     ele.addClass("hide");
                     blockHtml = ele[0].outerHTML;
                 }
-                
+
                 blockHtmls.push(blockHtml);
             }
 
