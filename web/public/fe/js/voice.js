@@ -227,8 +227,8 @@ window.voice = window.voice || (function () {
                     .replace(/\s+/g, " ")
                     .trim();
                 if (text) {
-                    let start = match[1].split(":");
-                    let end = match[2].split(":");
+                    let start = match[1].split(",")[0].split(":");
+                    let end = match[2].split(",")[0].split(":");
                     start = start[1] + ":" + start[2];
                     end = end[1] + ":" + end[2];
 
