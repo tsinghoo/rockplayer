@@ -412,6 +412,7 @@ window.voice = window.voice || (function () {
                 if (lineHtmls.length === 0) {
                     let ele = $(blockHtml);
                     ele.html("");
+                    ele.addClass("hide");
                     blockHtml = ele[0].outerHTML;
                 }
 
