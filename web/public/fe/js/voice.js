@@ -148,27 +148,311 @@ window.voice = window.voice || (function () {
             });
         },
         getVoiceWidth__: function (duration) {
-            return self.data.minVoiceWidth + 1.0 * duration / self.data.maxVoiceDuration * (self.data.maxVoiceWidth - self.data.minVoiceWidth);
+            var maxVoiceDuration = self.data.maxVoiceDuration || 1;
+            return self.data.minVoiceWidth + 1.0 * duration / maxVoiceDuration * (self.data.maxVoiceWidth - self.data.minVoiceWidth);
+        },
+        parseVoiceDuration__: function (fileName) {
+            let strs = fileName.split(".");
+            if (strs.length >= 4) {
+                let minute = parseInt(strs[2], 10);
+                let second = parseInt(strs[3], 10);
+                if (!isNaN(minute) && !isNaN(second)) {
+                    return minute * 60 + second;
+                }
+            }
+            return 0;
+        },
+        getScriptFileCandidates__: function (fileName) {
+            var candidates = [];
+            var replaced = fileName.replace(/\.[^/.]+$/, ".srt");
+            candidates.push(replaced);
+            candidates.push(fileName + ".srt");
+            candidates.push(fileName + ".txt");
+            return candidates.filter(function (name, index) {
+                return name && candidates.indexOf(name) === index;
+            });
+        },
+        getVoiceFileUrl__: function (fileName) {
+            return "/video/voice/" + encodeURIComponent(fileName);
+        },
+        parseScriptTime__: function (text) {
+            var match = (text || "").match(/(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/);
+            if (!match) {
+                return 0;
+            }
+
+            return parseInt(match[1], 10) * 3600 +
+                parseInt(match[2], 10) * 60 +
+                parseInt(match[3], 10) +
+                parseInt(match[4], 10) / 1000;
+        },
+        escapeHtml__: function (text) {
+            return $("<div>").text(text == null ? "" : text).html();
+        },
+        parseScriptContent__: function (content) {
+            var lines = (content || "").replace(/\ufeff/g, "").split(/\r?\n/);
+            var scripts = [];
+            var i = 0;
+
+            while (i < lines.length) {
+                var line = lines[i].trim();
+                if (!line) {
+                    i += 1;
+                    continue;
+                }
+
+                if (/^\d+$/.test(line) && i + 1 < lines.length) {
+                    i += 1;
+                    line = lines[i].trim();
+                }
+
+                var match = line.match(/^\[?(\d{2}:\d{2}:\d{2}[,.]\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2}[,.]\d{3})\]?\s*(.*)$/);
+                if (!match) {
+                    i += 1;
+                    continue;
+                }
+
+                var textLines = [];
+                if (match[3]) {
+                    textLines.push(match[3]);
+                }
+                i += 1;
+                while (i < lines.length && lines[i].trim() !== "") {
+                    textLines.push(lines[i].trim());
+                    i += 1;
+                }
+
+                var text = textLines.join(" ")
+                    .replace(/<br\s*\/?>/gi, "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+                if (text) {
+                    scripts.push({
+                        start: self.parseScriptTime__(match[1]),
+                        end: self.parseScriptTime__(match[2]),
+                        timeText: match[1] + " --> " + match[2],
+                        text: text
+                    });
+                }
+            }
+
+            return scripts;
+        },
+        loadScriptForVoice__: function (fileName) {
+            var candidates = self.getScriptFileCandidates__(fileName);
+            return new Promise(function (resolve) {
+                var loadAt = function (index) {
+                    if (index >= candidates.length) {
+                        resolve({ fileName: fileName, lines: [] });
+                        return;
+                    }
+
+                    $.ajax({
+                        url: self.getVoiceFileUrl__(candidates[index]),
+                        type: "GET",
+                        dataType: "text",
+                        cache: false
+                    }).done(function (data) {
+                        resolve({
+                            fileName: fileName,
+                            scriptFileName: candidates[index],
+                            lines: self.parseScriptContent__(data)
+                        });
+                    }).fail(function () {
+                        loadAt(index + 1);
+                    });
+                };
+
+                loadAt(0);
+            });
+        },
+        scrollScriptTo__: function (target, alignTop) {
+            if (!target || target.length === 0) {
+                return;
+            }
+
+            var container = $("#script");
+            var top = target.position().top + container.scrollTop() - (alignTop ? 12 : Math.max((container.height() - target.outerHeight()) / 2, 12));
+            container.stop(true).animate({ scrollTop: Math.max(top, 0) }, 150);
+        },
+        refreshScriptLineState__: function () {
+            $(".scriptLine").removeClass("scriptLineActive scriptLinePlaying");
+            if (self.data.activeScriptLineId != null && self.data.activeScriptLineId >= 0) {
+                $("#script_" + self.data.activeScriptLineId).addClass("scriptLineActive");
+            }
+            if (self.data.playingScriptLineId != null && self.data.playingScriptLineId >= 0) {
+                $("#script_" + self.data.playingScriptLineId).addClass("scriptLinePlaying");
+            }
+        },
+        setActiveScriptLine__: function (lineId) {
+            if (self.data.activeScriptLineId === lineId) {
+                return;
+            }
+            self.data.activeScriptLineId = lineId;
+            self.refreshScriptLineState__();
+        },
+        setPlayingScriptLine__: function (lineId) {
+            if (self.data.playingScriptLineId === lineId) {
+                return;
+            }
+            self.data.playingScriptLineId = lineId;
+            self.refreshScriptLineState__();
+        },
+        highlightScriptBlock__: function (voiceIndex) {
+            if (self.data.activeScriptBlockIndex === voiceIndex) {
+                return;
+            }
+            self.data.activeScriptBlockIndex = voiceIndex;
+            $(".scriptBlock").removeClass("scriptBlockActive");
+            if (voiceIndex != null && voiceIndex >= 0) {
+                $("#scriptBlock_" + voiceIndex).addClass("scriptBlockActive");
+            }
+        },
+        focusScriptByVoiceIndex__: function (voiceIndex) {
+            self.highlightScriptBlock__(voiceIndex);
+            var lines = (self.data.linesByVoiceIndex && self.data.linesByVoiceIndex[voiceIndex]) || [];
+            if (lines.length > 0) {
+                self.setActiveScriptLine__(lines[0].id);
+                self.scrollScriptTo__($("#script_" + lines[0].id), true);
+            } else {
+                self.setActiveScriptLine__(-1);
+                self.scrollScriptTo__($("#scriptBlock_" + voiceIndex), true);
+            }
+        },
+        focusScriptLine__: function (lineId, alignTop) {
+            var line = self.data.scriptLineMap ? self.data.scriptLineMap[lineId] : null;
+            if (!line) {
+                return;
+            }
+
+            self.highlightScriptBlock__(line.voiceIndex);
+            self.setActiveScriptLine__(line.id);
+            self.scrollScriptTo__($("#script_" + line.id), alignTop);
+        },
+        syncPlayingScript__: function (time) {
+            var voiceIndex = self.data.playingIndex;
+            if (voiceIndex == null || voiceIndex < 0) {
+                self.setPlayingScriptLine__(-1);
+                return;
+            }
+
+            self.highlightScriptBlock__(voiceIndex);
+            var lines = (self.data.linesByVoiceIndex && self.data.linesByVoiceIndex[voiceIndex]) || [];
+            if (lines.length === 0) {
+                self.setPlayingScriptLine__(-1);
+                return;
+            }
+
+            var currentLine = null;
+            for (var i = 0; i < lines.length; ++i) {
+                if (time >= lines[i].start && (time < lines[i].end || i === lines.length - 1)) {
+                    currentLine = lines[i];
+                    break;
+                }
+            }
+
+            if (currentLine == null && time >= lines[lines.length - 1].start) {
+                currentLine = lines[lines.length - 1];
+            }
+
+            self.setPlayingScriptLine__(currentLine ? currentLine.id : -1);
+        },
+        playVoiceAt__: function (index, seekTo) {
+            self.data.seekTo = seekTo || 0;
+            if (self.data.playingIndex == index && self.data.playerStatus == "playing") {
+                self.getAudio__()[0].currentTime = self.data.seekTo;
+                self.updateVoicePlayingTime__(self.data.seekTo);
+                self.data.seekTo = 0;
+                return;
+            }
+
+            self.playVoice__(index);
+        },
+        renderAllScripts__: function (files, scriptResults) {
+            var blockTemplate = $("#scriptBlockTemplate").html();
+            var lineTemplate = $("#scriptTemplate").html();
+            var blockHtmls = [];
+            var scriptLineMap = {};
+            var linesByVoiceIndex = {};
+            var nextId = 0;
+
+            for (let i = 0; i < files.length; ++i) {
+                var result = scriptResults[i] || { lines: [] };
+                var lines = result.lines || [];
+                var lineHtmls = [];
+                linesByVoiceIndex[i] = [];
+
+                for (let j = 0; j < lines.length; ++j) {
+                    var lineInfo = {
+                        id: nextId,
+                        voiceIndex: i,
+                        fileName: files[i].name,
+                        start: lines[j].start,
+                        end: lines[j].end,
+                        timeText: lines[j].timeText,
+                        text: lines[j].text
+                    };
+                    scriptLineMap[nextId] = lineInfo;
+                    linesByVoiceIndex[i].push(lineInfo);
+
+                    var lineHtml = lineTemplate.replace(/#id#/g, nextId);
+                    lineHtml = lineHtml.replace(/#voiceIndex#/g, i);
+                    lineHtml = lineHtml.replace(/#start#/g, lines[j].start);
+                    lineHtml = lineHtml.replace(/#time#/g, self.escapeHtml__(lines[j].timeText));
+                    lineHtml = lineHtml.replace(/#script#/g, self.escapeHtml__(lines[j].text));
+                    lineHtmls.push(lineHtml);
+                    nextId += 1;
+                }
+
+                if (lineHtmls.length === 0) {
+                    lineHtmls.push('<div class="scriptEmpty">无字幕</div>');
+                }
+
+                var blockHtml = blockTemplate.replace(/#voiceIndex#/g, i);
+                blockHtml = blockHtml.replace(/#index#/g, i + 1);
+                blockHtml = blockHtml.replace(/#fileName#/g, self.escapeHtml__(files[i].name));
+                blockHtml = blockHtml.replace(/#content#/g, lineHtmls.join(""));
+                blockHtmls.push(blockHtml);
+            }
+
+            self.data.scriptLineMap = scriptLineMap;
+            self.data.linesByVoiceIndex = linesByVoiceIndex;
+            self.data.activeScriptBlockIndex = null;
+            self.data.activeScriptLineId = -1;
+            $("#script").html(blockHtmls.length > 0 ? blockHtmls.join("") : "无字幕");
+            $(".scriptLine").off("click").on("click", self.scriptLineClicked__);
+
+            if (self.data.playingIndex != null && self.data.playingIndex >= 0) {
+                self.syncPlayingScript__(self.getAudio__()[0].currentTime || 0);
+            } else {
+                self.highlightScriptBlock__(-1);
+                self.setPlayingScriptLine__(-1);
+            }
         },
         getVoices: function () {
             let voiceHtmls = [];
             $.get("/video/voice", function (data) {
                 data = JSON.parse(data);
-                var files = data.files;
+                var files = data.files || [];
+                var maxVoiceDuration = 1;
                 self.data.newMessages = files;
                 for (let i = 0; i < files.length; ++i) {
+                    files[i].duration = self.parseVoiceDuration__(files[i].name);
+                    if (files[i].duration > maxVoiceDuration) {
+                        maxVoiceDuration = files[i].duration;
+                    }
+                }
 
+                self.data.maxVoiceDuration = maxVoiceDuration;
+                for (let i = 0; i < files.length; ++i) {
                     var templateVoice = $("#templateVoice").html();
-                    message = templateVoice.replace(/#id#/g, i);
+                    var message = templateVoice.replace(/#id#/g, i);
                     message = message.replace(/#index#/g, i + 1);
                     message = message.replace(/#fileName#/g, files[i].name);
-                    let strs = files[i].name.split(".");
-                    files[i].duration = parseInt(strs[2]) * 60 + parseInt(strs[3]);
                     message = message.replace(/ _width_/g, self.getVoiceWidth__(files[i].duration));
                     message = message.replace(/#duration#/g, share.getDurationText__(files[i].duration));
                     voiceHtmls.push(message);
                 }
-
 
                 $("#items").html(voiceHtmls.join(""));
                 share.onClick__($(".voiceIcon"), self.voiceIconClicked__);
@@ -176,14 +460,38 @@ window.voice = window.voice || (function () {
                 $(".voiceDuration").off("mousedown").on("mousedown", self.voiceDurationTouchStart__);
                 $(".voiceDuration").off("mousemove").on("mousemove", self.voiceDurationTouchMove__);
                 $(".voiceDuration").off("mouseup").on("mouseup", self.voiceDurationTouchEnd__);
-
                 $(".voiceDuration").off("touchstart").on("touchstart", self.voiceDurationTouchStart__);
                 $(".voiceDuration").off("touchmove").on("touchmove", self.voiceDurationTouchMove__);
                 $(".voiceDuration").off("touchend").on("touchend", self.voiceDurationTouchEnd__);
-
                 $(".voiceDeleteBtn").off("click").on("click", self.deleteSelectedVoices__);
                 $(".voiceDeleteOldBtn").off("click").on("click", self.deleteOldVoices__);
-                new bootstrap.Dropdown($(".voiceMoreBtn"));
+                $(".voiceMoreBtn").each(function () {
+                    new bootstrap.Dropdown(this);
+                });
+
+                if (self.data.playerStatus === "playing" && self.data.playingIndex != null && self.data.playingIndex >= 0) {
+                    $("#voiceIcon_" + self.data.playingIndex).addClass("voiceIconPlaying").removeClass("voiceIcon");
+                    self.updateVoicePlayingTime__(self.getAudio__()[0].currentTime || 0);
+                }
+
+                var signature = files.map(function (file) {
+                    return file.name;
+                }).join("|");
+                if (self.data.scriptSignature === signature && self.data.scriptLineMap) {
+                    return;
+                }
+
+                self.data.scriptSignature = signature;
+                self.data.scriptLoadToken = (self.data.scriptLoadToken || 0) + 1;
+                var loadToken = self.data.scriptLoadToken;
+                Promise.all(files.map(function (file) {
+                    return self.loadScriptForVoice__(file.name);
+                })).then(function (results) {
+                    if (loadToken !== self.data.scriptLoadToken) {
+                        return;
+                    }
+                    self.renderAllScripts__(files, results);
+                });
             });
         },
         initAudio__: function () {
@@ -195,7 +503,9 @@ window.voice = window.voice || (function () {
                 }
 
                 var duration = this.duration;
-                self.updateDuration__(Math.ceil(duration));
+                if (typeof self.updateDuration__ === "function") {
+                    self.updateDuration__(Math.ceil(duration));
+                }
                 self.updateVoicePlayingTime__(self.getAudio__()[0].currentTime);
             }).bind('ended', function () {
                 self.updateVoicePlayingTime__(0);
@@ -278,6 +588,7 @@ window.voice = window.voice || (function () {
             }
 
             bar.html(share.getDurationText__(time));
+            self.syncPlayingScript__(time);
         },
         unSelectAllItems__: function () {
             self.data.selectedMessage = null;
@@ -317,7 +628,7 @@ window.voice = window.voice || (function () {
             var index = id.split("_")[1];
             var si = self.data.newMessages[index];
             self.data.selectedMessage = si;
-
+            self.focusScriptByVoiceIndex__(parseInt(index, 10));
             self.playVoice__(index);
 
         },
@@ -325,37 +636,17 @@ window.voice = window.voice || (function () {
             var id = $(this).parents(".player")[0].id;
             share.debug__("fileName clicked:" + id);
             var index = id.split("_")[1];
-            var si = self.data.newMessages[index];
-            var fileName = $(this).html();
-            var url = "../video/voice/" + fileName + ".txt";
+            self.focusScriptByVoiceIndex__(parseInt(index, 10));
+        },
+        scriptLineClicked__: function (e) {
+            var id = parseInt($(e.currentTarget).data("id"), 10);
+            var line = self.data.scriptLineMap ? self.data.scriptLineMap[id] : null;
+            if (!line) {
+                return;
+            }
 
-            var params = {
-            };
-
-            var success = function (data) {
-            };
-
-            var fail = function (e) {
-                share.toastError__(e);
-            };
-
-            $.get(url, function (data) {
-                share.closeDialog__();
-                var script = data.split("\n");
-
-                let template = $("#scriptTemplate").html();
-                let htmls = [];
-                for (let i = 0; i < script.length; ++i) {
-                    let line = script[i].replace(/-->.*\] /g, "");
-                    line = line.replace(/ <br>/g, "");
-                    line = line.replace(/\[/g, "");
-                    let html = template.replace(/#script#/g, line);
-                    html = html.replace(/#id#/g, i);
-                    htmls.push(html);
-                }
-
-                $("#script").html(htmls.join(""));
-            });
+            self.focusScriptLine__(line.id, false);
+            self.playVoiceAt__(line.voiceIndex, line.start);
         },
         getAudio__: function () {
             return $("#audio");
@@ -402,6 +693,8 @@ window.voice = window.voice || (function () {
             self.updateVoicePlayingTime__(0);
             self.data.playerStatus = "stopped";
             self.data.playingIndex = -1;
+            self.highlightScriptBlock__(-1);
+            self.setPlayingScriptLine__(-1);
         },
 
         playVoice__: function (index) {
@@ -417,6 +710,8 @@ window.voice = window.voice || (function () {
                 self.data.playingIndex = -1;
                 self.data.playerStatus = "stopped";
                 self.data.playingVoice = false;
+                self.highlightScriptBlock__(-1);
+                self.setPlayingScriptLine__(-1);
                 return;
             }
 
@@ -440,7 +735,8 @@ window.voice = window.voice || (function () {
             $("#voiceIcon_" + index).addClass("voiceIconPlaying");
             $("#voiceIcon_" + index).removeClass("voiceIcon");
             self.data.playingIndex = index / 1;
-            audio[0].src = "../video/voice/" + item.name;
+            self.highlightScriptBlock__(self.data.playingIndex);
+            audio[0].src = self.getVoiceFileUrl__(item.name);
             audio[0].play();
             if (self.data.seekTo > 0) {
                 self.updateVoicePlayingTime__(self.data.seekTo);
@@ -848,5 +1144,3 @@ $("#buttonStart").on("click", function (e) {
 $("#buttonEnd").on("click", function (e) {
     buttonEndClicked(e);
 });
-
-

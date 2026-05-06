@@ -40,6 +40,123 @@
     <script src="vendor/store.legacy.min.js"></script>
     <script src="vendor/purify.js"></script>
     <script src="js/common.js"></script>
+    <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        .voicePane {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .scriptPane {
+            width: 48vw;
+            max-width: 760px;
+            min-width: 360px;
+            background-color: #efefef;
+            border-left: 1px solid #d8d8d8;
+        }
+
+        #items {
+            position: absolute;
+            left: 10px;
+            right: 0;
+            top: 10px;
+            bottom: 0;
+            overflow: auto;
+            padding: 0 12px 80px 0;
+        }
+
+        #script {
+            overflow: auto;
+            padding: 12px 20px 80px;
+            font-family: serif;
+        }
+
+        .scriptBlock {
+            margin-bottom: 14px;
+            background: #fff;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .scriptBlockActive {
+            border-color: #198754;
+            box-shadow: 0 0 0 1px #198754 inset;
+        }
+
+        .scriptBlockTitle {
+            padding: 10px 14px;
+            background: #f6f6f6;
+            color: #444;
+            font-weight: 600;
+            border-bottom: 1px solid #e7e7e7;
+        }
+
+        .scriptLine {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 14px;
+            border-top: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+
+        .scriptLine:first-child {
+            border-top: 0;
+        }
+
+        .scriptLine:hover {
+            background: #f8fbff;
+        }
+
+        .scriptLineActive {
+            background: #edf5ff;
+        }
+
+        .scriptLinePlaying {
+            background: #e4f6ea;
+        }
+
+        .scriptTime {
+            flex: 0 0 120px;
+            color: #666;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 20px;
+        }
+
+        .scriptText {
+            flex: 1 1 auto;
+            min-width: 0;
+            line-height: 20px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #222;
+        }
+
+        .scriptEmpty {
+            padding: 12px 14px;
+            color: #888;
+        }
+
+        @media (max-width: 900px) {
+            #holder {
+                flex-direction: column;
+            }
+
+            .scriptPane {
+                width: 100%;
+                min-width: 0;
+                height: 45%;
+                border-left: 0;
+                border-top: 1px solid #d8d8d8;
+            }
+        }
+    </style>
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="vendor/html5shiv/3.7.2/html5shiv.min.js"></script>
@@ -53,29 +170,33 @@
         <span id="heartbeatText">心跳检测中...</span>
     </div>
     <div id="holder" class="flexrow height100p" style="background-color:lightgray;">
-        <div class="width100p height100p">
+        <div class="voicePane height100p">
             <div class="width100p height100p" style="position: relative;">
-
-                <div id="items" class="width100p height100p" style="position:absolute;left:10;top:10;">
-
+                <div id="items" class="width100p height100p">
                 </div>
             </div>
         </div>
-        <div class="flexcolumn height100p">
+        <div class="scriptPane flexcolumn height100p">
             <div class="flexrow margintb2" style="margin-top:24px;">
                 <div>脚本
                 </div>
             </div>
-            <div id="script" class="flexcolumn bg_gray gray "
-                style="overflow: auto;padding-right: 80px;padding-left:120px;font-family:serif;">
+            <div id="script" class="flexcolumn bg_gray gray">
                 无字幕
             </div>
         </div>
     </div>
     <div id="recent" class="hide"></div>
+    <div id="scriptBlockTemplate" class="hide">
+        <div id="scriptBlock_#voiceIndex#" class="scriptBlock">
+            <div class="scriptBlockTitle">#index#. #fileName#</div>
+            <div class="scriptBlockBody">#content#</div>
+        </div>
+    </div>
     <div id="scriptTemplate" class="hide">
-        <div id="script_#id#" class="scriptLine">
-            #script#
+        <div id="script_#id#" class="scriptLine" data-id="#id#" data-voice-index="#voiceIndex#" data-start="#start#">
+            <div class="scriptTime">#time#</div>
+            <div class="scriptText">#script#</div>
         </div>
     </div>
     <div id="editorTemplate" class="hide">
