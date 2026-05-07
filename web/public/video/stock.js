@@ -1478,7 +1478,7 @@ window.stock_list = window.stock_list || (function () {
             });
             self.refreshBlockedActionMessageStyles();
         },
-        findBuySellCellForBlockedAction: function (blockedAction) {
+        findRowForBlockedAction: function (blockedAction) {
             let scode = blockedAction && blockedAction.scode ? blockedAction.scode : "";
             let normalizedScode = "";
             try {
@@ -1495,6 +1495,34 @@ window.stock_list = window.stock_list || (function () {
             if (tr.length == 0) {
                 tr = $(`tr[code="${self.stripScodeSuffix(normalizedScode)}"]`).first();
             }
+            return tr;
+        },
+        scrollToBlockedActionRow: async function (blockedAction) {
+            let tr = self.findRowForBlockedAction(blockedAction);
+            if (tr.length == 0) {
+                return tr;
+            }
+
+            let shouldWait = !share.isInViewport(tr);
+            let row = tr[0];
+            if (row && typeof row.scrollIntoView == "function") {
+                row.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                    inline: "nearest"
+                });
+            }
+
+            if (shouldWait) {
+                await new Promise(function (resolve) {
+                    setTimeout(resolve, 320);
+                });
+            }
+
+            return tr;
+        },
+        findBuySellCellForBlockedAction: function (blockedAction) {
+            let tr = self.findRowForBlockedAction(blockedAction);
             if (tr.length == 0) {
                 return $();
             }
@@ -1513,6 +1541,7 @@ window.stock_list = window.stock_list || (function () {
                         await share.closePopup__();
                         let buySellCell = self.findBuySellCellForBlockedAction(blockedAction);
                         if (buySellCell.length > 0) {
+                            await self.scrollToBlockedActionRow(blockedAction);
                             share.currentTarget = buySellCell[0];
                             await self.onBuySellClicked(buySellCell[0]);
                             return;
