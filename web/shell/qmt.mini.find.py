@@ -74,7 +74,7 @@ g.jiuzhuan_recent_days = 5  # 最近N天内出现下跌九转
 g.volume_ma_days = 3  # 放量判断使用的均量天数
 g.volume_ma_ratio = 1.6  # 今天成交量至少是最近均量的多少倍
 g.volume_compare_days = 3  # 今天成交量需要高于前几日
-g.volume_signal_recent_days = 10  # 最近N天内出现过放量参考日
+g.volume_signal_recent_days = 5  # 最近N天内出现过放量参考日
 g.keep_low_days = 5  # 最近几天内不能跌破参考低点
 g.low_window_days = 20  # 最近N日最低点窗口
 
