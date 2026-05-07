@@ -1151,8 +1151,11 @@ window.stock_list = window.stock_list || (function () {
                 let data = tr.attr("data");
                 data = JSON.parse(data);
 
-                let pairedId = data["配对"];
-                let pairedTr = $(`.tid${pairedId.replace(/[\.:]/g, '_')}`);
+                let pairedIds = String(data["配对"] || "").split(",").map((item) => item.trim()).filter((item) => item != "");
+                let pairedTr = $();
+                pairedIds.forEach(function (pairedId) {
+                    pairedTr = pairedTr.add($(`.tid${pairedId.replace(/[\.:]/g, '_')}`));
+                });
                 pairedTr.find("td").addClass("bg_purple");
                 tr.find("td").addClass("bg_purple");
                 let popup;
@@ -1180,46 +1183,6 @@ window.stock_list = window.stock_list || (function () {
                                 share.toastError__(res.error);
                             } else {
                                 tr.remove();
-                            }
-                        }
-                    },
-                    {
-                        text: "隐藏本行及关联",
-                        onTap: async function () {
-                            popup.close();
-
-                            if (pairedId == "" || pairedId == null || pairedTr.length == 0) {
-                                share.toastError__("未找到配对行");
-                                return;
-                            }
-
-                            let res = await share.getSync__(`/stock/deleteRow?tid=${data.tid}`);
-                            if (res.error) {
-                                share.toastError__(res.error);
-                            } else {
-                                tr.remove();
-
-                                if (pairedId != "" && pairedId != null) {
-                                    let res = await share.getSync__(`/stock/deleteRow?tid=${pairedId}`);
-                                    if (res.error) {
-                                        share.toastError__(res.error);
-                                    } else {
-                                        pairedTr.remove();
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    {
-                        text: "取消隐藏",
-                        onTap: async function () {
-                            popup.close();
-
-                            let res = await share.getSync__(`/stock/undeleteRow?tid=${data.tid}`);
-                            if (res.error) {
-                                share.toastError__(res.error);
-                            } else {
-                                tr.find("td").removeClass("gray");
                             }
                         }
                     },

@@ -4506,7 +4506,97 @@ async function autoDelete(delta, scode, req) {
     let r = await db.allSync(sql, [scode], req.threadId);
     let trades = r.rows;
     info(`${trades.length} trades`, req.threadId);
-    for (let i = 0; i < trades.length - 2; ++i) {
+
+    let getTradeNumber = function (value) {
+        let num = parseFloat(value);
+        if (isNaN(num)) {
+            return 0;
+        }
+
+        return num;
+    };
+
+    let canAutoPairTrade = function (t1, t2) {
+        let amount1 = getTradeNumber(t1.tamount);
+        let amount2 = getTradeNumber(t2.tamount);
+        if (Math.abs(amount1 + amount2) > 0.00000001) {
+            return false;
+        }
+
+        let price1 = getTradeNumber(t1.tprice);
+        let price2 = getTradeNumber(t2.tprice);
+        if (price1 <= price2 && amount1 < 0) {
+            return false;
+        }
+
+        if (price1 > price2 && amount1 > 0) {
+            return false;
+        }
+
+        return true;
+    };
+
+    let canSellMatchBuy = function (sellTrade, buyTrade) {
+        return getTradeNumber(buyTrade.tprice) <= getTradeNumber(sellTrade.tprice);
+    };
+
+    let hideTradeGroup = async function (groupTrades) {
+        let tids = groupTrades.map((trade) => trade.tid);
+        for (let i = 0; i < groupTrades.length; ++i) {
+            let trade = groupTrades[i];
+            let tpair = tids.filter((tid) => tid != trade.tid).join(",");
+            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [tpair, trade.tid], req.threadId);
+            trade.deleted = 1;
+            trade.tpair = tpair;
+        }
+    };
+
+    let findTradeSubsetByAmount = function (candidates, targetAmount) {
+        let suffixAmounts = new Array(candidates.length + 1).fill(0);
+        for (let i = candidates.length - 1; i >= 0; --i) {
+            suffixAmounts[i] = suffixAmounts[i + 1] + getTradeNumber(candidates[i].tamount);
+        }
+
+        let tried = new Set();
+        let dfs = function (start, remaining) {
+            if (Math.abs(remaining) < 0.00000001) {
+                return [];
+            }
+
+            if (start >= candidates.length || remaining < -0.00000001) {
+                return null;
+            }
+
+            if (suffixAmounts[start] + 0.00000001 < remaining) {
+                return null;
+            }
+
+            let key = `${start}:${remaining.toFixed(8)}`;
+            if (tried.has(key)) {
+                return null;
+            }
+
+            for (let i = start; i < candidates.length; ++i) {
+                let candidate = candidates[i];
+                let amount = getTradeNumber(candidate.tamount);
+                if (amount <= 0) {
+                    continue;
+                }
+
+                let result = dfs(i + 1, remaining - amount);
+                if (result != null) {
+                    return [candidate].concat(result);
+                }
+            }
+
+            tried.add(key);
+            return null;
+        };
+
+        return dfs(0, targetAmount);
+    };
+
+    for (let i = 0; i < trades.length - 1; ++i) {
         let t1 = trades[i];
         info(`${i}: ${t1.tprice} * ${t1.tamount}`, req.threadId);
         if (t1.deleted) {
@@ -4514,7 +4604,11 @@ async function autoDelete(delta, scode, req) {
             continue;
         }
 
-        for (let j = i + 1; j < trades.length - 1; ++j) {
+        if (Math.abs(getTradeNumber(t1.tamount)) < 0.00000001) {
+            continue;
+        }
+
+        for (let j = i + 1; j < trades.length; ++j) {
             let t2 = trades[j];
             info(`${j}: ${t2.tprice} * ${t2.tamount}`, req.threadId);
             if (t2.deleted) {
@@ -4522,26 +4616,54 @@ async function autoDelete(delta, scode, req) {
                 continue;
             }
 
-            if (t2.tamount + t1.tamount != 0) {
-                info(`t2.tamount + t1.tamount != 0`, req.threadId);
+            if (Math.abs(getTradeNumber(t2.tamount)) < 0.00000001) {
                 continue;
             }
 
-            if (t1.tprice <= t2.tprice && t1.tamount < 0) {
+            if (!canAutoPairTrade(t1, t2)) {
+                info(`can not auto pair`, req.threadId);
                 continue;
             }
 
-            if (t1.tprice > t2.tprice && t1.tamount > 0) {
-                continue;
-            }
-
-            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [t2.tid, t1.tid]);
-            await db.runSync(`update tstock set tpair=?, deleted=1 where tid=?`, [t1.tid, t2.tid]);
-            t2.deleted = 1;
-            t1.deleted = 1;
+            await hideTradeGroup([t1, t2]);
             break;
         }
-    };
+    }
+
+    for (let sellIndex = 0; sellIndex < trades.length; ++sellIndex) {
+        let sellTrade = trades[sellIndex];
+        let sellAmount = getTradeNumber(sellTrade.tamount);
+        if (sellTrade.deleted || sellAmount >= 0) {
+            continue;
+        }
+
+        let targetAmount = Math.abs(sellAmount);
+        let candidateBuys = [];
+        for (let buyIndex = 0; buyIndex < sellIndex; ++buyIndex) {
+            let buyTrade = trades[buyIndex];
+            let buyAmount = getTradeNumber(buyTrade.tamount);
+            if (buyTrade.deleted || buyAmount <= 0) {
+                continue;
+            }
+
+            if (!canSellMatchBuy(sellTrade, buyTrade)) {
+                continue;
+            }
+
+            candidateBuys.push(buyTrade);
+        }
+
+        if (candidateBuys.length < 2) {
+            continue;
+        }
+
+        let matchedBuys = findTradeSubsetByAmount(candidateBuys, targetAmount);
+        if (matchedBuys == null || matchedBuys.length < 2) {
+            continue;
+        }
+
+        await hideTradeGroup([sellTrade].concat(matchedBuys));
+    }
 }
 
 app.get('/stock/delete/auto', async (req, res) => {
