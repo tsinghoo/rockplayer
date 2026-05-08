@@ -4502,10 +4502,11 @@ async function autoDelete(delta, scode, req) {
         await db.runSync(`update tstock set tpair='', deleted=0 where scode=?`, [scode]);
     }
 
-    let sql = `select * from tstock where scode=? and deleted=0 order by tday , ttime`;
+    let sql = `select * from tstock where scode=? and deleted=0 order by tday, ttime, tid`;
     let r = await db.allSync(sql, [scode], req.threadId);
     let trades = r.rows;
     info(`${trades.length} trades`, req.threadId);
+    let latestTradeId = trades.length > 0 ? trades[trades.length - 1].tid : null;
 
     let getTradeNumber = function (value) {
         let num = parseFloat(value);
@@ -4616,6 +4617,11 @@ async function autoDelete(delta, scode, req) {
                 continue;
             }
 
+            if (t2.tid == latestTradeId) {
+                info(`${j} latest trade excluded`, req.threadId);
+                continue;
+            }
+
             if (Math.abs(getTradeNumber(t2.tamount)) < 0.00000001) {
                 continue;
             }
@@ -4633,7 +4639,7 @@ async function autoDelete(delta, scode, req) {
     for (let sellIndex = 0; sellIndex < trades.length; ++sellIndex) {
         let sellTrade = trades[sellIndex];
         let sellAmount = getTradeNumber(sellTrade.tamount);
-        if (sellTrade.deleted || sellAmount >= 0) {
+        if (sellTrade.deleted || sellAmount >= 0 || sellTrade.tid == latestTradeId) {
             continue;
         }
 
