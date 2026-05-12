@@ -1439,7 +1439,7 @@ app.use((req, res, next) => {
     const originalEnd = res.end.bind(res);
     let responseLogged = false;
 
-    res.send = function(body, ...args) {
+    res.send = function (body, ...args) {
         if (!responseLogged) {
             responseLogged = true;
             const respStr = body !== undefined ? (typeof body === 'string' ? body : JSON.stringify(body)) : '';
@@ -1448,7 +1448,7 @@ app.use((req, res, next) => {
         return originalSend(body, ...args);
     };
 
-    res.end = function(chunk, ...args) {
+    res.end = function (chunk, ...args) {
         if (!responseLogged && chunk) {
             responseLogged = true;
             const respStr = typeof chunk === 'string' ? chunk : JSON.stringify(chunk);
@@ -3843,7 +3843,7 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
             amount = stockBasicInfo.volumeMultiple;
         }
 
-        if (amount < 100) {
+        if (amount != 50 && amount < 100) {
             amount = 100;
         }
     }
@@ -4802,13 +4802,13 @@ app.post('/stock/k/upload', async (req, res) => {
 
             if (period == "1d") {
                 row.cci = data[i][7];
-            //     row.kdj_k = 0;
-            //     row.kdj_d = 0;
-            //     row.kdj_j = 0;
-            //     row.boll_u = 0;
-            //     row.boll_m = 0;
-            //     row.boll_l = 0;
-            //     row.range = 0;
+                //     row.kdj_k = 0;
+                //     row.kdj_d = 0;
+                //     row.kdj_j = 0;
+                //     row.boll_u = 0;
+                //     row.boll_m = 0;
+                //     row.boll_l = 0;
+                //     row.range = 0;
             }
 
             if (row.volume < 0) {
@@ -5274,7 +5274,7 @@ app.post('/video/openwrt/clients/upload', async (req, res) => {
         );
 
         const isReconnect = latestRow &&
-                             currentMinute - parseInt(latestRow.time) <= 1;
+            currentMinute - parseInt(latestRow.time) <= 1;
 
         if (isReconnect) {
             // Continue same online session, just update time
