@@ -5,7 +5,7 @@ cd $DIR
 # apt-get install libgl1
 stt(){
   today=`date +%Y-%m-%d`
-  python ./stt.py  >> ./stt.$today.log 2>&1 
+  python ./stt.py  >> ./logs/stt.$today.log 2>&1 
 }
 
 stt
