@@ -79,6 +79,7 @@ today = datetime.datetime.now().date()
 threadLocal = threading.local()
 g.k1dIndicatorLookbackDays = 30
 g.update1dTaskStarted = False
+g.printTaskStarted = False
 
 
 def strip_scode_suffix(scode):
@@ -727,13 +728,13 @@ def log(*args, **kwargs):
     """增强版log函数，完全模拟print的参数行为"""
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # 将时间作为第一个元素插入到输出中
-    if (hasattr(threadLocal, "id")):
+    if hasattr(threadLocal, "id"):
         time_header = f"[{current_time}][{threadLocal.id}]"
     else:
         time_header = f"[{current_time}]"
 
     all_args = (time_header,) + args
-    # print(*all_args, **kwargs)
+
     g.toPrint.append([all_args, kwargs])
 
 
@@ -1059,14 +1060,28 @@ def obj2JsonString(obj, max_depth=4, indent=4, ensure_ascii=False):
 def printTask():
     while True:
         toPrint, g.toPrint = g.toPrint, []
-        log2File(toPrint, g.logPathPrefix + "\\qmt.action")
+        log2File(toPrint, f"{g.logPathPrefix}\\qmt.1d")
+        while len(toPrint) > 0:
+            item = toPrint.pop(0)
+            print(*item[0], **item[1])
+
         time.sleep(0.1)
 
 
-def log2File(toPrint, file="d:\\qmt.action", sep=' ', end='\n', flush=True, mode='a', encoding='utf-8'):
-    print("log2File")
-    # 在file文件名后边加上当天日期
-    file = file + "." + datetime.datetime.now().strftime("%Y%m%d")+".log"
+def log2File(toPrint, file, sep=" ", end="\n", flush=True, mode="a", encoding="utf-8"):
+    """
+    将打印内容输出到文件，参数与print()函数保持一致
+
+    参数:
+        file: 输出文件名前缀
+        sep: 分隔符(默认空格)
+        end: 结束符(默认换行)
+        flush: 是否立即刷新缓冲区
+        mode: 文件打开模式('a'追加或'w'写入)
+        encoding: 文件编码(默认'utf-8')
+    """
+    sessionId = g.config.get("sessionId", 0)
+    file = f"{file}.{datetime.datetime.now().strftime('%Y%m%d')}.log.{sessionId:02d}"
 
     with open(file, mode=mode, encoding=encoding) as f:
         for item in toPrint:
@@ -1082,13 +1097,19 @@ def init(ContextInfo):
     info(sys.version)
     info(sys.executable)
     loadConfig()
+    if "sessionId" not in g.config:
+        g.config["sessionId"] = 0
+    g.config["sessionId"] = g.config["sessionId"] + 1
+    saveConfig()
     ContextInfo.set_account(account)
     g.ContextInfo = ContextInfo
     g.stocklist = getStockList()
     ContextInfo.set_universe(g.stocklist)
 
-    t3 = Thread(target=printTask)
-    t3.start()
+    if not g.printTaskStarted:
+        g.printTaskStarted = True
+        t3 = Thread(target=printTask)
+        t3.start()
 
     if not g.update1dTaskStarted:
         g.update1dTaskStarted = True
