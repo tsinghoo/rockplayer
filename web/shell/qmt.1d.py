@@ -1,4 +1,4 @@
-# encoding:gbk
+# encoding:utf-8
 '''
 
 '''
@@ -70,9 +70,15 @@ else:
 
 g.tick = {}
 g.actions = {}
+g.reloadK1d = []
+g.stocklist = []
+g.candidates = []
+g.ruleCodes = []
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
+g.k1dIndicatorLookbackDays = 30
+g.update1dTaskStarted = False
 
 
 def strip_scode_suffix(scode):
@@ -209,110 +215,276 @@ def get1dLastDate(scode):
         error("getLast1dDate failed:", str(e))
 
 
+def getKLastDate(scode, period):
+    try:
+        mapping = {"1d": "1d", "1w": "1w", "1mon": "1mon"}
+        route = mapping.get(period)
+        if route is None:
+            error("getKLastDate unsupported period:", period)
+            return
+        url = g.baseUrl + f"/stock/{route}/lastDate?scode=" + scode
+        debug("get", url)
+        response = requests.get(url, verify=False, timeout=5)
+        if response.status_code != 200:
+            error("getKLastDate failed:", response.status_code)
+            return
+        else:
+            response.encoding = 'utf-8'
+            content = response.text
+            debug(content)
+            return json.loads(content)["lastDate"]
+
+    except Exception as e:
+        error("getKLastDate failed:", traceback.format_exc())
+
+
 def get1dData(stocklist, index, startTime, endTime):
-    xtdata = g.ContextInfo
-    if (startTime is None):
-        startTime = datetime.datetime.now().strftime("%Y%m%d%H")
-
-    if (endTime is None):
-        endTime = ""
-
-    scode = stocklist[index]
-    period = '1d'
-    params = ['open', 'close', 'high', 'low', 'volume', 'amount']
-    info('downloading', period, 'from', startTime, "for", scode)
-    download_history_data(scode, period, startTime, endTime)
-    # download_history_data2 批量版本 todo
-    # params = []
-    info('get', period, 'from', startTime, 'to', endTime,
-         'for', scode, "(", index, "/", len(stocklist), ")")
-    df = xtdata.get_market_data_ex(params, [scode], period=period,
-                                   start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
-    datas = df[scode]
-
-    return datas
+    return getPeriodData(stocklist, index, startTime, endTime, "1d", True)
 
 
 def update1d(stocklist=None, startTime=None, endTime=None):
-    info("update1d")
-    if (stocklist is None):
+    updatePeriod(stocklist, startTime, endTime, "1d")
+
+
+def update1w(stocklist=None, startTime=None, endTime=None):
+    updatePeriod(stocklist, startTime, endTime, "1w")
+
+
+def update1mon(stocklist=None, startTime=None, endTime=None):
+    updatePeriod(stocklist, startTime, endTime, "1mon")
+
+
+def updatePeriod(stocklist=None, startTime=None, endTime=None, period="1d"):
+    info("updatePeriod", period)
+    if stocklist is None:
         stocklist = g.stocklist
-    if (endTime is None):
+    if endTime is None:
         endTime = ""
 
-    for index, scode in enumerate(stocklist):
-        dataStartTime = startTime
-        if (startTime is None):
-            lastDate = get1dLastDate(scode)
-            if lastDate:
-                dataStartTime = lastDate
-            else:
-                # 把dateStartTime设置为1年前
-                dataStartTime = (datetime.datetime.now() -
-                                 datetime.timedelta(days=365)).strftime("%Y%m%d")
-        period = '1d'
-        datas = get1dData(stocklist, index, dataStartTime, endTime)
-        # print("所有列名:", df.keys())
-        # print("所有:", df.values())
-        columns = ['Time'] + datas.columns.tolist()
-        # print(columns)
-        info("", len(datas), "rows")
-        # array_data = [datas.columns.tolist()] + datas.values.tolist()
+    defaultLookbackDays = 365
+    fetchLookbackDays = 0
+    includeCci = False
+    if period == "1d":
+        fetchLookbackDays = g.k1dIndicatorLookbackDays
+        includeCci = True
+    elif period == "1w":
+        defaultLookbackDays = 365 * 5
+    elif period == "1mon":
+        defaultLookbackDays = 365 * 10
 
-        # 将datas的数据分批上传，每批100条
-        bsize = 500
-        for i in range(0, len(datas), bsize):
-            batch = datas.iloc[i:i+bsize]
-            info("上传", scode, period,
-                 "[", i, ",", i+bsize, "]", len(batch))
-            for idx, row in batch.iterrows():
-                # info(row)
-                batch_data = [[str(idx)] + [row["open"], row["close"],
-                                            row["high"], row["low"], row["volume"], row["amount"]]]
-            # print(obj2JsonString(batch_data, indent=None))
-                body = {"data": obj2Json(
-                    batch_data), "scode": scode, "period": period, "passcode": "995560"}
-                debug("body:", body)
-                # 上传数据到test1
-                try:
-                    response = requests.post(
-                        g.baseUrl+"/stock/k/upload", json=body, verify=False, timeout=20)
-                    if response.status_code != 200:
-                        error("上传失败，状态码:", response.status_code,
-                              "响应内容:", response.text)
-                except Exception as e:
-                    error("上传失败:", str(e))
+    for index, scode in enumerate(stocklist):
+        try:
+            newData = 0
+
+            dataStartTime = startTime
+            if startTime is None:
+                lastDate = getKLastDate(scode, period)
+                info("lastDate:", lastDate)
+                if lastDate:
+                    dataStartTime = lastDate
+                else:
+                    newData = 1
+                    dataStartTime = (datetime.datetime.now() -
+                                     datetime.timedelta(days=defaultLookbackDays)).strftime("%Y%m%d")
+
+            uploadStartTime = dataStartTime
+            fetchStartTime = dataStartTime
+            if fetchLookbackDays > 0:
+                fetchStartTime = (
+                    datetime.datetime.strptime(dataStartTime, "%Y%m%d") -
+                    datetime.timedelta(days=fetchLookbackDays)
+                ).strftime("%Y%m%d")
+            datas = getPeriodData(
+                stocklist, index, fetchStartTime, endTime, period, includeCci
+            )
+            info(
+                "",
+                len(datas),
+                "rows",
+                "fetchStartTime:",
+                fetchStartTime,
+                "uploadStartTime:",
+                uploadStartTime,
+                "period:",
+                period,
+            )
+
+            uploadPeriodData(
+                scode, period, datas, uploadStartTime, newData, includeCci
+            )
+        except Exception as e:
+            error(f"update {period} error:", traceback.format_exc())
+
+
+def KDJ(table):
+    table["kdj_k"] = 0.0000001
+    table["kdj_d"] = 0.0000001
+    table["kdj_j"] = 0.0000001
+    for i in range(13, len(table)):
+        high = table["high"].values[i - 13: i + 1]
+        low = table["low"].values[i - 13: i + 1]
+        close = table["close"].values[i - 13: i + 1]
+        rsv = (close[-1] - low.min()) / (high.max() - low.min())
+        table["kdj_k"].values[i] = 2 / 3 * table["kdj_k"].values[i - 1] + 1 / 3 * rsv
+        table["kdj_d"].values[i] = 2 / 3 * table["kdj_d"].values[i - 1] + 1 / 3 * table["kdj_k"].values[i]
+        table["kdj_j"].values[i] = 3 * table["kdj_k"].values[i] - 2 * table["kdj_d"].values[i]
+        table["kdj_k"].values[i] = round(table["kdj_k"].values[i], 3)
+        table["kdj_d"].values[i] = round(table["kdj_d"].values[i], 3)
+        table["kdj_j"].values[i] = round(table["kdj_j"].values[i], 3)
+
+
+def BOLL(table, period=20, k=2):
+    table["boll_u"] = 0.0000001
+    table["boll_m"] = 0.0000001
+    table["boll_l"] = 0.0000001
+    for i in range(period, len(table)):
+        close = table["close"].values[i - period: i + 1]
+        boll_u = close.mean() + k * close.std()
+        boll_m = close.mean()
+        boll_l = close.mean() - k * close.std()
+
+        table["boll_u"].values[i] = round(boll_u, 2)
+        table["boll_m"].values[i] = round(boll_m, 2)
+        table["boll_l"].values[i] = round(boll_l, 2)
+
+
+def RANGE(table, period=5):
+    table["range"] = 0.0000001
+    for i in range(period, len(table)):
+        high = table["high"].values[i - period: i + 1]
+        low = table["low"].values[i - period: i + 1]
+        delta = high - low
+        table["range"].values[i] = delta.mean()
+
+
+def CCI(table):
+    table["cci"] = 0.0000001
+    for i in range(13, len(table)):
+        high = table["high"].values[i - 13: i + 1]
+        low = table["low"].values[i - 13: i + 1]
+        close = table["close"].values[i - 13: i + 1]
+        tp = (high + low + close) / 3
+        sma = tp.mean()
+        mad = np.abs(tp - sma).mean()
+        table["cci"].values[i] = (tp[-1] - sma) / (0.015 * mad)
+        table["cci"].values[i] = round(table["cci"].values[i], 2)
+
+
+def getPeriodData(stocklist, index, startTime, endTime, period, calcIndicators=False):
+    info("getPeriodData", period, index, startTime, endTime)
+    if startTime is None:
+        startTime = datetime.datetime.now().strftime("%Y%m%d")
+
+    if endTime is None:
+        endTime = ""
+
+    scode = stocklist[index]
+    ci = g.ContextInfo
+    params = ['open', 'close', 'high', 'low', 'volume', 'amount', 'suspendFlag']
+    info('downloading', period, 'from', startTime, "for", scode)
+    download_history_data(scode, period, startTime, endTime)
+    info('get', period, 'from', startTime, 'to', endTime,
+         'for', scode, "(", index, "/", len(stocklist), ")")
+    df = ci.get_market_data_ex(params, [scode], period=period,
+                               start_time=startTime, end_time=endTime, count=-1, dividend_type='none', fill_data=True)
+    table = df[scode]
+    if "suspendFlag" in table.columns:
+        table = table.query("suspendFlag != 1").copy()
+    info("getPeriodData done", period)
+    if calcIndicators:
+        CCI(table)
+        KDJ(table)
+        BOLL(table)
+        RANGE(table)
+
+    return table
+
+
+def uploadPeriodData(scode, period, datas, uploadStartTime, newData, includeCci=False):
+    bsize = 50
+    foundStart = 0
+    for i in range(0, len(datas), bsize):
+        batch = datas.iloc[i:i+bsize]
+        info("上传", scode, period, "[", i, ",", i + bsize, "]", len(batch))
+        batch_data = []
+        for idx, row in batch.iterrows():
+            if newData != 1 and foundStart != 1 and idx != uploadStartTime:
+                info(
+                    f"newData={newData}, idx={idx}, foundStart={foundStart}, uploadStartTime={uploadStartTime}"
+                )
+                continue
+
+            if idx == uploadStartTime:
+                foundStart = 1
+
+            values = [
+                row["open"],
+                row["close"],
+                row["high"],
+                row["low"],
+                row["volume"],
+                row["amount"],
+            ]
+            if includeCci:
+                values.append(row["cci"])
+            batch_data.append([str(idx)] + values)
+
+        if len(batch_data) > 0:
+            body = {
+                "data": obj2Json(batch_data),
+                "scode": scode,
+                "period": period,
+                "passcode": "995560",
+            }
+            response = requests.post(
+                g.baseUrl + "/stock/k/upload", json=body, verify=False, timeout=20
+            )
+            if response.status_code != 200:
+                error("上传失败，状态码:", response.status_code,
+                      "响应内容:", response.text)
 
 
 def update1dTask():
     info("update1dTask")
     try:
         g.candidates = getCandidates()
-        resetThreadId("u1d")
-        # update1d(g.candidates, (datetime.datetime.now() - datetime.timedelta(days=370)).strftime("%Y%m%d"))
+        g.stocklist = getStockList()
+        resetThreadId("u1mc")
+        update1mon(g.candidates)
+        resetThreadId("u1m")
+        update1mon(g.stocklist)
+
+        resetThreadId("u1wc")
+        update1w(g.candidates)
+        resetThreadId("u1w")
+        update1w(g.stocklist)
+
+        resetThreadId("u1dc")
         update1d(g.candidates)
 
-        g.ruleCodes = getRuleCodes()
-        resetThreadId("u1d")
-        update1d(g.ruleCodes)
+        # g.ruleCodes = getRuleCodes()
+        # resetThreadId("u1dr")
+        # update1d(g.ruleCodes)
 
         while True:
-            time.sleep(1)
             resetThreadId("u1d")
             reloadK1d, g.reloadK1d = g.reloadK1d, []
             if len(reloadK1d) > 0:
                 info("reloading 1d data")
                 for scode in reloadK1d:
-                    updateActionOrdered(scode, "", "56", 0, "")
                     update1d([scode.replace(".HGT", ".HK")], "20210101", "")
             g.stocklist = getStockList()
             update1d(g.stocklist)
+            mergedStocks = list(
+                dict.fromkeys((g.stocklist or []) + (g.candidates or []) + (g.ruleCodes or []))
+            )
+            updateHigherPeriodIfNeeded("1w", mergedStocks, "lastUpdate1wDate")
+            updateHigherPeriodIfNeeded("1mon", mergedStocks, "lastUpdate1monDate")
 
             updateLastStartTime1d()
             saveConfig()
     except Exception as e:
-        error("update1dTask error:", str(e))
-    info("update1dTask quit")
+        info("update1dTask error:", traceback.format_exc())
 
 
 def update1mTask():
@@ -710,6 +882,30 @@ def orderError_callback(ContextInfo, orderArgs, errMsg):
     debug(obj2JsonString(orderArgs))
 
 
+def updateHigherPeriodIfNeeded(period, stocklist, configKey):
+    if stocklist is None or len(stocklist) == 0:
+        return
+
+    today = datetime.datetime.now().strftime("%Y%m%d")
+    if g.config.get(configKey) == today:
+        return
+
+    if period == "1w":
+        update1w(stocklist)
+    elif period == "1mon":
+        update1mon(stocklist)
+    else:
+        error("updateHigherPeriodIfNeeded unsupported period:", period)
+        return
+
+    g.config[configKey] = today
+
+
+def updateLastStartTime1d():
+    g.config["lastStartTime1d"] = datetime.datetime.now().strftime("%Y%m%d")
+    info("lastStartTime1d:", g.config["lastStartTime1d"])
+
+
 def initLastStartTime1d():
     g.config["lastStartTime1d"] = (datetime.datetime.now() - datetime.timedelta(days=370)).strftime(
         "%Y%m%d")
@@ -894,6 +1090,11 @@ def init(ContextInfo):
     t3 = Thread(target=printTask)
     t3.start()
 
+    if not g.update1dTaskStarted:
+        g.update1dTaskStarted = True
+        t1 = Thread(target=update1dTask)
+        t1.start()
+
 
 def after_init(ContextInfo):
     info('after_init')
@@ -902,10 +1103,6 @@ def after_init(ContextInfo):
 def handlebar(ContextInfo):
     info("handlebar ", ContextInfo.barpos)
     g.ContextInfo = ContextInfo
-    update1d()
-    # resetThreadId("hdlbar")
-    # g.ContextInfo = ContextInfo
-    # update1mTimer(ContextInfo)
 
 
 def stop(ContextInfo):
