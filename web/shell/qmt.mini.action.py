@@ -1696,7 +1696,7 @@ if __name__ == "__main__":
     # js = python_to_json(deals)
     # info("deals HGT:", js)
 
-    # resubscribe()
+    resubscribe()
     # g.subscribeId = xtdata.subscribe_whole_quote( g.stocklist, callback=subscribe_whole_callback)
 
     # t1 = Thread(target=update1dTask)
@@ -1711,8 +1711,8 @@ if __name__ == "__main__":
     t5 = Thread(target=updatePriceTask)
     t5.start()
 
-    t6 = Thread(target=updateTickTask)
-    t6.start()
+    # t6 = Thread(target=updateTickTask)
+    # t6.start()
 
     # 阻塞主线程退出
     xt_trader.run_forever()

@@ -4891,7 +4891,6 @@ function convertIfInteger(number) {
 }
 app.post('/stock/deal/update', async (req, res) => {
     let threadId = req.threadId;
-    info(`/stock/deal/update:${JSON.stringify(req.body)}`, req.threadId)
     let deal = req.body;
     let ocode = normalizeScode(deal.scode).split(".");
     deal.scode = `${ocode[0]}.${ocode[1]}`;
