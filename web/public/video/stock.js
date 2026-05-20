@@ -172,7 +172,7 @@ window.stock_list = window.stock_list || (function () {
                 return "";
             }
 
-            let keys = ["简介", "intro", "brief", "summary", "description"];
+            let keys = ["intro"];
             for (let i = 0; i < keys.length; i++) {
                 let value = row[keys[i]];
                 if (value != null && `${value}`.trim() != "") {
@@ -273,6 +273,32 @@ window.stock_list = window.stock_list || (function () {
             target.empty();
             let input = $("<input type='text' class='stockIntroInput'>");
             input.val(intro);
+            input.off("click");
+            input.on("click", function (e) {
+                e.stopPropagation();
+            });
+            input.off("keydown");
+            input.on("keydown", async function (e) {
+                if (e.key == "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await self.saveStockIntro($(this).parent(), $(this));
+                } else if (e.key == "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    let currentTarget = $(this).parent();
+                    self.renderStockIntro(currentTarget, currentTarget.data("original-intro") || "");
+                }
+            });
+            input.off("blur");
+            input.on("blur", function () {
+                if ($(this).data("submitted")) {
+                    return;
+                }
+
+                let currentTarget = $(this).parent();
+                self.renderStockIntro(currentTarget, currentTarget.data("original-intro") || "");
+            });
             target.append(input);
             input.trigger("focus");
             input[0].select();
@@ -295,41 +321,10 @@ window.stock_list = window.stock_list || (function () {
             share.toastSuccess__("简介已更新", 1000);
         },
         bindStockIntroEvents: function () {
-            let table = $("#stockTable");
-            table.off("click", ".stockIntro");
-            table.off("click", ".stockIntroInput");
-            table.off("keydown", ".stockIntroInput");
-            table.off("blur", ".stockIntroInput");
-
-            table.on("click", ".stockIntro", function (e) {
+            $(".stockIntro").off("click");
+            $(".stockIntro").on("click", function (e) {
                 e.stopPropagation();
                 self.startEditStockIntro($(this));
-            });
-
-            table.on("click", ".stockIntroInput", function (e) {
-                e.stopPropagation();
-            });
-
-            table.on("keydown", ".stockIntroInput", async function (e) {
-                if (e.key == "Enter") {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    await self.saveStockIntro($(this).parent(), $(this));
-                } else if (e.key == "Escape") {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    let target = $(this).parent();
-                    self.renderStockIntro(target, target.data("original-intro") || "");
-                }
-            });
-
-            table.on("blur", ".stockIntroInput", function () {
-                if ($(this).data("submitted")) {
-                    return;
-                }
-
-                let target = $(this).parent();
-                self.renderStockIntro(target, target.data("original-intro") || "");
             });
         },
         addButtonClicked__: async function () {
