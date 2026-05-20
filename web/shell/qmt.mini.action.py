@@ -1446,8 +1446,8 @@ def python_to_json(obj, indent=4, ensure_ascii=False):
     return js
 
 
-def subscribe_whole_callback(data):
-    info("subscribe_whole_callback", data)
+def subscribewholecallback(data):
+    info("subscribewholecallback", data.keys())
     try:
         for stock in data:
             if stock not in g.stocklist:
@@ -1573,7 +1573,7 @@ def resubscribe():
         xtdata.unsubscribe_quote(g.subscribeId)
 
     g.subscribeId = xtdata.subscribe_whole_quote(
-        g.stocklist, callback=subscribe_whole_callback
+        g.stocklist, callback=subscribewholecallback
     )
 
     info("resubscribe end", g.subscribeId)
