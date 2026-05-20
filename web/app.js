@@ -1436,7 +1436,8 @@ app.use((req, res, next) => {
     const url = req.url;
     const queryParams = JSON.stringify(req.query);
     const bodyParams = JSON.stringify(req.body);
-    debug(`${method} ${url} body:${bodyParams}`, req.threadId)
+    info(`${method} ${url}`, req.threadId)
+    debug(`body:${bodyParams}`, req.threadId)
 
     // 拦截 response 的 send/end 方法来记录响应内容
     const originalSend = res.send.bind(res);
