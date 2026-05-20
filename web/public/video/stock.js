@@ -991,24 +991,7 @@ window.stock_list = window.stock_list || (function () {
                         }
 
                         if (firstRow) {
-                            td.html(`${row[key]}${option}
-                                <div class="stockMoveActions">
-                                    <button type="button" class="stockMoveButton forceMoveUp" title="强置顶" aria-label="强置顶">
-                                        <span class="glyphicon glyphicon-fast-backward iconRotate90" aria-hidden="true"></span>
-                                    </button>
-                                    <button type="button" class="stockMoveButton moveUp" title="置顶" aria-label="置顶">
-                                        <span class="glyphicon glyphicon-backward iconRotate90" aria-hidden="true"></span>
-                                    </button>
-                                    <button type="button" class="stockMoveButton resetMove" title="归位" aria-label="归位">
-                                        <span class="glyphicon glyphicon-pause iconRotate90" aria-hidden="true"></span>
-                                    </button>
-                                    <button type="button" class="stockMoveButton moveDown" title="置底" aria-label="置底">
-                                        <span class="glyphicon glyphicon-forward iconRotate90" aria-hidden="true"></span>
-                                    </button>
-                                    <button type="button" class="stockMoveButton forceMoveDown" title="强置底" aria-label="强置底">
-                                        <span class="glyphicon glyphicon-fast-forward iconRotate90" aria-hidden="true"></span>
-                                    </button>
-                                </div>`);
+                            td.html(`${row[key]}${option} <span class="vote">⇅</span>`);
                         } else {
                             td.html(`${row[key]}${option}`);
                             td.addClass("almostwhite");
@@ -1298,34 +1281,74 @@ window.stock_list = window.stock_list || (function () {
                 self.showK(code);
             })
 
-            $(".forceMoveUp").click(async function (e) {
+            $(".vote").click(async function (e) {
                 e.stopPropagation();
                 let code = $(this).parents("tr").attr("code");
-                await self.moveStock(code, "forceMoveUp", "已强置顶");
-            })
-
-            $(".moveUp").click(async function (e) {
-                e.stopPropagation();
-                let code = $(this).parents("tr").attr("code");
-                await self.moveStock(code, "moveUp", "已置顶");
-            })
-
-            $(".resetMove").click(async function (e) {
-                e.stopPropagation();
-                let code = $(this).parents("tr").attr("code");
-                await self.moveStock(code, "resetMove", "已归位");
-            })
-
-            $(".moveDown").click(async function (e) {
-                e.stopPropagation();
-                let code = $(this).parents("tr").attr("code");
-                await self.moveStock(code, "moveDown", "已置底");
-            })
-
-            $(".forceMoveDown").click(async function (e) {
-                e.stopPropagation();
-                let code = $(this).parents("tr").attr("code");
-                await self.moveStock(code, "forceMoveDown", "已强置底");
+                let popup;
+                let buttons = [
+                    {
+                        text: "强置顶",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/forceMoveUp?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已强置顶", 1000);
+                            }
+                        }
+                    },
+                    {
+                        text: "置顶",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/moveUp?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已置顶", 1000);
+                            }
+                        }
+                    },
+                    {
+                        text: "归位",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/resetMove?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已归位", 1000);
+                            }
+                        }
+                    },
+                    {
+                        text: "置底",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/moveDown?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已置底", 1000);
+                            }
+                        }
+                    },
+                    {
+                        text: "强置底",
+                        onTap: async function () {
+                            popup.close();
+                            let res = await share.getSync__(`/stock/forceMoveDown?code=${code}`);
+                            if (res.error) {
+                                share.toastError__(res.error);
+                            } else {
+                                share.toastSuccess__("已强置底", 1000);
+                            }
+                        }
+                    }
+                ];
+                share.currentTarget = e.currentTarget;
+                popup = await share.popupAction__("", buttons);
             })
 
             $(".deleteRow").click(async function (e) {
