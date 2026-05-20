@@ -1447,7 +1447,7 @@ app.use((req, res, next) => {
         if (!responseLogged) {
             responseLogged = true;
             const respStr = body !== undefined ? (typeof body === 'string' ? body : JSON.stringify(body)) : '';
-            info(`${method} ${url} response:${respStr}`, req.threadId);
+            debug(`${method} ${url} response:${respStr}`, req.threadId);
         }
         return originalSend(body, ...args);
     };
