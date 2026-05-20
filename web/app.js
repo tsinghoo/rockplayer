@@ -183,7 +183,11 @@ if (args.length > 4) {
 }
 info(args[4]);
 info(suffix.join(" "));
-
+if (args.length > 5) {
+    if (args[5] == "info") {
+        logLevel = INFO;
+    }
+}
 
 info("open stock.db");
 const dbFilePath = path.join(directoryPath, "stock.db");
@@ -1432,7 +1436,7 @@ app.use((req, res, next) => {
     const url = req.url;
     const queryParams = JSON.stringify(req.query);
     const bodyParams = JSON.stringify(req.body);
-    info(`${method} ${url} body:${bodyParams}`, req.threadId)
+    debug(`${method} ${url} body:${bodyParams}`, req.threadId)
 
     // 拦截 response 的 send/end 方法来记录响应内容
     const originalSend = res.send.bind(res);
@@ -1452,7 +1456,7 @@ app.use((req, res, next) => {
         if (!responseLogged && chunk) {
             responseLogged = true;
             const respStr = typeof chunk === 'string' ? chunk : JSON.stringify(chunk);
-            info(`${method} ${url} response:${respStr}`, req.threadId);
+            debug(`${method} ${url} response:${respStr}`, req.threadId);
         }
         return originalEnd(chunk, ...args);
     };
@@ -1585,9 +1589,9 @@ app.post('/stock/update', async (req, resp) => {
             broker = "国信港股通历史"
         }
     }
-    info(broker)
+    debug(broker)
     let data = req.body.rows.split("\n");
-    info(data.join("\n"), req.threadId)
+    debug(data.join("\n"), req.threadId)
     let now = new Date().getTime();
     for (var i = 0; i < data.length; ++i) {
         if (data[i].trim() == "") {
@@ -1595,7 +1599,7 @@ app.post('/stock/update', async (req, resp) => {
         }
 
         var fields = data[i].split("\t");
-        info(JSON.stringify(fields));
+        debug(JSON.stringify(fields));
         let tday = fields[0];
         let ttime = fields[1];
         if (broker == "广发历史") {
@@ -1607,7 +1611,7 @@ app.post('/stock/update', async (req, resp) => {
         values (?, ?, ?,?, ?, ?,?, ?, ?,?, ?, ?, ?, ?)`;
             let res = await db.runSync(sql, fields.concat([Date.now()]));
             if (res.error) {
-                info(res.error, req.threadId)
+                debug(res.error, req.threadId)
                 resp.send(res);
                 return;
             } else {
