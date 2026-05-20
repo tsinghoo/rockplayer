@@ -2280,6 +2280,90 @@ app.get('/stock/updatePrice/option', async (req, res) => {
     res.send(resp);
 });
 
+app.get('/stock/intros', async (req, res) => {
+    let scodes = (req.query.scodes || "").split(",").map((item) => normalizeScode(item)).filter((item) => item);
+    let uniqueScodes = [];
+    scodes.forEach((scode) => {
+        if (!uniqueScodes.includes(scode)) {
+            uniqueScodes.push(scode);
+        }
+    });
+
+    if (uniqueScodes.length < 1) {
+        res.send(JSON.stringify({ data: {} }));
+        return;
+    }
+
+    let queryScodes = [];
+    uniqueScodes.forEach((scode) => {
+        getScodeAliases(scode).forEach((item) => {
+            if (!queryScodes.includes(item)) {
+                queryScodes.push(item);
+            }
+        });
+    });
+
+    let placeholders = queryScodes.map(() => "?").join(",");
+    let result = await db.allSync(`select scode, id, intro from tStockBasic where scode in (${placeholders}) or id in (${placeholders})`, queryScodes.concat(queryScodes), req.threadId);
+    if (result.error) {
+        res.send(JSON.stringify(result));
+        return;
+    }
+
+    normalizeDbRowsScodes(result.rows);
+    let data = {};
+    uniqueScodes.forEach((scode) => {
+        data[scode] = "";
+    });
+    result.rows.forEach((row) => {
+        let scode = normalizeScode(row.scode || row.id);
+        if (scode) {
+            data[scode] = row.intro || "";
+        }
+    });
+
+    res.send(JSON.stringify({ data }));
+});
+
+app.post('/stock/intro/update', async (req, res) => {
+    let scode = normalizeScode(req.body.scode);
+    let intro = req.body.intro == null ? "" : `${req.body.intro}`.trim();
+    let updateTime = Date.now();
+
+    if (scode == null || scode == "") {
+        res.send(JSON.stringify({ error: "scode required" }));
+        return;
+    }
+
+    let aliases = getScodeAliases(scode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let stockBasic = await db.getSync(`select * from tStockBasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), req.threadId);
+
+    let result;
+    if (stockBasic == null) {
+        result = await insertOrReplace("tStockBasic", {
+            id: scode,
+            scode: scode,
+            intro: intro,
+            updateTime: updateTime
+        });
+    } else {
+        result = await updateStockBasicByScode(`intro=?, updateTime=?`, [intro, updateTime], scode);
+    }
+
+    if (result && result.error) {
+        res.send(JSON.stringify(result));
+        return;
+    }
+
+    res.send(JSON.stringify({
+        data: {
+            scode,
+            intro
+        }
+    }));
+});
+
 app.get('/stock/deleteRow', async (req, res) => {
     let js = req.query.js;
     let tid = req.query.tid;
@@ -2382,6 +2466,7 @@ async function upgradeDb(succ, fail) {
         `create table openwrt(id text primary key, ip text, mac text, host text, online int default 0, time integer);`,
         `create table openwrt_onlines(id text primary key, ip text, mac text, host text, status text, time integer);`,
         `alter table openwrt_onlines add column startTime integer;`,
+        `alter table tStockBasic add column intro text default '';`,
     ];
 
     if (res == null || res.error) {

@@ -95,6 +95,59 @@
     margin-top:4px;
 }
 
+.stockCodeBlock{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.stockCodeLine{
+    display:flex;
+    align-items:center;
+    gap:4px;
+}
+
+.stockIntro{
+    min-width:120px;
+    max-width:220px;
+    padding:2px 6px;
+    border-radius:4px;
+    font-size:12px;
+    line-height:1.4;
+    color:#4b5563;
+    background:#f7f9fc;
+    border:1px dashed #d0d7de;
+    white-space:normal;
+    word-break:break-word;
+    cursor:text;
+}
+
+.stockIntro.empty{
+    color:#9aa4b2;
+}
+
+.stockIntro.editing{
+    padding:0;
+    border-style:solid;
+    border-color:#93c5fd;
+    background:#fff;
+}
+
+.stockIntro.saving{
+    opacity:0.7;
+}
+
+.stockIntroInput{
+    width:100%;
+    border:none;
+    outline:none;
+    padding:2px 6px;
+    font-size:12px;
+    line-height:1.4;
+    color:#111827;
+    background:transparent;
+}
+
 .stockMoveButton{
     width:24px;
     height:24px;

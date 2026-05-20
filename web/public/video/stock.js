@@ -28,6 +28,9 @@ window.stock_list = window.stock_list || (function () {
         maxBlockedActionMessages: 5,
         sql: { name: "" },
         currentPrices: {},
+        stockIntros: {},
+        stockIntroUpdatedAt: {},
+        stockIntroPlaceholder: "点击填写简介",
         init: async function () {
             self.sql.name = decodeURIComponent(window.location.hash.substring(1));
             if (self.sql.name == null || self.sql.name == "") {
@@ -157,6 +160,177 @@ window.stock_list = window.stock_list || (function () {
             } else {
                 share.toastSuccess__(successMessage, 1000);
             }
+        },
+        escapeHtml: function (text) {
+            return $("<div>").text(text == null ? "" : `${text}`).html();
+        },
+        getStockIntroKey: function (scode) {
+            return self.normalizeScode(scode || "");
+        },
+        getRowStockIntro: function (row) {
+            if (row == null) {
+                return "";
+            }
+
+            let keys = ["简介", "intro", "brief", "summary", "description"];
+            for (let i = 0; i < keys.length; i++) {
+                let value = row[keys[i]];
+                if (value != null && `${value}`.trim() != "") {
+                    return `${value}`.trim();
+                }
+            }
+
+            return "";
+        },
+        buildStockIntroHtml: function (scode, intro) {
+            let text = intro && intro != "" ? intro : self.stockIntroPlaceholder;
+            let emptyClass = intro && intro != "" ? "" : " empty";
+            return `<div class="stockIntro${emptyClass}" data-scode="${self.escapeHtml(scode)}" data-intro="${self.escapeHtml(intro || "")}" title="点击修改简介">${self.escapeHtml(text)}</div>`;
+        },
+        renderStockIntro: function (target, intro) {
+            let value = intro == null ? "" : `${intro}`;
+            target.removeClass("editing saving");
+            target.attr("data-intro", value);
+            if (value.trim() == "") {
+                target.addClass("empty");
+                target.text(self.stockIntroPlaceholder);
+            } else {
+                target.removeClass("empty");
+                target.text(value);
+            }
+        },
+        applyStockIntro: function (scode, intro) {
+            let key = self.getStockIntroKey(scode);
+            let value = intro == null ? "" : `${intro}`;
+            self.stockIntros[key] = value;
+
+            self.rows.forEach(function (row) {
+                if (self.getStockIntroKey(row["代码"]) == key) {
+                    row["简介"] = value;
+                    row.intro = value;
+                }
+            });
+
+            $(`.stockIntro[data-scode="${key}"]`).each(function () {
+                self.renderStockIntro($(this), value);
+            });
+
+            $(`[code="${key}"]`).each(function () {
+                let tr = $(this);
+                let data = tr.attr("data");
+                if (data == null || data == "") {
+                    return;
+                }
+                try {
+                    data = JSON.parse(data);
+                    data["简介"] = value;
+                    data.intro = value;
+                    tr.attr("data", JSON.stringify(data));
+                } catch (e) {
+                    console.log(e);
+                }
+            });
+        },
+        loadStockIntros: async function (codes) {
+            let requestTime = Date.now();
+            let normalizedCodes = [];
+            codes.forEach(function (code) {
+                let normalized = self.getStockIntroKey(code);
+                if (normalized != "" && !normalizedCodes.includes(normalized)) {
+                    normalizedCodes.push(normalized);
+                }
+            });
+
+            if (normalizedCodes.length < 1) {
+                return;
+            }
+
+            let res = await share.getSync__(`/stock/intros?scodes=${encodeURIComponent(normalizedCodes.join(","))}`);
+            if (res.error || res.data == null) {
+                return;
+            }
+
+            Object.keys(res.data).forEach(function (scode) {
+                if (self.stockIntroUpdatedAt[scode] != null && self.stockIntroUpdatedAt[scode] > requestTime) {
+                    return;
+                }
+                self.applyStockIntro(scode, res.data[scode]);
+            });
+        },
+        startEditStockIntro: function (target) {
+            if (target.hasClass("editing")) {
+                return;
+            }
+
+            let scode = self.getStockIntroKey(target.attr("data-scode"));
+            let intro = self.stockIntros[scode];
+            if (intro == null) {
+                intro = target.attr("data-intro") || "";
+            }
+
+            target.data("original-intro", intro);
+            target.addClass("editing");
+            target.empty();
+            let input = $("<input type='text' class='stockIntroInput'>");
+            input.val(intro);
+            target.append(input);
+            input.trigger("focus");
+            input[0].select();
+        },
+        saveStockIntro: async function (target, input) {
+            let scode = self.getStockIntroKey(target.attr("data-scode"));
+            let intro = input.val().trim();
+            input.data("submitted", 1);
+            target.addClass("saving");
+            let res = await share.postSync__("/stock/intro/update", { scode, intro });
+            if (res.error) {
+                target.removeClass("saving");
+                share.toastError__(res.error);
+                self.renderStockIntro(target, target.data("original-intro") || "");
+                return;
+            }
+
+            self.stockIntroUpdatedAt[scode] = Date.now();
+            self.applyStockIntro(scode, intro);
+            share.toastSuccess__("简介已更新", 1000);
+        },
+        bindStockIntroEvents: function () {
+            let table = $("#stockTable");
+            table.off("click", ".stockIntro");
+            table.off("click", ".stockIntroInput");
+            table.off("keydown", ".stockIntroInput");
+            table.off("blur", ".stockIntroInput");
+
+            table.on("click", ".stockIntro", function (e) {
+                e.stopPropagation();
+                self.startEditStockIntro($(this));
+            });
+
+            table.on("click", ".stockIntroInput", function (e) {
+                e.stopPropagation();
+            });
+
+            table.on("keydown", ".stockIntroInput", async function (e) {
+                if (e.key == "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await self.saveStockIntro($(this).parent(), $(this));
+                } else if (e.key == "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    let target = $(this).parent();
+                    self.renderStockIntro(target, target.data("original-intro") || "");
+                }
+            });
+
+            table.on("blur", ".stockIntroInput", function () {
+                if ($(this).data("submitted")) {
+                    return;
+                }
+
+                let target = $(this).parent();
+                self.renderStockIntro(target, target.data("original-intro") || "");
+            });
         },
         addButtonClicked__: async function () {
             let popup;
@@ -791,7 +965,18 @@ window.stock_list = window.stock_list || (function () {
                         tr.addClass(`code${row[key]}`);
                         if (firstRow) {
                             self.data[row[key]] = [row];
-                            td.html(row[key] + `<span class="kLine">${code}</span>`);
+                            let intro = self.getRowStockIntro(row);
+                            let introKey = self.getStockIntroKey(row[key]);
+                            if (intro != "") {
+                                self.stockIntros[introKey] = intro;
+                            } else if (self.stockIntros[introKey] != null) {
+                                intro = self.stockIntros[introKey];
+                            }
+                            td.html(`
+                                <div class="stockCodeBlock">
+                                    <div class="stockCodeLine">${self.escapeHtml(row[key])}<span class="kLine">${code}</span></div>
+                                    ${self.buildStockIntroHtml(introKey, intro)}
+                                </div>`);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
                             td.addClass("code");
@@ -961,6 +1146,9 @@ window.stock_list = window.stock_list || (function () {
             } else {
                 $(".repeatCode").hide();
             }
+
+            self.bindStockIntroEvents();
+            self.loadStockIntros(Object.keys(self.data));
 
             $(".ruleStatus").click(function (e) {
                 let data = $(this).parents("tr").attr("data");
