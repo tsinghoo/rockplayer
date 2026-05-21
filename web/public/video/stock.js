@@ -165,6 +165,12 @@ window.stock_list = window.stock_list || (function () {
         escapeHtml: function (text) {
             return $("<div>").text(text == null ? "" : `${text}`).html();
         },
+        escapeHtmlAttr: function (text) {
+            return self.escapeHtml(text)
+                .replace(/"/g, "&quot;")
+                .replace(/\r/g, "&#13;")
+                .replace(/\n/g, "&#10;");
+        },
         getStockIntroKey: function (scode) {
             return self.normalizeScode(scode || "");
         },
@@ -186,7 +192,7 @@ window.stock_list = window.stock_list || (function () {
         buildStockIntroHtml: function (scode, intro) {
             let text = intro && intro != "" ? intro : self.stockIntroPlaceholder;
             let emptyClass = intro && intro != "" ? "" : " empty";
-            return `<div class="stockIntro${emptyClass}" data-scode="${self.escapeHtml(scode)}" data-intro="${self.escapeHtml(intro || "")}" title="点击修改简介">${self.escapeHtml(text)}</div>`;
+            return `<div class="stockIntro${emptyClass}" data-scode="${self.escapeHtmlAttr(scode)}" data-intro="${self.escapeHtmlAttr(intro || "")}" title="点击修改简介">${self.escapeHtml(text)}</div>`;
         },
         renderStockIntro: function (target, intro) {
             let value = intro == null ? "" : `${intro}`;
@@ -272,7 +278,7 @@ window.stock_list = window.stock_list || (function () {
             target.data("original-intro", intro);
             target.addClass("editing");
             target.empty();
-            let input = $("<input type='text' class='stockIntroInput'>");
+            let input = $("<textarea class='stockIntroInput' rows='3'></textarea>");
             input.val(intro);
             input.off("click");
             input.on("click", function (e) {
@@ -280,7 +286,7 @@ window.stock_list = window.stock_list || (function () {
             });
             input.off("keydown");
             input.on("keydown", async function (e) {
-                if (e.key == "Enter") {
+                if (e.key == "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     e.stopPropagation();
                     await self.saveStockIntro($(this).parent(), $(this));
