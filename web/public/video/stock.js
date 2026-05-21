@@ -25,6 +25,7 @@ window.stock_list = window.stock_list || (function () {
         autoActionGateInited: false,
         lastBlockedActionCount: 0,
         blockedActionMessageContainer: null,
+        blockedActionShownKeys: {},
         maxBlockedActionMessages: 5,
         sql: { name: "" },
         currentPrices: {},
@@ -1497,6 +1498,10 @@ window.stock_list = window.stock_list || (function () {
             }
 
             self.lastBlockedActionCount = gate.blockCount;
+            let blockedActionKey = self.buildBlockedActionMessageKey(gate);
+            if (blockedActionKey != "" && self.blockedActionShownKeys[blockedActionKey]) {
+                return;
+            }
             let target = "当前规则";
             if (gate.lastScode && gate.lastSname) {
                 target = `${gate.lastScode}.${gate.lastSname}`;
@@ -1508,7 +1513,28 @@ window.stock_list = window.stock_list || (function () {
             let actionText = gate.lastActionType == "sell" ? "卖出" : "买入";
             let startTime = gate.startTime || "00:00";
             let msg = `${target} 自动${actionText}${startTime}后才开始`;
-            self.pushBlockedActionMessage(msg, gate);
+            self.pushBlockedActionMessage(msg, gate, blockedActionKey);
+        },
+        buildBlockedActionMessageKey: function (gate) {
+            if (gate == null) {
+                return "";
+            }
+
+            let scode = "";
+            try {
+                if (gate.lastScode) {
+                    scode = self.normalizeScode(gate.lastScode);
+                }
+            } catch (e) {
+                scode = `${gate.lastScode || ""}`.trim().toUpperCase();
+            }
+
+            let sname = `${gate.lastSname || ""}`.trim().toUpperCase();
+            let broker = `${gate.lastBroker || ""}`.trim().toUpperCase();
+            let actionType = `${gate.lastActionType || ""}`.trim().toLowerCase();
+            let startTime = `${gate.startTime || "00:00"}`.trim();
+            let target = scode || sname;
+            return [target, broker, actionType, startTime].join("|");
         },
         ensureBlockedActionMessageContainer: function () {
             if (self.blockedActionMessageContainer && self.blockedActionMessageContainer.length > 0) {
@@ -1535,7 +1561,14 @@ window.stock_list = window.stock_list || (function () {
             self.blockedActionMessageContainer = container;
             return container;
         },
-        pushBlockedActionMessage: function (message, gate) {
+        pushBlockedActionMessage: function (message, gate, blockedActionKey) {
+            if (blockedActionKey != null && blockedActionKey != "") {
+                if (self.blockedActionShownKeys[blockedActionKey]) {
+                    return;
+                }
+                self.blockedActionShownKeys[blockedActionKey] = 1;
+            }
+
             let container = self.ensureBlockedActionMessageContainer();
             let now = share.timeFormat__(new Date(), "hh:mm:ss");
 
@@ -1547,6 +1580,7 @@ window.stock_list = window.stock_list || (function () {
                 actionType: gate && gate.lastActionType ? gate.lastActionType : "",
                 startTime: gate && gate.startTime ? gate.startTime : "00:00"
             });
+            item.data("blockedActionKey", blockedActionKey || "");
             item.css({
                 position: "relative",
                 "padding-top": "10px",
@@ -1645,7 +1679,26 @@ window.stock_list = window.stock_list || (function () {
                     item.remove();
                 }
             });
+            self.clearBlockedActionShownKeysByScode(normalizedScode);
             self.refreshBlockedActionMessageStyles();
+        },
+        clearBlockedActionShownKeysByScode: function (scode) {
+            if (scode == null || scode === "") {
+                return;
+            }
+
+            let normalizedScode = "";
+            try {
+                normalizedScode = self.normalizeScode(scode);
+            } catch (e) {
+                normalizedScode = `${scode}`.trim().toUpperCase();
+            }
+
+            Object.keys(self.blockedActionShownKeys).forEach(function (key) {
+                if (key.indexOf(`${normalizedScode}|`) == 0) {
+                    delete self.blockedActionShownKeys[key];
+                }
+            });
         },
         findRowForBlockedAction: function (blockedAction) {
             let scode = blockedAction && blockedAction.scode ? blockedAction.scode : "";
