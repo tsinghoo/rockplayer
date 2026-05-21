@@ -1618,6 +1618,10 @@ window.stock_list = window.stock_list || (function () {
 
             close.on("click", function (e) {
                 e.stopPropagation();
+                let key = item.data("blockedActionKey") || "";
+                if (key != "") {
+                    delete self.blockedActionShownKeys[key];
+                }
                 item.remove();
                 self.refreshBlockedActionMessageStyles();
             });
