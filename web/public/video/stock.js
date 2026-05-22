@@ -1033,7 +1033,7 @@ window.stock_list = window.stock_list || (function () {
                         td.text(self.getBuySellText(row[key]));
                         td.addClass("tdBuySell");
                     } else if (key == "总额") {
-                        td.text(share.toFixed(row[key]));
+                        td.text(share.convertIfInteger(row[key]));
                     } else if (key == "规则") {
                         td.addClass("tdRule");
                         td.addClass("ruleContent");
@@ -4713,13 +4713,13 @@ window.stock_list = window.stock_list || (function () {
                 prices = `<div class="flexrow center">
                             <div class="margin4">——<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${rc.buy} : <br>${rc.buyAmount}</div>
                             ${prices}
-                            <div class="margin4">${rc.broker}${mapping[r.status]}<br>: ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip))}</span><br> ${rc.sellAmount}</div>
+                            <div class="margin4">${rc.broker}${mapping[r.status]}<br>: ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.convertIfInteger(parseFloat(rc.dip))}</span><br> ${rc.sellAmount}</div>
                           </div>`;
             } else {
                 prices = `<div class="flexrow center">
                             <div class="margin4">${rc.broker}买<br><span class="font10">${share.convertIfInteger(rc.bounce)}<img style="width:10px;" src='./img/arrow-turn-up-sharp.svg'/></span>${share.convertIfInteger(rc.buy)} : <br> ${rc.buyAmount} </div>
                             ${prices}
-                            <div class="margin4">${rc.broker}卖<br> : ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.toFixed(parseFloat(rc.dip))}</span><br>${rc.sellAmount}</div>
+                            <div class="margin4">${rc.broker}卖<br> : ${share.convertIfInteger(rc.sell)}<span class="font10"><img style="width:10px;" src='./img/arrow-turn-down-sharp.svg'/>${share.convertIfInteger(parseFloat(rc.dip))}</span><br>${rc.sellAmount}</div>
                           </div>`;
             }
             let expireTime = r.expireTime ? share.timeFormat__(r.expireTime, "失效:yyyy-MM-dd hh:mm") : "";
@@ -4817,9 +4817,9 @@ window.stock_list = window.stock_list || (function () {
 
                     let lastDay = categoryData[categoryData.length - 1];
                     let d0v = values[values.length - 1];
-                    let d0low = share.toFixed(d0v[3]);
-                    let d0high = share.toFixed(d0v[2]);
-                    let d0close = share.toFixed(d0v[1]);
+                    let d0low = share.convertIfInteger(d0v[3]);
+                    let d0high = share.convertIfInteger(d0v[2]);
+                    let d0close = share.convertIfInteger(d0v[1]);
                     c.find(".dayPeriod").text(periodLabel);
                     c.find(".day0").removeClass("bg_purple gray");
                     c.find(".day0").text(`${lastDay}:`);
@@ -4833,8 +4833,8 @@ window.stock_list = window.stock_list || (function () {
                     c.find(".priceLow").text(`${d0low}`);
                     c.find(".priceHigh").text(`${d0high}`);
                     if (sb && sb.downStopPrice > 0) {
-                        c.find(".downStopPrice").text(`${sb.downStopPrice}<`);
-                        c.find(".upStopPrice").text(`<${sb.upStopPrice}`);
+                        c.find(".downStopPrice").text(`${share.convertIfInteger(sb.downStopPrice)}<`);
+                        c.find(".upStopPrice").text(`<${share.convertIfInteger(sb.upStopPrice)}`);
                     }
                     //获取progressContainer的实际宽度
                     let totalWidth = c.find(".progressContainer").width();
