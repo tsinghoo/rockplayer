@@ -4089,6 +4089,7 @@ window.stock_list = window.stock_list || (function () {
                 //toggleLine('Kdj', isSelected);
 
                 option.legend.selected = {
+                    ...option.legend.selected,
                     'Kdj': kdjSel,
                     'kDj': kdjSel,
                     'kdJ': kdjSel,
@@ -4099,30 +4100,8 @@ window.stock_list = window.stock_list || (function () {
                     'Boll下': bollSel
                 };
 
-                if (bollSel) {
-                    option.legend.selected.MA5 = false;
-                    option.legend.selected.MA10 = false;
-                    option.legend.selected.MA20 = false;
-                    option.legend.selected.MA60 = false;
-                } else {
-                    option.legend.selected.MA5 = true;
-                    option.legend.selected.MA10 = true;
-                }
-
                 chart.setOption(option);
 
-
-                // chart.dispatchAction({
-                //     type: 'legendSelect',
-                //     name: 'kDj',
-                //     selected: isSelected
-                // });
-
-                // chart.dispatchAction({
-                //     type: 'legendSelect',
-                //     name: 'kdJ',
-                //     selected: isSelected
-                // });
                 // toggleLine('kDj', isSelected);
                 // toggleLine('kdJ', isSelected);
                 // toggleLine('kdJ+20', isSelected);
