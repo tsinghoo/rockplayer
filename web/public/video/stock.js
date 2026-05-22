@@ -3556,8 +3556,6 @@ window.stock_list = window.stock_list || (function () {
                     left: 'center',
                     data: [periodLabel, 'kdJ', 'MA5', 'MA10', 'MA20', 'MA60', 'Boll', 'cci', 'Volume'],
                     selected: {
-                        "MA20": true,
-                        "MA60": true,
                         'Kdj': true,
                         'kDj': true,
                         'kdJ': true,
