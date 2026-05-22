@@ -855,9 +855,18 @@ window.stock_list = window.stock_list || (function () {
             let rows = self.rows;
             self.data = {};
             table.empty();
-            let getRepeatRowsByCode = function (code) {
+            let getRowGroupKey = function (row) {
+                if (row == null) {
+                    return "||";
+                }
+                let code = row["代码"] == null ? "" : `${row["代码"]}`;
+                let broker = row["券商"] == null ? "" : `${row["券商"]}`;
+                let type = row["type"] == null ? "" : `${row["type"]}`;
+                return `${code}|${broker}|${type}`;
+            };
+            let getRepeatRowsByGroupKey = function (groupKey) {
                 return $(`.repeatCode`).filter(function () {
-                    return $(this).attr("data-repeat-code") == code;
+                    return $(this).attr("data-repeat-group-key") == groupKey;
                 });
             };
             let thead = $("<thead>");
@@ -945,6 +954,7 @@ window.stock_list = window.stock_list || (function () {
                 if (row["代码"] == null) {
                     row["代码"] = "";
                 }
+                let groupKey = getRowGroupKey(row);
                 if (row["代码"] == lastCode && row["券商"] == lastBroker && row["type"] == lastType) {
                     firstRow = false;
                 } else {
@@ -981,13 +991,14 @@ window.stock_list = window.stock_list || (function () {
                                 </div>`);
                             td.addClass("bold");
                             tr.addClass("firstCode clickable");
+                            tr.attr("data-repeat-group-key", groupKey);
                             td.addClass("code");
                         } else {
                             td.text(row[key]);
                             td.addClass("almostWhite");
                             self.data[row[key]].push(row);
                             tr.addClass("repeatCode");
-                            tr.attr("data-repeat-code", row[key]);
+                            tr.attr("data-repeat-group-key", groupKey);
                         }
 
                         tr.attr("code", row[key]);
@@ -1190,8 +1201,8 @@ window.stock_list = window.stock_list || (function () {
             })
 
             $(".firstCode").click(function () {
-                let code = $(this).attr("code");
-                let trs = getRepeatRowsByCode(code);
+                let groupKey = $(this).attr("data-repeat-group-key");
+                let trs = getRepeatRowsByGroupKey(groupKey);
                 if (trs.is(":visible")) {
                     trs.hide();
                 } else {
@@ -1267,11 +1278,13 @@ window.stock_list = window.stock_list || (function () {
 
             $(".code").click(async function (e) {
                 e.stopPropagation();
-                let code = $(this).parents("tr").attr("code");
+                let parentTr = $(this).parents("tr");
+                let code = parentTr.attr("code");
                 let rows = self.data[code];
                 share.currentTarget = this;
                 share.popupPlacement = "top";
-                let trs = getRepeatRowsByCode(code);
+                let groupKey = parentTr.attr("data-repeat-group-key");
+                let trs = getRepeatRowsByGroupKey(groupKey);
                 trs.show();
                 self.showStockDetail(code);
                 //self.showChart(rows);
@@ -1279,11 +1292,13 @@ window.stock_list = window.stock_list || (function () {
 
             $(".kLine").click(async function (e) {
                 e.stopPropagation();
-                let code = $(this).parents("tr").attr("code");
+                let parentTr = $(this).parents("tr");
+                let code = parentTr.attr("code");
                 let rows = self.data[code];
                 share.currentTarget = this;
                 share.popupPlacement = "top";
-                let trs = getRepeatRowsByCode(code);
+                let groupKey = parentTr.attr("data-repeat-group-key");
+                let trs = getRepeatRowsByGroupKey(groupKey);
                 trs.show();
                 self.showK(code);
             })
