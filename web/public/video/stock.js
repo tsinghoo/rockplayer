@@ -2549,8 +2549,6 @@ window.stock_list = window.stock_list || (function () {
                 }
             })
 
-
-
             let kTick = c.find(".kTick");
             share.getSync__(`/stock/k/1m?scode=${scode}&type=${type}&day=${Date.now()}`)
                 .then((ticks) => {
