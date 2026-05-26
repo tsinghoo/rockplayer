@@ -363,7 +363,7 @@ window.stock_list = window.stock_list || (function () {
                 {
                     text: "现价",
                     onTap: function () {
-                        let tds = $(`.curPrice, .tdRule,.tdStatus, .tdK1d`);
+                        let tds = $(`.curPrice, .tdRule,.tdStatus, .tdK1d, .tdK1w`);
                         if (tds.is(":visible")) {
                             tds.hide();
                         } else {
@@ -784,6 +784,23 @@ window.stock_list = window.stock_list || (function () {
             });
 
         },
+        showK1wsInView: async function () {
+            let vtr = $('.firstCode').map(function (i, item) {
+                let tr = $(item);
+                if (!self.shouldShowK1w(tr)) {
+                    return;
+                }
+
+                let k1w = tr.find(".k1w");
+                let res = share.isInViewport(tr);
+                if (res && k1w.html() == "") {
+                    let data = tr.attr("data");
+                    let row = JSON.parse(data);
+                    self.showK1ws([row["代码"]]);
+                }
+            });
+
+        },
         showK1msInView: async function () {
             let vtr = $('.firstCode').map(function (i, item) {
                 let k1m = $(item).find(".k1m");
@@ -849,6 +866,91 @@ window.stock_list = window.stock_list || (function () {
                 self.drawK1dChartSmall(scode, categoryData, values, volumes, c, self.getKPeriodLabel(period));
             }
         },
+        showK1ws: async function (codes) {
+            let scode = codes[0];
+            codes.forEach(function (scode) {
+                let tr = $(`.firstCode[code="${scode}"]`);
+                if (!self.shouldShowK1w(tr)) {
+                    return;
+                }
+
+                let td = tr.find(".tdK1w");
+                let k1w = td.find(".k1w");
+                k1w.html("loading k1w");
+                k1w.removeClass("hide");
+            });
+
+            let tr = $(`.firstCode[code="${scode}"]`);
+            if (!self.shouldShowK1w(tr)) {
+                return;
+            }
+
+            let td = tr.find(".tdK1w");
+            let k1w = td.find(".k1w");
+            let maxCount = 60;
+            let data = await share.getSync__(`/stock/k/1w?scode=${scode}&type=0&max=${maxCount}`);
+            let rows = data.rows;
+            let categoryData = [];
+            let values = [];
+            let volumes = [];
+            if (rows.length < 1) {
+                k1w.html(`${rows.length} rows`);
+                return;
+            }
+
+            const fillCount = maxCount / 2 - rows.length;
+            for (let i = 0; i < fillCount; i++) {
+                categoryData.push("-");
+                values.push([0, 0, 0, 0, 0, 0, 0]);
+                volumes.push([i, 0, 1]);
+            }
+
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                categoryData.push(row.time);
+                values.push([row.open, row.close, row.high, row.low, row.volume, row.amount, row.cci]);
+                volumes.push([i + fillCount, row.volume, row.open > row.close ? 1 : -1]);
+            }
+
+            if (values.length > 0) {
+                self.drawK1dChartSmall(scode, categoryData, values, volumes, td, "1w");
+            }
+        },
+        shouldShowK1w: function (tr) {
+            if (tr == null || tr.length < 1 || !self.showK1d) {
+                return false;
+            }
+
+            let td = tr.find(".tdK1d");
+            return self.getActiveKPeriod(td) == "1d";
+        },
+        syncK1wVisibility: function (tr) {
+            let td = tr.find(".tdK1w");
+            if (td.length < 1) {
+                return;
+            }
+
+            let k1w = td.find(".k1w");
+            if (self.shouldShowK1w(tr)) {
+                td.removeClass("gray");
+                k1w.css({
+                    width: "380px",
+                    height: "300px"
+                }).removeClass("hide");
+                if (k1w.html() == "" && share.isInViewport(tr)) {
+                    self.showK1ws([tr.attr("code")]);
+                }
+            } else {
+                td.addClass("gray");
+                k1w.addClass("hide");
+            }
+        },
+        syncAllK1wVisibility: function () {
+            $(".thK1w").toggleClass("gray", !self.showK1d);
+            $(".firstCode").each(function () {
+                self.syncK1wVisibility($(this));
+            });
+        },
 
         showRows: function (expanded) {
             let table = $("#stockTable");
@@ -892,11 +994,17 @@ window.stock_list = window.stock_list || (function () {
                     params[key] = ele[key];
                 }
             });
+            let k1dIndex = keys.indexOf("K1d");
+            if (k1dIndex >= 0 && keys.indexOf("K1w") < 0) {
+                keys.splice(k1dIndex + 1, 0, "K1w");
+            }
             for (let i = 0; i < keys.length; i++) {
                 let th = $("<th>");
                 let title = keys[i];
                 if (keys[i] == "K1d") {
                     title = "K线";
+                } else if (keys[i] == "K1w") {
+                    title = "K1w";
                 }
                 th.text(title);
                 tr.append(th);
@@ -911,6 +1019,9 @@ window.stock_list = window.stock_list || (function () {
                     th.addClass("tdK1d gray");
                     th.addClass("thK1d gray");
                     th.addClass("clickable");
+                } else if (keys[i] == "K1w") {
+                    th.addClass("tdK1w gray");
+                    th.addClass("thK1w gray");
                 } else if (keys[i] == "K1m") {
                     th.addClass("tdK1m gray");
                     th.addClass("thK1m");
@@ -925,6 +1036,7 @@ window.stock_list = window.stock_list || (function () {
 
                     if (self.showK1d) {
                         self.showK1dsInView();
+                        self.showK1wsInView();
                     }
 
                     if (self.showK1m) {
@@ -1086,6 +1198,17 @@ window.stock_list = window.stock_list || (function () {
                             // self.showK1ds([row["代码"]]);
                             // td.removeClass("nowrap"); 
                         }
+                    } else if (key == "K1w") {
+                        if (firstRow) {
+                            td.addClass("tdK1w gray");
+                            td.html(`
+                            <div class="flexrow">
+                                <div class="flexcolumn">
+                                    <div class="k1w hide"></div>
+                                </div>
+                            </div>
+                            `);
+                        }
                     } else if (key == "K1m") {
                         if (firstRow) {
                             td.addClass("tdK1m");
@@ -1186,6 +1309,11 @@ window.stock_list = window.stock_list || (function () {
                     $(".k1d").addClass("hide");
                     $(".k1dCollapse").addClass("gray");
                 }
+                self.syncAllK1wVisibility();
+                if (self.showK1d) {
+                    self.showK1dsInView();
+                    self.showK1wsInView();
+                }
             })
 
             $(".thK1m").click(function (e) {
@@ -1247,6 +1375,7 @@ window.stock_list = window.stock_list || (function () {
                     self.setActiveKPeriod(td, period);
                     let scode = tr.attr("code");
                     self.showK1ds([scode]);
+                    self.syncK1wVisibility(tr);
                     return;
                 }
 

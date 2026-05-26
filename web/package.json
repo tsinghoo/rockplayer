@@ -20,7 +20,7 @@
     "fs": "^0.0.1-security",
     "mime": "^3.0.0",
     "multer": "^1.4.5-lts.1",
-    "node-binance-api": "github:tsinghoo/node-binance-api",
+    "node-binance-api": "^1.0.26",
     "nodemon": "^2.0.22",
     "okx-api": "^3.1.0",
     "socks-proxy-agent": "^8.0.5",

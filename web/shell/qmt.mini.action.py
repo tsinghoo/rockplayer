@@ -1451,6 +1451,7 @@ def subscribewholecallback(data):
     try:
         for stock in data:
             if stock not in g.stocklist:
+                info(f"not in stocklist: {stock}")
                 continue
             g.changedTicks[stock] = data[stock]
     except Exception as e:
@@ -1642,16 +1643,16 @@ if __name__ == "__main__":
 
     subscribe_result = xt_trader.subscribe(stockAccount)
     if subscribe_result == 0:
-        info("订阅成功")
+        info("A股订阅成功")
     else:
-        info("订阅失败")
+        info("A股订阅失败")
         xt_trader.stop()
         sys.exit(1)
     subscribe_result = xt_trader.subscribe(stockAccountHgt)
     if subscribe_result == 0:
-        info("订阅成功")
+        info("沪港通订阅成功")
     else:
-        info("订阅失败")
+        info("沪港通订阅失败")
         xt_trader.stop()
         sys.exit(1)
 

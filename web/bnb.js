@@ -14,17 +14,17 @@ let dev = 0;
 
 
 const binance = new Binance({
-  APIKEY: '5tZbH6hW8lHgS6vNm5Dg8BKMYny1kXZDIqvZWZnqJtz2EQXOOSS2w1PADilLFObe',
-  APISECRET: 'Jf8gB0jdZ5A7ACjzqTvxIrj0wvWwjj1scgHsZl8NJpGMFODo0AKv37WNkS1EJ7v3',
+  APIKEY: 'kDosGMPCkXm5vKWiRoinGpFe0VzXxtFMmgLkAvlRZLvm1Fzfa39WxU15N9Ss6498',
+  APISECRET: 'ZAgHZNWepd6EVmDw60YIVrizKBL4eDzWM8lx6f1IjX3f8Naek3KKdf54CycANillqh7',
   verbose: logLevel <= DEBUG,
   //test: true, // if you want to use the sandbox/testnet
 });
 
 // binance.socksProxy = 'socks://192.168.66.1:10800/';
-binance.httpsProxy = 'http://192.168.66.205:8080/';
+binance.httpsProxy = 'http://proxy.labadida.cn:8118/';
 let g = {};
 g.broker = "BNB";
-g.baseUrl = "http://test1.91taogu.com";
+g.baseUrl = "http://152.136.244.225";
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
