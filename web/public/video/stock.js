@@ -994,18 +994,9 @@ window.stock_list = window.stock_list || (function () {
                     params[key] = ele[key];
                 }
             });
-            let k1dIndex = keys.indexOf("K1d");
-            if (k1dIndex >= 0 && keys.indexOf("K1w") < 0) {
-                keys.splice(k1dIndex + 1, 0, "K1w");
-            }
             for (let i = 0; i < keys.length; i++) {
                 let th = $("<th>");
                 let title = keys[i];
-                if (keys[i] == "K1d") {
-                    title = "K线";
-                } else if (keys[i] == "K1w") {
-                    title = "K1w";
-                }
                 th.text(title);
                 tr.append(th);
                 th.addClass("nowrap");
