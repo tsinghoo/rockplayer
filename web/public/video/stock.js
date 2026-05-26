@@ -917,12 +917,7 @@ window.stock_list = window.stock_list || (function () {
             }
         },
         shouldShowK1w: function (tr) {
-            if (tr == null || tr.length < 1 || !self.showK1d) {
-                return false;
-            }
-
-            let td = tr.find(".tdK1d");
-            return self.getActiveKPeriod(td) == "1d";
+            return self.showK1d;
         },
         syncK1wVisibility: function (tr) {
             let td = tr.find(".tdK1w");
