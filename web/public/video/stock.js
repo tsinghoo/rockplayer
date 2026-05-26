@@ -4236,10 +4236,20 @@ window.stock_list = window.stock_list || (function () {
             }
             c.find(".k1dCollapse").addClass("hide");
             let k1d = c.find(".k1d");
-            if (k1d == null) {
+            if (k1d.length < 1) {
+                k1d = c.find(".k1w");
+            }
+            if (k1d.length < 1) {
                 let tr = $(`.firstCode[code="${scode}"]`);
                 let td = tr.find(".tdK1d");
                 k1d = td.find(".k1d");
+                if (k1d.length < 1) {
+                    td = tr.find(".tdK1w");
+                    k1d = td.find(".k1w");
+                }
+            }
+            if (k1d.length < 1) {
+                return;
             }
             const upColor = '#00da3c';
             const downColor = '#ec0000';
