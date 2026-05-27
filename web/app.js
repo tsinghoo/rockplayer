@@ -2526,12 +2526,12 @@ async function upgradeDb(succ, fail) {
         `alter table tStockBasic add column intro text default '';`,
         `alter table tStockBasic add column type int default 0;`,
         `update tStockBasic set type=1 where optionPrice is not null or optionUpdateTime is not null;`,
+        `alter table tStockBasic drop column optionPrice;`,
+        `alter table tStockBasic drop column optionUpdateTime;`,
         `alter table tRuleAction add column type int default 0;`,
         `update tRuleAction set type=1 where lower(scode) like '%.o';`,
         `alter table tTradeRule add column type int default 0;`,
         `update tTradeRule set type=1 where lower(scode) like '%.o';`,
-        `alter table tStockBasic drop column optionPrice;`,
-        `alter table tStockBasic drop column optionUpdateTime;`,
     ];
 
     if (res == null || res.error) {
