@@ -401,6 +401,13 @@ def update1dTask():
         # update1d(g.ruleCodes)
 
         while True:
+            now = datetime.datetime.now()
+            if now.hour < 9 or (now.hour == 9 and now.minute < 15):
+                time.sleep(1)
+                continue
+            if now.hour > 16 or (now.hour == 16 and now.minute >= 10):
+                info("16:10以后，update1dTask退出")
+                return
             resetThreadId("u1d")
             reloadK1d, g.reloadK1d = g.reloadK1d, []
             if len(reloadK1d) > 0:
@@ -496,13 +503,20 @@ def updateTodayTask():
 
 def update1mTask():
     while True:
-        time.sleep(1)
+        now = datetime.datetime.now()
+        if now.hour < 9 or (now.hour == 9 and now.minute < 15):
+            time.sleep(1)
+            continue
+        if now.hour > 16 or (now.hour == 16 and now.minute >= 10):
+            info("16:10以后，update1mTask退出")
+            return
         resetThreadId("u1m")
         try:
             update1m(g.stocklist)
         except Exception as e:
             info("update1mTask error:", traceback.format_exc())
         # update1m(g.candidates)
+        time.sleep(1)
 
 
 def updatePriceTask():

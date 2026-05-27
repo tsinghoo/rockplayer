@@ -622,6 +622,13 @@ def update1mTask():
 def updatePriceTask():
     resetThreadId("upt")
     while True:
+        now = datetime.datetime.now()
+        if now.hour < 9 or (now.hour == 9 and now.minute < 15):
+            time.sleep(1)
+            continue
+        if now.hour > 16 or (now.hour == 16 and now.minute >= 10):
+            info("16:10以后，updatePriceTask退出")
+            return
         uploadStockPrice()
         time.sleep(0.1)
 
@@ -720,9 +727,16 @@ def updateDetailTask():
 
 def getActionsTask():
     while True:
-        time.sleep(1)
         resetThreadId("act")
+        now = datetime.datetime.now()
+        if now.hour < 9 or (now.hour == 9 and now.minute < 30):
+            time.sleep(1)
+            continue
+        if now.hour > 16 or (now.hour == 16 and now.minute >= 10):
+            info("16:10以后，getActionsTask退出")
+            return
         getActions()
+        time.sleep(1)
 
 
 def getActions():

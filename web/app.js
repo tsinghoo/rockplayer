@@ -4422,7 +4422,8 @@ function formatScode(stockCode) {
 
 app.get('/stock/codes', async (req, res) => {
     let js = req.query.js;
-    let sql = `select scode from tstockbasic;`;
+    let sql = `select scode from tstockbasic
+            order by priority desc;`;
     let r = await db.allSync(sql, [], req.threadId);
     let scodes = [];
     r.rows.forEach((row) => {
