@@ -2279,7 +2279,7 @@ app.get('/stock/updatePrice/option', async (req, res) => {
 
     //updatePriceToRule(scode, price);
 
-    await updateStockBasicByScode(`optionPrice=?, optionUpdateTime=?`, [price, time], scode);
+    await updateStockBasicByScode(`buy=?, updateTime=?, type=?`, [price, time, 1], scode);
     //checkRule([scode]);
     var resp = `${js}({})`;
     res.send(resp);
@@ -2472,6 +2472,10 @@ async function upgradeDb(succ, fail) {
         `create table openwrt_onlines(id text primary key, ip text, mac text, host text, status text, time integer);`,
         `alter table openwrt_onlines add column startTime integer;`,
         `alter table tStockBasic add column intro text default '';`,
+        `alter table tStockBasic add column type int default 0;`,
+        `update tStockBasic set type=1 where optionPrice is not null or optionUpdateTime is not null;`,
+        `alter table tStockBasic drop column optionPrice;`,
+        `alter table tStockBasic drop column optionUpdateTime;`,
     ];
 
     if (res == null || res.error) {

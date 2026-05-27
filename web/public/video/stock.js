@@ -2475,10 +2475,6 @@ window.stock_list = window.stock_list || (function () {
                             data = JSON.parse(data);
                             let curPrice = share.convertIfInteger(row.buy);
                             let timePassed = share.getTimePassed__(row.updateTime);
-                            if (data.type == 1) {
-                                curPrice = share.convertIfInteger(row.optionPrice);
-                                timePassed = share.getTimePassed__(row.optionUpdateTime);
-                            }
                             data.curPrice = curPrice;
                             td.attr("data", JSON.stringify(data));
                             const price = data["价格"];
