@@ -418,6 +418,10 @@ async function updateStockBasicByScode(fields) {
         type = 0;
     }
 
+    if (row.sname == null) {
+        row.sname = row.scode;
+    }
+
     let candidateIds = aliases.map((alias) => type == 1 ? `${alias}.o` : alias);
     let scodePlaceholders = aliases.map(() => "?").join(",");
     let idPlaceholders = candidateIds.map(() => "?").join(",");
@@ -3803,7 +3807,7 @@ app.get('/stock/rule/actions', async (req, res) => {
     for (let row of r.rows) {
         if (await allowAutoCreateAction(req, row)) {
             filteredRows.push(row);
-        }else{
+        } else {
             info(`${row.scode} is filtered`);
         }
     }
