@@ -3787,6 +3787,8 @@ app.get('/stock/rule/actions', async (req, res) => {
     for (let row of r.rows) {
         if (await allowAutoCreateAction(req, row)) {
             filteredRows.push(row);
+        }else{
+            info(`${row.scode} is filtered`);
         }
     }
 
