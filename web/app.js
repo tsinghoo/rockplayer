@@ -403,11 +403,37 @@ async function refreshAllTableScodes(threadId) {
     return {};
 }
 
-async function updateStockBasicByScode(assignments, values, scode) {
+async function updateStockBasicByScode(fields) {
+    let scode = normalizeScode(fields.scode);
+    if (scode == null || scode == "") {
+        return { error: "scode required" };
+    }
+
     let aliases = getScodeAliases(scode);
-    let placeholders = aliases.map(() => "?").join(",");
-    let sql = `update tStockBasic set ${assignments} where scode in (${placeholders}) or id in (${placeholders})`;
-    return await db.runSync(sql, values.concat(aliases, aliases));
+    let row = Object.assign({}, fields);
+    row.scode = scode;
+
+    let type = parseInt(row.type || 0);
+    if (isNaN(type)) {
+        type = 0;
+    }
+
+    let candidateIds = aliases.map((alias) => type == 1 ? `${alias}.o` : alias);
+    let scodePlaceholders = aliases.map(() => "?").join(",");
+    let idPlaceholders = candidateIds.map(() => "?").join(",");
+    let querySql = `select id from tStockBasic where type=? and (scode in (${scodePlaceholders}) or id in (${idPlaceholders})) limit 1`;
+    let target = await db.getSync(querySql, [type].concat(aliases, candidateIds));
+    if (target && !target.error) {
+        let columns = Object.keys(row);
+        let assignments = columns.map((column) => `${column}=?`).join(", ");
+        let values = columns.map((column) => row[column]);
+        let sql = `update tStockBasic set ${assignments} where id=?`;
+        return await db.runSync(sql, values.concat([target.id]));
+    }
+
+    row.id = type == 1 ? `${scode}.o` : scode;
+    row.type = type;
+    return await insertOrReplace("tStockBasic", row);
 }
 
 function log(msg) {
@@ -2262,7 +2288,7 @@ app.get('/stock/updatePrice', async (req, res) => {
     }
 
     updatePriceToRule(scode, price);
-    await updateStockBasicByScode(`buy=?, updateTime=?`, [price, time], scode);
+    await updateStockBasicByScode({ scode: scode, buy: price, updateTime: time });
     checkRule([scode], req);
     var resp = `${js}({})`;
     res.send(resp);
@@ -2279,7 +2305,7 @@ app.get('/stock/updatePrice/option', async (req, res) => {
 
     //updatePriceToRule(scode, price);
 
-    await updateStockBasicByScode(`buy=?, updateTime=?, type=?`, [price, time, 1], scode);
+    await updateStockBasicByScode({ scode: scode, buy: price, updateTime: time, type: 1 });
     //checkRule([scode]);
     var resp = `${js}({})`;
     res.send(resp);
@@ -2340,21 +2366,7 @@ app.post('/stock/intro/update', async (req, res) => {
         return;
     }
 
-    let aliases = getScodeAliases(scode);
-    let placeholders = aliases.map(() => "?").join(",");
-    let stockBasic = await db.getSync(`select * from tStockBasic where scode in (${placeholders}) or id in (${placeholders})`, aliases.concat(aliases), req.threadId);
-
-    let result;
-    if (stockBasic == null) {
-        result = await insertOrReplace("tStockBasic", {
-            id: scode,
-            scode: scode,
-            intro: intro,
-            updateTime: updateTime
-        });
-    } else {
-        result = await updateStockBasicByScode(`intro=?, updateTime=?`, [intro, updateTime], scode);
-    }
+    let result = await updateStockBasicByScode({ scode: scode, intro: intro, updateTime: updateTime });
 
     if (result && result.error) {
         res.send(JSON.stringify(result));
@@ -2889,7 +2901,7 @@ app.post('/stock/quotes', async (req, res) => {
 
             } else {
                 updatePriceToRule(scode, price);
-                await updateStockBasicByScode(`buy=?,updateTime=?`, [price, updateTime], scode);
+                await updateStockBasicByScode({ scode: scode, buy: price, updateTime: updateTime });
 
                 delete v1["stime"];
                 delete v1["pvolume"];
@@ -2933,7 +2945,7 @@ app.post('/stock/quotes.mini', async (req, res) => {
         if (price == 0) {
         } else {
             updatePriceToRule(scode, price);
-            await updateStockBasicByScode(`buy=?,updateTime=?`, [price, updateTime], scode);
+            await updateStockBasicByScode({ scode: scode, buy: price, updateTime: updateTime });
         }
     })
 
