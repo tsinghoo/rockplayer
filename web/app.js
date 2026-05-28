@@ -332,7 +332,7 @@ function normalizeType(type, scode) {
 function getTypedScodeQuery(scode, type, minLength) {
     let aliases = getScodeAliases(scode, minLength);
     let normalizedType = normalizeType(type, scode);
-    let candidateIds = aliases.map((alias) => normalizedType == 1 ? `O_${alias}` : alias);
+    let candidateIds = aliases.map((alias) => alias);
     return {
         type: normalizedType,
         aliases,
@@ -462,7 +462,7 @@ async function updateStockBasicByScode(fields, threadId) {
         return await db.runSync(sql, values.concat([target.id]), threadId);
     }
 
-    row.id = type == 1 ? `O_${scode}` : scode;
+    row.id = scode;
     row.type = type;
     return await insertOrReplace("tStockBasic", row, threadId);
 }
