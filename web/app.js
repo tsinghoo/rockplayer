@@ -441,7 +441,7 @@ async function refreshAllTableScodes(threadId) {
     return {};
 }
 
-async function updateStockBasicByScode(fields) {
+async function updateStockBasicByScode(fields, threadId) {
     let scode = normalizeScode(fields.scode);
     if (scode == null || scode == "") {
         return { error: "scode required" };
@@ -453,18 +453,18 @@ async function updateStockBasicByScode(fields) {
     let type = query.type;
 
     let querySql = `select id from tStockBasic where type=? and (scode in (${query.scodePlaceholders}) or id in (${query.idPlaceholders})) limit 1`;
-    let target = await db.getSync(querySql, [type].concat(query.aliases, query.candidateIds), fields.threadId);
+    let target = await db.getSync(querySql, [type].concat(query.aliases, query.candidateIds), threadId);
     if (target && !target.error) {
         let columns = Object.keys(row);
         let assignments = columns.map((column) => `${column}=?`).join(", ");
         let values = columns.map((column) => row[column]);
         let sql = `update tStockBasic set ${assignments} where id=?`;
-        return await db.runSync(sql, values.concat([target.id]), fields.threadId);
+        return await db.runSync(sql, values.concat([target.id]), threadId);
     }
 
     row.id = type == 1 ? `O_${scode}` : scode;
     row.type = type;
-    return await insertOrReplace("tStockBasic", row, fields.threadId);
+    return await insertOrReplace("tStockBasic", row, threadId);
 }
 
 function log(msg) {
@@ -2324,7 +2324,7 @@ app.get('/stock/updatePrice', async (req, res) => {
     }
 
     updatePriceToRule(scode, price);
-    await updateStockBasicByScode({ scode: scode, buy: price, updateTime: time, threadId: req.threadId });
+    await updateStockBasicByScode({ scode: scode, buy: price, updateTime: time }, req.threadId);
     checkRule([scode], req);
     var resp = `${js}({})`;
     res.send(resp);
@@ -2921,6 +2921,7 @@ function parseTime(str) {
 
 app.post('/stock/quotes', async (req, res) => {
     //{"data":{"837092.BJ":{"20250523101631.000":{"amount":10865500,"askPrice":[42.86,42.87,42.88,42.9,42.92],"askVol":[59,4,20,1,30],"bidPrice":[42.66,42.65,42.64,42.63,42.62],"bidVol":[2,2,10,32,26],"high":43.24,"lastClose":42.76,"lastPrice":42.65,"lastSettlementPrice":0,"low":42.41,"open":42.41,"openInt":13,"pvolume":253700,"settlementPrice":0,"stime":"20250523101631.000","stockStatus":1,"time":1747966591000,"transactionNum":0,"volume":2537}}}}
+    let threadId = req.threadId;
     info(JSON.stringify(req.body), req.threadId);
     let passcode = req.body.passcode;
     if (passcode != "995560") {
@@ -2941,7 +2942,7 @@ app.post('/stock/quotes', async (req, res) => {
 
             } else {
                 updatePriceToRule(scode, price);
-                await updateStockBasicByScode({ scode: scode, buy: price, updateTime: updateTime });
+                await updateStockBasicByScode({ scode: scode, buy: price, updateTime: updateTime }, threadId);
 
                 delete v1["stime"];
                 delete v1["pvolume"];
@@ -2966,8 +2967,8 @@ app.post('/stock/quotes', async (req, res) => {
 });
 
 app.post('/stock/quotes.mini', async (req, res) => {
-
-    info(JSON.stringify(req.body), req.threadId);
+    let threadId = req.threadId;
+    info(JSON.stringify(req.body), threadId);
     let passcode = req.body.passcode;
     if (passcode != "995560") {
         info("bad request", req.threadId);
@@ -2985,7 +2986,7 @@ app.post('/stock/quotes.mini', async (req, res) => {
         if (price == 0) {
         } else {
             updatePriceToRule(scode, price);
-            await updateStockBasicByScode({ scode: scode, buy: price, updateTime: updateTime });
+            await updateStockBasicByScode({ scode: scode, buy: price, updateTime: updateTime }, threadId);
         }
     })
 
@@ -3110,7 +3111,7 @@ app.get('/stock/rule/create', async (req, res) => {
         priority: now,
         updateTime: now,
         type: json.type
-    });
+    }, threadId);
 
     let r = await db.allSync(`select * from tStock where scode in (${placeholders}) and deleted=0 and tamount<>0`, aliases, threadId);
     if (r.rows.length == 0) {
