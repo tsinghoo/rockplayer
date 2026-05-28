@@ -14,6 +14,15 @@ function getTodayStr() {
     return getDateStr(new Date());
 }
 
+function toInputDateStr(dateStr) {
+    const date = parseDateStr(dateStr);
+    if (!date) return '';
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
 // Parse YYMMDD string to Date object
 function parseDateStr(str) {
     if (!str || !/^\d{6}$/.test(str)) return null;
@@ -133,6 +142,40 @@ function getDeviceName(record) {
 
 function getEventStartTimestamp(record) {
     return parseTimeToTimestamp(record.startTime) || parseTimeToTimestamp(record.time) || 0;
+}
+
+function syncDateControls() {
+    const customDate = document.getElementById('customDate');
+    const targetDate = parseDateStr(currentDate);
+    const today = parseDateStr(getTodayStr());
+    if (customDate) {
+        customDate.value = toInputDateStr(currentDate);
+    }
+
+    let activePreset = '';
+    if (targetDate && today) {
+        const diffDays = Math.round((today.getTime() - targetDate.getTime()) / 86400000);
+        if (diffDays === 0) {
+            activePreset = 'today';
+        } else if (diffDays === 1) {
+            activePreset = 'yesterday';
+        } else if (diffDays === 2) {
+            activePreset = '2daysago';
+        }
+    }
+
+    document.querySelectorAll('.time-range button[data-date]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.date === activePreset);
+    });
+}
+
+function shiftCurrentDate(offsetDays) {
+    const date = parseDateStr(currentDate);
+    if (!date) return;
+    date.setDate(date.getDate() + offsetDays);
+    currentDate = getDateStr(date);
+    syncDateControls();
+    loadHistory();
 }
 
 async function loadHistory() {
@@ -273,6 +316,7 @@ async function loadHistory() {
             .filter(r => r.status)
             .map(r => ({
                 deviceName: getDeviceName(r),
+                mac: r.mac || '',
                 eventTime: parseTimeToTimestamp(r.time) || 0,
                 startTime: getEventStartTimestamp(r)
             }))
@@ -293,6 +337,7 @@ async function loadHistory() {
                     '<span class="event-device">' +
                     escapeHtml(ev.deviceName) +
                     '</span>' +
+                    '<span class="event-mac">MAC: ' + escapeHtml(ev.mac || '-') + '</span>' +
                     '</div>' +
                     '<div class="event-times">' +
                     '<span class="event-time">' + escapeHtml(formatTimeShort(ev.startTime)) + ' ↔ ' + escapeHtml(formatTimeShort(ev.eventTime)) + '</span>' +
@@ -306,10 +351,8 @@ async function loadHistory() {
 }
 
 // Time range buttons
-document.querySelectorAll('.time-range button').forEach(btn => {
+document.querySelectorAll('.time-range button[data-date]').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('.time-range button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
         const dateAttr = btn.dataset.date;
         if (dateAttr === 'today') {
             currentDate = getTodayStr();
@@ -318,8 +361,7 @@ document.querySelectorAll('.time-range button').forEach(btn => {
         } else if (dateAttr === '2daysago') {
             currentDate = getDateStr(new Date(Date.now() - 2 * 86400000));
         }
-        // Clear custom date input
-        document.getElementById('customDate').value = '';
+        syncDateControls();
         loadHistory();
     });
 });
@@ -330,12 +372,21 @@ document.getElementById('customDate').addEventListener('change', (e) => {
     if (!val) return;
     const [yyyy, mm, dd] = val.split('-');
     currentDate = String(parseInt(yyyy) - 2000).padStart(2, '0') + mm + dd;
-    document.querySelectorAll('.time-range button').forEach(b => b.classList.remove('active'));
+    syncDateControls();
     loadHistory();
+});
+
+document.getElementById('prevDate').addEventListener('click', () => {
+    shiftCurrentDate(-1);
+});
+
+document.getElementById('nextDate').addEventListener('click', () => {
+    shiftCurrentDate(1);
 });
 
 window.addEventListener('resize', () => { if (chart) chart.resize(); });
 
+syncDateControls();
 loadClients();
 setInterval(loadClients, 3000);
 loadHistory();

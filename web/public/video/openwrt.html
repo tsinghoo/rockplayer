@@ -102,6 +102,11 @@
         .time-range button:hover { border-color: var(--accent); color: var(--accent); }
         .time-range button.active { background: var(--accent); color: white; border-color: var(--accent); }
 
+        .date-nav {
+            padding: 8px 12px;
+            min-width: 40px;
+        }
+
         .chart-container { width: 100%; height: 500px; margin-top: 14px; }
 
         .stats-panel {
@@ -141,6 +146,11 @@
         }
 
         .event-device { font-weight: 600; }
+        .event-mac {
+            color: var(--muted);
+            font-size: 12px;
+            font-family: "SFMono-Regular", Consolas, monospace;
+        }
         .event-times {
             color: var(--muted);
             font-size: 12px;
@@ -215,6 +225,8 @@
                 <button data-date="yesterday">昨天</button>
                 <button data-date="2daysago">前天</button>
                 <input type="date" id="customDate" style="padding: 8px 12px; border: 1px solid var(--line); border-radius: 20px; font-size: 13px; background: var(--panel);">
+                <button type="button" id="prevDate" class="date-nav" aria-label="前一天">←</button>
+                <button type="button" id="nextDate" class="date-nav" aria-label="后一天">→</button>
             </div>
             <div id="chart" class="chart-container"></div>
             <h3 style="padding: 14px 14px 0; margin: 0; font-size: 16px; color: var(--muted);">事件记录</h3>
