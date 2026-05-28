@@ -202,6 +202,96 @@ function get(url) {
   });
 }
 
+async function getKLastDate(scode, period) {
+  try {
+    let route;
+    let field;
+    if (period == "1d") {
+      route = "1d/lastDate";
+      field = "lastDate";
+    } else if (period == "1m") {
+      route = "1m/lastMinute";
+      field = "lastMinute";
+    } else {
+      error("getKLastDate unsupported period:", period);
+      return null;
+    }
+
+    let response = await get(`${g.baseUrl}/stock/${route}?scode=${scode}`);
+    if (!response.ok) {
+      error("getKLastDate failed:", response.status);
+      return null;
+    }
+
+    let content = await response.text();
+    debug("getKLastDate:", content);
+    let json = JSON.parse(content);
+    return json[field];
+  } catch (e) {
+    error("getKLastDate failed:", e.toString());
+    return null;
+  }
+}
+
+function parseTimeByPeriod(value, period) {
+  if (!value) {
+    return null;
+  }
+  if (period == "1d") {
+    return new Date(
+      parseInt(value.substring(0, 4)),
+      parseInt(value.substring(4, 6)) - 1,
+      parseInt(value.substring(6, 8)),
+      0,
+      0,
+      0,
+      0
+    );
+  }
+  if (period == "1m") {
+    return new Date(
+      parseInt(value.substring(0, 4)),
+      parseInt(value.substring(4, 6)) - 1,
+      parseInt(value.substring(6, 8)),
+      parseInt(value.substring(8, 10)),
+      parseInt(value.substring(10, 12)),
+      parseInt(value.substring(12, 14)),
+      0
+    );
+  }
+
+  return null;
+}
+
+async function resolveStickLimit(stock, period, limit) {
+  if (limit != null) {
+    return limit;
+  }
+
+  let defaultLimit = period == "1d" ? 360 : 240;
+  let lastDate = await getKLastDate(stock, period);
+  info(`lastDate ${stock} ${period}:`, lastDate);
+  let lastTime = parseTimeByPeriod(lastDate, period);
+  if (lastTime == null) {
+    return defaultLimit;
+  }
+
+  let now = new Date();
+  let diffMs = now.getTime() - lastTime.getTime();
+  if (diffMs <= 0) {
+    return 1;
+  }
+
+  if (period == "1d") {
+    return Math.max(1, Math.ceil(diffMs / (24 * 60 * 60 * 1000)) + 1);
+  }
+  if (period == "1m") {
+    return Math.max(1, Math.ceil(diffMs / (60 * 1000)) + 1);
+  }
+
+  return defaultLimit;
+}
+
 g.logs = [];
 async function log2File() {
   return new Promise(async (resolve, reject) => {
@@ -254,6 +344,8 @@ function error(msg) {
 async function updateSticks(stock, period, limit) {
   info(`updateSticks ${stock} ${period} ${limit}`);
   try {
+    limit = await resolveStickLimit(stock, period, limit);
+    info(`updateSticks resolved limit ${stock} ${period} ${limit}`);
     if (period == "1d") {
       timePatten = "yyyyMMdd";
     } else if (period == "1m") {
@@ -269,7 +361,7 @@ async function updateSticks(stock, period, limit) {
       if (data.length == 50) {
         let body = {
           period: period,
-          scode: stock,
+          scode: `O_${stock}`,
           data: data
         };
         post(`${g.baseUrl}/stock/k/upload`, body);
@@ -279,7 +371,7 @@ async function updateSticks(stock, period, limit) {
 
     let body = {
       period: period,
-      scode: stock,
+      scode: `O_${stock}`,
       data: data
     };
 
@@ -495,7 +587,7 @@ async function startFutureMiniTicket() {
   g.stocklist.forEach(element => {
     binance.futuresMiniTickerStream(element, item => {
       let { symbol, close, high, low, open, volume, quoteVolume, eventTime } = item;
-      let url = `${g.baseUrl}/stock/updatePrice/option?scode=${symbol}&price=${close}&time=${eventTime}`;
+      let url = `${g.baseUrl}/stock/updatePrice?scode=O_${symbol}&price=${close}&time=${eventTime}`;
       info(`GET ${url}`);
       get(url)
         .catch((err) => {
@@ -515,11 +607,11 @@ async function start() {
   binance.websockets.userData(balance_update, execution_update);
 
   for (let scode of g.stocklist) {
-    await updateSticks(scode, "1m", 240);
-    await updateSticks(scode, "1d", 360);
+    await updateSticks(scode, "1m");
+    await updateSticks(scode, "1d");
 
-    await futureCandles(scode, "1m", 240);
-    await futureCandles(scode, "1d", 360);
+    await futureCandles(scode, "1m");
+    await futureCandles(scode, "1d");
   }
 
   startFutureMiniTicket();
@@ -632,13 +724,14 @@ async function test1() {
 async function futureCandles(stock, period, limit) {
   info(`futureCandles ${stock} ${period} ${limit}`);
   try {
+    limit = await resolveStickLimit(`O_${stock}`, period, limit);
+    info(`updateSticks resolved limit O_${stock} ${period} ${limit}`);
     let count = 0;
     if (period == "1d") {
       timePatten = "yyyyMMdd";
     } else if (period == "1m") {
       timePatten = "yyyyMMddhhmmss";
     }
-
 
     let response = await binance.futuresCandles(stock, period, { limit });
     let data = [];
@@ -648,13 +741,13 @@ async function futureCandles(stock, period, limit) {
       if (data.length == 50) {
         let body = {
           period: period,
-          scode: stock,
+          scode: `O_${stock}`,
           type: 1,
           data: data
         };
         await post(`${g.baseUrl}/stock/k/upload`, body);
         count += 50;
-        info(`fc upload:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
+        info(`fc upload:O_${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
         data = [];
       }
     }
@@ -662,13 +755,13 @@ async function futureCandles(stock, period, limit) {
     if (data.length > 0) {
       let body = {
         period: period,
-        scode: stock,
+        scode: `O_${stock}`,
         type: 1,
         data: data
       };
       await post(`${g.baseUrl}/stock/k/upload`, body);
       count += data.length;
-      info(`fc upload last:${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
+      info(`fc upload last:O_${stock}:${period}:${data[0][0]}-${data[data.length - 1][0]} ${count}`);
     }
 
   } catch (e) {
@@ -707,6 +800,5 @@ if (dev == 1) {
 } else {
   start();
 }
-
 
 
