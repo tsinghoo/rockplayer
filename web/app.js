@@ -453,18 +453,18 @@ async function updateStockBasicByScode(fields) {
     let type = query.type;
 
     let querySql = `select id from tStockBasic where type=? and (scode in (${query.scodePlaceholders}) or id in (${query.idPlaceholders})) limit 1`;
-    let target = await db.getSync(querySql, [type].concat(query.aliases, query.candidateIds));
+    let target = await db.getSync(querySql, [type].concat(query.aliases, query.candidateIds), fields.threadId);
     if (target && !target.error) {
         let columns = Object.keys(row);
         let assignments = columns.map((column) => `${column}=?`).join(", ");
         let values = columns.map((column) => row[column]);
         let sql = `update tStockBasic set ${assignments} where id=?`;
-        return await db.runSync(sql, values.concat([target.id]));
+        return await db.runSync(sql, values.concat([target.id]), fields.threadId);
     }
 
     row.id = type == 1 ? `O_${scode}` : scode;
     row.type = type;
-    return await insertOrReplace("tStockBasic", row);
+    return await insertOrReplace("tStockBasic", row, fields.threadId);
 }
 
 function log(msg) {
@@ -2324,7 +2324,7 @@ app.get('/stock/updatePrice', async (req, res) => {
     }
 
     updatePriceToRule(scode, price);
-    await updateStockBasicByScode({ scode: scode, buy: price, updateTime: time });
+    await updateStockBasicByScode({ scode: scode, buy: price, updateTime: time, threadId: req.threadId });
     checkRule([scode], req);
     var resp = `${js}({})`;
     res.send(resp);
@@ -2471,21 +2471,21 @@ function fixScode(scode, minLength) {
     return normalizeScode(scode, minLength);
 }
 
-async function dbCall(options) {
+async function dbCall(options, threadId) {
     for (let i = 0; i < options.length; ++i) {
         let stat = options[i];
         if (isArray(stat)) {
             let sql = stat[0];
             let params = stat[1];
-            debug("dbCall sql:" + sql);
-            debug("params:" + JSON.stringify(params));
-            let res = await db.runSync(sql, params);
+            debug("dbCall sql:" + sql, threadId);
+            debug("params:" + JSON.stringify(params), threadId);
+            let res = await db.runSync(sql, params, threadId);
             if (res.error) {
                 return res;
             }
         } else {
-            debug("sql:" + stat);
-            let res = await db.runSync(stat);
+            debug("sql:" + stat, threadId);
+            let res = await db.runSync(stat, null, threadId);
             if (res.error) {
                 return res;
             }
@@ -2608,7 +2608,7 @@ CREATE TABLE ttick(id text primary key, scode text, time int, data text);`);
     }
 }
 
-async function insertOrReplace(table, row) {
+async function insertOrReplace(table, row, threadId) {
     debug("insertOrReplace:" + table);
     let keys = Object.keys(row);
     let cols = keys.join(",");
@@ -2623,7 +2623,7 @@ async function insertOrReplace(table, row) {
         return val;
     });
 
-    return await dbCall([[sql, vals]]);
+    return await dbCall([[sql, vals]], threadId);
 }
 
 async function insertOrIgnore(table, row) {
