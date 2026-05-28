@@ -612,7 +612,7 @@ window.stock_list = window.stock_list || (function () {
             });
         },
         deleteRule: async function () {
-            let res = await share.getSync__("/stock/rule/delete", { scode: self.selectedData["代码"], id: self.selectedData["id"], broker: self.selectedData["券商"] });
+            let res = await share.getSync__("/stock/rule/delete", { scode: self.getRowScode(self.selectedData), id: self.selectedData["id"], broker: self.selectedData["券商"] });
             if (res.error) {
                 share.toastError__(res.error);
             } else {
@@ -621,7 +621,7 @@ window.stock_list = window.stock_list || (function () {
             }
         },
         toCancelRule: async function (all) {
-            let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], broker: self.selectedData["券商"], all });
+            let res = await share.getSync__("/stock/rule/cancel", { scode: self.getRowScode(self.selectedData), broker: self.selectedData["券商"], all });
             if (res.error) {
                 share.toastError__(res.error);
             } else {
@@ -630,7 +630,7 @@ window.stock_list = window.stock_list || (function () {
             }
         },
         showMenu4RuleContent: async function () {
-            let res = await share.getSync__("/stock/rule/status", { scode: self.selectedData["代码"], broker: self.selectedData["券商"] });
+            let res = await share.getSync__("/stock/rule/status", { scode: self.getRowScode(self.selectedData), broker: self.selectedData["券商"] });
             let guide = ``;
 
             let buttons = [
@@ -1368,12 +1368,12 @@ window.stock_list = window.stock_list || (function () {
                 let popupRoot = tab.closest(".buySellPopupContent");
                 if (popupRoot.length > 0) {
                     self.setActiveKPeriod(popupRoot, period);
-                    let type = self.selectedData && self.selectedData["type"] != null ? self.selectedData["type"] : 0;
+                    let type = self.selectedData ? self.getRowType(self.selectedData) : 0;
                     let scode = popupRoot.find(".scode").val().trim();
                     if (scode == "" && self.selectedData) {
-                        scode = self.selectedData["代码"];
+                        scode = self.getRowScode(self.selectedData);
                     }
-                    scode = self.normalizeScode(scode);
+                    scode = self.normalizeTypedScode(scode, type);
                     self.toDrawK1dChart(scode, type, popupRoot, period);
                 }
             })
@@ -2021,6 +2021,8 @@ window.stock_list = window.stock_list || (function () {
                 broker = "国金";
             }
 
+            let selectedScode = self.getRowScode(self.selectedData);
+
             if (sellAmount == null || sellAmount == 0 || isNaN(sellAmount)) {
                 sellAmount = Math.abs(self.selectedData["数量"]);
             }
@@ -2038,9 +2040,8 @@ window.stock_list = window.stock_list || (function () {
                 let popup = await share.popup__(null, c);
                 c = $(`#${popup.id}`);
             }
-
             c.find(".sname").val(`${self.selectedData["名称"]}`);
-            c.find(".scode").val(`${self.normalizeScode(self.selectedData["代码"])}`);
+            c.find(".scode").val(selectedScode);
             //添加.sname或.scode发生变化时的事件处理
 
             let onchanged = function () {
@@ -2050,10 +2051,10 @@ window.stock_list = window.stock_list || (function () {
                 if (match) {
                     let sname = match[1].trim();
                     let scode = match[2] ? `${match[3]}.${match[2].replace(":", "")}` : match[3];
-                    c.find(".scode").val(self.normalizeScode(scode));
+                    c.find(".scode").val(self.normalizeTypedScode(scode, self.getScodeType(scode)));
                     c.find(".sname").val(sname);
                 } else if ($(this).hasClass("scode")) {
-                    c.find(".scode").val(self.normalizeScode(input));
+                    c.find(".scode").val(self.normalizeTypedScode(input, self.getScodeType(input)));
                 }
             };
 
@@ -2189,7 +2190,9 @@ window.stock_list = window.stock_list || (function () {
                 let bounce = c.find(".bounce").val().trim();
                 let sell = c.find(".sell").val().trim();
                 let dip = c.find(".dip").val().trim();
-                let scode = self.normalizeScode(c.find(".scode").val().trim());
+                let scodeInput = c.find(".scode").val().trim();
+                let type = self.getScodeType(scodeInput);
+                let scode = self.normalizeTypedScode(scodeInput, type);
                 let sname = c.find(".sname").val().trim();
                 let sellAmount = c.find(".sellAmount").val().trim();
                 let buyAmount = c.find(".buyAmount").val().trim();
@@ -2205,7 +2208,7 @@ window.stock_list = window.stock_list || (function () {
 
                 let submit = async function () {
 
-                    let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, broker, order, expireHours };
+                    let json = { buy, bounce, buyAmount, sell, dip, sellAmount, scode, sname, broker, order, expireHours, type };
                     let res = await share.getSync__(`/stock/rule/create?json=${encodeURIComponent(JSON.stringify(json))}`);
                     if (res.error) {
                         share.toastError__(res.error);
@@ -2245,7 +2248,6 @@ window.stock_list = window.stock_list || (function () {
                         text: "自动",
                         onTap: async function () {
                             brokerPopup.close();
-                            let type = 0;
                             let maxCount = 5;
                             let priceDelay = 10000000;
                             let res = await share.getSync__(`/stock/rule/create/auto?scode=${scode}&type=${type}&max=${maxCount}&priceDelay=${priceDelay}`);
@@ -2278,8 +2280,9 @@ window.stock_list = window.stock_list || (function () {
             c.find(".buttonAuto").click(async function (ele) {
                 let broker = c.find(".operationName").val().trim();
                 self.lastBroker = broker;
-                let scode = self.normalizeScode(c.find(".scode").val().trim());
-                let type = 0;
+                let scodeInput = c.find(".scode").val().trim();
+                let type = self.getScodeType(scodeInput);
+                let scode = self.normalizeTypedScode(scodeInput, type);
                 let maxCount = 5;
                 let priceDelay = 10000000;
                 let res = await share.getSync__(`/stock/rule/create/auto?scode=${scode}&type=${type}&max=${maxCount}&priceDelay=${priceDelay}`);
@@ -2374,6 +2377,14 @@ window.stock_list = window.stock_list || (function () {
             return code;
         },
 
+        getScodeType: function (stockCode) {
+            if (stockCode == null) {
+                return 0;
+            }
+
+            return String(stockCode).trim().toLowerCase().endsWith(".o") ? 1 : 0;
+        },
+
         normalizeScode: function (stockCode) {
             let code = String(stockCode || "").trim().toUpperCase();
             if (!code) {
@@ -2393,8 +2404,37 @@ window.stock_list = window.stock_list || (function () {
             return `${code}.${market}`;
         },
 
-        formatScode: function (stockCode) {
+        normalizeTypedScode: function (stockCode, type) {
             let scode = self.normalizeScode(stockCode);
+            type = type == null ? self.getScodeType(stockCode) : parseInt(type);
+            if (isNaN(type)) {
+                type = 0;
+            }
+            if (type == 1 && !scode.toLowerCase().endsWith(".o")) {
+                return `${scode}.o`;
+            }
+
+            return scode;
+        },
+
+        getRowType: function (row) {
+            if (row == null || row["type"] == null) {
+                return 0;
+            }
+            let type = parseInt(row["type"]);
+            return isNaN(type) ? 0 : type;
+        },
+
+        getRowScode: function (row) {
+            if (row == null) {
+                return "";
+            }
+
+            return self.normalizeTypedScode(row["代码"] || "", self.getRowType(row));
+        },
+
+        formatScode: function (stockCode) {
+            let scode = self.normalizeTypedScode(stockCode, self.getScodeType(stockCode));
             let fields = scode.split(".");
             if (fields.length < 2) {
                 return scode;
@@ -2563,11 +2603,8 @@ window.stock_list = window.stock_list || (function () {
             data = JSON.parse(data);
             self.selectedData = data;
             share.currentTarget = ele;
-            let scode = data["代码"];
-            let type = data["type"];
-            if (type == null) {
-                type = 0;
-            }
+            let scode = self.getRowScode(data);
+            let type = self.getRowType(data);
             let tbs = $("#templateBuySell").html();
             let html = `
                     <div class="flexrow buySellPopupContent">
@@ -2619,7 +2656,7 @@ window.stock_list = window.stock_list || (function () {
                 if (popupScode == "") {
                     popupScode = scode;
                 }
-                self.toDrawK1dChart(self.normalizeScode(popupScode), type, c, period);
+                self.toDrawK1dChart(self.normalizeTypedScode(popupScode, type), type, c, period);
             });
             self.showPosition(null, c.find(".position"), scode);
             await self.showTradeList(c, scode, 0, type);
@@ -2649,7 +2686,7 @@ window.stock_list = window.stock_list || (function () {
             })
 
             c.find(".buttonCancelRule").click(async function (e) {
-                let res = await share.getSync__("/stock/rule/cancel", { scode: self.selectedData["代码"], broker: self.selectedData["券商"] });
+                let res = await share.getSync__("/stock/rule/cancel", { scode: self.getRowScode(self.selectedData), broker: self.selectedData["券商"] });
                 if (res.error) {
                     share.toastError__(res.error);
                 } else {

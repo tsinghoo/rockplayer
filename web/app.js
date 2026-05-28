@@ -452,10 +452,6 @@ async function updateStockBasicByScode(fields) {
     row.scode = scode;
     let type = query.type;
 
-    if (row.sname == null) {
-        row.sname = row.scode;
-    }
-
     let querySql = `select id from tStockBasic where type=? and (scode in (${query.scodePlaceholders}) or id in (${query.idPlaceholders})) limit 1`;
     let target = await db.getSync(querySql, [type].concat(query.aliases, query.candidateIds));
     if (target && !target.error) {
