@@ -317,7 +317,7 @@ function getScodeType(scode) {
         return 0;
     }
 
-    return String(scode).trim().toLowerCase().endsWith(".o") ? 1 : 0;
+    return String(scode).trim().toUpperCase().startsWith("O_") ? 1 : 0;
 }
 
 function normalizeType(type, scode) {
@@ -332,7 +332,7 @@ function normalizeType(type, scode) {
 function getTypedScodeQuery(scode, type, minLength) {
     let aliases = getScodeAliases(scode, minLength);
     let normalizedType = normalizeType(type, scode);
-    let candidateIds = aliases.map((alias) => normalizedType == 1 ? `${alias}.o` : alias);
+    let candidateIds = aliases.map((alias) => normalizedType == 1 ? `O_${alias}` : alias);
     return {
         type: normalizedType,
         aliases,
@@ -462,7 +462,7 @@ async function updateStockBasicByScode(fields) {
         return await db.runSync(sql, values.concat([target.id]));
     }
 
-    row.id = type == 1 ? `${scode}.o` : scode;
+    row.id = type == 1 ? `O_${scode}` : scode;
     row.type = type;
     return await insertOrReplace("tStockBasic", row);
 }
@@ -2525,9 +2525,9 @@ async function upgradeDb(succ, fail) {
         `alter table tStockBasic drop column optionPrice;`,
         `alter table tStockBasic drop column optionUpdateTime;`,
         `alter table tRuleAction add column type int default 0;`,
-        `update tRuleAction set type=1 where lower(scode) like '%.o';`,
+        `update tRuleAction set type=1 where substr(upper(trim(scode)), 1, 2)='O_';`,
         `alter table tTradeRule add column type int default 0;`,
-        `update tTradeRule set type=1 where lower(scode) like '%.o';`,
+        `update tTradeRule set type=1 where substr(upper(trim(scode)), 1, 2)='O_';`,
     ];
 
     if (res == null || res.error) {
