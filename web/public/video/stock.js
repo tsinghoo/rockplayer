@@ -2026,6 +2026,14 @@ window.stock_list = window.stock_list || (function () {
             if (!Number.isInteger(leverage) || leverage <= 0) {
                 leverage = 5;
             }
+            let defaultDip = parseFloat(self.selectedData.dip);
+            if (isNaN(defaultDip) || defaultDip <= 0) {
+                defaultDip = 0.02;
+            }
+            let defaultBounce = parseFloat(self.selectedData.bounce);
+            if (isNaN(defaultBounce) || defaultBounce <= 0) {
+                defaultBounce = 0.02;
+            }
 
             if (sellAmount == null || sellAmount == 0 || isNaN(sellAmount)) {
                 sellAmount = Math.abs(self.selectedData["数量"]);
@@ -2141,32 +2149,19 @@ window.stock_list = window.stock_list || (function () {
                 }
             }
 
-            let autoDelta = function () {
-                let buy = c.find(".buy").val().trim();
-                if (buy >= 100) {
-                    c.find(".bounce").val(0.2);
-                    c.find(".dip").val(0.2);
-                } else {
-                    c.find(".bounce").val(0.02);
-                    c.find(".dip").val(0.02);
-                }
-            }
-
-
             if (delta == null) {
                 delta = 0.02;
             }
 
             if (dip == null) {
-                dip = delta;
+                dip = defaultDip;
             }
             if (bounce == null) {
-                bounce = delta;
+                bounce = defaultBounce;
             }
 
             c.find(".bounce").val(bounce);
             c.find(".dip").val(dip);
-            autoDelta();
 
             $('.buy', c).change(function () {
                 self.autoPrice("buy", c);

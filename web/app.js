@@ -390,6 +390,15 @@ function quoteSqliteIdentifier(name) {
     return `"${String(name).replace(/"/g, '""')}"`;
 }
 
+function normalizeRuleRatio(value, fallback) {
+    let result = parseFloat(value);
+    if (isNaN(result) || result <= 0) {
+        return fallback;
+    }
+
+    return result;
+}
+
 async function refreshTableScodeColumn(tableName, columnName, threadId) {
     let tableSqlName = quoteSqliteIdentifier(tableName);
     let columnSqlName = quoteSqliteIdentifier(columnName);
@@ -464,6 +473,7 @@ async function updateStockBasicByScode(fields, threadId) {
 
     row.id = scode;
     row.type = type;
+    row.market = getMarket(code);
     return await insertOrReplace("tStockBasic", row, threadId);
 }
 
@@ -2606,6 +2616,8 @@ async function upgradeDb(succ, fail) {
         `alter table tTradeRule add column type int default 0;`,
         `update tTradeRule set type=1 where substr(upper(trim(scode)), 1, 2)='O_';`,
         `alter table tStockBasic add column leverage int default 5;`,
+        `alter table tStockBasic add column dip real default 0.02;`,
+        `alter table tStockBasic add column bounce real default 0.02;`,
     ];
 
     if (res == null || res.error) {
@@ -3127,6 +3139,8 @@ app.get('/stock/rule/create', async (req, res) => {
     let json = JSON.parse(req.query.json);
     json.scode = normalizeScode(json.scode);
     json.type = normalizeType(json.type, json.scode);
+    json.dip = normalizeRuleRatio(json.dip, 0.02);
+    json.bounce = normalizeRuleRatio(json.bounce, 0.02);
     let now = Date.now();
 
     let sql = `insert or replace into tTradeRule(id, broker, scode, sname, rule, createTime, expireTime, type) values(?,?,?,?,?,?,?,?)`;
@@ -3186,6 +3200,8 @@ app.get('/stock/rule/create', async (req, res) => {
         sname: json.sname,
         market: market,
         buy: buy,
+        dip: json.dip,
+        bounce: json.bounce,
         priority: now,
         updateTime: now,
         type: json.type
@@ -4079,19 +4095,15 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
 
     let minDelta = 0.5;
     let maxDelta = 2;
-    let dip = 0.02;
     let deltaRatio = 0.02;
 
     let currentPrice = stockBasicInfo.buy;
     if (currentPrice < 30) {
-        dip = 0.005;
         minDelta = 0.3;
         maxDelta = 1;
         deltaRatio = 0.04;
     } else if (currentPrice < 300) {
-        dip = 0.02;
     } else {
-        dip = 0.1;
         minDelta = 1;
         maxDelta = 3;
         deltaRatio = 0.01;
@@ -4100,10 +4112,10 @@ async function autoCreateRule(scode, threadId, stockBasicInfo, notBatch) {
     if (trade.operationName == "BNB" || trade.operationName == "OKX") {
         minDelta = 1;
         maxDelta = 20000;
-        dip = 10;
     }
 
-    let bounce = dip;
+    let dip = normalizeRuleRatio(stockBasicInfo.dip, 0.02);
+    let bounce = normalizeRuleRatio(stockBasicInfo.bounce, 0.02);
 
     let lastPrice = trade.tprice;
     let buyDelta = deltaRatio * lastPrice;

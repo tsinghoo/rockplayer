@@ -14,8 +14,8 @@ let dev = 0;
 
 
 const binance = new Binance({
-  APIKEY: 'kDosGMPCkXm5vKWiRoinGpFe0VzXxtFMmgLkAvlRZLvm1Fzfa39WxU15N9Ss6498',
-  APISECRET: 'ZAgHZNWepd6EVmDw60YIVrizKBL4eDzWM8lx6f1IjX3f8Naek3KKdf54CycANillqh7',
+  APIKEY: process.env.BnbAPIKEY,
+  APISECRET: process.env.BnbAPISECRET,
   verbose: logLevel <= DEBUG,
   //test: true, // if you want to use the sandbox/testnet
 });
@@ -25,7 +25,7 @@ binance.httpsProxy = 'http://proxy.labadida.cn:8118/';
 let g = {};
 g.broker = "BNB";
 g.baseUrl = "http://152.136.244.225";
-g.actions = [];
+g.doneActionIds = new Set();
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
 g.futuresPositionMode = null;
@@ -409,91 +409,92 @@ async function getActions() {
 
     for (const act of jso.data) {
       act.scode = act.scode.split(".")[0];
+      let actionId = String(act.id);
 
-      if (g.actions.includes(act.scode)) {
-        info("已存在", act.scode, "的action");
-      } else {
-
-        try {
-          let dotNums = {
-            "BTCUSDT": 100000,
-            "ETHUSDT": 10000,
-            "BNBUSDT": 1000,
-            "DOGEUSDT": 1
-          };
-          let isFuture = act.scode.startsWith("O_");
-          let tradeSymbol = isFuture ? act.scode.substring(2) : act.scode;
-          if (isFuture) {
-            await syncFuturesPositionMode();
-          }
-          let ratio = dotNums[tradeSymbol];
-          if (ratio == null) {
-            ratio = 1000;
-          }
-          let price = parseFloat(act.price);
-          if (price < 1) {
-            price = price.toFixed(5);
-          } else {
-            price = price.toFixed(2);
-          }
-          let quantity = Math.floor(parseFloat(act["amount"]) * ratio) / ratio;
-          if (act.action === "buy") {
-            info("买入", act.sname, act.scode, act.price, act.amount);
-            info("买入", price, quantity);
-
-            let response;
-            if (isFuture) {
-              response = await placeFutureOrder("BUY", tradeSymbol, quantity, price);
-            } else {
-              response = await binance.buy(tradeSymbol, quantity, price);
-            }
-            debug(response);
-            info("已买入", act.sname, act.scode, act.price, act.amount);
-
-          } else if (act.action === "sell") {
-            info("卖出", act.sname, act.scode, act.price, act.amount);
-            info("卖出", price, quantity);
-            let response;
-            if (isFuture) {
-              response = await placeFutureOrder("SELL", tradeSymbol, quantity, price);
-            } else {
-              response = await binance.sell(tradeSymbol, quantity, price);
-            }
-            debug(response);
-            info("已卖出", act.sname, act.scode, act.price, act.amount);
-          } else if (act.action === "setLeverage" || act.action === "changeLeverage" || act.action === "updateLeverage") {
-            if (!isFuture) {
-              throw new Error(`set leverage only supports futures symbol: ${act.scode}`);
-            }
-
-            let leverage = parseInt(act.amount, 10);
-            if (!Number.isInteger(leverage) || leverage <= 0) {
-              leverage = parseInt(act.price, 10);
-            }
-            if (!Number.isInteger(leverage) || leverage <= 0) {
-              throw new Error(`invalid leverage: amount=${act.amount}, price=${act.price}`);
-            }
-
-            info("调整杠杆", act.sname, act.scode, leverage);
-            let response = await binance.futuresLeverage(tradeSymbol, leverage);
-            debug(response);
-            info("已调整杠杆", act.sname, act.scode, leverage);
-          } else if (act.action === "reloadK1d") {
-            info("reloadK1d action for", act.scode);
-          } else if (act.action === "cancelAction") {
-            info("cancel action for", act.scode);
-
-            if (isFuture) {
-              response = await binance.futuresCancelAll(tradeSymbol);
-            } else {
-              response = await binance.cancelAll(tradeSymbol);
-            }
-            debug("cancelAll response:" + response);
-          }
-        } catch (e) {
-          error(act.action, act.scode, "fail:", e);
+      if (g.doneActionIds.has(actionId)) {
+        info("action已执行过，跳过", act.id, act.scode);
+        continue;
+      }
+      try {
+        let dotNums = {
+          "BTCUSDT": 100000,
+          "ETHUSDT": 10000,
+          "BNBUSDT": 1000,
+          "DOGEUSDT": 1
+        };
+        let isFuture = act.scode.startsWith("O_");
+        let tradeSymbol = isFuture ? act.scode.substring(2) : act.scode;
+        if (isFuture) {
+          await syncFuturesPositionMode();
         }
+        let ratio = dotNums[tradeSymbol];
+        if (ratio == null) {
+          ratio = 1000;
+        }
+        let price = parseFloat(act.price);
+        if (price < 1) {
+          price = price.toFixed(5);
+        } else {
+          price = price.toFixed(2);
+        }
+        let quantity = Math.floor(parseFloat(act["amount"]) * ratio) / ratio;
+        if (act.action === "buy") {
+          info("买入", act.sname, act.scode, act.price, act.amount);
+          info("买入", price, quantity);
 
+          let response;
+          if (isFuture) {
+            response = await placeFutureOrder("BUY", tradeSymbol, quantity, price);
+          } else {
+            response = await binance.buy(tradeSymbol, quantity, price);
+          }
+          debug(response);
+          info("已买入", act.sname, act.scode, act.price, act.amount);
+
+        } else if (act.action === "sell") {
+          info("卖出", act.sname, act.scode, act.price, act.amount);
+          info("卖出", price, quantity);
+          let response;
+          if (isFuture) {
+            response = await placeFutureOrder("SELL", tradeSymbol, quantity, price);
+          } else {
+            response = await binance.sell(tradeSymbol, quantity, price);
+          }
+          debug(response);
+          info("已卖出", act.sname, act.scode, act.price, act.amount);
+        } else if (act.action === "setLeverage" || act.action === "changeLeverage" || act.action === "updateLeverage") {
+          if (!isFuture) {
+            throw new Error(`set leverage only supports futures symbol: ${act.scode}`);
+          }
+
+          let leverage = parseInt(act.amount, 10);
+          if (!Number.isInteger(leverage) || leverage <= 0) {
+            leverage = parseInt(act.price, 10);
+          }
+          if (!Number.isInteger(leverage) || leverage <= 0) {
+            throw new Error(`invalid leverage: amount=${act.amount}, price=${act.price}`);
+          }
+
+          info("调整杠杆", act.sname, act.scode, leverage);
+          let response = await binance.futuresLeverage(tradeSymbol, leverage);
+          debug(response);
+          info("已调整杠杆", act.sname, act.scode, leverage);
+        } else if (act.action === "reloadK1d") {
+          info("reloadK1d action for", act.scode);
+        } else if (act.action === "cancelAction") {
+          info("cancel action for", act.scode);
+
+          if (isFuture) {
+            response = await binance.futuresCancelAll(tradeSymbol);
+          } else {
+            response = await binance.cancelAll(tradeSymbol);
+          }
+          debug("cancelAll response:" + response);
+        }
+      } catch (e) {
+        error(act.action, act.scode, "fail:", e);
+      } finally {
+        g.doneActionIds.add(actionId);
         actionDone(act.id);
       }
     }
@@ -537,7 +538,9 @@ async function placeFutureOrder(side, symbol, quantity, price) {
 
 async function actionDone(id) {
   try {
-    const response = await fetch(g.baseUrl + "/stock/action/done?id=" + id, {
+    const url = g.baseUrl + "/stock/action/done?id=" + id;
+    info(`GET ${url}`)
+    const response = await fetch(url, {
       method: 'GET',
     });
 
@@ -661,7 +664,6 @@ async function startFutureMiniTicket() {
     binance.futuresMiniTickerStream(element, item => {
       let { symbol, close, high, low, open, volume, quoteVolume, eventTime } = item;
       let url = `${g.baseUrl}/stock/updatePrice?scode=O_${symbol}&price=${close}&time=${eventTime}`;
-      info(`GET ${url}`);
       get(url)
         .catch((err) => {
           error("updatePrice error:", err.toString());
@@ -696,7 +698,6 @@ async function start() {
 
     let data = [[timeFormat(time, "yyyyMMddhhmmss"), open, close, high, low, volume, quoteVolume]];
     let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${close}&type=0`;
-    info(`GET ${url}`);
     get(url)
       .catch((err) => {
         error("updatePrice error:", err.toString());
