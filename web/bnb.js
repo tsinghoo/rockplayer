@@ -456,6 +456,23 @@ async function getActions() {
             }
             debug(response);
             info("已卖出", act.sname, act.scode, act.price, act.amount);
+          } else if (act.action === "setLeverage" || act.action === "changeLeverage" || act.action === "updateLeverage") {
+            if (!isFuture) {
+              throw new Error(`set leverage only supports futures symbol: ${act.scode}`);
+            }
+
+            let leverage = parseInt(act.amount, 10);
+            if (!Number.isInteger(leverage) || leverage <= 0) {
+              leverage = parseInt(act.price, 10);
+            }
+            if (!Number.isInteger(leverage) || leverage <= 0) {
+              throw new Error(`invalid leverage: amount=${act.amount}, price=${act.price}`);
+            }
+
+            info("调整杠杆", act.sname, act.scode, leverage);
+            let response = await binance.futuresLeverage(tradeSymbol, leverage);
+            debug(response);
+            info("已调整杠杆", act.sname, act.scode, leverage);
           } else if (act.action === "reloadK1d") {
             info("reloadK1d action for", act.scode);
           } else if (act.action === "cancelAction") {
@@ -818,4 +835,3 @@ if (dev == 1) {
 } else {
   start();
 }
-

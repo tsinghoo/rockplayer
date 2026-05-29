@@ -301,7 +301,7 @@
                 >
                 <label class="floating-label">股票代码</label>
             </div>
-            <div class="form-floating widthauto margin4">
+            <div class="form-floating widthauto margin4 expireHoursGroup">
                 <input
                     type="text"
                     min="5"
@@ -311,6 +311,25 @@
                     style="width:55px;"
                 >
                 <label class="floating-label">限时</label>
+            </div>
+            <div class="form-floating widthauto margin4 leverageGroup" style="display:none;">
+                <select
+                    class="form-control leverage h20"
+                    name="leverage"
+                    style="width:70px;"
+                >
+                    <option value="1">1x</option>
+                    <option value="2">2x</option>
+                    <option value="3">3x</option>
+                    <option value="5">5x</option>
+                    <option value="10">10x</option>
+                    <option value="20">20x</option>
+                    <option value="50">50x</option>
+                    <option value="75">75x</option>
+                    <option value="100">100x</option>
+                    <option value="125">125x</option>
+                </select>
+                <label class="floating-label">杠杆</label>
             </div>
         </div>
         <div class="flexrow width100p">

@@ -467,6 +467,42 @@ async function updateStockBasicByScode(fields, threadId) {
     return await insertOrReplace("tStockBasic", row, threadId);
 }
 
+async function queueFutureLeverageAction(scode, leverage, broker, threadId) {
+    let normalizedScode = normalizeScode(scode);
+    if (normalizedScode == null || normalizedScode == "" || !normalizedScode.startsWith("O_")) {
+        return { error: "future scode required" };
+    }
+
+    let type = normalizeType(1, normalizedScode);
+    let aliases = getScodeAliases(normalizedScode);
+    let placeholders = aliases.map(() => "?").join(",");
+    let normalizedBroker = broker == null || `${broker}`.trim() == "" ? "BNB" : `${broker}`.trim();
+    let deleteParams = [type].concat(aliases, [normalizedBroker]);
+    let deleteSql = `delete from tRuleAction where type=? and scode in (${placeholders}) and broker=? and done=0 and action in ('setLeverage','changeLeverage','updateLeverage')`;
+    let deleteResult = await db.runSync(deleteSql, deleteParams, threadId);
+    if (deleteResult && deleteResult.error) {
+        return deleteResult;
+    }
+
+    let stockBasicInfo = await getStockBasicByScode(normalizedScode, type, threadId);
+    let now = Date.now();
+    return await insertOrReplace("tRuleAction", {
+        id: `${normalizedScode}.${normalizedBroker}.setLeverage.${now}`,
+        ruleId: `${normalizedScode}.${normalizedBroker}.setLeverage`,
+        scode: normalizedScode,
+        sname: stockBasicInfo && stockBasicInfo.sname ? stockBasicInfo.sname : normalizedScode,
+        action: "setLeverage",
+        price: 0,
+        amount: leverage,
+        orderNo: "",
+        done: 0,
+        createTime: now,
+        broker: normalizedBroker,
+        status: "",
+        type: type
+    }, threadId);
+}
+
 function log(msg) {
     g.logs.push(msg);
 }
@@ -2417,6 +2453,47 @@ app.post('/stock/intro/update', async (req, res) => {
     }));
 });
 
+app.post('/stock/future/leverage/update', async (req, res) => {
+    let scode = normalizeScode(req.body.scode);
+    let leverage = parseInt(req.body.leverage, 10);
+    let updateTime = Date.now();
+
+    if (scode == null || scode == "" || !scode.startsWith("O_")) {
+        res.send(JSON.stringify({ error: "future scode required" }));
+        return;
+    }
+
+    if (!Number.isInteger(leverage) || leverage <= 0) {
+        res.send(JSON.stringify({ error: "invalid leverage" }));
+        return;
+    }
+
+    let updateResult = await updateStockBasicByScode({
+        scode: scode,
+        leverage: leverage,
+        updateTime: updateTime,
+        type: 1
+    }, req.threadId);
+    if (updateResult && updateResult.error) {
+        res.send(JSON.stringify(updateResult));
+        return;
+    }
+
+    let actionResult = await queueFutureLeverageAction(scode, leverage, "BNB", req.threadId);
+    if (actionResult && actionResult.error) {
+        res.send(JSON.stringify(actionResult));
+        return;
+    }
+
+    res.send(JSON.stringify({
+        data: {
+            scode,
+            leverage,
+            broker: "BNB"
+        }
+    }));
+});
+
 app.get('/stock/deleteRow', async (req, res) => {
     let js = req.query.js;
     let tid = req.query.tid;
@@ -2528,6 +2605,7 @@ async function upgradeDb(succ, fail) {
         `update tRuleAction set type=1 where substr(upper(trim(scode)), 1, 2)='O_';`,
         `alter table tTradeRule add column type int default 0;`,
         `update tTradeRule set type=1 where substr(upper(trim(scode)), 1, 2)='O_';`,
+        `alter table tStockBasic add column leverage int default 5;`,
     ];
 
     if (res == null || res.error) {

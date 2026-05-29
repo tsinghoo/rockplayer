@@ -2022,6 +2022,10 @@ window.stock_list = window.stock_list || (function () {
             }
 
             let selectedScode = self.getRowScode(self.selectedData);
+            let leverage = parseInt((opt && opt.leverage != null ? opt.leverage : self.selectedData.leverage), 10);
+            if (!Number.isInteger(leverage) || leverage <= 0) {
+                leverage = 5;
+            }
 
             if (sellAmount == null || sellAmount == 0 || isNaN(sellAmount)) {
                 sellAmount = Math.abs(self.selectedData["数量"]);
@@ -2042,7 +2046,25 @@ window.stock_list = window.stock_list || (function () {
             }
             c.find(".sname").val(`${self.selectedData["名称"]}`);
             c.find(".scode").val(selectedScode);
-            //添加.sname或.scode发生变化时的事件处理
+
+            let ensureLeverageOption = function (value) {
+                let leverageSelect = c.find(".leverage");
+                if (leverageSelect.find(`option[value='${value}']`).length < 1) {
+                    leverageSelect.append(`<option value="${value}">${value}x</option>`);
+                }
+            };
+            ensureLeverageOption(leverage);
+            c.find(".leverage").val(`${leverage}`);
+
+            let toggleFutureFields = function () {
+                let scodeInput = c.find(".scode").val().trim();
+                let type = self.getScodeType(scodeInput);
+                let normalizedScode = self.normalizeTypedScode(scodeInput, type);
+                let isFuture = normalizedScode.indexOf("O_") == 0;
+                c.find(".expireHoursGroup").toggle(!isFuture);
+                c.find(".leverageGroup").toggle(isFuture);
+                return { isFuture, scode: normalizedScode, type };
+            };
 
             let onchanged = function () {
                 let input = $(this).val().trim();
@@ -2056,12 +2078,14 @@ window.stock_list = window.stock_list || (function () {
                 } else if ($(this).hasClass("scode")) {
                     c.find(".scode").val(self.normalizeTypedScode(input, self.getScodeType(input)));
                 }
+                toggleFutureFields();
             };
 
             c.find(".sname").change(onchanged);
             c.find(".scode").change(onchanged);
             c.find(".operationName").val(`${broker}`);
             c.find(".expireHours").val("12");
+            toggleFutureFields();
             let np = self.selectedData.curPrice;
             if (np == null || np == 0) {
                 np = self.selectedData["价格"];
@@ -2170,6 +2194,31 @@ window.stock_list = window.stock_list || (function () {
 
             c.find(".buyAmount").val(buyAmount);
             c.find(".sellAmount").val(sellAmount);
+            c.find(".leverage").change(async function () {
+                let futureInfo = toggleFutureFields();
+                if (!futureInfo.isFuture) {
+                    return;
+                }
+
+                let nextLeverage = parseInt($(this).val(), 10);
+                if (!Number.isInteger(nextLeverage) || nextLeverage <= 0) {
+                    share.toastError__("杠杆无效");
+                    return;
+                }
+
+                let res = await share.postSync__("/stock/future/leverage/update", {
+                    scode: futureInfo.scode,
+                    leverage: nextLeverage
+                });
+                if (res.error) {
+                    share.toastError__(res.error);
+                    return;
+                }
+
+                leverage = nextLeverage;
+                self.selectedData.leverage = nextLeverage;
+                share.toastSuccess__("杠杆已更新", 800);
+            });
 
             c.find(".buyFirst").on('change', function () {
                 if (this.checked) {
