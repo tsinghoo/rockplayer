@@ -419,7 +419,12 @@ async function getActions() {
             "BNBUSDT": 1000,
             "DOGEUSDT": 1
           };
-          let ratio = dotNums[act.scode];
+          let isFuture = act.scode.startsWith("O_");
+          let tradeSymbol = isFuture ? act.scode.substring(2) : act.scode;
+          let ratio = dotNums[tradeSymbol];
+          if (ratio == null) {
+            ratio = 1000;
+          }
           let price = parseFloat(act.price);
           if (price < 1) {
             price = price.toFixed(5);
@@ -431,14 +436,24 @@ async function getActions() {
             info("买入", act.sname, act.scode, act.price, act.amount);
             info("买入", price, quantity);
 
-            let response = await binance.buy(act.scode, quantity, price);
+            let response;
+            if (isFuture) {
+              response = await binance.futuresBuy(tradeSymbol, quantity, price);
+            } else {
+              response = await binance.buy(tradeSymbol, quantity, price);
+            }
             debug(response);
             info("已买入", act.sname, act.scode, act.price, act.amount);
 
           } else if (act.action === "sell") {
             info("卖出", act.sname, act.scode, act.price, act.amount);
             info("卖出", price, quantity);
-            let response = await binance.sell(act.scode, quantity, price);
+            let response;
+            if (isFuture) {
+              response = await binance.futuresSell(tradeSymbol, quantity, price);
+            } else {
+              response = await binance.sell(tradeSymbol, quantity, price);
+            }
             debug(response);
             info("已卖出", act.sname, act.scode, act.price, act.amount);
           } else if (act.action === "reloadK1d") {
@@ -446,7 +461,11 @@ async function getActions() {
           } else if (act.action === "cancelAction") {
             info("cancel action for", act.scode);
 
-            response = await binance.cancelAll(act.scode);
+            if (isFuture) {
+              response = await binance.futuresCancelAll(tradeSymbol);
+            } else {
+              response = await binance.cancelAll(tradeSymbol);
+            }
             debug("cancelAll response:" + response);
           }
         } catch (e) {
@@ -593,7 +612,6 @@ async function startFutureMiniTicket() {
         .catch((err) => {
           error("updatePrice error:", err.toString());
         });
-
     });
   });
 
@@ -800,5 +818,4 @@ if (dev == 1) {
 } else {
   start();
 }
-
 
