@@ -28,6 +28,8 @@ g.baseUrl = "http://152.136.244.225";
 g.actions = [];
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
+g.futuresPositionMode = null;
+g.lastFuturesPositionModeSync = 0;
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -421,6 +423,9 @@ async function getActions() {
           };
           let isFuture = act.scode.startsWith("O_");
           let tradeSymbol = isFuture ? act.scode.substring(2) : act.scode;
+          if (isFuture) {
+            await syncFuturesPositionMode();
+          }
           let ratio = dotNums[tradeSymbol];
           if (ratio == null) {
             ratio = 1000;
@@ -438,7 +443,7 @@ async function getActions() {
 
             let response;
             if (isFuture) {
-              response = await binance.futuresBuy(tradeSymbol, quantity, price);
+              response = await placeFutureOrder("BUY", tradeSymbol, quantity, price);
             } else {
               response = await binance.buy(tradeSymbol, quantity, price);
             }
@@ -450,7 +455,7 @@ async function getActions() {
             info("卖出", price, quantity);
             let response;
             if (isFuture) {
-              response = await binance.futuresSell(tradeSymbol, quantity, price);
+              response = await placeFutureOrder("SELL", tradeSymbol, quantity, price);
             } else {
               response = await binance.sell(tradeSymbol, quantity, price);
             }
@@ -496,6 +501,38 @@ async function getActions() {
   } catch (err) {
     error("getActions出错:", err.toString());
   }
+}
+
+async function syncFuturesPositionMode(force) {
+  let now = Date.now();
+  if (!force && g.lastFuturesPositionModeSync > 0 && (now - g.lastFuturesPositionModeSync) < 60 * 1000) {
+    return g.futuresPositionMode;
+  }
+
+  try {
+    let response = await binance.futuresPositionSideDual();
+    let dualSidePosition = response && (response.dualSidePosition === true || response.dualSidePosition === "true");
+    g.futuresPositionMode = dualSidePosition ? "HEDGE" : "ONE_WAY";
+    g.lastFuturesPositionModeSync = now;
+    //binance.options({ hedgeMode: dualSidePosition });
+    info("Binance futures position mode:", g.futuresPositionMode);
+  } catch (e) {
+    error("syncFuturesPositionMode fail:", e.toString());
+  }
+
+  return g.futuresPositionMode;
+}
+
+async function placeFutureOrder(side, symbol, quantity, price) {
+  let params = {};
+  if (g.futuresPositionMode === "HEDGE") {
+    params.positionSide = side === "BUY" ? "LONG" : "SHORT";
+  }
+
+  if (side === "BUY") {
+    return await binance.futuresBuy(symbol, quantity, price, params);
+  }
+  return await binance.futuresSell(symbol, quantity, price, params);
 }
 
 async function actionDone(id) {
@@ -635,6 +672,7 @@ async function startFutureMiniTicket() {
 }
 async function start() {
   log2File();
+  await syncFuturesPositionMode(1);
   await updatePositions(1);
   await updatePositions(0);
   await updateFuturePositions();
