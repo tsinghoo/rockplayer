@@ -6,7 +6,7 @@ const fs = require("fs");
 let DEBUG = 2;
 let INFO = 3;
 let ERROR = 4;
-let logLevel = INFO;
+let logLevel = process.env.LOG_LEVEL;
 
 
 const args = process.argv;
@@ -21,13 +21,14 @@ const binance = new Binance({
 });
 
 // binance.socksProxy = 'socks://192.168.66.1:10800/';
-binance.httpsProxy = 'http://proxy.labadida.cn:8118/';
+binance.httpsProxy = process.env.HTTP_PROXY;
 let g = {};
 g.broker = "BNB";
 g.baseUrl = "http://152.136.244.225";
 g.doneActionIds = new Set();
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
+// g.stocklist = ['BTCUSDT'];
 g.futuresPositionMode = null;
 g.lastFuturesPositionModeSync = 0;
 
@@ -373,7 +374,7 @@ async function updateSticks(stock, period, limit) {
 
     let body = {
       period: period,
-      scode: `O_${stock}`,
+      scode: `${stock}`,
       data: data
     };
 
@@ -713,10 +714,10 @@ async function start() {
       post(`${g.baseUrl}/stock/k/upload`, body);
 
       for (let scode of g.stocklist) {
-        updateSticks(scode, "1d", 1);
-        updateSticks(scode, "1m", 10);
-        futureCandles(scode, "1m", 2);
-        futureCandles(scode, "1d", 1);
+        updateSticks(scode, "1d");
+        updateSticks(scode, "1m");
+        futureCandles(scode, "1m");
+        futureCandles(scode, "1d");
       }
     }
   });
