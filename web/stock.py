@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import base64
 import json
+import mimetypes
 import os
 import re
 import sqlite3
@@ -382,10 +383,24 @@ class StockService:
 
     def get_auto_action_gate_info(self) -> Dict[str, Any]:
         self.refresh_auto_action_start_time()
+        now = datetime.now()
+        minute = now.hour * 60 + now.minute
+        blocked_buy = self.auto_action_start_time["buy"]["minutes"] > 0 and minute < self.auto_action_start_time["buy"]["minutes"]
+        blocked_sell = self.auto_action_start_time["sell"]["minutes"] > 0 and minute < self.auto_action_start_time["sell"]["minutes"]
         return {
+            "blocked": blocked_buy or blocked_sell,
+            "blockedBuy": blocked_buy,
+            "blockedSell": blocked_sell,
             "buyStartTime": self.auto_action_start_time["buy"]["value"],
             "sellStartTime": self.auto_action_start_time["sell"]["value"],
-            "blocked": self.auto_action_blocked_info,
+            "startTime": self.auto_action_blocked_info["lastStartTime"],
+            "currentTime": f"{add0(now.hour)}:{add0(now.minute)}",
+            "blockCount": self.auto_action_blocked_info["count"],
+            "lastBlockedAt": self.auto_action_blocked_info["lastAt"],
+            "lastScode": self.auto_action_blocked_info["lastScode"],
+            "lastSname": self.auto_action_blocked_info["lastSname"],
+            "lastBroker": self.auto_action_blocked_info["lastBroker"],
+            "lastActionType": self.auto_action_blocked_info["lastActionType"],
         }
 
     def allow_auto_create_action(self, row: Dict[str, Any], action_type: Optional[str] = None) -> bool:
@@ -1005,6 +1020,49 @@ class StockService:
             if matched_buys and len(matched_buys) >= 2:
                 hide_trade_group([sell_trade] + matched_buys)
 
+    def get_day_like_range(self, table_name: str, scode: str, type_value: int, start_day: Optional[str], end_day: Optional[str], max_count: Optional[int] = None) -> Dict[str, Any]:
+        end_dt = datetime.fromtimestamp(int(end_day) / 1000) if end_day else datetime.now()
+        if start_day:
+            start_dt = datetime.fromtimestamp(int(start_day) / 1000)
+        else:
+            if max_count:
+                start_dt = end_dt - timedelta(days=max_count)
+            else:
+                years = 4 if table_name == "t1d" else 8 if table_name == "t1mon" else 3
+                start_dt = end_dt - timedelta(days=365 * years)
+        start_text = time_format(start_dt, "yyyyMMdd")
+        end_text = time_format(end_dt, "yyyyMMdd")
+        aliases = get_scode_aliases(scode)
+        placeholders = ",".join(["?"] * len(aliases))
+        result = self.db.all(
+            f"select * from {table_name} where scode in ({placeholders}) and type=? and time >= ? and time <= ? order by time",
+            aliases + [type_value, start_text, end_text],
+        )
+        normalize_db_rows_scodes(result.get("rows", []))
+        return {
+            "stockBasic": self.get_stock_basic_by_scode(scode, type_value),
+            "rows": result.get("rows", []),
+            "error": result.get("error"),
+        }
+
+    def get_day_like_batch(self, table_name: str, scodes: str, type_value: int, start_day: Optional[str], end_day: Optional[str], day_span: int) -> Dict[str, Any]:
+        end_dt = datetime.fromtimestamp(int(end_day) / 1000) if end_day else datetime.now()
+        start_dt = datetime.fromtimestamp(int(start_day) / 1000) if start_day else end_dt - timedelta(days=day_span)
+        start_text = time_format(start_dt, "yyyyMMdd")
+        end_text = time_format(end_dt, "yyyyMMdd")
+        query_scodes = []
+        for scode in (scodes or "").split(","):
+            for alias in get_scode_aliases(scode):
+                if alias not in query_scodes:
+                    query_scodes.append(alias)
+        placeholders = ",".join(["?"] * len(query_scodes))
+        result = self.db.all(
+            f"select * from {table_name} where scode in ({placeholders}) and type=? and time >= ? and time <= ? order by scode,time",
+            query_scodes + [type_value, start_text, end_text],
+        )
+        normalize_db_rows_scodes(result.get("rows", []))
+        return result
+
     def upgrade_db(self) -> None:
         row = self.db.get("SELECT * FROM config where key=?", ["dbVersion"])
         updates = [
@@ -1102,6 +1160,23 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    def _send_file(self, file_path: str):
+        if not os.path.isfile(file_path):
+            self._json_response({"error": "not found"}, 404)
+            return
+        with open(file_path, "rb") as f:
+            payload = f.read()
+        content_type, _ = mimetypes.guess_type(file_path)
+        if not content_type:
+            content_type = "application/octet-stream"
+        if content_type.startswith("text/") or content_type in ("application/javascript", "application/json", "image/svg+xml"):
+            content_type = f"{content_type}; charset=utf-8"
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
     def _parse_query(self):
         parsed = urlparse(self.path)
         query = {k: v[-1] for k, v in parse_qs(parsed.query).items()}
@@ -1138,6 +1213,19 @@ class Handler(BaseHTTPRequestHandler):
                 self._json_response({"error": str(exc)}, 400)
                 return
         js = query.get("js")
+        if method == "GET":
+            public_root = os.path.join(os.path.dirname(__file__), "public")
+            if path in ("/", "/stock.html"):
+                self._send_file(os.path.join(public_root, "video", "stock.html"))
+                return
+            if path.startswith("/video/") or path.startswith("/fe/"):
+                normalized = os.path.normpath(path.lstrip("/"))
+                target = os.path.abspath(os.path.join(public_root, normalized))
+                if not target.startswith(os.path.abspath(public_root) + os.sep):
+                    self._json_response({"error": "forbidden"}, 403)
+                    return
+                self._send_file(target)
+                return
         try:
             if path == "/stock/account" and method == "GET":
                 row = service.db.get("select * from config where key='stockAccount'") or {"value": "null"}
@@ -1541,24 +1629,57 @@ class Handler(BaseHTTPRequestHandler):
                 self._json_response({})
                 return
             if path in ("/stock/k/1d", "/stock/k/1w", "/stock/k/1mon", "/stock/k/1ds", "/stock/k/1ws", "/stock/k/1mons", "/stock/k/1ms") and method == "GET":
-                period_map = {
-                    "/stock/k/1d": "t1d",
-                    "/stock/k/1w": "t1w",
-                    "/stock/k/1mon": "t1mon",
-                    "/stock/k/1ds": "t1d",
-                    "/stock/k/1ws": "t1w",
-                    "/stock/k/1mons": "t1mon",
-                    "/stock/k/1ms": "t1m",
-                }
-                table = period_map[path]
-                scode = normalize_scode(query.get("scode"))
                 type_value = int(query.get("type") or 0)
-                limit = int(query.get("limit") or 2000)
-                aliases = get_scode_aliases(scode)
-                placeholders = ",".join(["?"] * len(aliases))
-                rows = service.db.all(f"select * from {table} where scode in ({placeholders}) and type=? order by time desc limit ?", aliases + [type_value, limit]).get("rows", [])
-                normalize_db_rows_scodes(rows)
-                self._json_response(rows[::-1], js=js)
+                if path == "/stock/k/1d":
+                    result = service.get_day_like_range("t1d", normalize_scode(query.get("scode")), type_value, query.get("startDay"), query.get("endDay"), int(query.get("max")) if query.get("max") else None)
+                    if result.get("error"):
+                        self._json_response({"error": result["error"]}, 500, js=js)
+                    else:
+                        self._json_response({"stockBasic": result["stockBasic"], "rows": result["rows"]}, js=js)
+                    return
+                if path == "/stock/k/1w":
+                    result = service.get_day_like_range("t1w", normalize_scode(query.get("scode")), type_value, query.get("startDay"), query.get("endDay"))
+                    if result.get("error"):
+                        self._json_response({"error": result["error"]}, 500, js=js)
+                    else:
+                        self._json_response({"stockBasic": result["stockBasic"], "rows": result["rows"]}, js=js)
+                    return
+                if path == "/stock/k/1mon":
+                    result = service.get_day_like_range("t1mon", normalize_scode(query.get("scode")), type_value, query.get("startDay"), query.get("endDay"))
+                    if result.get("error"):
+                        self._json_response({"error": result["error"]}, 500, js=js)
+                    else:
+                        self._json_response({"stockBasic": result["stockBasic"], "rows": result["rows"]}, js=js)
+                    return
+                if path == "/stock/k/1ds":
+                    result = service.get_day_like_batch("t1d", query.get("scodes"), type_value, query.get("startDay"), query.get("endDay"), 30)
+                    self._json_response(result.get("rows", []), js=js)
+                    return
+                if path == "/stock/k/1ws":
+                    result = service.get_day_like_batch("t1w", query.get("scodes"), type_value, query.get("startDay"), query.get("endDay"), 365 * 3)
+                    self._json_response(result.get("rows", []), js=js)
+                    return
+                if path == "/stock/k/1mons":
+                    result = service.get_day_like_batch("t1mon", query.get("scodes"), type_value, query.get("startDay"), query.get("endDay"), 365 * 8)
+                    self._json_response(result.get("rows", []), js=js)
+                    return
+                if path == "/stock/k/1ms":
+                    day = datetime.fromtimestamp(int(query.get("day")) / 1000) if query.get("day") else datetime.now()
+                    day = day.replace(hour=0, minute=0, second=0, microsecond=0)
+                    next_day = day + timedelta(days=1)
+                    query_scodes = []
+                    for scode in (query.get("scodes") or "").split(","):
+                        for alias in get_scode_aliases(scode):
+                            if alias not in query_scodes:
+                                query_scodes.append(alias)
+                    placeholders = ",".join(["?"] * len(query_scodes))
+                    result = service.db.all(
+                        f"select * from t1m where scode in ({placeholders}) and type=? and time >= ? and time <= ? order by scode,time",
+                        query_scodes + [type_value, time_format(day, 'yyyyMMdd'), time_format(next_day, 'yyyyMMdd')],
+                    )
+                    normalize_db_rows_scodes(result.get("rows", []))
+                    self._json_response(result.get("rows", []), js=js)
+                    return
                 return
             if path == "/stock/rule/cancel" and method == "GET":
                 scode = normalize_scode(query.get("scode"))
