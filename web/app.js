@@ -192,6 +192,89 @@ if (args.length > 5) {
 info("open stock.db");
 const dbFilePath = path.join(directoryPath, "stock.db");
 let db = new sqlite3.Database(dbFilePath);
+const stockPyPort = parseInt(process.env.STOCK_PY_PORT || (port + 10000));
+let stockPyReady = false;
+let stockPyProcess = null;
+
+function startStockPyService() {
+    if (process.env.DISABLE_STOCK_PY_PROXY === "1") {
+        info("stock.py proxy disabled by env");
+        return;
+    }
+
+    stockPyProcess = spawn("python3", [path.join(__dirname, "stock.py"), `${stockPyPort}`, directoryPath], {
+        cwd: __dirname,
+        stdio: ["ignore", "pipe", "pipe"]
+    });
+
+    stockPyProcess.stdout.on("data", (data) => {
+        let text = data.toString();
+        if (text.indexOf("stock.py listening") >= 0) {
+            stockPyReady = true;
+        }
+        info(`[stock.py] ${text.trim()}`);
+    });
+
+    stockPyProcess.stderr.on("data", (data) => {
+        error(`[stock.py] ${data.toString().trim()}`);
+    });
+
+    stockPyProcess.on("exit", (code) => {
+        stockPyReady = false;
+        error(`stock.py exited with code ${code}`);
+    });
+}
+
+startStockPyService();
+
+app.use(async (req, res, next) => {
+    if (!stockPyProcess || !stockPyReady) {
+        next();
+        return;
+    }
+
+    if (req.path === "/stock/ws" || (!req.path.startsWith("/stock") && req.path !== "/stockUpdate")) {
+        next();
+        return;
+    }
+
+    try {
+        let headers = {
+            accept: req.headers.accept || "application/json"
+        };
+        if (req.headers["content-type"]) {
+            headers["content-type"] = req.headers["content-type"];
+        }
+
+        let body = undefined;
+        if (req.method !== "GET" && req.method !== "HEAD") {
+            body = JSON.stringify(req.body || {});
+            headers["content-type"] = headers["content-type"] || "application/json";
+        }
+
+        let resp = await fetch(`http://127.0.0.1:${stockPyPort}${req.originalUrl}`, {
+            method: req.method,
+            headers,
+            body
+        });
+
+        if (resp.status === 404 || resp.status === 501) {
+            next();
+            return;
+        }
+
+        let text = await resp.text();
+        res.status(resp.status);
+        let contentType = resp.headers.get("content-type");
+        if (contentType) {
+            res.set("content-type", contentType);
+        }
+        res.send(text);
+    } catch (e) {
+        error(`stock.py proxy failed:${e.message}`, req.threadId);
+        next();
+    }
+});
 
 db.runSync = (sql, params, threadId) => {
     info(`runSync: ${sql}, ${JSON.stringify(params)}`, threadId);

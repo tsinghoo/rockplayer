@@ -525,7 +525,7 @@ def getStockDetail(scode):
     info("getStockDetail", scode)
     si = xtdata.get_instrument_detail(scode, True)
     if si is None:
-        error(scode, "error")
+        error(scode, "get_instrument_detail error")
         return None
     info("detail:", obj2JsonString(si))
     detail = {
