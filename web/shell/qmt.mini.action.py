@@ -44,8 +44,8 @@ g.uploading = 0
 g.stocklist = ["000300.SH", "000004.SZ"]
 
 g.baseUrl = "http://192.168.66.205:3001"
-g.baseUrl = "http://test1.91taogu.com"
-
+g.baseUrl = "http://192.168.1.6:3001"
+g.test = 1
 g.log = {
     "level": 4,
     "none": 0,
@@ -525,7 +525,7 @@ def getStockDetail(scode):
     info("getStockDetail", scode)
     si = xtdata.get_instrument_detail(scode, True)
     if si is None:
-        error(scode, "get_instrument_detail error")
+        error(scode, "error")
         return None
     info("detail:", obj2JsonString(si))
     detail = {
@@ -623,10 +623,10 @@ def updatePriceTask():
     resetThreadId("upt")
     while True:
         now = datetime.datetime.now()
-        if now.hour < 9 or (now.hour == 9 and now.minute < 15):
+        if g.test == 0 and now.hour < 9 or (now.hour == 9 and now.minute < 15):
             time.sleep(1)
             continue
-        if now.hour > 16 or (now.hour == 16 and now.minute >= 10):
+        if g.test == 0 and now.hour > 16 or (now.hour == 16 and now.minute >= 10):
             info("16:10以后，updatePriceTask退出")
             return
         uploadStockPrice()
@@ -729,10 +729,10 @@ def getActionsTask():
     while True:
         resetThreadId("act")
         now = datetime.datetime.now()
-        if now.hour < 9 or (now.hour == 9 and now.minute < 30):
+        if g.test == 0 and now.hour < 9 or (now.hour == 9 and now.minute < 30):
             time.sleep(1)
             continue
-        if now.hour > 16 or (now.hour == 16 and now.minute >= 10):
+        if g.test == 0 and now.hour > 16 or (now.hour == 16 and now.minute >= 10):
             info("16:10以后，getActionsTask退出")
             return
         getActions()

@@ -25,6 +25,7 @@ binance.httpsProxy = process.env.HTTP_PROXY;
 let g = {};
 g.broker = "BNB";
 g.baseUrl = "http://152.136.244.225";
+g.baseUrl = "http://192.168.1.6:3001";
 g.doneActionIds = new Set();
 g.getActionTimes = 0;
 g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
