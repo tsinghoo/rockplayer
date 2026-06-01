@@ -1915,8 +1915,8 @@ def main():
     port = int(sys.argv[1])
     directory_path = sys.argv[2]
     service = StockService(directory_path)
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"stock.py listening on 127.0.0.1:{port}", flush=True)
+    server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+    print(f"stock.py listening on 0.0.0.0:{port}", flush=True)
     server.serve_forever()
 
 
