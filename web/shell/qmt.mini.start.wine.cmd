@@ -6,7 +6,7 @@ cls
 
 set PATH=z:\data\soft\pythonwin3.6.8\;%PATH%
 @echo PATH=%PATH%
-set startGjzqqmt=0
+set startGjzqqmt=1
 set env=1
 set url=4
 
