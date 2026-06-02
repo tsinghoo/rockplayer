@@ -21,7 +21,13 @@ from threading import Thread
 import asyncio
 import websockets
 
+import signal
+def cleanup(signum, frame):
+    print("\n正在清理并退出...")
+    # 这里放你的清理代码，如保存数据、断开连接
+    sys.exit(0)
 
+signal.signal(signal.SIGINT, cleanup)
 class G:
     pass
 
@@ -1612,7 +1618,7 @@ if __name__ == "__main__":
     if configPathPrefix:
         g.configFile = configPathPrefix + r"\qmt.config.json"
     else:
-        g.configFile = r"c:\qmt.config.json"
+        g.configFile = r":\qmt.config.json"
 
     logPathPrefix = os.getenv("logPathPrefix")
     if logPathPrefix:
@@ -1732,9 +1738,4 @@ if __name__ == "__main__":
     # t6.start()
 
     # 阻塞主线程退出
-    try:
-        xt_trader.run_forever()
-    except KeyboardInterrupt:
-        print("用户主动退出程序")
-    # 执行清理操作，如断开连接、保存数据等
-        xt_trader.stop()
+    xt_trader.run_forever()
