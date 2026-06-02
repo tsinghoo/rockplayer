@@ -1732,4 +1732,9 @@ if __name__ == "__main__":
     # t6.start()
 
     # 阻塞主线程退出
-    xt_trader.run_forever()
+    try:
+        xt_trader.run_forever()
+    except KeyboardInterrupt:
+        print("用户主动退出程序")
+    # 执行清理操作，如断开连接、保存数据等
+        xt_trader.stop()
