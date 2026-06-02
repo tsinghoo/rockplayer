@@ -26,6 +26,7 @@ def cleanup(signum, frame):
     print("\n正在清理并退出...")
     # 这里放你的清理代码，如保存数据、断开连接
     sys.exit(0)
+    os._exit(0)
 
 signal.signal(signal.SIGINT, cleanup)
 class G:
