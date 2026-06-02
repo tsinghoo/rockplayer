@@ -11,9 +11,9 @@ def main():
         # 清屏
         os.system('cls' if os.name == 'nt' else 'clear')
         
-        user_input = os.environ['startGjzqqmt']
+        user_input = os.environ.get('startGjzqqmt', '')
 
-        if user_input is None or user_input == "":
+        if user_input == "":
             print("0. start gjzqqmt")
             print("q. quit")
             user_input = input("Please select: ")
@@ -31,9 +31,9 @@ def main():
             print("no start")
         
 
-        user_input = os.environ['env']
+        user_input = os.environ.get('env', '')
 
-        if user_input is None or user_input == "":
+        if user_input == "":
             print("1. wine")
             print("2. windows")
             print("q. quit")
@@ -56,7 +56,7 @@ def main():
         else:
             continue
         
-        user_input = os.environ['url']
+        user_input = os.environ.get('url', '')
         if user_input == "":
             print("1. http://152.136.244.225 vbj")
             print("2. http://test.labadida.com:3001")
