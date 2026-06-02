@@ -42,7 +42,7 @@ def main():
         
         if user_input == "1":
             qmtpath = r"c:\gjzqqmt\userdata_mini"
-            configPathPrefix = r"z:\data\noDel"
+            configPathPrefix = r"c:"
             logPathPrefix = r"z:\data\logs"
             # 设置PATH环境变量
             python_path = r"z:\data\soft\pythonwin3.6.8"
