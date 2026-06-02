@@ -33,6 +33,7 @@ g.account = "620000558442"  # 国信
 g.account = "8883949249"  # 国金
 g.broker = "国金"
 g.lastUploadPriceTime = time.time()
+
 g.lastGetActionsTime = time.time()
 g.subscribeId = 0
 g.lastTicks = {}
@@ -106,6 +107,7 @@ async def websocket_client():
     uri = g.baseUrl.replace("http", "ws")
     uri = f"{uri}/stock/ws"
     info(f"websocket connecting to {uri}")
+    g.websocketFailedTime = 0
     try:
         # 连接到 WebSocket 服务器
         async with websockets.connect(uri) as wsc:

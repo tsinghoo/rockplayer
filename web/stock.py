@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import base64
+import hashlib
 import json
 import mimetypes
 import os
 import re
 import sqlite3
+import struct
 import sys
 import threading
 import time
@@ -16,6 +18,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 
 PASSCODE = "995560"
+WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 
 def now_ms() -> int:
@@ -242,6 +245,167 @@ class Db:
                 return {"error": traceback.format_exc()}
 
 
+class WebSocketConnection:
+    def __init__(self, sock, manager, client_addr):
+        self.sock = sock
+        self.manager = manager
+        self.client_addr = client_addr
+        self.lock = threading.RLock()
+        self.pending = {}
+        self.client_id = None
+        self.closed = False
+
+    def _read_exact(self, length: int) -> bytes:
+        data = b""
+        while len(data) < length:
+            chunk = self.sock.recv(length - len(data))
+            if not chunk:
+                raise ConnectionError("websocket closed")
+            data += chunk
+        return data
+
+    def _read_frame(self):
+        header = self._read_exact(2)
+        b1, b2 = header[0], header[1]
+        opcode = b1 & 0x0F
+        masked = (b2 & 0x80) != 0
+        length = b2 & 0x7F
+        if length == 126:
+            length = struct.unpack("!H", self._read_exact(2))[0]
+        elif length == 127:
+            length = struct.unpack("!Q", self._read_exact(8))[0]
+        mask_key = self._read_exact(4) if masked else b""
+        payload = self._read_exact(length) if length > 0 else b""
+        if masked:
+            payload = bytes(b ^ mask_key[i % 4] for i, b in enumerate(payload))
+        return opcode, payload
+
+    def _send_frame(self, opcode: int, payload: bytes = b""):
+        with self.lock:
+            header = bytes([0x80 | (opcode & 0x0F)])
+            length = len(payload)
+            if length < 126:
+                header += bytes([length])
+            elif length < 65536:
+                header += bytes([126]) + struct.pack("!H", length)
+            else:
+                header += bytes([127]) + struct.pack("!Q", length)
+            self.sock.sendall(header + payload)
+
+    def send_text(self, text: str):
+        self._send_frame(0x1, text.encode("utf-8"))
+
+    def send_json(self, data: Dict[str, Any]):
+        self.send_text(json.dumps(data, ensure_ascii=False))
+
+    def close(self):
+        if self.closed:
+            return
+        self.closed = True
+        try:
+            self._send_frame(0x8, b"")
+        except Exception:
+            pass
+        try:
+            self.sock.close()
+        except Exception:
+            pass
+        self.manager.unregister(self)
+
+    def call_func(self, func: str, params: Optional[Dict[str, Any]] = None, timeout: float = 5.0) -> Dict[str, Any]:
+        call_id = f"{now_ms()}-{os.urandom(4).hex()}"
+        event = threading.Event()
+        holder = {}
+        self.pending[call_id] = (event, holder)
+        try:
+            self.send_json({"func": func, "params": params or {}, "id": call_id})
+            if not event.wait(timeout):
+                self.pending.pop(call_id, None)
+                return {"error": f"ws.callFunc({func}) timeout"}
+            return holder.get("result", {})
+        except Exception as exc:
+            self.pending.pop(call_id, None)
+            return {"error": str(exc)}
+
+    def run(self):
+        register_result = self.call_func("register", {})
+        if register_result.get("error"):
+            self.close()
+            return
+        self.client_id = register_result.get("clientId") or (register_result.get("result") or {}).get("clientId")
+        if self.client_id:
+            self.manager.bind_client_id(self, self.client_id)
+        try:
+            while not self.closed:
+                opcode, payload = self._read_frame()
+                if opcode == 0x8:
+                    break
+                if opcode == 0x9:
+                    self._send_frame(0xA, payload)
+                    continue
+                if opcode != 0x1:
+                    continue
+                text = payload.decode("utf-8", errors="ignore")
+                try:
+                    message = json.loads(text)
+                except Exception:
+                    continue
+                if message.get("id"):
+                    pending = self.pending.pop(message["id"], None)
+                    if pending is not None:
+                        event, holder = pending
+                        holder["result"] = message.get("result", message)
+                        event.set()
+                        continue
+                if message.get("func"):
+                    result = self.manager.handle_server_call(message, self)
+                    if message.get("id"):
+                        self.send_json({"id": message["id"], "result": result})
+        except Exception:
+            pass
+        self.close()
+
+
+class WebSocketManager:
+    def __init__(self):
+        self.lock = threading.RLock()
+        self.clients = {}
+        self.funcs = {}
+
+    def register(self, conn: WebSocketConnection):
+        with self.lock:
+            self.clients[id(conn)] = conn
+
+    def unregister(self, conn: WebSocketConnection):
+        with self.lock:
+            self.clients.pop(id(conn), None)
+            if conn.client_id:
+                existing = self.clients.get(conn.client_id)
+                if existing is conn:
+                    self.clients.pop(conn.client_id, None)
+
+    def bind_client_id(self, conn: WebSocketConnection, client_id: str):
+        with self.lock:
+            conn.client_id = client_id
+            self.clients[client_id] = conn
+
+    def handle_server_call(self, message: Dict[str, Any], conn: WebSocketConnection):
+        func = self.funcs.get(message.get("func"))
+        if func is None:
+            return {}
+        try:
+            return func(message.get("params") or {}, conn) or {}
+        except Exception as exc:
+            return {"error": str(exc)}
+
+    def call_func(self, client_id: str, func: str, params: Optional[Dict[str, Any]] = None, timeout: float = 5.0) -> Dict[str, Any]:
+        with self.lock:
+            conn = self.clients.get(client_id)
+        if conn is None:
+            return {"error": f"clientId {client_id} not found"}
+        return conn.call_func(func, params or {}, timeout=timeout)
+
+
 class StockService:
     def __init__(self, directory_path: str):
         self.directory_path = directory_path
@@ -274,8 +438,12 @@ class StockService:
             "lastStartTime": "",
         }
         self.temp_auto_actions: Dict[str, int] = {}
+        self.ws_manager = WebSocketManager()
         self.upgrade_db()
         self.reload_rules()
+
+    def ws_call(self, client_id: str, func: str, params: Optional[Dict[str, Any]] = None, timeout: float = 5.0) -> Dict[str, Any]:
+        return self.ws_manager.call_func(client_id, func, params or {}, timeout=timeout)
 
     def insert_or_replace(self, table: str, row: Dict[str, Any]) -> Dict[str, Any]:
         keys = list(row.keys())
@@ -1213,6 +1381,25 @@ class Handler(BaseHTTPRequestHandler):
                 self._json_response({"error": str(exc)}, 400)
                 return
         js = query.get("js")
+        if method == "GET" and path in ("/stock/ws", "/") and self.headers.get("Upgrade", "").lower() == "websocket":
+            key = self.headers.get("Sec-WebSocket-Key", "")
+            if not key:
+                self._json_response({"error": "bad websocket request"}, 400)
+                return
+            accept = base64.b64encode(hashlib.sha1((key + WS_MAGIC).encode("utf-8")).digest()).decode("utf-8")
+            response = (
+                "HTTP/1.1 101 Switching Protocols\r\n"
+                "Upgrade: websocket\r\n"
+                "Connection: Upgrade\r\n"
+                f"Sec-WebSocket-Accept: {accept}\r\n"
+                "\r\n"
+            )
+            self.request.sendall(response.encode("utf-8"))
+            self.close_connection = True
+            conn = WebSocketConnection(self.request, service.ws_manager, self.client_address)
+            service.ws_manager.register(conn)
+            conn.run()
+            return
         if method == "GET":
             public_root = os.path.join(os.path.dirname(__file__), "public")
             if path in ("/", "/stock.html"):
@@ -1564,6 +1751,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not trades:
                     service.insert_or_replace("tstock", {"tday": time_format(now, "yyyyMMdd"), "ttime": time_format(now, "hh:mm:ss"), "sname": payload.get("sname"), "scode": payload["scode"], "operationDirection": "卖出", "operationName": broker, "market": get_market(payload["scode"]), "tamount": 0, "tprice": payload["sell"], "tcash": 0, "tid": f"{payload['scode']}.{payload.get('sname')}", "taccount": "", "tpair": "", "deleted": 0, "lastOperationTime": now})
                     service.check_rule([payload["scode"]])
+                service.ws_call("国金", "reloadStockCodes", {}, timeout=2.0)
+                service.ws_call("国金", "updateDetail", {"scode": format_scode(payload["scode"])}, timeout=2.0)
                 resp = result if result.get("error") else {}
                 self._json_response(resp, js=js)
                 return
@@ -1606,6 +1795,7 @@ class Handler(BaseHTTPRequestHandler):
                 scode = normalize_scode(query.get("scode"))
                 type_value = int(query.get("type") or 0)
                 day = datetime.fromtimestamp(int(query["day"]) / 1000) if query.get("day") else datetime.now()
+                service.ws_call("国金", "forceUpdate1m", {"scode": format_scode(scode)}, timeout=2.0)
                 day = day.replace(hour=0, minute=0, second=0, microsecond=0)
                 next_day = day + timedelta(days=1)
                 aliases = get_scode_aliases(scode)
@@ -1631,6 +1821,7 @@ class Handler(BaseHTTPRequestHandler):
             if path in ("/stock/k/1d", "/stock/k/1w", "/stock/k/1mon", "/stock/k/1ds", "/stock/k/1ws", "/stock/k/1mons", "/stock/k/1ms") and method == "GET":
                 type_value = int(query.get("type") or 0)
                 if path == "/stock/k/1d":
+                    service.ws_call("国金", "forceUpdate1d", {"scode": format_scode(normalize_scode(query.get("scode")))}, timeout=2.0)
                     result = service.get_day_like_range("t1d", normalize_scode(query.get("scode")), type_value, query.get("startDay"), query.get("endDay"), int(query.get("max")) if query.get("max") else None)
                     if result.get("error"):
                         self._json_response({"error": result["error"]}, 500, js=js)
