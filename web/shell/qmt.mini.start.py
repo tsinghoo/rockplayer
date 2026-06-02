@@ -13,14 +13,14 @@ def main():
         
         user_input = os.environ['startGjzqqmt']
 
-        if user_input == "":
+        if user_input is None or user_input == "":
             print("0. start gjzqqmt")
             print("q. quit")
             user_input = input("Please select: ")
             
         if user_input == "0":
             # 启动XtItClient.exe
-            exe_path = r"z:\data\soft\gjzqqmt\bin.x64\XtItClient.exe"
+            exe_path = r"c:\gjzqqmt\bin.x64\XtItClient.exe"
             try:
                 subprocess.Popen(['start', exe_path], shell=True)
             except Exception as e:
@@ -33,7 +33,7 @@ def main():
 
         user_input = os.environ['env']
 
-        if user_input == "":
+        if user_input is None or user_input == "":
             print("1. wine")
             print("2. windows")
             print("q. quit")
@@ -41,7 +41,7 @@ def main():
             user_input = input("Please select: ")
         
         if user_input == "1":
-            qmtpath = r"z:\data\soft\gjzqqmt\userdata_mini"
+            qmtpath = r"c:\gjzqqmt\userdata_mini"
             configPathPrefix = r"z:\data\noDel"
             logPathPrefix = r"z:\data\logs"
             # 设置PATH环境变量
@@ -61,6 +61,7 @@ def main():
             print("1. http://152.136.244.225 vbj")
             print("2. http://test.labadida.com:3001")
             print("3. http://192.168.66.205:3001")
+            print("4. http://10.2.20.3:3001 vbj local")
             print("q. quit")
             
             user_input = input("Please select: ")
@@ -71,6 +72,8 @@ def main():
             proxy = "http://test.labadida.com:3001"
         elif user_input == "3":
             proxy = "http://192.168.66.205:3001"
+        elif user_input == "4":
+            proxy = "http://10.2.20.3:3001"
         elif user_input.lower() == "q":
             break
         else:
