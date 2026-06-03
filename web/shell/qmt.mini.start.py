@@ -6,6 +6,8 @@ def main():
     # 切换到脚本所在目录
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
+    account=""
+    broker=""
     
     while True:
         # 清屏
