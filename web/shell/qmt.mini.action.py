@@ -64,6 +64,7 @@ threadLocal = threading.local()
 
 def cleanup(signum, frame):
     print("\n正在清理并退出...")
+    unsubscribe()
     g.exit = 1
     # 这里放你的清理代码，如保存数据、断开连接
     sys.exit(0)
@@ -1595,18 +1596,27 @@ def updatePositions():
     uploadPosition(js)
 
 
+
 def resubscribe():
-    # return
     info("resubscribe start", g.stocklist)
+    unsubscribe()
+
+    g.subscribeId = xtdata.subscribe_whole_quote(
+        g.stocklist, callback=subscribe_whole_callback
+    )
+
+    info("resubscribe end", g.subscribeId)
+
+
+def unsubscribe():
+    info("unsubscribe start")
     if g.subscribeId != 0:
         info("unsubscribe", g.subscribeId)
         xtdata.unsubscribe_quote(g.subscribeId)
 
-    g.subscribeId = xtdata.subscribe_whole_quote(
-        g.stocklist, callback=subscribewholecallback
-    )
+    g.subscribeId = 0
 
-    info("resubscribe end", g.subscribeId)
+    info("unsubscribe end", g.subscribeId)
 
 
 if __name__ == "__main__":
