@@ -639,7 +639,7 @@ def updatePriceTask():
             info("16:10以后，updatePriceTask退出")
             return
         uploadStockPrice()
-        time.sleep(0.1)
+        time.sleep(0.5)
 
 
 def updateTickTask():
@@ -1564,7 +1564,7 @@ def printTask():
             item = toPrint.pop(0)
             print(*item[0], **item[1])
 
-        time.sleep(0.1)
+        time.sleep(1)
 
 
 def startUpdatePositions():
@@ -1591,7 +1591,7 @@ def updatePositions():
 
 
 def resubscribe():
-    return
+    # return
     info("resubscribe start", g.stocklist)
     if g.subscribeId != 0:
         info("unsubscribe", g.subscribeId)
@@ -1736,8 +1736,8 @@ if __name__ == "__main__":
     t5 = Thread(target=updatePriceTask)
     t5.start()
 
-    t6 = Thread(target=updateTickTask)
-    t6.start()
+    # t6 = Thread(target=updateTickTask)
+    # t6.start()
 
     # 阻塞主线程退出
     xt_trader.run_forever()
