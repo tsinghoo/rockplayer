@@ -1041,7 +1041,7 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                         )
                 except Exception as e:
                     error("上传失败:", str(e))
-
+            time.sleep(0.2)
 
 def KDJ(table):
     table["kdj_k"] = 0
@@ -1260,6 +1260,7 @@ def update1m(stocklist, startTime=None):
                         )
                 except Exception as e:
                     error("上传失败:", str(e))
+            time.sleep(0.2)
 
 
 def initLastStartTime1m():
