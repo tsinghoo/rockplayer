@@ -1747,4 +1747,7 @@ if __name__ == "__main__":
     # t6.start()
 
     # 阻塞主线程退出
-    xt_trader.run_forever()
+    while 1==1:
+        if g.exit == 1:
+            break
+        time.sleep(1)

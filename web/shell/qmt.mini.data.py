@@ -1654,6 +1654,7 @@ if __name__ == "__main__":
     # t5.start()
 
     # 阻塞主线程退出
-    # xt_trader.run_forever()
-    while True:
-        time.sleep(2)
+    while 1==1:
+        if g.exit == 1:
+            break
+        time.sleep(1)
