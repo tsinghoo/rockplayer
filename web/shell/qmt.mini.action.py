@@ -1475,8 +1475,8 @@ def python_to_json(obj, indent=4, ensure_ascii=False):
     return js
 
 
-def subscribewholecallback(data):
-    info("subscribewholecallback", data.keys())
+def subscribe_whole_callback(data):
+    info("subscribe_whole_callback", data.keys())
     try:
         for stock in data:
             if stock not in g.stocklist:
