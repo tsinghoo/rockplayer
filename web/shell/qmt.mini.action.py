@@ -30,8 +30,14 @@ g = G()
 
 
 g.account = "620000558442"  # 国信
+g.broker = "国信"
+
 g.account = "8883949249"  # 国金
 g.broker = "国金"
+
+g.account = "50900001667601" #华鑫
+g.broker = "华鑫"
+
 g.lastUploadPriceTime = time.time()
 
 g.lastGetActionsTime = time.time()
