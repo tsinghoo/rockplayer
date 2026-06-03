@@ -8,7 +8,7 @@ def main():
     os.chdir(script_dir)
     account=""
     broker=""
-    
+
     while True:
         # 清屏
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -45,6 +45,8 @@ def main():
         
         if user_input == "1":
             qmtpath = r"c:\gjzqqmt\userdata_mini"
+            account = "8883949249"  # 国金
+            broker = "国金"
             configPathPrefix = r"c:"
             logPathPrefix = r"z:\data\logs"
             # 设置PATH环境变量
