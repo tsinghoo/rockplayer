@@ -1591,6 +1591,7 @@ def updatePositions():
 
 
 def resubscribe():
+    return
     info("resubscribe start", g.stocklist)
     if g.subscribeId != 0:
         info("unsubscribe", g.subscribeId)
@@ -1735,8 +1736,8 @@ if __name__ == "__main__":
     t5 = Thread(target=updatePriceTask)
     t5.start()
 
-    # t6 = Thread(target=updateTickTask)
-    # t6.start()
+    t6 = Thread(target=updateTickTask)
+    t6.start()
 
     # 阻塞主线程退出
     xt_trader.run_forever()
