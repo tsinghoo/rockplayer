@@ -20,7 +20,7 @@ import traceback
 from threading import Thread
 import asyncio
 import websockets
-
+import signal
 
 class G:
     pass
@@ -55,11 +55,17 @@ g.log = {
 g.log["level"] = g.log["debug"]
 
 g.toPrint = []
+g.exit = 0
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
 g.k1dIndicatorLookbackDays = 30
 
 
+def cleanup(signum, frame):
+    print("\n正在清理并退出...")
+    g.exit = 1
+    # 这里放你的清理代码，如保存数据、断开连接
+    sys.exit(0)
 def strip_scode_suffix(scode):
     scode = str(scode or "").strip().upper()
     index = scode.rfind(".")
@@ -401,6 +407,8 @@ def update1dTask():
         # update1d(g.ruleCodes)
 
         while True:
+            if g.exit == 1:
+                return
             now = datetime.datetime.now()
             if now.hour < 9 or (now.hour == 9 and now.minute < 15):
                 time.sleep(1)
@@ -503,6 +511,8 @@ def updateTodayTask():
 
 def update1mTask():
     while True:
+        if g.exit == 1:
+            return
         now = datetime.datetime.now()
         if now.hour < 9 or (now.hour == 9 and now.minute < 15):
             time.sleep(1)
@@ -522,8 +532,19 @@ def update1mTask():
 def updatePriceTask():
     info("upt")
     while True:
-        uploadStockPrice()
-        time.sleep(0.1)
+        if g.exit == 1:
+            return
+        now = datetime.datetime.now()
+        # 非交易时段降低频率，避免无效请求
+        if now.hour < 9 or (now.hour == 9 and now.minute < 15) or now.hour > 16 or (now.hour == 16 and now.minute >= 10):
+            time.sleep(5)
+            continue
+        resetThreadId("upt")
+        try:
+            uploadStockPrice()
+        except Exception as e:
+            info("updatePriceTask error:", traceback.format_exc())
+        time.sleep(0.5)
 
 
 def uploadDetail(details):
@@ -1450,6 +1471,8 @@ def log2File(toPrint, file, sep=" ", end="\n", flush=True, mode="a", encoding="u
 
 def printTask():
     while True:
+        if g.exit == 1:
+            return
         toPrint, g.toPrint = g.toPrint, []
         log2File(toPrint, f"{g.logPathPrefix}\\qmt.mini.data")
         while len(toPrint) > 0:
@@ -1495,6 +1518,7 @@ def resubscribe():
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, cleanup)
     # Mini-QMT的userdata_mini路径
     # path = r'D:\国金证券QMT交易端\userdata_mini'
     path = os.getenv("qmtpath")

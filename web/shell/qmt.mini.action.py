@@ -22,13 +22,6 @@ import asyncio
 import websockets
 
 import signal
-def cleanup(signum, frame):
-    print("\n正在清理并退出...")
-    # 这里放你的清理代码，如保存数据、断开连接
-    sys.exit(0)
-    os._exit(0)
-
-signal.signal(signal.SIGINT, cleanup)
 class G:
     pass
 
@@ -64,11 +57,16 @@ g.log = {
 }
 
 g.log["level"] = g.log["debug"]
-
+g.exit = 0
 g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
 
+def cleanup(signum, frame):
+    print("\n正在清理并退出...")
+    g.exit = 1
+    # 这里放你的清理代码，如保存数据、断开连接
+    sys.exit(0)
 
 def strip_scode_suffix(scode):
     scode = str(scode or "").strip().upper()
@@ -640,12 +638,16 @@ def updatePriceTask():
             return
         uploadStockPrice()
         time.sleep(0.5)
+        if g.exit == 1:
+            return
 
 
 def updateTickTask():
     resetThreadId("utt")
     while True:
         time.sleep(0.1)
+        if g.exit == 1:
+            return
         try:
             ticks = xtdata.get_full_tick(g.stocklist)
 
@@ -737,6 +739,8 @@ def updateDetailTask():
 def getActionsTask():
     while True:
         resetThreadId("act")
+        if g.exit == 1:
+            return
         now = datetime.datetime.now()
         if g.test == 0 and now.hour < 9 or (now.hour == 9 and now.minute < 30):
             time.sleep(1)
@@ -1616,6 +1620,8 @@ if __name__ == "__main__":
     else:
         g.baseUrl = "http://test1.91taogu.com"
 
+
+    signal.signal(signal.SIGINT, cleanup)
     configPathPrefix = os.getenv("configPathPrefix")
 
     if configPathPrefix:
