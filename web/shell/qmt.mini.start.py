@@ -35,7 +35,8 @@ def main():
 
         if user_input == "":
             print("1. wine")
-            print("2. windows")
+            print("2. windows guoJin")
+            print("3. windows huaXin")
             print("q. quit")
             
             user_input = input("Please select: ")
@@ -49,6 +50,18 @@ def main():
             os.environ['PATH'] = python_path + os.pathsep + os.environ.get('PATH', '')
         elif user_input == "2":
             qmtpath = r"D:\国金证券QMT交易端\userdata_mini"
+
+            account = "8883949249"  # 国金
+            broker = "国金"
+
+            configPathPrefix = "d:"
+            logPathPrefix = "d:"
+        elif user_input == "3":
+            qmtpath = r"D:\huaXinQMT\userdata_mini"
+
+            account = "50900001667601" #华鑫
+            broker = "华鑫"
+
             configPathPrefix = "d:"
             logPathPrefix = "d:"
         elif user_input.lower() == "q":
@@ -84,6 +97,8 @@ def main():
         os.environ['configPathPrefix'] = configPathPrefix
         os.environ['logPathPrefix'] = logPathPrefix
         os.environ['proxy'] = proxy
+        os.environ['account'] = account
+        os.environ['broker'] = broker
         
         while True:
             print("1. qmt.mini.action.py")

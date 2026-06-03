@@ -1636,6 +1636,13 @@ if __name__ == "__main__":
     else:
         g.baseUrl = "http://test1.91taogu.com"
 
+    account=os.getenv("account")
+    if account:
+        g.account = account
+    
+    broker=os.getenv("broker")
+    if broker:
+        g.broker = broker
 
     signal.signal(signal.SIGINT, cleanup)
     configPathPrefix = os.getenv("configPathPrefix")
@@ -1654,11 +1661,9 @@ if __name__ == "__main__":
     print("configPathPrefix:", configPathPrefix)
     print("configFile:", g.configFile)
     print("logPathPrefix:", logPathPrefix)
-    # print("1.http://test1.91taogu.com")
-    # print("2.http://192.168.66.205:3001")
-    # print("q.退出")
-    # ui = input("请选择:")
-
+    print("path:", path)
+    print("account:", account)
+    print("broker:", broker)
     print("baseUrl:", g.baseUrl)
     time.sleep(2)
 
@@ -1680,13 +1685,18 @@ if __name__ == "__main__":
 
     print("connect xt_trader")
     # 建立交易连接，返回0表示连接成功
-    connect_result = xt_trader.connect()
-    if connect_result != 0:
-        info("连接失败")
+    try:
+        connect_result = xt_trader.connect()
+        if connect_result != 0:
+            info("连接失败")
+            xt_trader.stop()
+            sys.exit(1)
+        else:
+            info("连接成功")
+    except Exception as e:
+        error(f"connect error: {e}")
         xt_trader.stop()
         sys.exit(1)
-    else:
-        info("连接成功")
 
     subscribe_result = xt_trader.subscribe(stockAccount)
     if subscribe_result == 0:
