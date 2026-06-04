@@ -407,6 +407,12 @@ def update1dTask():
 
         resetThreadId("u1dc")
         update1d(g.candidates)
+        mergedStocks = list(
+            dict.fromkeys((g.stocklist or []) + (g.candidates or []) + (g.ruleCodes or []))
+        )
+        
+        updateHigherPeriodIfNeeded("1w", mergedStocks, "lastUpdate1wDate")
+        updateHigherPeriodIfNeeded("1mon", mergedStocks, "lastUpdate1monDate")
 
         # g.ruleCodes = getRuleCodes()
         # resetThreadId("u1dr")
@@ -431,11 +437,6 @@ def update1dTask():
                     update1d([scode.replace(".HGT", ".HK")], "20210101", "")
             g.stocklist = getStockList()
             update1d(g.stocklist)
-            mergedStocks = list(
-                dict.fromkeys((g.stocklist or []) + (g.candidates or []) + (g.ruleCodes or []))
-            )
-            updateHigherPeriodIfNeeded("1w", mergedStocks, "lastUpdate1wDate")
-            updateHigherPeriodIfNeeded("1mon", mergedStocks, "lastUpdate1monDate")
 
             updateLastStartTime1d()
             saveConfig()
