@@ -1677,10 +1677,10 @@ if __name__ == "__main__":
     callback = MyXtQuantTraderCallback()
     xt_trader.register_callback(callback)
     # 启动本地客户端
-    print("start xt_trader")
+    info("start xt_trader")
     xt_trader.start()
 
-    print("connect xt_trader")
+    info("connect xt_trader")
     # 建立交易连接，返回0表示连接成功
     try:
         connect_result = xt_trader.connect()
@@ -1702,20 +1702,24 @@ if __name__ == "__main__":
         info("A股订阅失败")
         xt_trader.stop()
         sys.exit(1)
-    subscribe_result = xt_trader.subscribe(stockAccountHgt)
-    if subscribe_result == 0:
-        info("沪港通订阅成功")
-    else:
-        info("沪港通订阅失败")
-        xt_trader.stop()
-        sys.exit(1)
+    
+    disableHugangtong=os.getenv("disableHugangtong") 
+    if disableHugangtong!="1":
+        subscribe_result = xt_trader.subscribe(stockAccountHgt)
+        if subscribe_result == 0:
+            info("沪港通订阅成功")
+        else:
+            info("沪港通订阅失败")
+            xt_trader.stop()
+            sys.exit(1)
 
+        # 查询当日所有的委托
+        orders = xt_trader.query_stock_orders(stockAccountHgt, False)
+        info("orders:", obj2JsonString(orders))
+        
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
 
-    # 查询当日所有的委托
-    orders = xt_trader.query_stock_orders(stockAccountHgt, False)
-    info("orders:", obj2JsonString(orders))
 
     # stock_list = xtdata.get_stock_list_in_sector('上证A股')
     # print(stock_list)
