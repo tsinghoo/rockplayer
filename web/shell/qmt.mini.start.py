@@ -61,8 +61,7 @@ def main():
             configPathPrefix = "d:"
             logPathPrefix = "d:"
         elif user_input == "3":
-            qmtpath = r"D:\huaXinQMT\userdata_mini"
-
+            qmtpath = r"D:\huaxinQMT\userdata_mini"
             account = "50900001667601" #华鑫
             broker = "华鑫"
 
