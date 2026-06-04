@@ -556,7 +556,7 @@ async function updateStockBasicByScode(fields, threadId) {
 
     row.id = scode;
     row.type = type;
-    row.market = getMarket(code);
+    row.market = getMarket(scode);
     return await insertOrReplace("tStockBasic", row, threadId);
 }
 
