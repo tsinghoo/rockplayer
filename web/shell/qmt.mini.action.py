@@ -168,8 +168,8 @@ async def websocket_client():
                     elif message["func"] == "forceUpdate1d":
                         params = message["params"]
                         scode = params["scode"]
-                        update1d([scode])
-                        info("update1d done")
+                        forceUploadToday1dByFullKline(scode)
+                        info("forceUpdate1d done")
                         response = {"id": message["id"]}
 
                         await wsc.send(json.dumps(response))
@@ -1053,6 +1053,77 @@ def update1d(stocklist=None, startTime=None, endTime=None):
                 except Exception as e:
                     error("上传失败:", str(e))
             time.sleep(0.2)
+
+
+def forceUploadToday1dByFullKline(scode):
+    info("forceUploadToday1dByFullKline", scode)
+    period = "1d"
+    params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
+    startTime = (
+        datetime.datetime.now() - datetime.timedelta(days=30)
+    ).strftime("%Y%m%d")
+    allKline = xtdata.get_full_kline(
+        params,
+        stock_list=[scode],
+        period=period,
+        start_time=startTime,
+        end_time="",
+        count=-1,
+        dividend_type="none",
+        fill_data=True,
+    )
+    if scode not in allKline:
+        error("forceUploadToday1dByFullKline missing scode:", scode)
+        return
+
+    table = allKline[scode]
+    table = table.query("suspendFlag != 1").copy()
+    if len(table) == 0:
+        info("forceUploadToday1dByFullKline no data:", scode)
+        return
+
+    CCI(table)
+    KDJ(table)
+
+    lastIdx = table.index[-1]
+    row = table.iloc[-1]
+    batch_data = [
+        [
+            str(lastIdx),
+            row["open"],
+            row["close"],
+            row["high"],
+            row["low"],
+            row["volume"],
+            row["amount"],
+            row["cci"],
+            row["kdj_k"],
+            row["kdj_d"],
+            row["kdj_j"],
+        ]
+    ]
+    body = {
+        "data": obj2Json(batch_data),
+        "scode": scode,
+        "period": period,
+        "passcode": "995560",
+    }
+    try:
+        response = requests.post(
+            g.baseUrl + "/stock/k/upload",
+            json=body,
+            verify=False,
+            timeout=20,
+        )
+        if response.status_code != 200:
+            error(
+                "上传失败，状态码:",
+                response.status_code,
+                "响应内容:",
+                response.text,
+            )
+    except Exception as e:
+        error("forceUploadToday1dByFullKline 上传失败:", str(e))
 
 def KDJ(table):
     table["kdj_k"] = 0
