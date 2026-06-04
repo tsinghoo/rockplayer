@@ -120,7 +120,7 @@ if __name__ == "__main__":
     stockAccount = StockAccount(account)
     stockAccountHgt = StockAccount(account, "HUGANGTONG")
 
-    xt_trader = XtQuantTrader(path, 1)
+    xt_trader = XtQuantTrader(path, 12)
     callback = MyXtQuantTraderCallback()
     xt_trader.register_callback(callback)
     # 启动本地客户端
@@ -144,6 +144,4 @@ if __name__ == "__main__":
 
     # 阻塞主线程退出
     while 1==1:
-        if g.exit == 1:
-            break
         time.sleep(1)
