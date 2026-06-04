@@ -1445,7 +1445,7 @@ def log(*args, **kwargs):
         time_header = f"[{current_time}]"
 
     all_args = (time_header,) + args
-
+    print(*all_args, **kwargs)
     g.toPrint.append([all_args, kwargs])
 
 
@@ -1481,11 +1481,8 @@ def printTask():
             return
         toPrint, g.toPrint = g.toPrint, []
         log2File(toPrint, f"{g.logPathPrefix}\\qmt.mini.data")
-        while len(toPrint) > 0:
-            item = toPrint.pop(0)
-            print(*item[0], **item[1])
 
-        time.sleep(0.1)
+        time.sleep(1)
 
 
 def startUpdatePositions():
