@@ -408,7 +408,7 @@ def update1dTask():
         resetThreadId("u1dc")
         update1d(g.candidates)
         mergedStocks = list(
-            dict.fromkeys((g.stocklist or []) + (g.candidates or []) + (g.ruleCodes or []))
+            dict.fromkeys((g.stocklist or []) + (g.candidates or []))
         )
         
         updateHigherPeriodIfNeeded("1w", mergedStocks, "lastUpdate1wDate")
