@@ -172,7 +172,7 @@ async def websocket_client():
                     elif message["func"] == "forceUpdate1d":
                         params = message["params"]
                         scode = params["scode"]
-                        forceUploadToday1dByFullKline(scode)
+                        update1d([scode])
                         info("forceUpdate1d done")
                         response = {"id": message["id"]}
 
@@ -1207,6 +1207,7 @@ def get1dData(stocklist, index, startTime, endTime):
         period=period,
         start_time=startTime,
         end_time=endTime,
+        subscribe=False,
         count=-1,
         dividend_type="none",
         fill_data=True,
