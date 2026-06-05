@@ -690,13 +690,13 @@ def updateTickTask():
                         "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
-                elif now - g.lastUpdatePriceTime.get(stock) > 10000:
-                    changed = changed + 1
-                    g.lastUpdatePriceTime[stock] = now
-                    g.changedTicks[stock] = {
-                        "time": ticks[stock]["time"],
-                        "lastPrice": ticks[stock]["lastPrice"],
-                    }
+                # elif now - g.lastUpdatePriceTime.get(stock) > 10000:
+                #     changed = changed + 1
+                #     g.lastUpdatePriceTime[stock] = now
+                #     g.changedTicks[stock] = {
+                #         "time": ticks[stock]["time"],
+                #         "lastPrice": ticks[stock]["lastPrice"],
+                #     }
 
             info("got",len(list(ticks)), "ticks:",  changed)
             g.lastTicks = ticks
