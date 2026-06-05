@@ -511,9 +511,10 @@ def uploadStockPrice():
     # 组装成json对象post到test1.91taogu.com
     # 为data添加passcode属性
     sb, g.changedTicks = g.changedTicks, {}  # 这行是原子的
-
+    info(sb.keys())
     if g.broker=="国金":
         sb = [x for x in sb if not x.endswith(".SH") and not x.endswith(".SZ")]
+    info(sb.keys())
 
     if len(list(sb)) < 1:
         now = time.time()
@@ -522,8 +523,6 @@ def uploadStockPrice():
             g.lastUploadPriceTime = now
         return
     info("上传", len(list(sb)), "个股票价格")
-    # 打印g.tick的所有key
-    info(sb.keys())
     g.lastUploadPriceTime = time.time()
     # info(sb.keys())
     try:
