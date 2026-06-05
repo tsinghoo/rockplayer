@@ -423,7 +423,7 @@ def getStockList():
             # 将g.stocklist中包含".EC"的元素去除
             stocklist = [x for x in stocklist if not x.endswith(".EC")]
             # stocklist=["09926.HK"]
-            info("got", len(stocklist, "stocks"))
+            info("got", len(stocklist), "stocks")
             return stocklist
 
     except Exception as e:
