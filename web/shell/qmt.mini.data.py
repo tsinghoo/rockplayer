@@ -456,9 +456,10 @@ def updateToday1d(stocklist=None):
     period = "1d"
     params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
     for index, chunk in enumerate(chunks):
-        datas = xtdata.get_market_data_ex(params, chunk, period, start_time = '', end_time = '', count = 1, dividend_type = 'none', fill_data = True)
+        xtdata.download_history_data2(chunk, period, '', '')
+        datas = xtdata.get_local_data(params, chunk, period, start_time = '', end_time = '', count = 1, dividend_type = 'none', fill_data = True)
 
-        info("get_full_kline:", datas)
+        info("get_local_data:", datas)
         info("", len(datas), "rows")
         batch_data = []
         for idx, row in datas.iterrows():
@@ -1120,7 +1121,7 @@ def update1m(stocklist, startTime=None):
                 len(stocklist),
                 ")",
             )
-            df = xtdata.get_market_data_ex(
+            df = xtdata.get_local_data(
                 params,
                 stock_list=[scode],
                 period=period,

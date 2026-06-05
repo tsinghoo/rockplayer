@@ -1286,7 +1286,7 @@ def update1m(stocklist, startTime=None):
                 len(stocklist),
                 ")",
             )
-            df = xtdata.get_market_data_ex(
+            df = xtdata.get_local_data(
                 params,
                 stock_list=[scode],
                 period=period,
