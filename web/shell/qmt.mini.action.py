@@ -1201,13 +1201,12 @@ def get1dData(stocklist, index, startTime, endTime):
         len(stocklist),
         ")",
     )
-    df = xtdata.get_market_data_ex(
+    df = xtdata.get_local_data(
         params,
         stock_list=[scode],
         period=period,
         start_time=startTime,
         end_time=endTime,
-        subscribe=False,
         count=-1,
         dividend_type="none",
         fill_data=True,
