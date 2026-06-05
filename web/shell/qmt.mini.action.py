@@ -423,6 +423,7 @@ def getStockList():
             # 将g.stocklist中包含".EC"的元素去除
             stocklist = [x for x in stocklist if not x.endswith(".EC")]
             # stocklist=["09926.HK"]
+            info("got", len(stocklist, "stocks"))
             return stocklist
 
     except Exception as e:
@@ -514,8 +515,8 @@ def uploadStockPrice():
     info("changed:", sb.keys())
     now = time.time()
     # if g.broker == "国金" and sb:
-    sb = {scode: tick for scode, tick in sb.items() if (now-tick["time"]<5000)}
-        #[x for x in stocklist if not x.endswith(".EC")]
+    sb = {scode: tick for scode, tick in sb.items() if (now - tick["time"] < 5000)}
+    # [x for x in stocklist if not x.endswith(".EC")]
     if len(list(sb)) < 1:
         if now - g.lastUploadPriceTime > 10:
             info("0 stocks, skip upload")
@@ -657,6 +658,7 @@ def updatePriceTask():
             error(f"updatePriceTask error: {str(e)}")
             time.sleep(1)
 
+
 def updateTickTask():
     resetThreadId("utt")
     while True:
@@ -667,42 +669,31 @@ def updateTickTask():
             ticks = xtdata.get_full_tick(g.stocklist)
 
             now = int(time.time() * 1000)
-            changed = 0
+            changedCount = 0
             # 逐个比较ticks和g.lastTicks的价格是否相等，如果不相等则更新到g.tick里
             for stock in ticks:
+                c = 0
                 if stock not in g.stocklist:
                     info("skip", stock)
                     continue
                 if g.lastTicks.get(stock) is None:
-                    g.lastUpdatePriceTime[stock] = now
-                    changed = changed + 1
-                    g.changedTicks[stock] = {
-                        "time": ticks[stock]["time"],
-                        "lastPrice": ticks[stock]["lastPrice"],
-                    }
+                    c = 1
                 elif g.lastTicks[stock]["lastPrice"] != ticks[stock]["lastPrice"]:
-                    changed = changed + 1
-                    g.lastUpdatePriceTime[stock] = now
-                    g.changedTicks[stock] = {
-                        "time": ticks[stock]["time"],
-                        "lastPrice": ticks[stock]["lastPrice"],
-                    }
+                    c = 1
+                elif g.lastTicks[stock]["time"] != ticks[stock]["time"]:
+                    c = 1
                 elif g.lastUpdatePriceTime.get(stock) is None:
-                    changed = changed + 1
+                    c = 1
+
+                if c == 1:
+                    changedCount = changedCount + 1
                     g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
                         "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
-                # elif now - g.lastUpdatePriceTime.get(stock) > 10000:
-                #     changed = changed + 1
-                #     g.lastUpdatePriceTime[stock] = now
-                #     g.changedTicks[stock] = {
-                #         "time": ticks[stock]["time"],
-                #         "lastPrice": ticks[stock]["lastPrice"],
-                #     }
 
-            info("got",len(list(ticks)), "ticks:",  changed)
+            info("got", len(list(ticks)), "ticks:", changedCount)
             g.lastTicks = ticks
         except Exception as e:
             error("updateTickTask error:", traceback.format_exc())
@@ -1696,7 +1687,7 @@ def resubscribe():
         g.stocklist, callback=subscribe_whole_callback
     )
 
-    info("resubscribe end", g.subscribeId)
+    info(len(g.stocklist), "subscribed:", g.subscribeId)
 
 
 def unsubscribe():
