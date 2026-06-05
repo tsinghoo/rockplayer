@@ -10,7 +10,7 @@ def main():
     env = os.environ.copy()
     env["startGjzqqmt"] = "1"
     env["env"] = "3"
-    env["url"] = "4"
+    env["url"] = "1"
     env["disableHugangtong"]="1"
 
     subprocess.run([sys.executable, target], check=True, cwd=script_dir, env=env)
