@@ -419,6 +419,7 @@ def update1dTask():
         # update1d(g.ruleCodes)
 
         while True:
+            info("1d loop start")
             if g.exit == 1:
                 return
             now = datetime.datetime.now()
