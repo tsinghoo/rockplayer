@@ -22,6 +22,8 @@ import asyncio
 import websockets
 
 import signal
+
+
 class G:
     pass
 
@@ -35,7 +37,7 @@ g.broker = "国信"
 g.account = "8883949249"  # 国金
 g.broker = "国金"
 
-g.account = "50900001667601" #华鑫
+g.account = "50900001667601"  # 华鑫
 g.broker = "华鑫"
 
 g.lastUploadPriceTime = time.time()
@@ -43,7 +45,7 @@ g.lastUploadPriceTime = time.time()
 g.lastGetActionsTime = time.time()
 g.subscribeId = 0
 g.lastTicks = {}
-g.lastUpdatePriceTime={}
+g.lastUpdatePriceTime = {}
 g.changedTicks = {}
 g.actions = {}
 g.reloadK1d = []
@@ -68,12 +70,14 @@ g.toPrint = []
 today = datetime.datetime.now().date()
 threadLocal = threading.local()
 
+
 def cleanup(signum, frame):
     print("\n正在清理并退出...")
     unsubscribe()
     g.exit = 1
     # 这里放你的清理代码，如保存数据、断开连接
     sys.exit(0)
+
 
 def strip_scode_suffix(scode):
     scode = str(scode or "").strip().upper()
@@ -658,8 +662,8 @@ def updateTickTask():
         try:
             ticks = xtdata.get_full_tick(g.stocklist)
 
-            info("got", len(list(ticks)), "ticks")
             now = int(time.time() * 1000)
+            changed = 0
             # 逐个比较ticks和g.lastTicks的价格是否相等，如果不相等则更新到g.tick里
             for stock in ticks:
                 if stock not in g.stocklist:
@@ -667,29 +671,34 @@ def updateTickTask():
                     continue
                 if g.lastTicks.get(stock) is None:
                     g.lastUpdatePriceTime[stock] = now
+                    changed = changed + 1
                     g.changedTicks[stock] = {
                         "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
                 elif g.lastTicks[stock]["lastPrice"] != ticks[stock]["lastPrice"]:
+                    changed = changed + 1
                     g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
                         "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
                 elif g.lastUpdatePriceTime.get(stock) is None:
+                    changed = changed + 1
                     g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
-                        "time": now,
+                        "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
                 elif now - g.lastUpdatePriceTime.get(stock) > 10000:
+                    changed = changed + 1
                     g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
                         "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
 
+            info("got",len(list(ticks)), "ticks:",  changed)
             g.lastTicks = ticks
         except Exception as e:
             error("updateTickTask error:", traceback.format_exc())
@@ -1059,9 +1068,9 @@ def forceUploadToday1dByFullKline(scode):
     info("forceUploadToday1dByFullKline", scode)
     period = "1d"
     params = ["open", "close", "high", "low", "volume", "amount", "suspendFlag"]
-    startTime = (
-        datetime.datetime.now() - datetime.timedelta(days=30)
-    ).strftime("%Y%m%d")
+    startTime = (datetime.datetime.now() - datetime.timedelta(days=30)).strftime(
+        "%Y%m%d"
+    )
     allKline = xtdata.get_full_kline(
         params,
         stock_list=[scode],
@@ -1124,6 +1133,7 @@ def forceUploadToday1dByFullKline(scode):
             )
     except Exception as e:
         error("forceUploadToday1dByFullKline 上传失败:", str(e))
+
 
 def KDJ(table):
     table["kdj_k"] = 0
@@ -1246,12 +1256,14 @@ def update1m(stocklist, startTime=None):
                 dataStartTime = (
                     datetime.datetime.now() - datetime.timedelta(hours=7)
                 ).strftime("%Y%m%d%H%M%S")
-        
+
         origTime = datetime.datetime.strptime(dataStartTime, "%Y%m%d%H%M%S")
-        today_930 = datetime.datetime.combine(datetime.datetime.now().date(), datetime.time(9, 30, 0))
-    
+        today_930 = datetime.datetime.combine(
+            datetime.datetime.now().date(), datetime.time(9, 30, 0)
+        )
+
         if origTime < today_930:
-            dataStartTime= today_930.strftime("%Y%m%d%H%M%S")
+            dataStartTime = today_930.strftime("%Y%m%d%H%M%S")
 
         info("dataStartTime:", dataStartTime)
 
@@ -1670,7 +1682,6 @@ def updatePositions():
     uploadPosition(js)
 
 
-
 def resubscribe():
     info("resubscribe skipped")
     return
@@ -1706,11 +1717,11 @@ if __name__ == "__main__":
     else:
         g.baseUrl = "http://test1.91taogu.com"
 
-    account=os.getenv("account")
+    account = os.getenv("account")
     if account:
         g.account = account
-    
-    broker=os.getenv("broker")
+
+    broker = os.getenv("broker")
     if broker:
         g.broker = broker
 
@@ -1775,9 +1786,9 @@ if __name__ == "__main__":
         info("A股订阅失败")
         xt_trader.stop()
         sys.exit(1)
-    
-    disableHugangtong=os.getenv("disableHugangtong") 
-    if disableHugangtong!="1":
+
+    disableHugangtong = os.getenv("disableHugangtong")
+    if disableHugangtong != "1":
         subscribe_result = xt_trader.subscribe(stockAccountHgt)
         if subscribe_result == 0:
             info("沪港通订阅成功")
@@ -1789,10 +1800,9 @@ if __name__ == "__main__":
         # 查询当日所有的委托
         orders = xt_trader.query_stock_orders(stockAccountHgt, False)
         info("orders:", obj2JsonString(orders))
-        
+
     sector_list = xtdata.get_sector_list()
     info("sector_list:", sector_list)
-
 
     # stock_list = xtdata.get_stock_list_in_sector('上证A股')
     # print(stock_list)
@@ -1847,7 +1857,7 @@ if __name__ == "__main__":
     t6.start()
 
     # 阻塞主线程退出
-    while 1==1:
+    while 1 == 1:
         if g.exit == 1:
             break
         time.sleep(1)
