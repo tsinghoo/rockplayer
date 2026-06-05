@@ -959,7 +959,7 @@ def getPeriodData(stocklist, index, startTime, endTime, period, calcIndicators=F
         len(stocklist),
         ")",
     )
-    df = xtdata.get_market_data_ex(
+    df = xtdata.get_local_data(
         params,
         stock_list=[scode],
         period=period,
