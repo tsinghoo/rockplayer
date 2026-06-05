@@ -649,11 +649,14 @@ def updatePriceTask():
         if g.test == 0 and now.hour > 16 or (now.hour == 16 and now.minute >= 10):
             info("16:10以后，updatePriceTask退出")
             return
-        uploadStockPrice()
-        time.sleep(0.1)
-        if g.exit == 1:
-            return
-
+        try:
+            uploadStockPrice()
+            time.sleep(0.1)
+            if g.exit == 1:
+                return
+        except Exception as e:
+            error(f"updatePriceTask error: {str(e)}")
+            time.sleep(1)
 
 def updateTickTask():
     resetThreadId("utt")
