@@ -395,9 +395,9 @@ def update1dTask():
         g.candidates = getCandidates()
 
         g.stocklist = getStockList()
-        resetThreadId("u1mc")
+        resetThreadId("u1Mc")
         update1mon(g.candidates)
-        resetThreadId("u1m")
+        resetThreadId("u1M")
         update1mon(g.stocklist)
 
         resetThreadId("u1wc")
@@ -407,6 +407,8 @@ def update1dTask():
 
         resetThreadId("u1dc")
         update1d(g.candidates)
+        resetThreadId("u1d")
+        update1d(g.stocklist)
         mergedStocks = list(
             dict.fromkeys((g.stocklist or []) + (g.candidates or []))
         )
