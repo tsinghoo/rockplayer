@@ -642,6 +642,8 @@ def update1mTask():
 def updatePriceTask():
     resetThreadId("upt")
     while True:
+        if g.exit == 1:
+            return
         now = datetime.datetime.now()
         if g.test == 0 and now.hour < 9 or (now.hour == 9 and now.minute < 15):
             time.sleep(1)
@@ -1853,6 +1855,6 @@ if __name__ == "__main__":
 
     # 阻塞主线程退出
     while 1 == 1:
+        time.sleep(1)
         if g.exit == 1:
             break
-        time.sleep(1)
