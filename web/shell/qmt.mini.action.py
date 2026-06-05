@@ -511,12 +511,12 @@ def uploadStockPrice():
     # 组装成json对象post到test1.91taogu.com
     # 为data添加passcode属性
     sb, g.changedTicks = g.changedTicks, {}  # 这行是原子的
-    info(sb.keys())
-    if g.broker == "国金" and sb:
-        sb = {scode: tick for scode, tick in sb.items() if not scode.endswith(".SH") and not scode.endswith(".SZ")}
+    info("changed:", sb.keys())
+    now = time.time()
+    # if g.broker == "国金" and sb:
+    sb = {scode: tick for scode, tick in sb.items() if (now-tick.time<5000)}
         #[x for x in stocklist if not x.endswith(".EC")]
     if len(list(sb)) < 1:
-        now = time.time()
         if now - g.lastUploadPriceTime > 10:
             info("0 stocks, skip upload")
             g.lastUploadPriceTime = now
