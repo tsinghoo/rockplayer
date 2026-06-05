@@ -521,9 +521,8 @@ def uploadStockPrice():
             info("0 stocks, skip upload")
             g.lastUploadPriceTime = now
         return
-    info("上传", len(list(sb)), "个股票价格")
+    info("上传", len(list(sb)), "个:", sb.keys())
     g.lastUploadPriceTime = time.time()
-    info(sb.keys())
     try:
         response = requests.post(
             g.baseUrl + "/stock/quotes.mini",
