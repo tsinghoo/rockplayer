@@ -512,10 +512,9 @@ def uploadStockPrice():
     # 为data添加passcode属性
     sb, g.changedTicks = g.changedTicks, {}  # 这行是原子的
     info(sb.keys())
-    if g.broker=="国金":
-        sb = [x for x in sb if not x.endswith(".SH") and not x.endswith(".SZ")]
-    info(sb.keys())
-
+    if g.broker == "国金" and sb:
+        sb = {scode: tick for scode, tick in sb.items() if not scode.endswith(".SH") and not scode.endswith(".SZ")}
+        #[x for x in stocklist if not x.endswith(".EC")]
     if len(list(sb)) < 1:
         now = time.time()
         if now - g.lastUploadPriceTime > 10:
@@ -524,7 +523,7 @@ def uploadStockPrice():
         return
     info("上传", len(list(sb)), "个股票价格")
     g.lastUploadPriceTime = time.time()
-    # info(sb.keys())
+    info(sb.keys())
     try:
         response = requests.post(
             g.baseUrl + "/stock/quotes.mini",
