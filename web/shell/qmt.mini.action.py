@@ -644,7 +644,7 @@ def updatePriceTask():
             info("16:10以后，updatePriceTask退出")
             return
         uploadStockPrice()
-        time.sleep(0.5)
+        time.sleep(0.1)
         if g.exit == 1:
             return
 
@@ -683,10 +683,10 @@ def updateTickTask():
                         "time": now,
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
-                elif now - g.lastUpdatePriceTime.get(stock) > 30000:
+                elif now - g.lastUpdatePriceTime.get(stock) > 10000:
                     g.lastUpdatePriceTime[stock] = now
                     g.changedTicks[stock] = {
-                        "time": now,
+                        "time": ticks[stock]["time"],
                         "lastPrice": ticks[stock]["lastPrice"],
                     }
 
@@ -1672,6 +1672,8 @@ def updatePositions():
 
 
 def resubscribe():
+    info("resubscribe skipped")
+    return
     info("resubscribe start", g.stocklist)
     unsubscribe()
 
@@ -1841,8 +1843,8 @@ if __name__ == "__main__":
     t5 = Thread(target=updatePriceTask)
     t5.start()
 
-    # t6 = Thread(target=updateTickTask)
-    # t6.start()
+    t6 = Thread(target=updateTickTask)
+    t6.start()
 
     # 阻塞主线程退出
     while 1==1:
