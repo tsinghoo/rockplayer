@@ -3699,12 +3699,7 @@ app.get('/stock/k/1d', async (req, res) => {
 
     startDay = timeFormat(startDay, "yyyyMMdd");
     endDay = timeFormat(endDay, "yyyyMMdd");
-    try {
-        await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
-        // await genCci(scode, req);
-    } catch (e) {
-        error(e.stack, req.threadId)
-    }
+    await forceUpdate1d(scode, req.threadId);
 
     let aliases = getScodeAliases(scode);
     let placeholders = aliases.map(() => "?").join(",");
@@ -3833,6 +3828,16 @@ app.get('/stock/k/1ms', async (req, res) => {
 
     res.send(resp);
 });
+
+async function forceUpdate1d(scode, threadId) {
+    let r = get1dLastDate(scode, threadId);
+    try {
+        await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode), lastDate: r.lastDate });
+        // await genCci(scode, req);
+    } catch (e) {
+        error(e.stack, threadId);
+    }
+}
 
 async function cancelAction(rule) {
     info("cancelAction:" + rule.scode);
@@ -4485,7 +4490,7 @@ async function ensureAboveMa5(scode, sname, threadId, prevRes, start, end) {
 
 async function get1dData(scode, threadId) {
     info(`get1dData`, threadId);
-    await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode) });
+    await forceUpdate1d(scode, threadId);
     let prevRes = await db.allSync(`select * from t1d where scode=? order by time desc limit 30`, [scode], threadId);
     return prevRes;
 }
@@ -4750,10 +4755,7 @@ app.get('/stock/1d/lastDate', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
     let scode = normalizeScode(req.query.scode);
-    info("scode:" + scode, req.threadId)
-    let aliases = getScodeAliases(scode);
-    let sql = `select max(time) as lastDate from t1d where scode in (${aliases.map(() => "?").join(",")})`;
-    let r = await db.getSync(sql, aliases, threadId);
+    let r = await get1dLastDate(scode, threadId);
 
     var resp = JSON.stringify(r);
     if (js != null) {
@@ -4762,6 +4764,14 @@ app.get('/stock/1d/lastDate', async (req, res) => {
 
     res.send(resp);
 });
+
+async function get1dLastDate(scode, threadId) {
+    info("scode:" + scode, threadId);
+    let aliases = getScodeAliases(scode);
+    let sql = `select max(time) as lastDate from t1d where scode in (${aliases.map(() => "?").join(",")})`;
+    let r = await db.getSync(sql, aliases, threadId);
+    return r;
+}
 
 async function sendKLastDate(req, res, tableName) {
     let threadId = req.threadId;

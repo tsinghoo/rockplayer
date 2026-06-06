@@ -172,7 +172,8 @@ async def websocket_client():
                     elif message["func"] == "forceUpdate1d":
                         params = message["params"]
                         scode = params["scode"]
-                        update1d([scode])
+                        lastDate = params["lastDate"]
+                        update1d([scode], lastDate)
                         info("forceUpdate1d done")
                         response = {"id": message["id"]}
 
