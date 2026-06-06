@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@binance/alpha": "^1.0.15",
     "@binance/spot": "^19.0.0",
     "cross-env": "^10.1.0",
     "ejs": "^3.1.9",

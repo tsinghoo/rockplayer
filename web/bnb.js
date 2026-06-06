@@ -1,6 +1,7 @@
 // const Binance = require('node-binance-api');
 // import Binance from "node-binance-api";
 const { json } = require("express");
+const { Alpha, ALPHA_REST_API_PROD_URL } = require("@binance/alpha");
 const Binance = require("node-binance-api");
 const fs = require("fs");
 let DEBUG = 2;
@@ -19,6 +20,13 @@ const binance = new Binance({
   verbose: logLevel <= DEBUG,
   //test: true, // if you want to use the sandbox/testnet
 });
+const alpha = new Alpha({
+  configurationRestAPI: {
+    apiKey: process.env.BnbAPIKEY || "",
+    apiSecret: process.env.BnbAPISECRET || "",
+    basePath: process.env.BNB_ALPHA_BASE_URL || ALPHA_REST_API_PROD_URL
+  }
+});
 
 // binance.socksProxy = 'socks://192.168.66.1:10800/';
 binance.httpsProxy = process.env.HTTP_PROXY;
@@ -32,6 +40,12 @@ g.stocklist = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
 // g.stocklist = ['BTCUSDT'];
 g.futuresPositionMode = null;
 g.lastFuturesPositionModeSync = 0;
+g.alphaBaseUrl = process.env.BNB_ALPHA_BASE_URL || ALPHA_REST_API_PROD_URL;
+g.alphaDiscoveryKeywords = (process.env.BNB_ALPHA_STOCK_KEYWORDS || "stock,us stock,equity").split(",").map(item => item.trim().toLowerCase()).filter(Boolean);
+g.alphaTokenMap = {};
+g.alphaSymbols = new Set();
+g.alphaPrice = {};
+g.lastAlphaMetaLoad = 0;
 
 function printObjFunc(obj) {
   const allProps = Object.getOwnPropertyNames(obj);
@@ -206,6 +220,304 @@ function get(url) {
   });
 }
 
+function buildUrl(baseUrl, path, params) {
+  let url = new URL(path, baseUrl);
+  if (params) {
+    Object.keys(params).forEach(key => {
+      if (params[key] != null && params[key] !== "") {
+        url.searchParams.set(key, params[key]);
+      }
+    });
+  }
+  return url.toString();
+}
+
+async function requestJson(url, options) {
+  let response = await fetch(url, options);
+  let text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (e) {
+    error("requestJson parse fail:", url, text);
+  }
+
+  if (!response.ok) {
+    throw new Error(`${response.status} ${text}`);
+  }
+
+  return data;
+}
+
+async function getAlphaSdkData(methodName, params) {
+  if (!alpha || !alpha.restAPI || typeof alpha.restAPI[methodName] !== "function") {
+    throw new Error(`@binance/alpha method not found: ${methodName}`);
+  }
+
+  let response = await alpha.restAPI[methodName](params || {});
+  if (response == null) {
+    return null;
+  }
+
+  if (typeof response.data === "function") {
+    return await response.data();
+  }
+
+  if (typeof response.data !== "undefined") {
+    return response.data;
+  }
+
+  return response;
+}
+
+function normalizeAlphaSymbol(scode) {
+  if (!scode) {
+    return "";
+  }
+  return `${scode}`.trim().toUpperCase();
+}
+
+function isAlphaSymbol(scode) {
+  let symbol = normalizeAlphaSymbol(scode);
+  return symbol.startsWith("A_") || g.alphaSymbols.has(symbol);
+}
+
+function toAlphaLookupKey(scode) {
+  let symbol = normalizeAlphaSymbol(scode);
+  if (symbol.startsWith("A_")) {
+    symbol = symbol.substring(2);
+  }
+  return symbol;
+}
+
+function toAlphaScode(meta) {
+  if (!meta) {
+    return "";
+  }
+
+  let code = meta.symbol || meta.code || meta.baseAsset || meta.asset || meta.tokenSymbol || meta.displaySymbol || meta.name || "";
+  code = `${code}`.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!code) {
+    return "";
+  }
+  return `A_${code}`;
+}
+
+function getAlphaTradeSymbol(meta, fallbackScode) {
+  if (meta == null) {
+    return toAlphaLookupKey(fallbackScode);
+  }
+
+  let candidates = [
+    meta.alphaTradeSymbol,
+    meta.tradeSymbol,
+    meta.symbol,
+    meta.pair,
+    meta.code,
+    meta.tokenSymbol
+  ];
+
+  for (let item of candidates) {
+    if (item == null) continue;
+    item = `${item}`.trim();
+    if (item !== "") {
+      return item;
+    }
+  }
+
+  return toAlphaLookupKey(fallbackScode);
+}
+
+function pickAlphaMarketText(meta) {
+  let texts = [];
+  if (meta == null) {
+    return "";
+  }
+
+  Object.keys(meta).forEach(key => {
+    let value = meta[key];
+    if (value == null) return;
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      texts.push(`${value}`.toLowerCase());
+    }
+  });
+
+  return texts.join(" ");
+}
+
+function looksLikeAlphaStockToken(meta) {
+  let text = pickAlphaMarketText(meta);
+  if (!text) {
+    return false;
+  }
+
+  return g.alphaDiscoveryKeywords.some(keyword => text.indexOf(keyword) >= 0);
+}
+
+async function ensureAlphaTokenMeta(force) {
+  let now = Date.now();
+  if (!force && g.lastAlphaMetaLoad > 0 && now - g.lastAlphaMetaLoad < 10 * 60 * 1000 && Object.keys(g.alphaTokenMap).length > 0) {
+    return g.alphaTokenMap;
+  }
+
+  try {
+    let response = await getAlphaSdkData("tokenList");
+    let items = [];
+    if (Array.isArray(response)) {
+      items = response;
+    } else if (response && Array.isArray(response.data)) {
+      items = response.data;
+    } else if (response && response.data && Array.isArray(response.data.tokens)) {
+      items = response.data.tokens;
+    } else if (response && response.data && Array.isArray(response.data.list)) {
+      items = response.data.list;
+    }
+
+    let nextMap = {};
+    let nextSymbols = new Set();
+    for (let item of items) {
+      if (!looksLikeAlphaStockToken(item)) {
+        continue;
+      }
+
+      let scode = toAlphaScode(item);
+      if (!scode) {
+        continue;
+      }
+
+      nextMap[scode] = item;
+      nextSymbols.add(scode);
+
+      let raw = getAlphaTradeSymbol(item, scode);
+      nextSymbols.add(normalizeAlphaSymbol(raw));
+      nextSymbols.add(`A_${normalizeAlphaSymbol(raw)}`);
+    }
+
+    g.alphaTokenMap = nextMap;
+    g.alphaSymbols = nextSymbols;
+    g.lastAlphaMetaLoad = now;
+    info("alpha token meta loaded:", Object.keys(nextMap).join(","));
+  } catch (e) {
+    error("ensureAlphaTokenMeta failed:", e.toString());
+  }
+
+  return g.alphaTokenMap;
+}
+
+function getAlphaMetaByScode(scode) {
+  let key = normalizeAlphaSymbol(scode);
+  if (g.alphaTokenMap[key]) {
+    return g.alphaTokenMap[key];
+  }
+
+  let compact = `A_${toAlphaLookupKey(scode)}`;
+  return g.alphaTokenMap[compact];
+}
+
+function mapPeriodToAlpha(period) {
+  if (period == "1m") return "1m";
+  if (period == "1d") return "1d";
+  throw new Error(`unsupported alpha period ${period}`);
+}
+
+async function getAlphaKlines(scode, period, limit) {
+  await ensureAlphaTokenMeta();
+  let meta = getAlphaMetaByScode(scode);
+  let symbol = getAlphaTradeSymbol(meta, scode);
+  let interval = mapPeriodToAlpha(period);
+  let response = await getAlphaSdkData("klines", {
+    symbol,
+    interval,
+    limit
+  });
+  if (Array.isArray(response)) {
+    return response;
+  }
+  if (response && Array.isArray(response.data)) {
+    return response.data;
+  }
+  if (response && response.data && Array.isArray(response.data.klines)) {
+    return response.data.klines;
+  }
+  if (response && response.data && Array.isArray(response.data.list)) {
+    return response.data.list;
+  }
+  return [];
+}
+
+function parseAlphaKline(item) {
+  if (Array.isArray(item)) {
+    return {
+      openTime: parseInt(item[0]),
+      open: item[1],
+      high: item[2],
+      low: item[3],
+      close: item[4],
+      volume: item[5],
+      quoteAssetVolume: item[7] || item[6] || 0
+    };
+  }
+
+  return {
+    openTime: parseInt(item.openTime || item.t || item.time || item[0]),
+    open: item.open || item.o || item[1],
+    high: item.high || item.h || item[2],
+    low: item.low || item.l || item[3],
+    close: item.close || item.c || item[4],
+    volume: item.volume || item.v || item[5],
+    quoteAssetVolume: item.quoteAssetVolume || item.q || item[7] || item[6] || 0
+  };
+}
+
+async function updateAlphaPrice(scode) {
+  try {
+    await ensureAlphaTokenMeta();
+    let meta = getAlphaMetaByScode(scode);
+    let tradeSymbol = getAlphaTradeSymbol(meta, scode);
+    let response = await getAlphaSdkData("ticker", { symbol: tradeSymbol });
+    let ticker = response;
+    if (response && Array.isArray(response.data) && response.data.length > 0) {
+      ticker = response.data[0];
+    } else if (Array.isArray(response) && response.length > 0) {
+      ticker = response[0];
+    }
+
+    if (ticker == null) {
+      return;
+    }
+
+    let price = parseFloat(ticker.lastPrice || ticker.price || ticker.close || ticker.c);
+    if (!Number.isFinite(price)) {
+      return;
+    }
+    let updateTime = parseInt(ticker.closeTime || ticker.time || ticker.ts || Date.now());
+
+    let symbol = normalizeAlphaSymbol(scode);
+    let prev = g.alphaPrice[symbol];
+    if (prev != null && prev.price === price && Date.now() - prev.time < 1000) {
+      return;
+    }
+
+    g.alphaPrice[symbol] = {
+      price,
+      time: Date.now()
+    };
+
+    let url = `${g.baseUrl}/stock/updatePrice?scode=${symbol}&price=${price}&time=${updateTime}&type=0`;
+    await get(url);
+  } catch (e) {
+    error("updateAlphaPrice failed:", scode, e.toString());
+  }
+}
+
+async function syncAlphaTickers() {
+  await ensureAlphaTokenMeta();
+  let symbols = Object.keys(g.alphaTokenMap);
+  for (let scode of symbols) {
+    await updateAlphaPrice(scode);
+  }
+}
+
 async function getKLastDate(scode, period) {
   try {
     let route;
@@ -350,22 +662,28 @@ async function updateSticks(stock, period, limit) {
   try {
     limit = await resolveStickLimit(stock, period, limit);
     info(`updateSticks resolved limit ${stock} ${period} ${limit}`);
+    let isAlpha = isAlphaSymbol(stock);
+    let uploadScode = normalizeAlphaSymbol(stock);
     if (period == "1d") {
       timePatten = "yyyyMMdd";
     } else if (period == "1m") {
       timePatten = "yyyyMMddhhmmss";
     }
 
-
-    let response = await binance.candlesticks(stock, period, { limit: limit });
+    let response;
+    if (isAlpha) {
+      response = await getAlphaKlines(stock, period, limit);
+    } else {
+      response = await binance.candlesticks(stock, period, { limit: limit });
+    }
     let data = [];
     for (let i = 0; i < response.length; i++) {
-      let item = response[i];
+      let item = isAlpha ? parseAlphaKline(response[i]) : response[i];
       data.push([timeFormat(item.openTime, timePatten), item.open, item.close, item.high, item.low, item.volume, item.quoteAssetVolume]);
       if (data.length == 50) {
         let body = {
           period: period,
-          scode: `O_${stock}`,
+          scode: uploadScode,
           data: data
         };
         post(`${g.baseUrl}/stock/k/upload`, body);
@@ -375,7 +693,7 @@ async function updateSticks(stock, period, limit) {
 
     let body = {
       period: period,
-      scode: `${stock}`,
+      scode: uploadScode,
       data: data
     };
 
@@ -389,6 +707,7 @@ async function updateSticks(stock, period, limit) {
 
 async function getActions() {
   try {
+    await ensureAlphaTokenMeta();
     let response = await get(g.baseUrl + "/stock/rule/actions?broker=" + g.broker);
     if (!response.ok) {
       error("getActions失败，状态码:", response.status);
@@ -418,14 +737,15 @@ async function getActions() {
         continue;
       }
       try {
+        let isFuture = act.scode.startsWith("O_");
+        let isAlpha = isAlphaSymbol(act.scode);
+        let tradeSymbol = isFuture ? act.scode.substring(2) : act.scode;
         let dotNums = {
           "BTCUSDT": 100000,
           "ETHUSDT": 10000,
           "BNBUSDT": 1000,
           "DOGEUSDT": 1
         };
-        let isFuture = act.scode.startsWith("O_");
-        let tradeSymbol = isFuture ? act.scode.substring(2) : act.scode;
         if (isFuture) {
           await syncFuturesPositionMode();
         }
@@ -441,29 +761,37 @@ async function getActions() {
         }
         let quantity = Math.floor(parseFloat(act["amount"]) * ratio) / ratio;
         if (act.action === "buy") {
-          info("买入", act.sname, act.scode, act.price, act.amount);
-          info("买入", price, quantity);
-
-          let response;
-          if (isFuture) {
-            response = await placeFutureOrder("BUY", tradeSymbol, quantity, price);
+          if (isAlpha) {
+            info("skip alpha trade action", act.action, act.scode, act.price, act.amount);
           } else {
-            response = await binance.buy(tradeSymbol, quantity, price);
-          }
-          debug(response);
-          info("已买入", act.sname, act.scode, act.price, act.amount);
+            info("买入", act.sname, act.scode, act.price, act.amount);
+            info("买入", price, quantity);
 
+            let response;
+            if (isFuture) {
+              response = await placeFutureOrder("BUY", tradeSymbol, quantity, price);
+            } else {
+              response = await binance.buy(tradeSymbol, quantity, price);
+            }
+            debug(response);
+            info("已买入", act.sname, act.scode, act.price, act.amount);
+          }
         } else if (act.action === "sell") {
-          info("卖出", act.sname, act.scode, act.price, act.amount);
-          info("卖出", price, quantity);
-          let response;
-          if (isFuture) {
-            response = await placeFutureOrder("SELL", tradeSymbol, quantity, price);
+          if (isAlpha) {
+            info("skip alpha trade action", act.action, act.scode, act.price, act.amount);
           } else {
-            response = await binance.sell(tradeSymbol, quantity, price);
+            info("卖出", act.sname, act.scode, act.price, act.amount);
+            info("卖出", price, quantity);
+
+            let response;
+            if (isFuture) {
+              response = await placeFutureOrder("SELL", tradeSymbol, quantity, price);
+            } else {
+              response = await binance.sell(tradeSymbol, quantity, price);
+            }
+            debug(response);
+            info("已卖出", act.sname, act.scode, act.price, act.amount);
           }
-          debug(response);
-          info("已卖出", act.sname, act.scode, act.price, act.amount);
         } else if (act.action === "setLeverage" || act.action === "changeLeverage" || act.action === "updateLeverage") {
           if (!isFuture) {
             throw new Error(`set leverage only supports futures symbol: ${act.scode}`);
@@ -484,14 +812,18 @@ async function getActions() {
         } else if (act.action === "reloadK1d") {
           info("reloadK1d action for", act.scode);
         } else if (act.action === "cancelAction") {
-          info("cancel action for", act.scode);
-
-          if (isFuture) {
-            response = await binance.futuresCancelAll(tradeSymbol);
+          if (isAlpha) {
+            info("skip alpha trade action", act.action, act.scode, act.price, act.amount);
           } else {
-            response = await binance.cancelAll(tradeSymbol);
+            info("cancel action for", act.scode);
+            let response;
+            if (isFuture) {
+              response = await binance.futuresCancelAll(tradeSymbol);
+            } else {
+              response = await binance.cancelAll(tradeSymbol);
+            }
+            debug("cancelAll response:" + response);
           }
-          debug("cancelAll response:" + response);
         }
       } catch (e) {
         error(act.action, act.scode, "fail:", e);
@@ -662,7 +994,7 @@ function execution_update(data) {
 }
 
 async function startFutureMiniTicket() {
-  g.stocklist.forEach(element => {
+  g.stocklist.filter(element => !isAlphaSymbol(element)).forEach(element => {
     binance.futuresMiniTickerStream(element, item => {
       let { symbol, close, high, low, open, volume, quoteVolume, eventTime } = item;
       let url = `${g.baseUrl}/stock/updatePrice?scode=O_${symbol}&price=${close}&time=${eventTime}`;
@@ -676,6 +1008,8 @@ async function startFutureMiniTicket() {
 }
 async function start() {
   log2File();
+  await ensureAlphaTokenMeta();
+  let marketSymbols = g.stocklist.filter(scode => !isAlphaSymbol(scode));
   await syncFuturesPositionMode(1);
   await updatePositions(1);
   await updatePositions(0);
@@ -687,14 +1021,18 @@ async function start() {
     await updateSticks(scode, "1m");
     await updateSticks(scode, "1d");
 
-    await futureCandles(scode, "1m");
-    await futureCandles(scode, "1d");
+    if (!isAlphaSymbol(scode)) {
+      await futureCandles(scode, "1m");
+      await futureCandles(scode, "1d");
+    }
   }
+
+  await syncAlphaTickers();
 
   startFutureMiniTicket();
 
   //futuresCandlesticksStream
-  binance.websockets.candlesticks(g.stocklist, "1m", (candlesticks) => {
+  binance.websockets.candlesticks(marketSymbols, "1m", (candlesticks) => {
     let { e: type, E: time, s: symbol, k: ticks } = candlesticks;
     let { o: open, h: high, l: low, c: close, v: volume, n: trades, i: interval, x: isFinal, q: quoteVolume, V: buyVolume, Q: quoteBuyVolume } = ticks;
 
@@ -717,8 +1055,10 @@ async function start() {
       for (let scode of g.stocklist) {
         updateSticks(scode, "1d");
         updateSticks(scode, "1m");
-        futureCandles(scode, "1m");
-        futureCandles(scode, "1d");
+        if (!isAlphaSymbol(scode)) {
+          futureCandles(scode, "1m");
+          futureCandles(scode, "1d");
+        }
       }
     }
   });
@@ -726,6 +1066,7 @@ async function start() {
 
   while (1 == 1) {
     await getActions();
+    await syncAlphaTickers();
     await sleep(100);
   }
 
@@ -858,6 +1199,15 @@ function init() {
     g.stocklist = ['ETHUSDT'];
   } else {
     info("env: prod")
+  }
+
+  if (process.env.BNB_STOCKLIST) {
+    g.stocklist = process.env.BNB_STOCKLIST.split(",").map(item => item.trim()).filter(Boolean);
+  }
+
+  if (process.env.BNB_ALPHA_STOCKLIST) {
+    let alphaStocks = process.env.BNB_ALPHA_STOCKLIST.split(",").map(item => item.trim()).filter(Boolean).map(item => item.startsWith("A_") ? item.toUpperCase() : `A_${item.toUpperCase()}`);
+    g.stocklist = g.stocklist.concat(alphaStocks);
   }
 
   if (args.length > 3) {
