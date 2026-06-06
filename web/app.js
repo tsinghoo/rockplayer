@@ -3471,6 +3471,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
 
 app.get('/stock/k/1m', async (req, res) => {
     let js = req.query.js;
+    let threadId=req.threadId;
     info(JSON.stringify(req.query), req.threadId);
     let scode = normalizeScode(req.query.scode);
     let type = req.query.type;
@@ -3482,11 +3483,7 @@ app.get('/stock/k/1m', async (req, res) => {
         day = new Date(parseInt(day));
     }
 
-    try {
-        await wss.callFunc("国金", "forceUpdate1m", { scode: formatScode(scode) });
-    } catch (e) {
-        error("update1m error:" + e.message, req.threadId);
-    }
+    await forceUpdate1m(scode, threadId);
     day.setHours(0, 0, 0, 0);
     let nextDay = new Date(day.getTime() + 24 * 60 * 60 * 1000);
     day = timeFormat(day, "yyyyMMdd")
@@ -3559,6 +3556,15 @@ app.get('/stock/reload/k1d', async (req, res) => {
 
     res.send(resp);
 });
+
+async function forceUpdate1m(scode, threadId) {
+    let lastMinute=await getLastMinute(scode, threadId);
+    try {
+        await wss.callFunc("国金", "forceUpdate1m", { scode: formatScode(scode), lastMinute });
+    } catch (e) {
+        error("update1m error:" + e.message, threadId);
+    }
+}
 
 async function sendDayLikeKLine(res, req, tableName) {
     let threadId = req.threadId;
@@ -4803,10 +4809,7 @@ app.get('/stock/1m/lastMinute', async (req, res) => {
     let threadId = req.threadId;
     let js = req.query.js;
     let scode = normalizeScode(req.query.scode);
-    info("scode:" + scode, req.threadId)
-    let aliases = getScodeAliases(scode);
-    let sql = `select max(time) as lastMinute from t1m where scode in (${aliases.map(() => "?").join(",")})`;
-    let r = await db.getSync(sql, aliases, threadId);
+    let r = await getLastMinute(scode, threadId);
 
     var resp = JSON.stringify(r);
     if (js != null) {
@@ -4830,6 +4833,14 @@ app.get('/stock/price/current', async (req, res) => {
 
     res.send(resp);
 });
+
+async function getLastMinute(scode, threadId) {
+    info("scode:" + scode, threadId);
+    let aliases = getScodeAliases(scode);
+    let sql = `select max(time) as lastMinute from t1m where scode in (${aliases.map(() => "?").join(",")})`;
+    let r = await db.getSync(sql, aliases, threadId);
+    return r;
+}
 
 async function autoDelete(delta, scode, req) {
     info("auto delete", req.threadId);

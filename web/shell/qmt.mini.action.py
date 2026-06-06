@@ -182,7 +182,8 @@ async def websocket_client():
                     elif message["func"] == "forceUpdate1m":
                         params = message["params"]
                         scode = params["scode"]
-                        update1m([scode])
+                        lastMinute = params["lastMinute"]
+                        update1m([scode], lastMinute)
                         info("update1m done")
                         response = {"id": message["id"]}
 
