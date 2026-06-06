@@ -3471,7 +3471,7 @@ app.get('/stock/rule/create/auto', async (req, res) => {
 
 app.get('/stock/k/1m', async (req, res) => {
     let js = req.query.js;
-    let threadId=req.threadId;
+    let threadId = req.threadId;
     info(JSON.stringify(req.query), req.threadId);
     let scode = normalizeScode(req.query.scode);
     let type = req.query.type;
@@ -3558,7 +3558,8 @@ app.get('/stock/reload/k1d', async (req, res) => {
 });
 
 async function forceUpdate1m(scode, threadId) {
-    let lastMinute=await getLastMinute(scode, threadId);
+    let r = await getLastMinute(scode, threadId);
+    let lastMinute = r.lastMinute;
     try {
         await wss.callFunc("国金", "forceUpdate1m", { scode: formatScode(scode), lastMinute });
     } catch (e) {
