@@ -140,8 +140,9 @@ function initWss() {
                     info(`${func} result: ${res}`);
                     resolve(res);
                 }
-
-                ws.send(JSON.stringify({ func: func, params: params, id }));
+                let str = JSON.stringify({ func: func, params: params, id })
+                info(`ws.send: ${str}`);
+                ws.send(str);
             });
         }
 
@@ -3830,7 +3831,7 @@ app.get('/stock/k/1ms', async (req, res) => {
 });
 
 async function forceUpdate1d(scode, threadId) {
-    let r = get1dLastDate(scode, threadId);
+    let r = await get1dLastDate(scode, threadId);
     try {
         await wss.callFunc("国金", "forceUpdate1d", { scode: formatScode(scode), lastDate: r.lastDate });
         // await genCci(scode, req);
