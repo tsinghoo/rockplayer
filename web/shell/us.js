@@ -11,7 +11,7 @@ const g = {
     baseUrl: process.env.BASE_URL || "http://127.0.0.1:3001",
     passcode: process.env.PASSCODE || "995560",
     batchSize: parseInt(process.env.BATCH_SIZE || "50", 10),
-    defaultPeriods: ["1w", "1mon"],
+    defaultPeriods: ["1d", "1w", "1mon"],
     logs: []
 };
 
@@ -151,7 +151,10 @@ function toYahooSymbol(scode) {
 async function getKLastDate(scode, period) {
     let route;
     let field;
-    if (period === "1w") {
+    if (period === "1d") {
+        route = "/stock/1d/lastDate";
+        field = "lastDate";
+    } else if (period === "1w") {
         route = "/stock/1w/lastDate";
         field = "lastDate";
     } else if (period === "1mon") {
@@ -191,16 +194,38 @@ function resolveRange(period, lastDate, explicitRange) {
         return explicitRange;
     }
     if (!lastDate) {
-        return period === "1w" ? "10y" : "20y";
+        if (period === "1d") {
+            return "5y";
+        }
+        return period === "1d" ? "5y" : "10y";
     }
 
     const last = parseDateString(lastDate);
     if (last == null) {
-        return period === "1w" ? "10y" : "20y";
+        if (period === "1d") {
+            return "5y";
+        }
+        return period === "1d" ? "5y" : "10y";
     }
 
     const now = Date.now();
     const diffDays = Math.ceil((now - last.getTime()) / (24 * 60 * 60 * 1000));
+    if (period === "1d") {
+        if (diffDays <= 10) {
+            return "1mo";
+        }
+        if (diffDays <= 45) {
+            return "3mo";
+        }
+        if (diffDays <= 190) {
+            return "1y";
+        }
+        if (diffDays <= 900) {
+            return "5y";
+        }
+        return "10y";
+    }
+
     if (period === "1w") {
         if (diffDays <= 35) {
             return "3mo";
@@ -227,6 +252,9 @@ function resolveRange(period, lastDate, explicitRange) {
 }
 
 function mapYahooInterval(period) {
+    if (period === "1d") {
+        return "1d";
+    }
     if (period === "1w") {
         return "1wk";
     }
