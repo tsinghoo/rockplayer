@@ -132,6 +132,14 @@ async function post(url, body) {
     return text;
 }
 
+async function ensureSellPlaceholder(scode) {
+    await post(`${g.baseUrl}/stock/sell`, {
+        scode: normalizeUsScode(scode),
+        sname: normalizeUsScode(scode),
+        passcode: g.passcode
+    });
+}
+
 function getYahooProxyAgent() {
     if (!g.yahooSocksProxy) {
         return null;
@@ -441,6 +449,11 @@ async function main() {
     }
 
     for (const scode of stocks) {
+        try {
+            await ensureSellPlaceholder(scode);
+        } catch (e) {
+            error(`ensureSellPlaceholder failed ${scode}`, e.stack || e.toString());
+        }
         for (const period of periods) {
             try {
                 await updatePeriod(scode, period, rangeOverride);

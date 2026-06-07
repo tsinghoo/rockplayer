@@ -2957,6 +2957,57 @@ app.post('/stock/basic/update', async (req, res) => {
     res.send(resp);
 });
 
+app.post('/stock/sell', async (req, res) => {
+    let passcode = req.body ? req.body.passcode : null;
+    if (passcode != "995560") {
+        info("bad request", req.threadId);
+        res.send("bad request");
+        return;
+    }
+
+    let scode = normalizeScode(req.body ? req.body.scode : null);
+    if (!scode) {
+        res.send(JSON.stringify({ error: "scode required" }));
+        return;
+    }
+
+    let sname = req.body.sname || scode;
+    let market = req.body.market || (scode.indexOf(".") >= 0 ? scode.split(".").pop() : "");
+    let now = Date.now();
+    let trade = await db.getSync(`select tid from tstock where scode=? limit 1`, [scode], req.threadId);
+
+    if (trade == null) {
+        let tday = timeFormat(now, "yyyyMMdd");
+        let ttime = timeFormat(now, "hh:mm:ss");
+        await insertOrReplace("tstock", {
+            tid: `${scode}_sell_0`,
+            scode: scode,
+            sname: sname,
+            tday: tday,
+            ttime: ttime,
+            tprice: 0,
+            operationDirection: "卖出",
+            operationName: "sell",
+            market: market,
+            tamount: 0,
+            tcash: 0,
+            taccount: req.body.taccount || "",
+            tpair: "",
+            lastOperationTime: 0
+        }, req.threadId);
+    }
+
+    await insertOrReplace("tStockBasic", {
+        id: scode,
+        scode: scode,
+        sname: sname,
+        market: market,
+        updateTime: now
+    }, req.threadId);
+
+    res.send(JSON.stringify({ ok: true }));
+});
+
 app.post('/stock/candidates', async (req, res) => {
     let stocks = req.body.data;
     if (stocks.length == 0) {
