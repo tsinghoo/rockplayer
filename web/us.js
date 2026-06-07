@@ -1,16 +1,19 @@
 const fs = require("fs");
+const https = require("https");
+const { SocksProxyAgent } = require("socks-proxy-agent");
 
 let DEBUG = 2;
 let INFO = 3;
 let ERROR = 4;
-let logLevel = parseInt(process.env.LOG_LEVEL || `${INFO}`, 10);
+let logLevel = parseInt(process.env.LOG_LEVEL || `${DEBUG}`, 10);
 
 const args = process.argv;
 const g = {
     broker: "US",
-    baseUrl: process.env.BASE_URL || "http://127.0.0.1:3001",
+    baseUrl: process.env.BASE_URL || "http://152.136.244.225",
     passcode: process.env.PASSCODE || "995560",
-    batchSize: parseInt(process.env.BATCH_SIZE || "50", 10),
+    batchSize: 50,
+    yahooSocksProxy: "",
     defaultPeriods: ["1d", "1w", "1mon"],
     logs: []
 };
@@ -127,6 +130,42 @@ async function post(url, body) {
         throw new Error(`POST ${url} failed: ${response.status} ${text}`);
     }
     return text;
+}
+
+function getYahooProxyAgent() {
+    if (!g.yahooSocksProxy) {
+        return null;
+    }
+    return new SocksProxyAgent(g.yahooSocksProxy);
+}
+
+function requestYahooText(url) {
+    return new Promise((resolve, reject) => {
+        const req = https.request(url, {
+            method: "GET",
+            agent: getYahooProxyAgent(),
+            headers: {
+                "User-Agent": "Mozilla/5.0",
+                "Accept": "application/json"
+            }
+        }, (response) => {
+            const chunks = [];
+            response.on("data", (chunk) => {
+                chunks.push(chunk);
+            });
+            response.on("end", () => {
+                const text = Buffer.concat(chunks).toString("utf8");
+                if (response.statusCode < 200 || response.statusCode >= 300) {
+                    reject(new Error(`Yahoo request failed: ${response.statusCode} ${text}`));
+                    return;
+                }
+                resolve(text);
+            });
+        });
+
+        req.on("error", reject);
+        req.end();
+    });
 }
 
 function normalizeUsScode(scode) {
@@ -248,7 +287,7 @@ function resolveRange(period, lastDate, explicitRange) {
     if (diffDays <= 1850) {
         return "10y";
     }
-    return "20y";
+    return "10y";
 }
 
 function mapYahooInterval(period) {
@@ -275,16 +314,7 @@ async function fetchYahooKlines(scode, period, range) {
     url.searchParams.set("corsDomain", "finance.yahoo.com");
 
     info(`fetch ${symbol} ${period} range=${range}`);
-    const response = await fetch(url.toString(), {
-        headers: {
-            "User-Agent": "Mozilla/5.0",
-            "Accept": "application/json"
-        }
-    });
-    const text = await response.text();
-    if (!response.ok) {
-        throw new Error(`Yahoo request failed: ${response.status} ${text}`);
-    }
+    const text = await requestYahooText(url.toString());
 
     const json = JSON.parse(text);
     const result = json && json.chart && Array.isArray(json.chart.result) ? json.chart.result[0] : null;
@@ -384,18 +414,24 @@ function parseStockList(raw) {
 }
 
 async function main() {
-    const stocksArg = args[2] || process.env.US_STOCKS || "";
-    const periodsArg = args[3] || process.env.US_PERIODS || "";
-    const rangeOverride = args[4] || process.env.US_RANGE || "";
+    const stocksArg = "AAPL,MSFT,AMZN,NVDA,TSLA,GOOGL,META";
+    const periodsArg = "1d,1w,1mon";
+    const rangeOverride = "2y";
+    g.yahooSocksProxy = "socks5://proxy.labadida.cn:10800";
+
     const stocks = parseStockList(stocksArg);
     const periods = periodsArg
         ? periodsArg.split(",").map((item) => item.trim()).filter(Boolean)
         : g.defaultPeriods;
 
     if (stocks.length === 0) {
-        console.log("usage: node shell/us.js AAPL,MSFT [1w,1mon] [range]");
+        console.log("usage: node shell/us.js AAPL,MSFT [1w,1mon] [range] [socks5://127.0.0.1:1080]");
         process.exitCode = 1;
         return;
+    }
+
+    if (g.yahooSocksProxy) {
+        info(`Yahoo socks proxy enabled: ${g.yahooSocksProxy}`);
     }
 
     for (const period of periods) {
