@@ -293,8 +293,7 @@ db.runSync = (sql, params, threadId) => {
 
 db.allSync = (sql, params, threadId) => {
     return new Promise((resolve, reject) => {
-        info("allSync:" + sql, threadId);
-        info("params:" + JSON.stringify(params), threadId);
+        info("allSync:" + sql + " params:" + JSON.stringify(params), threadId);
         db.all(sql, params, function (err, rows) {
             if (err) {
                 error(err, threadId);
@@ -307,8 +306,7 @@ db.allSync = (sql, params, threadId) => {
 }
 
 db.getSync = db.getSync || function (sql, params, threadId) {
-    info("getSync:" + sql, threadId);
-    info(JSON.stringify(params), threadId);
+    info("getSync:" + sql + " params:" + JSON.stringify(params), threadId);
     return new Promise((resolve, reject) => {
         db.get(sql, params, function (err, row) {
             if (err != null) {
@@ -1181,7 +1179,7 @@ async function reloadRule(r, req) {
     normalizeDbRowScodes(r);
     r.type = normalizeType(r.type, r.scode);
 
-    info("reloadRule:" + r.scode + r.sname, req.threadId)
+    info("reloadRule:" + r.id, req.threadId)
 
     let now = Date.now();
     if (r.expireTime != null && r.expireTime < now) {
@@ -1209,7 +1207,7 @@ async function reloadRule(r, req) {
         info("r.rule:" + JSON.stringify(r.rule), req.threadId)
         r.rule = JSON.parse(r.rule);
     } catch (e) {
-        info(e.stack, req.threadId)
+        debug(e.stack, req.threadId)
     }
 
     if (rules[r.scode] == null) {
@@ -1224,10 +1222,10 @@ async function reloadRule(r, req) {
 
     r.actions = [];
     //从 truleaction 里读取响应股票的最近一条执行记录
-    let ra = await db.getSync(`select * from tRuleAction where ruleId = '${r.id}' order by createTime desc limit 1`, [], threadId);
+    let ra = await db.getSync(`select * from tRuleAction where ruleId = ? order by createTime desc limit 1`, [r.id], threadId);
     if (ra) {
         normalizeDbRowScodes(ra);
-        info("${r.scode} ${r.sname} ra:" + JSON.stringify(ra), req.threadId)
+        info(`${r.scode} ${r.sname} ra:` + JSON.stringify(ra), req.threadId)
         if (ra.done == 0) {
             r.status = "ordered";
         } else if (ra.done == -1) {
@@ -1623,7 +1621,8 @@ app.use((req, res, next) => {
     const url = req.url;
     const queryParams = JSON.stringify(req.query);
     const bodyParams = JSON.stringify(req.body);
-    info(`${method} ${url}`, req.threadId)
+    let bodyInfo = bodyParams.substring(0, 20);
+    info(`${method} ${url} (${bodyInfo})`, req.threadId)
     debug(`body:${bodyParams}`, req.threadId)
 
     // 拦截 response 的 send/end 方法来记录响应内容
