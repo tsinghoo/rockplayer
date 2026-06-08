@@ -403,7 +403,7 @@ def getMarkets():
     if g.broker=="华鑫":
         return ['SH','SZ']
     if g.broker=="国金":
-        return ['SH','SZ','BJ','HK']
+        return ['BJ','HK']
     return ['SH','SZ','BJ','HK']
 def init():
     print(sys.version)
