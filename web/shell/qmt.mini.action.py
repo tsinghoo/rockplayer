@@ -399,8 +399,12 @@ def saveConfig():
 
     with open(g.configFile, "w") as f:
         json.dump(g.config, f)
-
-
+def getMarkets():
+    if g.broker=="华鑫":
+        return ['SH','SZ']
+    if g.broker=="国金":
+        return ['SH','SZ','BJ','HK']
+    return ['SH','SZ','BJ','HK']
 def init():
     print(sys.version)
     print(sys.executable)
@@ -411,6 +415,7 @@ def init():
 def getStockList():
     # 从test1获取股票列表
     info("getStockList")
+    markets=getMarkets()
     try:
         response = requests.get(g.baseUrl + "/stock/codes", verify=False, timeout=5)
         if response.status_code != 200:
@@ -423,7 +428,7 @@ def getStockList():
             info("getStockList response:", content)
             stocklist = json.loads(content)
             # 将g.stocklist中包含".EC"的元素去除
-            stocklist = [x for x in stocklist if not x.endswith(".EC")]
+            stocklist = [x for x in stocklist if x.endswith(tuple(markets))]
             # stocklist=["09926.HK"]
             info("got", len(stocklist), "stocks")
             return stocklist
